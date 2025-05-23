@@ -1,0 +1,65 @@
+/* Estilos generales */
+body {
+    background-color: #f8f9fa;
+}
+
+/* Estilos para las preguntas */
+.question-container {
+    padding: 15px;
+    border-radius: 8px;
+    background-color: white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    transition: all 0.3s ease;
+}
+
+.question-container.answered {
+    background-color: #e8f5e9;
+}
+
+.question-container label {
+    font-weight: 500;
+    margin-bottom: 10px;
+}
+
+/* Estilos para los botones de respuesta */
+.btn-group {
+    gap: 10px;
+}
+
+.btn-check + label {
+    flex: 1;
+    text-align: center;
+}
+
+/* Estilos para las tarjetas */
+.card {
+    border: none;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+}
+
+.card-header {
+    background-color: white;
+    border-bottom: 1px solid rgba(0,0,0,0.1);
+}
+
+.card-title {
+    margin-bottom: 0;
+    font-size: 1.1rem;
+    font-weight: 500;
+}
+
+/* Estilos para la tabla de administración */
+.table {
+    margin-bottom: 0;
+}
+
+.table th {
+    border-top: none;
+    background-color: #f8f9fa;
+}
+
+/* Estilos para los gráficos */
+canvas {
+    max-height: 300px;
+}

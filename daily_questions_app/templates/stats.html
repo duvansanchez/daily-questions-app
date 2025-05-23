@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+
+{% block title %}Estadísticas Diarias{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Estadísticas del Día</h2>
+        <div class="text-muted">{{ fecha_actual }}</div>
+    </div>
+    
+    <!-- Tarjetas de resumen -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Preguntas Totales</h5>
+                    <h2 class="mb-0">{{ estadisticas.total_preguntas }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Días de Seguimiento</h5>
+                    <h2 class="mb-0">{{ estadisticas.dias_respondidos }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Respuestas Totales</h5>
+                    <h2 class="mb-0">{{ estadisticas.total_respuestas }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Tabla de respuestas del día -->
+    <div class="card">
+        <div class="card-header bg-dark text-white">
+            <h5 class="mb-0">Respuestas de Hoy</h5>
+        </div>
+        <div class="card-body p-0">
+            {% if preguntas %}
+                <div class="list-group list-group-flush">
+                    {% for pregunta in preguntas %}
+                    <div class="list-group-item">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1">{{ pregunta.texto }}</h6>
+                                <p class="mb-1">
+                                    {% if pregunta.tipo == 'yes_no' %}
+                                        <span class="badge bg-{{ 'success' if pregunta.respuesta == 'Sí' else 'danger' }}">
+                                            {{ pregunta.respuesta }}
+                                        </span>
+                                    {% elif pregunta.tipo == 'multiple_choice' %}
+                                        <span class="badge bg-info">{{ pregunta.respuesta }}</span>
+                                    {% else %}
+                                        <span class="text-muted">{{ pregunta.respuesta }}</span>
+                                    {% endif %}
+                                </p>
+                                <small class="text-muted">
+                                    Última actualización: {{ pregunta.fecha }}
+                                </small>
+                            </div>
+                            <div>
+                                <span class="badge bg-secondary">{{ pregunta.tipo|replace('_', ' ')|title }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-center p-4">
+                    <p class="text-muted">No hay respuestas registradas para hoy.</p>
+                    <a href="{{ url_for('index') }}" class="btn btn-primary">Responder preguntas</a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Gráfico de progreso semanal -->
+    <div class="card mt-4">
+        <div class="card-header bg-dark text-white">
+            <h5 class="mb-0">Progreso Semanal</h5>
+        </div>
+        <div class="card-body
+            <canvas id="weeklyProgressChart"></canvas>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Configuración del gráfico de progreso semanal
+    const ctx = document.getElementById('weeklyProgressChart').getContext('2d');
+    
+    // Datos de ejemplo - reemplazar con datos reales de la API
+    const weeklyData = {
+        labels: ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'],
+        datasets: [{
+            label: 'Preguntas respondidas',
+            data: [3, 5, 2, 4, 5, 1, 0],
+            backgroundColor: 'rgba(54, 162, 235, 0.2)',
+            borderColor: 'rgba(54, 162, 235, 1)',
+            borderWidth: 1,
+            tension: 0.3
+        }]
+    };
+    
+    // Opciones del gráfico
+    const chartOptions = {
+        responsive: true,
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    stepSize: 1
+                }
+            }
+        }
+    };
+    
+    // Crear el gráfico
+    new Chart(ctx, {
+        type: 'line',
+        data: weeklyData,
+        options: chartOptions
+    });
+    
+    // Función para mostrar/ocultar respuestas largas
+    $(document).on('click', '.text-truncate', function() {
+        const fullText = $(this).text().trim();
+        if (fullText.length > 100) {
+            const modal = `
+                <div class="modal fade" id="responseModal" tabindex="-1">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Respuesta Completa</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <p>${fullText}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+            $('body').append(modal);
+            const modalElement = new bootstrap.Modal(document.getElementById('responseModal'));
+            modalElement.show();
+            
+            // Remove modal from DOM after it's hidden
+            document.getElementById('responseModal').addEventListener('hidden.bs.modal', function () {
+                document.getElementById('responseModal').remove();
+            });
+        }
+    });
+});
+</script>
+{% endblock %}

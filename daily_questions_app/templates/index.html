@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block title %}Preguntas Diarias{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="mb-0">Preguntas del {{ date.strftime('%d/%m/%Y') }}</h2>
+            <div class="text-muted small">
+                <i class="bi bi-calendar3"></i> Hoy es {{ date.strftime('%A, %d de %B') }}
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-body">
+                <form id="daily-questions-form">
+                    <input type="hidden" name="date" id="date-field" value="{{ date.strftime('%Y-%m-%d') }}">
+                    {% for question in questions %}
+                    <div class="mb-4 question-container" data-question-id="{{ question.id }}">
+                        <label class="form-label">{{ question.text }}</label>
+                        {% if question.type == 'yes_no' %}
+                            <div class="btn-group w-100" role="group">
+                                <input type="radio" class="btn-check" name="q{{ question.id }}" id="q{{ question.id }}_yes" value="yes">
+                                <label class="btn btn-outline-success" for="q{{ question.id }}_yes">Sí</label>
+                                
+                                <input type="radio" class="btn-check" name="q{{ question.id }}" id="q{{ question.id }}_no" value="no">
+                                <label class="btn btn-outline-danger" for="q{{ question.id }}_no">No</label>
+                            </div>
+                        {% elif question.type == 'multiple_choice' %}
+                            <select class="form-select" name="q{{ question.id }}">
+                                <option value="">Selecciona una opción</option>
+                                {% for option in question.options.split(',') %}
+                                    <option value="{{ option.strip() }}">{{ option.strip() }}</option>
+                                {% endfor %}
+                            </select>
+                        {% elif question.type == 'open_text' %}
+                            <textarea class="form-control" name="q{{ question.id }}" rows="3" placeholder="Escribe tu respuesta aquí..." required></textarea>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                    
+                    {% if questions %}
+                        <button type="submit" class="btn btn-primary w-100">Guardar Respuestas</button>
+                    {% else %}
+                        <p class="text-center text-muted">No hay preguntas configuradas para hoy.</p>
+                    {% endif %}
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('daily-questions-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const data = {
+        date: formData.get('date'),
+        responses: {}
+    };
+    
+    const questions = document.querySelectorAll('.question-container');
+    questions.forEach(question => {
+        const questionId = question.dataset.questionId;
+        
+        const radioInputs = question.querySelectorAll('input[type="radio"]:checked');
+        const selectInput = question.querySelector('select');
+        const textareaInput = question.querySelector('textarea');
+        
+        if (radioInputs.length) {
+            data.responses[questionId] = radioInputs[0].value;
+        } else if (selectInput) {
+            data.responses[questionId] = selectInput.value;
+        } else if (textareaInput) {
+            data.responses[questionId] = textareaInput.value;
+        }
+    });
+    
+    try {
+        const response = await fetch('/submit_responses', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        if (result.status === 'success') {
+            alert('Respuestas guardadas exitosamente');
+            this.reset();
+        } else {
+            alert(result.message || 'Error al guardar las respuestas');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Error al guardar las respuestas');
+    }
+});
+</script>
+{% endblock %}

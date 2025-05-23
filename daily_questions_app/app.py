@@ -1,0 +1,625 @@
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
+from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
+from werkzeug.security import generate_password_hash, check_password_hash
+from datetime import datetime, timedelta
+import os
+import pyodbc
+from dotenv import load_dotenv
+
+load_dotenv()
+
+app = Flask(__name__)
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'your-secret-key-here')
+
+# Configuración de la base de datos
+# La cadena de conexión ahora se maneja dentro de get_db_connection
+
+# Función para obtener la conexión a la base de datos
+def get_db_connection():
+    """Obtiene una conexión a la base de datos con manejo de contexto"""
+    class ConnectionContext:
+        def __init__(self):
+            self.conn = None
+            
+        def __enter__(self):
+            # Intentar con ODBC 18 primero, luego 17, luego el genérico
+            drivers = [
+                "ODBC Driver 18 for SQL Server",
+                "ODBC Driver 17 for SQL Server",
+                "SQL Server"  # Último recurso
+            ]
+            
+            last_error = None
+            
+            for driver in drivers:
+                try:
+                    conn_str = (
+                        f"DRIVER={{{driver}}};"
+                        "SERVER=DESKTOP-32COF63;"
+                        "DATABASE=DailyQuestions;"
+                        "Trusted_Connection=yes;"
+                        "TrustServerCertificate=yes;"  # Importante para conexiones sin SSL
+                        "Connection Timeout=30;"
+                    )
+                    self.conn = pyodbc.connect(conn_str, autocommit=False)
+                    print(f"Conexión exitosa usando el controlador: {driver}")
+                    return self.conn
+                except Exception as e:
+                    last_error = e
+                    print(f"No se pudo conectar con {driver}: {str(e)}")
+            
+            # Si llegamos aquí, todas las conexiones fallaron
+            error_msg = "No se pudo establecer conexión con ningún controlador ODBC disponible"
+            print(error_msg)
+            if last_error:
+                print(f"Último error: {str(last_error)}")
+            raise Exception(error_msg)
+                
+        def __exit__(self, exc_type, exc_val, exc_tb):
+            if self.conn:
+                if exc_type is not None:  # Si hubo un error
+                    self.conn.rollback()
+                else:
+                    self.conn.commit()
+                self.conn.close()
+    
+    return ConnectionContext()
+
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'login'
+
+# Modelos
+class User(UserMixin):
+    def __init__(self, id, username, password, is_admin=False):
+        self.id = id
+        self.username = username
+        self.password = password
+        self.is_admin = bool(is_admin)
+
+    @classmethod
+    def get(cls, user_id):
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('SELECT id, username, password, is_admin FROM [user] WHERE id = ?', (user_id,))
+            user = cursor.fetchone()
+            if user:
+                return cls(user[0], user[1], user[2], user[3])
+        return None
+
+    @classmethod
+    def get_by_username(cls, username):
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('SELECT id, username, password, is_admin FROM [user] WHERE username = ?', (username,))
+            user_data = cursor.fetchone()
+            if user_data:
+                return cls(user_data[0], user_data[1], user_data[2], user_data[3])
+        return None
+
+class Question:
+    def __init__(self, id, text, type, options, active, created_at, assigned_user_id=None):
+        self.id = id
+        self.text = text
+        self.type = type
+        self.options = options
+        self.active = active
+        self.created_at = created_at
+        self.assigned_user_id = assigned_user_id
+
+    @classmethod
+    def get_all(cls):
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('SELECT id, text, type, options, active, created_at, assigned_user_id FROM question')
+            questions = [cls(*row) for row in cursor.fetchall()]
+            return questions
+
+    @classmethod
+    def get_by_user(cls, user_id):
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                'SELECT id, text, type, options, active, created_at, assigned_user_id '
+                'FROM question WHERE assigned_user_id = ? AND active = 1',
+                (user_id,)
+            )
+            questions = [cls(*row) for row in cursor.fetchall()]
+            return questions
+
+    @classmethod
+    def create(cls, text, type, options=None, assigned_user_id=None):
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                'INSERT INTO question (text, type, options, assigned_user_id) VALUES (?, ?, ?, ?)',
+                (text, type, options, assigned_user_id)
+            )
+            conn.commit()
+
+class Response:
+    def __init__(self, id, question_id, response, date, created_at):
+        self.id = id
+        self.question_id = question_id
+        self.response = response
+        self.date = date
+        self.created_at = created_at
+
+    @classmethod
+    def create(cls, question_id, response_text, date):
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                'INSERT INTO response (question_id, response, date) VALUES (?, ?, ?)',
+                (question_id, response_text, date)
+            )
+            conn.commit()
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User.get(int(user_id))
+
+# Rutas
+@app.route('/')
+@login_required
+def index():
+    questions = Question.get_by_user(current_user.id)
+    return render_template('index.html', questions=questions, date=datetime.now())
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        print(f"Intento de inicio de sesión para el usuario: {username}")
+        
+        try:
+            # Obtener el usuario directamente para depuración
+            with get_db_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute('SELECT id, username, password FROM [user] WHERE username = ?', (username,))
+                db_user = cursor.fetchone()
+            
+            if db_user:
+                user_id, db_username, db_password = db_user
+                print(f"Usuario encontrado en DB - ID: {user_id}, Username: {db_username}")
+                print(f"Hash almacenado en DB: {db_password}")
+                print(f"Contraseña ingresada: {password}")
+                
+                # Verificar la contraseña
+                is_valid = check_password_hash(db_password, password)
+                print(f"¿Contraseña válida? {is_valid}")
+                
+                if is_valid:
+                    user = User(user_id, db_username, db_password)
+                    login_user(user)
+                    print("Inicio de sesión exitoso")
+                    return redirect(url_for('index'))
+            else:
+                print("Usuario no encontrado en la base de datos")
+                
+            flash('Usuario o contraseña inválidos')
+        except Exception as e:
+            print(f"Error durante el inicio de sesión: {str(e)}")
+            flash('Error al procesar la solicitud de inicio de sesión')
+    
+    return render_template('login.html')
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        
+        try:
+            with get_db_connection() as conn:
+                cursor = conn.cursor()
+                
+                # Verificar si el usuario ya existe
+                cursor.execute('SELECT id FROM [user] WHERE username = ?', (username,))
+                if cursor.fetchone():
+                    flash('El nombre de usuario ya existe')
+                    return redirect(url_for('register'))
+                
+                # Crear nuevo usuario
+                hashed_password = generate_password_hash(password)
+                cursor.execute(
+                    'INSERT INTO [user] (username, password) VALUES (?, ?)',
+                    (username, hashed_password)
+                )
+                conn.commit()
+            
+            flash('¡Registro exitoso! Por favor inicia sesión.')
+            return redirect(url_for('login'))
+            
+        except Exception as e:
+            print(f"Error durante el registro: {str(e)}")
+            flash('Error al procesar el registro. Por favor intente de nuevo.')
+    
+    return render_template('register.html')
+
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    return redirect(url_for('login'))
+
+@app.route('/admin')
+@login_required
+def admin():
+    try:
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            
+            # Obtener todas las preguntas
+            cursor.execute('''
+                SELECT q.id, q.text, q.type, q.options, q.active, q.created_at, 
+                       q.assigned_user_id, u.username as assigned_to
+                FROM question q
+                LEFT JOIN [user] u ON q.assigned_user_id = u.id
+                ORDER BY q.created_at DESC
+            ''')
+            
+            questions = []
+            for row in cursor.fetchall():
+                questions.append({
+                    'id': row[0],
+                    'text': row[1],
+                    'type': row[2],
+                    'options': row[3],
+                    'active': bool(row[4]),
+                    'created_at': row[5],
+                    'assigned_user_id': row[6],
+                    'assigned_to': row[7] if row[7] else 'Sin asignar'
+                })
+            
+            # Obtener usuarios para el formulario de asignación
+            cursor.execute('SELECT id, username FROM [user]')
+            users = [{'id': row[0], 'username': row[1]} for row in cursor.fetchall()]
+            
+        return render_template('admin.html', questions=questions, users=users)
+        
+    except Exception as e:
+        print(f"Error al cargar la página de administración: {str(e)}")
+        flash('Error al cargar la página de administración', 'error')
+        return redirect(url_for('index'))
+
+@app.route('/add_question', methods=['POST'])
+@login_required
+def add_question():
+    try:
+        # Obtener datos del formulario
+        text = request.form.get('text', '').strip()
+        type = request.form.get('type', 'text')
+        options = request.form.get('options', '').strip()
+        active = 'active' in request.form
+        assigned_user_id = request.form.get('assigned_user_id')
+        
+        # Validar campos requeridos
+        if not text:
+            flash('El texto de la pregunta es requerido', 'error')
+            return redirect(url_for('admin'))
+            
+        if type not in ['text', 'select', 'checkbox', 'radio']:
+            flash('Tipo de pregunta no válido', 'error')
+            return redirect(url_for('admin'))
+        
+        # Insertar la pregunta
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                '''
+                INSERT INTO question 
+                (text, type, options, active, created_at, assigned_user_id) 
+                VALUES (?, ?, ?, ?, GETDATE(), ?)
+                ''',
+                (text, type, options if options else None, 
+                 1 if active else 0, 
+                 assigned_user_id if assigned_user_id and assigned_user_id.isdigit() else None)
+            )
+            conn.commit()
+        
+        flash('Pregunta agregada exitosamente', 'success')
+        return redirect(url_for('admin'))
+        
+    except Exception as e:
+        print(f"Error al agregar pregunta: {str(e)}")
+        flash('Error al agregar la pregunta. Por favor, intente de nuevo.', 'error')
+        return redirect(url_for('admin'))
+
+@app.route('/submit_responses', methods=['POST'])
+@login_required
+def submit_responses():
+    try:
+        data = request.get_json()
+        if not data or 'date' not in data or 'responses' not in data:
+            return jsonify({'status': 'error', 'message': 'Datos de solicitud inválidos'}), 400
+            
+        # Convertir la fecha al formato correcto para SQL Server
+        date_str = data['date']
+        date_obj = datetime.strptime(date_str, '%Y-%m-%d').date()
+        responses = data['responses']
+        
+        print(f"Recibiendo respuestas para la fecha: {date_obj}")
+        
+        with get_db_connection() as conn:
+            with conn.cursor() as cursor:
+                # Primero eliminamos cualquier respuesta existente para este día
+                try:
+                    # Primero obtenemos los IDs de las preguntas asignadas al usuario
+                    cursor.execute(
+                        'SELECT id FROM question WHERE assigned_user_id = ?',
+                        (current_user.id,)
+                    )
+                    question_ids = [row[0] for row in cursor.fetchall()]  # Mantener como enteros
+                    
+                    if question_ids:  # Solo si hay preguntas asignadas
+                        # Convertir la fecha a string en formato YYYY-MM-DD
+                        date_str = date_obj.strftime('%Y-%m-%d')
+                        
+                        # Crear una lista de cadenas con los IDs de pregunta
+                        question_ids_str = [str(qid) for qid in question_ids]
+                        
+                        # Construir la consulta SQL directamente (sin usar parámetros para la lista IN)
+                        delete_sql = """
+                            DELETE r
+                            FROM response r
+                            INNER JOIN question q ON r.question_id = q.id
+                            WHERE CONVERT(DATE, r.date) = ?
+                            AND q.assigned_user_id = ?
+                        """
+                        
+                        cursor.execute(delete_sql, (date_str, current_user.id))
+                        print(f"Respuestas anteriores eliminadas para el usuario {current_user.id} en la fecha {date_str}")
+                    else:
+                        print("No hay preguntas asignadas a este usuario")
+                except Exception as e:
+                    print(f"Error al eliminar respuestas anteriores: {str(e)}")
+                    conn.rollback()
+                    return jsonify({
+                        'status': 'error', 
+                        'message': f'Error al limpiar respuestas anteriores: {str(e)}'
+                    }), 500
+                
+                # Luego insertamos las nuevas respuestas
+                for question_id_str, response_text in responses.items():
+                    try:
+                        question_id = int(question_id_str)  # Asegurar que el ID sea entero
+                        response_text = str(response_text) if response_text is not None else ""
+                        
+                        print(f"Procesando pregunta {question_id}: {response_text[:50]}...")
+                        
+                        # Verificar si la pregunta está asignada al usuario
+                        if question_id not in question_ids:
+                            print(f"Advertencia: La pregunta {question_id} no está asignada al usuario {current_user.id}")
+                            continue
+                        
+                        # Insertar la respuesta con parámetros explícitos
+                        cursor.execute(
+                            """
+                            INSERT INTO response (question_id, response, date)
+                            VALUES (?, ?, ?)
+                            """,
+                            (question_id, response_text, date_obj)
+                        )
+                        print(f"Respuesta insertada correctamente para la pregunta {question_id}")
+                        
+                    except ValueError as ve:
+                        print(f"ID de pregunta inválido: {question_id}")
+                        conn.rollback()
+                        return jsonify({
+                            'status': 'error',
+                            'message': f'ID de pregunta inválido: {question_id}'
+                        }), 400
+                        
+                    except Exception as e:
+                        print(f"Error al insertar respuesta para pregunta {question_id}: {str(e)}")
+                        conn.rollback()
+                        return jsonify({
+                            'status': 'error',
+                            'message': f'Error al guardar la respuesta: {str(e)}',
+                            'question_id': question_id
+                        }), 500
+                
+                # Si todo salió bien, hacemos commit
+                conn.commit()
+                print("Todas las respuestas se guardaron exitosamente")
+                return jsonify({
+                    'status': 'success',
+                    'message': 'Respuestas guardadas correctamente'
+                })
+                
+    except ValueError as ve:
+        print(f"Error en el formato de fecha: {str(ve)}")
+        return jsonify({
+            'status': 'error',
+            'message': 'Formato de fecha inválido. Use YYYY-MM-DD'
+        }), 400
+        
+    except Exception as e:
+        print(f"Error en submit_responses: {str(e)}")
+        return jsonify({
+            'status': 'error', 
+            'message': f'Error en el servidor: {str(e)}'
+        }), 500
+
+@app.route('/stats')
+@login_required
+def stats():
+    try:
+        # Obtener la fecha actual en formato YYYY-MM-DD
+        today = datetime.now().strftime('%Y-%m-%d')
+        
+        # Obtener las preguntas del usuario con sus respuestas de hoy
+        with get_db_connection() as conn:
+            with conn.cursor() as cursor:
+                # Obtener preguntas con respuestas de hoy
+                cursor.execute('''
+                    SELECT 
+                        q.id,
+                        q.text as pregunta,
+                        q.type as tipo,
+                        r.response as respuesta,
+                        r.date as fecha_respuesta
+                    FROM question q
+                    LEFT JOIN response r ON q.id = r.question_id 
+                        AND CONVERT(DATE, r.date) = ?
+                    WHERE q.assigned_user_id = ?
+                    ORDER BY q.id
+                ''', (today, current_user.id))
+                
+                preguntas = []
+                for row in cursor.fetchall():
+                    preguntas.append({
+                        'id': row.id,
+                        'texto': row.pregunta,
+                        'tipo': row.tipo,
+                        'respuesta': row.respuesta if row.respuesta else 'Sin responder',
+                        'fecha': row.fecha_respuesta.strftime('%Y-%m-%d %H:%M') if row.fecha_respuesta else 'No respondida'
+                    })
+                
+                # Obtener estadísticas generales
+                cursor.execute('''
+                    SELECT 
+                        COUNT(DISTINCT CONVERT(DATE, r.date)) as dias_respondidos,
+                        COUNT(r.id) as total_respuestas,
+                        (SELECT COUNT(*) FROM question WHERE assigned_user_id = ?) as total_preguntas
+                    FROM response r
+                    JOIN question q ON r.question_id = q.id
+                    WHERE q.assigned_user_id = ?
+                ''', (current_user.id, current_user.id))
+                
+                stats = cursor.fetchone()
+                
+                estadisticas = {
+                    'dias_respondidos': stats.dias_respondidos if stats and stats.dias_respondidos else 0,
+                    'total_respuestas': stats.total_respuestas if stats and stats.total_respuestas else 0,
+                    'total_preguntas': stats.total_preguntas if stats and stats.total_preguntas else 0,
+                    'fecha_actual': today
+                }
+                
+                return render_template(
+                    'stats.html',
+                    preguntas=preguntas,
+                    estadisticas=estadisticas,
+                    fecha_actual=today
+                )
+                
+    except Exception as e:
+        print(f"Error en stats: {str(e)}")
+        flash('Error al cargar las estadísticas', 'error')
+        return render_template('stats.html', preguntas=[], estadisticas={})
+
+@app.route('/api/stats/weekly_responses')
+@login_required
+def get_weekly_responses():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    # Obtener los últimos 7 días
+    today = datetime.now()
+    days = [today - timedelta(days=i) for i in range(6, -1, -1)]
+    
+    # Obtener todas las respuestas de la semana
+    cursor.execute('''
+        SELECT q.id, q.text, q.type, r.response, r.date
+        FROM question q
+        LEFT JOIN response r ON q.id = r.question_id AND r.date >= ? AND r.date <= ?
+        WHERE q.assigned_user_id = ?
+        ORDER BY q.id, r.date
+    ''', days[0], days[-1], current_user.id)
+    
+    responses = []
+    for row in cursor.fetchall():
+        responses.append({
+            'question_id': row[0],
+            'text': row[1],
+            'type': row[2],
+            'response': row[3],
+            'date': row[4].strftime('%Y-%m-%d') if row[4] else None
+        })
+    
+    conn.close()
+    return jsonify(responses)
+
+@app.route('/api/stats')
+@login_required
+def get_stats():
+    try:
+        # Obtener la fecha actual en formato YYYY-MM-DD
+        today = datetime.now().strftime('%Y-%m-%d')
+        
+        with get_db_connection() as conn:
+            with conn.cursor() as cursor:
+                # Obtener las respuestas del día actual para el usuario
+                cursor.execute('''
+                    SELECT q.text as pregunta, r.response as respuesta, r.date
+                    FROM response r
+                    JOIN question q ON r.question_id = q.id
+                    WHERE CONVERT(DATE, r.date) = ?
+                    AND q.assigned_user_id = ?
+                    ORDER BY q.id
+                ''', (today, current_user.id))
+                
+                respuestas = [
+                    {
+                        'pregunta': row.pregunta,
+                        'respuesta': row.respuesta,
+                        'fecha': row.date.strftime('%Y-%m-%d')
+                    }
+                    for row in cursor.fetchall()
+                ]
+                
+                # Obtener estadísticas generales
+                cursor.execute('''
+                    SELECT 
+                        COUNT(DISTINCT CONVERT(DATE, r.date)) as dias_respondidos,
+                        COUNT(r.id) as total_respuestas
+                    FROM response r
+                    JOIN question q ON r.question_id = q.id
+                    WHERE q.assigned_user_id = ?
+                ''', (current_user.id,))
+                
+                stats = cursor.fetchone()
+                
+                return jsonify({
+                    'status': 'success',
+                    'fecha': today,
+                    'respuestas': respuestas,
+                    'estadisticas': {
+                        'dias_respondidos': stats.dias_respondidos if stats else 0,
+                        'total_respuestas': stats.total_respuestas if stats else 0
+                    }
+                })
+                
+    except Exception as e:
+        print(f"Error en get_stats: {str(e)}")
+        return jsonify({
+            'status': 'error',
+            'message': f'Error al obtener estadísticas: {str(e)}'
+        }), 500
+
+@app.route('/question/<int:question_id>', methods=['PUT'])
+@login_required
+def update_question(question_id):
+    data = request.get_json()
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    # Verificar que la pregunta pertenezca al usuario actual
+    cursor.execute('SELECT assigned_user_id FROM question WHERE id = ?', question_id)
+    question = cursor.fetchone()
+    if not question or question[0] != current_user.id:
+        conn.close()
+        return jsonify({'status': 'error', 'message': 'No autorizado'}), 403
+    
+    cursor.execute(
+        'UPDATE question SET text = ?, type = ?, options = ? WHERE id = ? AND assigned_user_id = ?',
+        (data['text'], data['type'], data['options'], question_id, current_user.id)
+    )
+    conn.commit()
+    conn.close()
+    return jsonify({'status': 'success'})
+
+if __name__ == '__main__':
+    app.run(debug=True)
