@@ -7,6 +7,7 @@ import pyodbc
 from dotenv import load_dotenv
 import logging
 import sys
+import traceback
 
 load_dotenv()
 
@@ -267,135 +268,111 @@ def admin():
     logger.info("\n=== INICIO DE LA RUTA ADMIN ===")
     logger.info(f"Usuario actual: {current_user.id}")
     
-    # Inicializar estadísticas con valores por defecto
-    stats = {
-        'total_preguntas': 0,
-        'preguntas_activas': 0,
-        'respuestas_hoy': 0
-    }
-    
     try:
+        # Verificar la conexión a la base de datos
         with get_db_connection() as conn:
             cursor = conn.cursor()
             
-            # 1. Verificar si el usuario existe y es administrador
-            cursor.execute('SELECT id, is_admin FROM [user] WHERE id = ?', (current_user.id,))
-            user_data = cursor.fetchone()
-            
-            if not user_data:
+            # Verificar si el usuario existe
+            cursor.execute('SELECT id FROM [user] WHERE id = ?', (current_user.id,))
+            if not cursor.fetchone():
                 logger.error(f"Error: Usuario {current_user.id} no encontrado en la base de datos")
                 flash('Error: Usuario no encontrado', 'error')
                 return redirect(url_for('index'))
-                
-            user_id, is_admin = user_data
             
-            if not is_admin:
-                logger.warning(f"Intento de acceso no autorizado a /admin por el usuario {user_id}")
-                flash('No tienes permisos para acceder a esta sección', 'error')
+            # Obtener las preguntas del usuario actual
+            query = '''
+                SELECT 
+                    id, 
+                    text, 
+                    type, 
+                    ISNULL(options, '') as options, 
+                    active, 
+                    CONVERT(datetime, created_at) as created_at
+                FROM question 
+                WHERE assigned_user_id = ?
+                ORDER BY created_at DESC
+            '''
+            logger.info(f"\nEjecutando consulta de preguntas:")
+            logger.info(f"Query: {query}")
+            logger.info(f"Parámetros: user_id={current_user.id}")
+            
+            try:
+                cursor.execute(query, (current_user.id,))
+                rows = cursor.fetchall()
+                logger.info(f"Resultados encontrados: {len(rows)}")
+            except Exception as e:
+                logger.error(f"Error al ejecutar consulta de preguntas: {str(e)}")
+                logger.error(f"Tipo de error: {type(e)}")
+                flash('Error al obtener las preguntas', 'error')
                 return redirect(url_for('index'))
             
-            # 2. Obtener todas las preguntas con manejo de errores
-            try:
-                query = '''
-                    SELECT 
-                        id, 
-                        COALESCE(text, '') as text, 
-                        COALESCE(type, 'text') as type, 
-                        COALESCE(options, '') as options, 
-                        COALESCE(active, 0) as active, 
-                        COALESCE(CONVERT(VARCHAR(10), created_at, 103), 'N/A') as created_at,
-                        COALESCE(assigned_user_id, 0) as assigned_user_id
-                    FROM question 
-                    ORDER BY COALESCE(created_at, GETDATE()) DESC
-                '''
-                logger.info("Ejecutando consulta de preguntas")
-                cursor.execute(query)
-                questions_data = cursor.fetchall()
-                
-                logger.info("Procesando preguntas...")
-                questions = []
-                for i, row in enumerate(questions_data, 1):
-                    logger.info(f"Procesando pregunta {i}/{len(questions_data)}")
-                    logger.info(f"Contenido de la fila: {row}")
-                    try:
-                        # Crear el diccionario de la pregunta
-                        question = {
-                            'id': row[0],
-                            'text': row[1],
-                            'type': row[2],
-                            'options': row[3],
-                            'active': bool(row[4]),
-                            'created_at': row[5],  # Ya viene formateado desde la consulta SQL
-                            'assigned_user_id': row[6]
-                        }
-                        questions.append(question)
-                    except Exception as e:
-                        logger.error(f"Error procesando pregunta {row[0]}: {str(e)}")
-                        continue
-                
-                logger.info(f"Se encontraron {len(questions)} preguntas")
-                
-            except Exception as e:
-                logger.error(f"Error en consulta de preguntas: {str(e)}")
-                logger.info(f"Se encontraron {len(questions_data)} preguntas")
-                
-                # Obtener estadísticas
-                stats = {
-                    'total_preguntas': len(questions_data),
-                    'preguntas_activas': sum(1 for q in questions_data if q[4] == 1),
-                    'respuestas_hoy': 0  # Inicializar contador
-                }
-                
-                # Debug: Verificar el tipo de datos de cada columna
-                if questions_data:
-                    first_row = questions_data[0]
-                    logger.info(f"Tipo de datos de la primera fila: {[type(field).__name__ for field in first_row]}")
-                    logger.info(f"Contenido de la primera fila: {first_row}")
+            questions = []
+            for row in rows:
+                try:
+                    # Asegurarse de que created_at sea un objeto datetime
+                    created_at = row[5] if isinstance(row[5], datetime) else datetime.strptime(str(row[5]), '%Y-%m-%d %H:%M:%S')
+                    
+                    question = {
+                        'id': row[0],
+                        'text': row[1],
+                        'type': row[2],
+                        'options': row[3] if row[3] else '',
+                        'active': bool(row[4]),
+                        'created_at': created_at
+                    }
+                    questions.append(question)
+                    logger.info(f"Pregunta procesada: ID={question['id']}, Texto={question['text'][:30]}...")
+                except Exception as e:
+                    logger.error(f"Error al procesar fila: {row}")
+                    logger.error(f"Error: {str(e)}")
+                    logger.error(f"Tipo de error: {type(e)}")
+                    continue  # Continuar con la siguiente pregunta
             
-            # 3. Obtener lista de usuarios para asignar preguntas
-            try:
-                cursor.execute('SELECT id, username FROM [user] ORDER BY username')
-                users = [{'id': row[0], 'username': row[1]} for row in cursor.fetchall()]
-            except Exception as e:
-                logger.error(f"Error obteniendo usuarios: {str(e)}")
-                users = []
+            # Obtener estadísticas básicas
+            stats = {
+                'total_preguntas': len(questions),
+                'preguntas_activas': sum(1 for q in questions if q['active']),
+                'respuestas_hoy': 0
+            }
+            logger.info(f"\nEstadísticas calculadas: {stats}")
             
-            # 4. Contar respuestas de hoy
+            # Contar respuestas de hoy
+            today = datetime.now().strftime('%Y-%m-%d')
+            count_query = '''
+                SELECT COUNT(*) 
+                FROM response r
+                JOIN question q ON r.question_id = q.id
+                WHERE q.assigned_user_id = ? 
+                AND CONVERT(date, r.date) = CONVERT(date, ?)
+            '''
+            logger.info(f"\nEjecutando consulta de respuestas:")
+            logger.info(f"Query: {count_query}")
+            logger.info(f"Parámetros: user_id={current_user.id}, date={today}")
+            
             try:
-                today = datetime.now().date()  # Obtener fecha actual como objeto date
-                logger.info(f"Fecha de hoy: {today}")
-                cursor.execute('''
-                    SELECT COUNT(*) 
-                    FROM response 
-                    WHERE CONVERT(date, date) = CONVERT(date, ?)
-                ''', (today,))
+                cursor.execute(count_query, (current_user.id, today))
                 count_result = cursor.fetchone()
-                stats['respuestas_hoy'] = int(count_result[0]) if count_result and count_result[0] is not None else 0
+                stats['respuestas_hoy'] = count_result[0] if count_result else 0
+                logger.info(f"Respuestas hoy: {stats['respuestas_hoy']}")
             except Exception as e:
-                logger.error(f"Error contando respuestas: {str(e)}")
-                logger.exception("Detalles del error:")  # Esto mostrará el traceback completo
+                logger.error(f"Error al contar respuestas: {str(e)}")
+                logger.error(f"Tipo de error: {type(e)}")
                 stats['respuestas_hoy'] = 0
             
-            logger.info(f"Estadísticas: {stats}")
+            logger.info("\nRenderizando template admin.html")
+            logger.info(f"Variables pasadas al template:")
+            logger.info(f"- stats: {stats}")
+            logger.info(f"- questions: {len(questions)} preguntas")
             
-            # 5. Obtener lista de usuarios para asignar preguntas
-            try:
-                cursor.execute('SELECT id, username FROM [user] ORDER BY username')
-                users = [{'id': row[0], 'username': row[1]} for row in cursor.fetchall()]
-            except Exception as e:
-                logger.error(f"Error obteniendo usuarios: {str(e)}")
-                users = []
-            
-            return render_template('admin.html', 
-                                stats=stats, 
-                                questions=questions,
-                                users=users)
+            return render_template('admin.html', stats=stats, questions=questions)
             
     except Exception as e:
-        print("\n=== ERROR EN LA RUTA ADMIN ===")
+        logger.error("\n=== ERROR EN LA RUTA ADMIN ===")
         print(f"Error: {str(e)}")
-        # print(f"Traceback completo:\n{traceback.format_exc()}")
-        flash('Error al cargar el panel de administración', 'error')
+        print(f"Tipo de error: {type(e)}")
+        print(f"Traceback completo:\n{traceback.format_exc()}")
+        flash('Error al cargar la página de administración', 'error')
         return redirect(url_for('index'))
     finally:
         logger.info("=== FIN DE LA RUTA ADMIN ===\n")
@@ -564,7 +541,6 @@ def submit_responses():
 def stats():
     try:
         # Obtener la fecha actual en formato YYYY-MM-DD
-        print("\n=== INICIO DE LA RUTA STATS ===")
         today = datetime.now().strftime('%Y-%m-%d')
         
         # Obtener las preguntas del usuario con sus respuestas de hoy
@@ -765,16 +741,4 @@ def toggle_question_status(question_id):
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
 if __name__ == '__main__':
-    try:
-        port = 5002
-        # print(f"Iniciando la aplicación en http://localhost:{port}")
-        # print("Presiona Ctrl+C para detener el servidor")
-        app.run(debug=True, port=port, use_reloader=False)
-    except Exception as e:
-        print(f"\nError al iniciar la aplicación: {str(e)}")
-        import traceback
-        traceback.print_exc()
-        # print("\nPosibles soluciones:")
-        # print("1. Verifica que el puerto 5001 no esté en uso")
-        # print("2. Cierra otras instancias de la aplicación")
-        # print("3. Prueba con otro puerto (ej: 5002, 8000)")
+    app.run(debug=True)

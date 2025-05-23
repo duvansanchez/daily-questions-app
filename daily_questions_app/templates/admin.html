@@ -1,16 +1,105 @@
 {% extends "base.html" %}
 
-{% block title %}Administración{% endblock %}
+{% block title %}Mis Preguntas{% endblock %}
 
 {% block content %}
-<div class="row">
+<!-- Encabezado -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0">Mis Preguntas</h1>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#nuevaPreguntaModal">
+        <i class="bi bi-plus"></i> Nueva Pregunta
+    </button>
+</div>
+
+<!-- Tarjetas de Resumen -->
+<div class="row mb-4">
+    <!-- Total de Preguntas -->
     <div class="col-md-4">
         <div class="card">
-            <div class="card-header">
-                <h3 class="card-title">Nueva Pregunta</h3>
-            </div>
             <div class="card-body">
-                <form action="{{ url_for('add_question') }}" method="POST">
+                <h5 class="card-title">Total de Preguntas</h5>
+                <p class="card-text display-6">{{ stats.total_preguntas|default(0) }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Preguntas Activas -->
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Preguntas Activas</h5>
+                <p class="card-text display-6">{{ stats.preguntas_activas|default(0) }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Respuestas Hoy -->
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Respuestas Hoy</h5>
+                <p class="card-text display-6">{{ stats.respuestas_hoy|default(0) }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Lista de Preguntas -->
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Pregunta</th>
+                        <th>Tipo</th>
+                        <th>Estado</th>
+                        <th>Fecha</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for question in questions %}
+                    <tr>
+                        <td>{{ question.text|default('') }}</td>
+                        <td>{{ question.type|default('text') }}</td>
+                        <td>
+                            <span class="badge {{ 'bg-success' if question.active else 'bg-danger' }}">
+                                {{ 'Activa' if question.active else 'Inactiva' }}
+                            </span>
+                        </td>
+                        <td>{{ question.created_at or 'N/A' }}</td>
+                        <td>
+                            <button class="btn btn-sm btn-info edit-question" 
+                                    data-question-id="{{ question.id }}"
+                                    data-text="{{ question.text|default('') }}"
+                                    data-type="{{ question.type|default('text') }}"
+                                    data-options="{{ question.options|default('') }}">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            <button class="btn btn-sm {{ 'btn-warning' if question.active else 'btn-success' }} toggle-status"
+                                    data-question-id="{{ question.id }}">
+                                <i class="bi {{ 'bi-toggle-on' if question.active else 'bi-toggle-off' }}"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Nueva Pregunta -->
+<div class="modal fade" id="nuevaPreguntaModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Nueva Pregunta</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('add_question') }}" method="POST">
+                <div class="modal-body">
                     <div class="mb-3">
                         <label for="text" class="form-label">Pregunta</label>
                         <textarea class="form-control" id="text" name="text" required></textarea>
@@ -19,78 +108,28 @@
                     <div class="mb-3">
                         <label for="type" class="form-label">Tipo de Pregunta</label>
                         <select class="form-select" id="type" name="type" required>
-                            <option value="yes_no">Sí/No</option>
-                            <option value="multiple_choice">Opción Múltiple</option>
-                            <option value="open_text">Respuesta Abierta</option>
+                            <option value="text">Texto Libre</option>
+                            <option value="select">Selección Múltiple</option>
+                            <option value="checkbox">Casillas de Verificación</option>
+                            <option value="radio">Botones de Radio</option>
                         </select>
                     </div>
                     
                     <div class="mb-3" id="options-container" style="display: none;">
-                        <label for="options" class="form-label">Opciones (solo para Sí/No y Opción Múltiple)</label>
-                        <input type="text" class="form-control" id="options" name="options" 
-                               placeholder="Opción 1, Opción 2, Opción 3">
+                        <label for="options" class="form-label">Opciones (una por línea)</label>
+                        <textarea class="form-control" id="options" name="options" rows="3"></textarea>
                     </div>
-
-
-                    
-                    <button type="submit" class="btn btn-primary">Agregar Pregunta</button>
-                </form>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-md-8">
-        <div class="card">
-            <div class="card-header">
-                <h3 class="card-title">Preguntas Existentes</h3>
-            </div>
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th>Pregunta</th>
-                                <th>Tipo</th>
-                                <th>Estado</th>
-
-                                <th>Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for question in questions %}
-                            <tr>
-                                <td>{{ question.text }}</td>
-                                <td>{{ 'Sí/No' if question.type == 'yes_no' else 'Opción Múltiple' if question.type == 'multiple_choice' else 'Respuesta Abierta' }}</td>
-                                <td>
-                                    <span class="badge bg-{{ 'success' if question.active else 'danger' }}">
-                                        {{ 'Activa' if question.active else 'Inactiva' }}
-                                    </span>
-                                </td>
-
-                                <td>
-                                    <button class="btn btn-sm btn-warning edit-question" 
-                                            data-question-id="{{ question.id }}"
-                                            data-text="{{ question.text }}"
-                                            data-type="{{ question.type }}"
-                                            data-options="{{ question.options or '' }}">
-                                        Editar
-                                    </button>
-                                    <button class="btn btn-sm btn-{{ 'danger' if question.active else 'success' }} toggle-status"
-                                            data-question-id="{{ question.id }}">
-                                        {{ 'Desactivar' if question.active else 'Activar' }}
-                                    </button>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
                 </div>
-            </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
 
-<!-- Modal de Edición -->
+<!-- Modal Editar Pregunta -->
 <div class="modal fade" id="editQuestionModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -109,25 +148,16 @@
                     <div class="mb-3">
                         <label for="edit-type" class="form-label">Tipo de Pregunta</label>
                         <select class="form-select" id="edit-type" name="type" required>
-                            <option value="yes_no">Sí/No</option>
-                            <option value="multiple_choice">Opción Múltiple</option>
-                            <option value="open_text">Respuesta Abierta</option>
+                            <option value="text">Texto Libre</option>
+                            <option value="select">Selección Múltiple</option>
+                            <option value="checkbox">Casillas de Verificación</option>
+                            <option value="radio">Botones de Radio</option>
                         </select>
                     </div>
                     
                     <div class="mb-3" id="edit-options-container" style="display: none;">
-                        <label for="edit-options" class="form-label">Opciones (solo para Sí/No y Opción Múltiple)</label>
-                        <input type="text" class="form-control" id="edit-options" name="options">
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="edit-assigned-user" class="form-label">Asignar a Usuario</label>
-                        <select class="form-select" id="edit-assigned-user" name="assigned_user_id" required>
-                            <option value="">Seleccionar usuario...</option>
-                            {% for user in users %}
-                            <option value="{{ user[0] }}">{{ user[1] }}</option>
-                            {% endfor %}
-                        </select>
+                        <label for="edit-options" class="form-label">Opciones (una por línea)</label>
+                        <textarea class="form-control" id="edit-options" name="options" rows="3"></textarea>
                     </div>
                 </form>
             </div>
@@ -144,12 +174,12 @@
 <script>
 document.getElementById('type').addEventListener('change', function() {
     const optionsContainer = document.getElementById('options-container');
-    optionsContainer.style.display = this.value === 'multiple_choice' ? 'block' : 'none';
+    optionsContainer.style.display = ['select', 'checkbox', 'radio'].includes(this.value) ? 'block' : 'none';
 });
 
 document.getElementById('edit-type').addEventListener('change', function() {
     const optionsContainer = document.getElementById('edit-options-container');
-    optionsContainer.style.display = this.value === 'multiple_choice' ? 'block' : 'none';
+    optionsContainer.style.display = ['select', 'checkbox', 'radio'].includes(this.value) ? 'block' : 'none';
 });
 
 // Manejo de edición de preguntas
@@ -159,26 +189,46 @@ document.querySelectorAll('.edit-question').forEach(button => {
         const text = this.dataset.text;
         const type = this.dataset.type;
         const options = this.dataset.options;
-        const assignedUserId = this.closest('tr').querySelector('td:nth-child(4)').textContent.trim();
         
         document.getElementById('edit-question-id').value = questionId;
         document.getElementById('edit-text').value = text;
         document.getElementById('edit-type').value = type;
         document.getElementById('edit-options').value = options;
         
-        // Buscar el ID del usuario basado en su nombre
-        const userSelect = document.getElementById('edit-assigned-user');
-        Array.from(userSelect.options).forEach(option => {
-            if (option.textContent.trim() === assignedUserId) {
-                userSelect.value = option.value;
-            }
-        });
-        
         const optionsContainer = document.getElementById('edit-options-container');
-        optionsContainer.style.display = type === 'multiple_choice' ? 'block' : 'none';
+        optionsContainer.style.display = ['select', 'checkbox', 'radio'].includes(type) ? 'block' : 'none';
         
         new bootstrap.Modal(document.getElementById('editQuestionModal')).show();
     });
+});
+
+// Guardar cambios en la edición
+document.getElementById('save-edit').addEventListener('click', async function() {
+    const form = document.getElementById('edit-question-form');
+    const questionId = document.getElementById('edit-question-id').value;
+    
+    try {
+        const response = await fetch(`/question/${questionId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                text: form.text.value,
+                type: form.type.value,
+                options: form.options.value
+            })
+        });
+        
+        if (response.ok) {
+            location.reload();
+        } else {
+            alert('Error al guardar los cambios');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Error al guardar los cambios');
+    }
 });
 
 // Manejo de cambio de estado (activar/desactivar)
@@ -193,34 +243,10 @@ document.querySelectorAll('.toggle-status').forEach(button => {
                 location.reload();
             }
         } catch (error) {
-            console.error('Error toggling question status:', error);
+            console.error('Error:', error);
+            alert('Error al cambiar el estado de la pregunta');
         }
     });
-});
-
-// Guardar cambios en la edición
-document.getElementById('save-edit').addEventListener('click', async function() {
-    const questionId = document.getElementById('edit-question-id').value;
-    const text = document.getElementById('edit-text').value;
-    const type = document.getElementById('edit-type').value;
-    const options = document.getElementById('edit-options').value;
-    const assignedUserId = document.getElementById('edit-assigned-user').value;
-    
-    try {
-        const response = await fetch(`/question/${questionId}`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ text, type, options, assigned_user_id: assignedUserId })
-        });
-        
-        if (response.ok) {
-            location.reload();
-        }
-    } catch (error) {
-        console.error('Error updating question:', error);
-    }
 });
 </script>
 {% endblock %}
