@@ -1,250 +1,284 @@
 {% extends "base.html" %}
 
-{% block title %}Mis Preguntas{% endblock %}
+{% block title %}Personaliza tu cuestionario diario{% endblock %}
 
 {% block content %}
-<!-- Encabezado -->
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h1 class="h3 mb-0">Mis Preguntas</h1>
-    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#nuevaPreguntaModal">
-        <i class="bi bi-plus"></i> Nueva Pregunta
-    </button>
-</div>
-
-<!-- Tarjetas de Resumen -->
-<div class="row mb-4">
-    <!-- Total de Preguntas -->
-    <div class="col-md-4">
-        <div class="card">
-            <div class="card-body">
-                <h5 class="card-title">Total de Preguntas</h5>
-                <p class="card-text display-6">{{ stats.total_preguntas|default(0) }}</p>
-            </div>
+<div class="container py-4">
+    <div class="mb-4">
+        <h1 class="fw-bold" style="font-size:2rem;">Personaliza tu cuestionario diario</h1>
+        <div class="text-muted" style="font-size:1.1rem;">
+            Crea nuevas preguntas, organiza las existentes por categorías y gestiona su estado (activas o inactivas) sin necesidad de eliminarlas.
         </div>
     </div>
-
-    <!-- Preguntas Activas -->
-    <div class="col-md-4">
-        <div class="card">
-            <div class="card-body">
-                <h5 class="card-title">Preguntas Activas</h5>
-                <p class="card-text display-6">{{ stats.preguntas_activas|default(0) }}</p>
+    <div class="card shadow-sm rounded-4 mx-auto" style="max-width:750px; min-height:600px;">
+        <div class="card-body p-4">
+            <div class="mb-3">
+                <span class="fw-semibold" style="font-size:1.2rem;">Preguntas</span>
             </div>
-        </div>
-    </div>
-
-    <!-- Respuestas Hoy -->
-    <div class="col-md-4">
-        <div class="card">
-            <div class="card-body">
-                <h5 class="card-title">Respuestas Hoy</h5>
-                <p class="card-text display-6">{{ stats.respuestas_hoy|default(0) }}</p>
+            <!-- Tabs de filtro -->
+            <div class="mb-4">
+                <div class="btn-group" role="group" aria-label="Filtros de categoría">
+                    <button type="button" class="btn btn-outline-primary active" data-category="Todas">Todas</button>
+                    {% for cat in categories if cat != 'Todas' %}
+                    <button type="button" class="btn btn-outline-primary" data-category="{{ cat }}">{{ cat }}</button>
+                    {% endfor %}
+                </div>
             </div>
-        </div>
-    </div>
-</div>
-
-<!-- Lista de Preguntas -->
-<div class="card">
-    <div class="card-body">
-        <div class="table-responsive">
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>Pregunta</th>
-                        <th>Tipo</th>
-                        <th>Estado</th>
-                        <th>Fecha</th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for question in questions %}
-                    <tr>
-                        <td>{{ question.text|default('') }}</td>
-                        <td>{{ question.type|default('text') }}</td>
-                        <td>
-                            <span class="badge {{ 'bg-success' if question.active else 'bg-danger' }}">
-                                {{ 'Activa' if question.active else 'Inactiva' }}
-                            </span>
-                        </td>
-                        <td>{{ question.created_at or 'N/A' }}</td>
-                        <td>
-                            <button class="btn btn-sm btn-info edit-question" 
-                                    data-question-id="{{ question.id }}"
-                                    data-text="{{ question.text|default('') }}"
-                                    data-type="{{ question.type|default('text') }}"
-                                    data-options="{{ question.options|default('') }}">
+            <!-- Lista de preguntas -->
+            <div id="preguntas-lista">
+                {% for question in questions %}
+                <div class="d-flex align-items-center justify-content-between py-3 border-bottom pregunta-item" data-category="{{ question.categoria }}">
+                    <div>
+                        <div class="fw-semibold" style="font-size:1.1rem;">{{ question.text }}</div>
+                        <div class="text-muted small">{{ question.categoria }}</div>
+                        {% if question.descripcion %}
+                        <div class="text-muted small mt-1">{{ question.descripcion }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="d-flex align-items-center gap-4">
+                        <div class="text-center">
+                            <div class="form-check form-switch mb-1">
+                                <input class="form-check-input toggle-status" type="checkbox" data-question-id="{{ question.id }}" {% if question.active %}checked{% endif %}>
+                            </div>
+                        </div>
+                        <div class="text-center">
+                            <button class="btn btn-sm btn-outline-primary edit-question mb-1" 
+                                data-id="{{ question.id }}"
+                                data-text="{{ question.text|e }}"
+                                data-descripcion="{{ question.descripcion|e }}"
+                                data-type="{{ question.type }}"
+                                data-categoria="{{ question.categoria }}"
+                                data-is_required="{{ question.is_required }}"
+                                data-active="{{ question.active }}">
                                 <i class="bi bi-pencil"></i>
                             </button>
-                            <button class="btn btn-sm {{ 'btn-warning' if question.active else 'btn-success' }} toggle-status"
-                                    data-question-id="{{ question.id }}">
-                                <i class="bi {{ 'bi-toggle-on' if question.active else 'bi-toggle-off' }}"></i>
+                        </div>
+                        <div class="text-center">
+                            <button class="btn btn-sm btn-outline-danger delete-question mb-1" data-id="{{ question.id }}">
+                                <i class="bi bi-trash"></i>
                             </button>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="text-center text-muted py-5">
+                    <i class="bi bi-question-circle display-4 mb-3"></i>
+                    <h5>No hay preguntas aún</h5>
+                    <p>Comienza creando tu primera pregunta</p>
+                </div>
+                {% endfor %}
+            </div>
+            <div class="d-flex justify-content-end mt-4">
+                <button class="btn btn-primary px-4" data-bs-toggle="modal" data-bs-target="#nuevaPreguntaModal">
+                    <i class="bi bi-plus-lg me-2"></i>Añadir pregunta
+                </button>
+            </div>
         </div>
     </div>
 </div>
 
 <!-- Modal Nueva Pregunta -->
-<div class="modal fade" id="nuevaPreguntaModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Nueva Pregunta</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <form action="{{ url_for('add_question') }}" method="POST">
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label for="text" class="form-label">Pregunta</label>
-                        <textarea class="form-control" id="text" name="text" required></textarea>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="type" class="form-label">Tipo de Pregunta</label>
-                        <select class="form-select" id="type" name="type" required>
-                            <option value="text">Texto Libre</option>
-                            <option value="select">Selección Múltiple</option>
-                            <option value="checkbox">Casillas de Verificación</option>
-                            <option value="radio">Botones de Radio</option>
-                        </select>
-                    </div>
-                    
-                    <div class="mb-3" id="options-container" style="display: none;">
-                        <label for="options" class="form-label">Opciones (una por línea)</label>
-                        <textarea class="form-control" id="options" name="options" rows="3"></textarea>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-primary">Guardar</button>
-                </div>
-            </form>
+<div class="modal fade" id="nuevaPreguntaModal" tabindex="-1" aria-labelledby="nuevaPreguntaModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content rounded-4">
+      <form action="{{ url_for('add_question') }}" method="POST">
+        <div class="modal-header border-0 pb-0">
+          <h5 class="modal-title fw-bold" id="nuevaPreguntaModalLabel">Nueva Pregunta</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
         </div>
+        <div class="modal-body pt-0">
+          <div class="mb-2 text-muted" style="font-size:1rem;">
+            Completa los campos para crear una nueva pregunta.
+          </div>
+          <div class="mb-3">
+            <label for="text" class="form-label fw-semibold">Pregunta</label>
+            <input type="text" class="form-control" id="text" name="text" placeholder="Escribe la pregunta aquí..." required>
+          </div>
+          <div class="mb-3">
+            <label for="descripcion" class="form-label">Descripción (opcional)</label>
+            <textarea class="form-control" id="descripcion" name="descripcion" rows="2" placeholder="Añade una descripción o instrucciones adicionales..."></textarea>
+          </div>
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <label for="type" class="form-label">Tipo de Pregunta</label>
+              <select class="form-select" id="type" name="type" required>
+                <option value="select">Sí/No</option>
+                <option value="text">Texto Libre</option>
+                <option value="checkbox">Casillas de Verificación</option>
+                <option value="radio">Botones de Radio</option>
+              </select>
+            </div>
+            <div class="col-6">
+              <label for="categoria-select" class="form-label">Categoría Existente</label>
+              <select class="form-select" id="categoria-select" name="categoria_existente">
+                {% for cat in categories if cat != 'Todas' %}
+                <option value="{{ cat }}" {% if cat == 'General' %}selected{% endif %}>{{ cat }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label for="nueva-categoria-input" class="form-label">O Añadir Nueva Categoría</label>
+            <input type="text" class="form-control" id="nueva-categoria-input" name="nueva_categoria" placeholder="Escribe un nombre para una nueva categoría (opcional)">
+          </div>
+          <div class="form-check form-switch mb-2">
+            <input class="form-check-input" type="checkbox" id="is_required" name="is_required">
+            <label class="form-check-label" for="is_required">¿Es obligatorio responder esta pregunta?</label>
+          </div>
+          <div class="form-check form-switch mb-2">
+            <input class="form-check-input" type="checkbox" id="active" name="active" checked>
+            <label class="form-check-label" for="active">¿La pregunta está activa para los usuarios?</label>
+          </div>
+        </div>
+        <div class="modal-footer border-0 pt-0">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Crear Pregunta</button>
+        </div>
+      </form>
     </div>
+  </div>
 </div>
 
 <!-- Modal Editar Pregunta -->
-<div class="modal fade" id="editQuestionModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Editar Pregunta</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <form id="edit-question-form">
-                    <input type="hidden" id="edit-question-id">
-                    <div class="mb-3">
-                        <label for="edit-text" class="form-label">Pregunta</label>
-                        <textarea class="form-control" id="edit-text" name="text" required></textarea>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="edit-type" class="form-label">Tipo de Pregunta</label>
-                        <select class="form-select" id="edit-type" name="type" required>
-                            <option value="text">Texto Libre</option>
-                            <option value="select">Selección Múltiple</option>
-                            <option value="checkbox">Casillas de Verificación</option>
-                            <option value="radio">Botones de Radio</option>
-                        </select>
-                    </div>
-                    
-                    <div class="mb-3" id="edit-options-container" style="display: none;">
-                        <label for="edit-options" class="form-label">Opciones (una por línea)</label>
-                        <textarea class="form-control" id="edit-options" name="options" rows="3"></textarea>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-primary" id="save-edit">Guardar Cambios</button>
-            </div>
+<div class="modal fade" id="editarPreguntaModal" tabindex="-1" aria-labelledby="editarPreguntaModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content rounded-4">
+      <form id="edit-question-form">
+        <div class="modal-header border-0 pb-0">
+          <h5 class="modal-title fw-bold" id="editarPreguntaModalLabel">Editar Pregunta</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
         </div>
+        <div class="modal-body pt-0">
+          <div class="mb-2 text-muted" style="font-size:1rem;">
+            Modifica los campos que desees y guarda los cambios.
+          </div>
+          <input type="hidden" id="edit-id" name="id">
+          <div class="mb-3">
+            <label for="edit-text" class="form-label fw-semibold">Pregunta</label>
+            <input type="text" class="form-control" id="edit-text" name="text" required>
+          </div>
+          <div class="mb-3">
+            <label for="edit-descripcion" class="form-label">Descripción (opcional)</label>
+            <textarea class="form-control" id="edit-descripcion" name="descripcion" rows="2"></textarea>
+          </div>
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <label for="edit-type" class="form-label">Tipo de Pregunta</label>
+              <select class="form-select" id="edit-type" name="type" required>
+                <option value="select">Sí/No</option>
+                <option value="text">Texto Libre</option>
+                <option value="checkbox">Casillas de Verificación</option>
+                <option value="radio">Botones de Radio</option>
+              </select>
+            </div>
+            <div class="col-6">
+              <label for="edit-categoria" class="form-label">Categoría</label>
+              <select class="form-select" id="edit-categoria" name="categoria">
+                <option value="General">General</option>
+                <option value="Salud">Salud</option>
+                <option value="Productividad">Productividad</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-check form-switch mb-2">
+            <input class="form-check-input" type="checkbox" id="edit-is_required" name="is_required">
+            <label class="form-check-label" for="edit-is_required">¿Es obligatorio responder esta pregunta?</label>
+          </div>
+          <div class="form-check form-switch mb-2">
+            <input class="form-check-input" type="checkbox" id="edit-active" name="active">
+            <label class="form-check-label" for="edit-active">¿La pregunta está activa para los usuarios?</label>
+          </div>
+        </div>
+        <div class="modal-footer border-0 pt-0">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+        </div>
+      </form>
     </div>
+  </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
-document.getElementById('type').addEventListener('change', function() {
-    const optionsContainer = document.getElementById('options-container');
-    optionsContainer.style.display = ['select', 'checkbox', 'radio'].includes(this.value) ? 'block' : 'none';
-});
-
-document.getElementById('edit-type').addEventListener('change', function() {
-    const optionsContainer = document.getElementById('edit-options-container');
-    optionsContainer.style.display = ['select', 'checkbox', 'radio'].includes(this.value) ? 'block' : 'none';
-});
-
-// Manejo de edición de preguntas
-document.querySelectorAll('.edit-question').forEach(button => {
-    button.addEventListener('click', function() {
-        const questionId = this.dataset.questionId;
-        const text = this.dataset.text;
-        const type = this.dataset.type;
-        const options = this.dataset.options;
-        
-        document.getElementById('edit-question-id').value = questionId;
-        document.getElementById('edit-text').value = text;
-        document.getElementById('edit-type').value = type;
-        document.getElementById('edit-options').value = options;
-        
-        const optionsContainer = document.getElementById('edit-options-container');
-        optionsContainer.style.display = ['select', 'checkbox', 'radio'].includes(type) ? 'block' : 'none';
-        
-        new bootstrap.Modal(document.getElementById('editQuestionModal')).show();
+// Filtro de tabs por categoría (frontend)
+document.querySelectorAll('[data-category]').forEach(btn => {
+    btn.addEventListener('click', function() {
+        document.querySelectorAll('[data-category]').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        const cat = this.getAttribute('data-category');
+        document.querySelectorAll('.pregunta-item').forEach(item => {
+            if (cat === 'Todas' || item.getAttribute('data-category') === cat) {
+                item.style.display = '';
+            } else {
+                item.style.display = 'none';
+            }
+        });
     });
 });
-
-// Guardar cambios en la edición
-document.getElementById('save-edit').addEventListener('click', async function() {
-    const form = document.getElementById('edit-question-form');
-    const questionId = document.getElementById('edit-question-id').value;
-    
-    try {
-        const response = await fetch(`/question/${questionId}`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                text: form.text.value,
-                type: form.type.value,
-                options: form.options.value
-            })
-        });
-        
-        if (response.ok) {
-            location.reload();
-        } else {
-            alert('Error al guardar los cambios');
-        }
-    } catch (error) {
-        console.error('Error:', error);
-        alert('Error al guardar los cambios');
-    }
+// Lógica para abrir el modal de edición y precargar datos
+const editModal = new bootstrap.Modal(document.getElementById('editarPreguntaModal'));
+document.querySelectorAll('.edit-question').forEach(btn => {
+    btn.addEventListener('click', function() {
+        document.getElementById('edit-id').value = this.dataset.id;
+        document.getElementById('edit-text').value = this.dataset.text;
+        document.getElementById('edit-descripcion').value = this.dataset.descripcion;
+        document.getElementById('edit-type').value = this.dataset.type;
+        document.getElementById('edit-categoria').value = this.dataset.categoria;
+        document.getElementById('edit-is_required').checked = this.dataset.is_required == '1' || this.dataset.is_required == 'true';
+        document.getElementById('edit-active').checked = this.dataset.active == '1' || this.dataset.active == 'true';
+        editModal.show();
+    });
 });
-
-// Manejo de cambio de estado (activar/desactivar)
-document.querySelectorAll('.toggle-status').forEach(button => {
-    button.addEventListener('click', async function() {
-        const questionId = this.dataset.questionId;
-        try {
-            const response = await fetch(`/question/${questionId}/toggle`, {
-                method: 'POST'
-            });
-            if (response.ok) {
+// Lógica para enviar la edición por AJAX
+const editForm = document.getElementById('edit-question-form');
+if (editForm) {
+    editForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const id = document.getElementById('edit-id').value;
+        const data = {
+            text: document.getElementById('edit-text').value,
+            descripcion: document.getElementById('edit-descripcion').value,
+            type: document.getElementById('edit-type').value,
+            categoria: document.getElementById('edit-categoria').value,
+            is_required: document.getElementById('edit-is_required').checked ? 1 : 0,
+            active: document.getElementById('edit-active').checked ? 1 : 0
+        };
+        fetch(`/question/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        })
+        .then(res => res.json())
+        .then(res => {
+            if (res.status === 'success') {
                 location.reload();
+            } else {
+                alert('Error al guardar los cambios: ' + (res.message || ''));
             }
-        } catch (error) {
-            console.error('Error:', error);
-            alert('Error al cambiar el estado de la pregunta');
+        })
+        .catch(err => alert('Error al guardar los cambios: ' + err));
+    });
+}
+// Lógica para eliminar pregunta por AJAX
+document.querySelectorAll('.delete-question').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const id = this.dataset.id;
+        if (confirm('¿Estás seguro de que deseas eliminar esta pregunta? Esta acción no se puede deshacer.')) {
+            fetch(`/question/${id}`, {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+            })
+            .then(res => res.json())
+            .then(res => {
+                if (res.status === 'success') {
+                    // Quitar de la lista visualmente
+                    this.closest('.pregunta-item').remove();
+                } else {
+                    alert('Error al eliminar: ' + (res.message || ''));
+                }
+            })
+            .catch(err => alert('Error al eliminar: ' + err));
         }
     });
 });

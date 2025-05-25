@@ -3,57 +3,98 @@
 {% block title %}Preguntas Diarias{% endblock %}
 
 {% block content %}
-<div class="row">
-    <div class="col-md-8 offset-md-2">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h2 class="mb-0">Preguntas del {{ date.strftime('%d/%m/%Y') }}</h2>
-            <div class="text-muted small">
-                <i class="bi bi-calendar3"></i> Hoy es {{ date.strftime('%A, %d de %B') }}
+<div class="main-container">
+    {% if questions %}
+        <!-- Barra de progreso -->
+        <div class="progress-container">
+            <div class="progress-text">
+                <span>Progreso</span>
+                <span>1 de {{ questions|length }}</span>
+            </div>
+            <div class="progress">
+                <div class="progress-bar" role="progressbar" style="width: {{ (1 / questions|length * 100) }}%;" 
+                     aria-valuenow="{{ 1 }}" aria-valuemin="0" aria-valuemax="{{ questions|length }}"></div>
             </div>
         </div>
-        <div class="card">
-            <div class="card-body">
-                <form id="daily-questions-form">
-                    <input type="hidden" name="date" id="date-field" value="{{ date.strftime('%Y-%m-%d') }}">
-                    {% for question in questions %}
-                    <div class="mb-4 question-container" data-question-id="{{ question.id }}">
-                        <label class="form-label">{{ question.text }}</label>
-                        {% if question.type == 'yes_no' %}
-                            <div class="btn-group w-100" role="group">
-                                <input type="radio" class="btn-check" name="q{{ question.id }}" id="q{{ question.id }}_yes" value="yes">
-                                <label class="btn btn-outline-success" for="q{{ question.id }}_yes">Sí</label>
-                                
-                                <input type="radio" class="btn-check" name="q{{ question.id }}" id="q{{ question.id }}_no" value="no">
-                                <label class="btn btn-outline-danger" for="q{{ question.id }}_no">No</label>
-                            </div>
-                        {% elif question.type == 'multiple_choice' %}
-                            <select class="form-select" name="q{{ question.id }}">
-                                <option value="">Selecciona una opción</option>
-                                {% for option in question.options.split(',') %}
-                                    <option value="{{ option.strip() }}">{{ option.strip() }}</option>
-                                {% endfor %}
-                            </select>
-                        {% elif question.type == 'open_text' %}
-                            <textarea class="form-control" name="q{{ question.id }}" rows="3" placeholder="Escribe tu respuesta aquí..." required></textarea>
-                        {% endif %}
-                    </div>
-                    {% endfor %}
-                    
-                    {% if questions %}
-                        <button type="submit" class="btn btn-primary w-100">Guardar Respuestas</button>
+
+        {% for question in questions %}
+        <!-- Tarjeta de pregunta -->
+        <div class="question-card">
+            <div class="question-header">
+                <span>Pregunta {{ loop.index }}</span>
+                <span class="question-number">{{ loop.index }} de {{ questions|length }}</span>
+            </div>
+            <div class="question-body">
+                <div class="question-text">
+                    {{ question.text }}
+                </div>
+                
+                <div class="options-container">
+                    {% if question.type == 'multiple_choice' and question.options %}
+                        {% set options = question.options.split(',') %}
+                        {% for option in options %}
+                            {% set option_letter = ['A', 'B', 'C', 'D', 'E'][loop.index0] %}
+                            <button type="button" class="option-btn" data-question-id="{{ question.id }}" data-option="{{ option|trim }}">
+                                <span class="option-letter">{{ option_letter }}</span>
+                                {{ option|trim }}
+                            </button>
+                        {% endfor %}
+                    {% elif question.type == 'yes_no' %}
+                        <button type="button" class="option-btn" data-question-id="{{ question.id }}" data-option="Sí">
+                            <span class="option-letter">S</span>
+                            Sí
+                        </button>
+                        <button type="button" class="option-btn" data-question-id="{{ question.id }}" data-option="No">
+                            <span class="option-letter">N</span>
+                            No
+                        </button>
                     {% else %}
-                        <p class="text-center text-muted">No hay preguntas configuradas para hoy.</p>
+                        <div class="form-group">
+                            <textarea class="form-control" rows="3" placeholder="Escribe tu respuesta aquí..."></textarea>
+                        </div>
                     {% endif %}
-                </form>
+                </div>
             </div>
         </div>
-    </div>
+        {% endfor %}
+
+        <!-- Botones de navegación -->
+        <div class="nav-buttons">
+            <button type="button" class="btn btn-outline-primary" id="prev-btn" disabled>
+                <i class="bi bi-arrow-left"></i> Anterior
+            </button>
+            <button type="button" class="btn btn-primary" id="next-btn">
+                Siguiente <i class="bi bi-arrow-right"></i>
+            </button>
+            <button type="button" class="btn btn-success" id="submit-btn" style="display: none;">
+                Enviar respuestas
+            </button>
+        </div>
+    {% else %}
+        <div class="alert alert-info">
+            No hay preguntas asignadas para hoy. Por favor, contacta al administrador.
+        </div>
+    {% endif %}
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
-document.getElementById('daily-questions-form').addEventListener('submit', async function(e) {
+// Función para manejar la selección de opciones
+document.querySelectorAll('.option-btn').forEach(button => {
+    button.addEventListener('click', function() {
+        // Remover la clase 'selected' de todos los botones
+        document.querySelectorAll('.option-btn').forEach(btn => {
+            btn.classList.remove('selected');
+        });
+        
+        // Agregar la clase 'selected' al botón clickeado
+        this.classList.add('selected');
+    });
+});
+
+// Función para manejar el envío del formulario
+document.getElementById('daily-questions-form')?.addEventListener('submit', async function(e) {
     e.preventDefault();
     
     const formData = new FormData(this);
@@ -62,22 +103,12 @@ document.getElementById('daily-questions-form').addEventListener('submit', async
         responses: {}
     };
     
-    const questions = document.querySelectorAll('.question-container');
-    questions.forEach(question => {
-        const questionId = question.dataset.questionId;
-        
-        const radioInputs = question.querySelectorAll('input[type="radio"]:checked');
-        const selectInput = question.querySelector('select');
-        const textareaInput = question.querySelector('textarea');
-        
-        if (radioInputs.length) {
-            data.responses[questionId] = radioInputs[0].value;
-        } else if (selectInput) {
-            data.responses[questionId] = selectInput.value;
-        } else if (textareaInput) {
-            data.responses[questionId] = textareaInput.value;
-        }
-    });
+    // Obtener la respuesta seleccionada
+    const selectedOption = document.querySelector('.option-btn.selected');
+    if (selectedOption) {
+        const questionId = 'q1'; // Ajustar según sea necesario
+        data.responses[questionId] = selectedOption.textContent.trim();
+    }
     
     try {
         const response = await fetch('/submit_responses', {
@@ -90,15 +121,17 @@ document.getElementById('daily-questions-form').addEventListener('submit', async
         
         const result = await response.json();
         if (result.status === 'success') {
-            alert('Respuestas guardadas exitosamente');
-            this.reset();
+            // Actualizar la interfaz para la siguiente pregunta
+            // Por ahora, solo mostramos un mensaje de éxito
+            alert('Respuesta guardada exitosamente');
         } else {
-            alert(result.message || 'Error al guardar las respuestas');
+            alert(result.message || 'Error al guardar la respuesta');
         }
     } catch (error) {
         console.error('Error:', error);
-        alert('Error al guardar las respuestas');
+        alert('Error al guardar la respuesta');
     }
+});
 });
 </script>
 {% endblock %}
