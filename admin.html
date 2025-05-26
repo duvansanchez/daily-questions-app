@@ -1,0 +1,31 @@
+                            <label for="categoria" class="form-label">Categoría</label>
+                            <select class="form-select" id="categoria" name="categoria">
+                                <option value="" disabled selected>Seleccione o añada</option>
+                                {% for category in categories %}
+                                <option value="{{ category }}">{{ category }}</option>
+                                {% endfor %}
+                            </select>
+                            <div class="mb-3">
+                                <div class="col-6">
+                                    <label for="categoria-select" class="form-label">Categoría Existente</label>
+                                    <select class="form-select" id="categoria-select" name="categoria_existente">
+                                        <option value="" disabled selected>Seleccione una categoría</option>
+                                        {% for cat in categories if cat != 'Todas' %}
+                                        <option value="{{ cat }}">{{ cat }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="nueva-categoria-input" class="form-label">O Añadir Nueva Categoría</label>
+                                <input type="text" class="form-control" id="nueva-categoria-input" name="nueva_categoria" placeholder="Escribe un nombre para una nueva categoría">
+                            </div>
+                            <div class="col-6">
+                              <label for="edit-categoria" class="form-label">Categoría</label>
+                              <select class="form-select" id="edit-categoria" name="categoria">
+                                <option value="" disabled>Seleccione una categoría</option>
+                                {% for cat in categories if cat != 'Todas' %}
+                                <option value="{{ cat }}">{{ cat }}</option>
+                                {% endfor %}
+                              </select>
+                            </div> 

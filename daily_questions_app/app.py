@@ -12,7 +12,7 @@ load_dotenv()
 
 # Configurar logging
 logging.basicConfig(
-    level=logging.DEBUG,
+    level=logging.ERROR,  # Cambiado de DEBUG a ERROR para reducir el ruido
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler(sys.stdout)
@@ -20,9 +20,9 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Configurar el logger de werkzeug también
+# Configurar el logger de werkzeug
 werkzeug_logger = logging.getLogger('werkzeug')
-werkzeug_logger.setLevel(logging.DEBUG)
+werkzeug_logger.setLevel(logging.ERROR)  # Reducir el nivel de registro de werkzeug
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'your-secret-key-here')
@@ -61,10 +61,7 @@ def get_db_connection():
                         "MARS_Connection=yes;"
                         "ApplicationIntent=ReadWrite;"
                     )
-                    logger.info(f"Intentando conectar usando el controlador: {driver}")
-                    logger.info(f"String de conexión (sin credenciales): {conn_str}")
                     self.conn = pyodbc.connect(conn_str, autocommit=False)
-                    logger.info("Conexión exitosa")
                     
                     # Configurar el cursor para mejor manejo de errores
                     cursor = self.conn.cursor()
@@ -75,7 +72,6 @@ def get_db_connection():
                     cursor.execute("SET CONCAT_NULL_YIELDS_NULL ON")
                     cursor.execute("SET QUOTED_IDENTIFIER ON")
                     cursor.execute("SET NOCOUNT ON")
-                    logger.info("Configuración de cursor completada")
                     return self.conn
                 except Exception as e:
                     last_error = e
@@ -303,9 +299,6 @@ def logout():
 @app.route('/admin')
 @login_required
 def admin():
-    logger.info("\n=== INICIO DE LA RUTA ADMIN ===")
-    logger.info(f"Usuario actual: {current_user.id}")
-    
     # Inicializar estadísticas con valores por defecto
     stats = {
         'total_preguntas': 0,
@@ -317,13 +310,10 @@ def admin():
     users = []
     
     try:
-        # Crear conexión con manejo explícito
-        # logger.info("Intentando crear conexión a la base de datos...")
         connection_context = get_db_connection()
         
         with connection_context as conn:
             cursor = conn.cursor()
-            # logger.info("Conexión establecida y cursor creado exitosamente")
             
             # Verificar si el usuario existe
             try:
@@ -332,7 +322,7 @@ def admin():
                 user_data = cursor.fetchone()
                 
                 if not user_data:
-                    logger.error(f"Error: Usuario {current_user.id} no encontrado en la base de datos")
+                    logger.error(f"Usuario {current_user.id} no encontrado en la base de datos")
                     flash('Error: Usuario no encontrado', 'error')
                     return redirect(url_for('index'))
                     
@@ -343,141 +333,83 @@ def admin():
                 flash('Error al verificar permisos de usuario', 'error')
                 return redirect(url_for('index'))
             
-            # 2. Verificar estructura de la tabla question
-            logger.info("=== VERIFICACIÓN DE ESTRUCTURA DE TABLA ===")
-            try:
-                # Obtener información de columnas de la tabla question
-                cursor.execute("""
-                    SELECT COLUMN_NAME, DATA_TYPE
-                    FROM INFORMATION_SCHEMA.COLUMNS
-                    WHERE TABLE_NAME = 'question'
-                """)
-                
-                columns = cursor.fetchall()
-                # logger.info("Estructura de la tabla 'question':")
-                for col in columns:
-                    logger.info(f"  - {col[0]}: {col[1]}")
-                    
-            except Exception as e:
-                logger.error(f"Error al verificar estructura de tabla: {str(e)}")
-            
-            # 3. Verificar si hay datos en la tabla
-            logger.info("=== VERIFICACIÓN DE DATOS EN TABLA ===")
+            # Verificar si hay datos en la tabla
             try:
                 cursor.execute("SELECT COUNT(*) FROM question")
                 count_result = cursor.fetchone()
                 record_count = count_result[0] if count_result else 0
-                # logger.info(f"Número total de registros en 'question': {record_count}")
                 
-                if record_count == 0:
-                    # logger.info("La tabla 'question' está vacía")
+                if record_count > 0:
+                    # Consulta completa para obtener preguntas
+                    basic_query = """
+                        SELECT 
+                            [id], 
+                            [text], 
+                            [type], 
+                            [options], 
+                            [active], 
+                            [created_at],
+                            [assigned_user_id],
+                            [descripcion],
+                            [is_required],
+                            [categoria]
+                        FROM [question] q
+                        ORDER BY q.[created_at] DESC
+                    """
+                        
+                    # Ejecutar la consulta básica
+                    cursor.execute(basic_query)
+                    
+                    # Procesar resultados
+                    questions_data = cursor.fetchall()
+                    
+                    # Mapear los resultados a objetos Question
+                    questions = []
+                    for row in questions_data:
+                        try:
+                            question = Question(
+                                id=row[0],
+                                text=row[1],
+                                type=row[2],
+                                options=row[3],
+                                active=row[4],
+                                created_at=row[5],
+                                assigned_user_id=row[6],
+                                descripcion=row[7],
+                                is_required=row[8] if len(row) > 8 else 0,
+                                categoria=row[9] if len(row) > 9 else 'General'
+                            )
+                            questions.append(question)
+                        except Exception as e:
+                            logger.error(f"Error al procesar pregunta: {str(e)}")
+                            continue
+                    
+                    # Actualizar estadísticas
+                    stats['total_preguntas'] = len(questions)
+                    stats['preguntas_activas'] = sum(1 for q in questions if q.active)
+                    
+            except Exception as e:
+                logger.error(f"Error al ejecutar consulta básica: {str(e)}", exc_info=True)
+                # Si falla, intentar con una consulta más simple
+                try:
+                    cursor.execute("SELECT id, text, active FROM question")
+                    simple_questions = cursor.fetchall()
+                    questions = []
+                    for q in simple_questions:
+                        questions.append({
+                            'id': q[0],
+                            'text': q[1],
+                            'active': q[2]
+                        })
+                    stats['total_preguntas'] = len(questions)
+                    stats['preguntas_activas'] = sum(1 for q in questions if q['active'])
+                except Exception as simple_e:
+                    logger.error(f"Error en consulta simple: {str(simple_e)}")
                     questions = []
                     stats['total_preguntas'] = 0
                     stats['preguntas_activas'] = 0
-                else:
-                    # Intentar una consulta muy simple primero
-                    try:
-                        simple_query = "SELECT TOP 1 id, text FROM question"
-                        # logger.info(f"Ejecutando consulta simple: {simple_query}")
-                        cursor.execute(simple_query)
-                        sample_row = cursor.fetchone()
-                        # logger.info(f"Resultado de consulta simple: {sample_row}")
-                        
-                        # Si la consulta simple funciona, intentar la consulta completa
-                        # logger.info("=== CONSULTA COMPLETA ===")
-                        
-                        # Usar consulta sin COALESCE primero para aislar el problema
-                        basic_query = """
-                            SELECT 
-                                [id], 
-                                [text], 
-                                [type], 
-                                [options], 
-                                [active], 
-                                [created_at],
-                                [assigned_user_id],
-                                [descripcion],
-                                [is_required],
-                                [categoria]
-                            FROM [question] q
-                            ORDER BY q.[created_at] DESC
-                        """
-                        
-                        # logger.info("=== CONSULTA SQL BÁSICA A EJECUTAR ===")
-                        # logger.info(basic_query.replace('\n', ' ').strip())
-                        # logger.info("=== FIN DE CONSULTA SQL BÁSICA ===")
-                        
-                        # Capturar cualquier error específico de SQL
-                        try:
-                            cursor.execute(basic_query)
-                            
-                            questions_data = cursor.fetchall()
-                            
-                            # Procesar los resultados
-                            questions = []
-                            for i, row in enumerate(questions_data):
-                                
-                                # Manejo seguro de la fecha
-                                created_at_value = row[5]
-                                if created_at_value is not None:
-                                    if not isinstance(created_at_value, datetime):
-                                        try:
-                                            created_at_value = datetime.strptime(str(created_at_value), '%Y-%m-%d %H:%M:%S.%f')
-                                        except ValueError:
-                                            try:
-                                                created_at_value = datetime.strptime(str(created_at_value), '%Y-%m-%d %H:%M:%S')
-                                            except ValueError:
-                                                logger.warning(f"No se pudo parsear la fecha: {created_at_value}")
-                                                created_at_value = None
-                                
-                                question = { # Asegurarse de que todos los índices sean correctos
-                                    'id': row[0],
-                                    'text': row[1] if row[1] is not None else '',
-                                    'type': row[2] if row[2] is not None else 'text',
-                                    'options': row[3] if row[3] is not None else '',
-                                    'active': bool(row[4]) if row[4] is not None else False,
-                                    'created_at': created_at_value,
-                                    'assigned_user_id': row[6] if len(row) > 6 and row[6] is not None else None,
-                                    'descripcion': row[7] if len(row) > 7 and row[7] is not None else '',
-                                    'is_required': bool(row[8]) if len(row) > 8 and row[8] is not None else False,
-                                    'categoria': row[9] if len(row) > 9 and row[9] is not None else 'General'
-                                }
-                                questions.append(question)
-                            
-                            # Actualizar estadísticas
-                            stats['total_preguntas'] = len(questions)
-                            stats['preguntas_activas'] = sum(1 for q in questions if q['active']) # Corregido para usar la lista procesada
-                            
-                        except Exception as sql_error:
-                            logger.error(f"ERROR ESPECÍFICO EN CONSULTA SQL: {str(sql_error)}")
-                            logger.error(f"Tipo de error: {type(sql_error)}")
-                            
-                            # Intentar obtener más detalles del error
-                            if hasattr(sql_error, 'args') and sql_error.args:  # Corregido de sql_error.args a sql_error.args
-                                logger.error(f"Argumentos del error: {sql_error.args}")
-                            
-                            # Verificar si hay caracteres especiales en los datos (simplificado para evitar errores previos)
-                            try:
-                                cursor.execute("SELECT id FROM question WHERE text LIKE '%formatear%'")
-                                problematic_rows = cursor.fetchone() # Solo necesitamos saber si hay al menos uno
-                                # if problematic_rows:
-                                #     logger.info("Posibles caracteres problemáticos encontrados.")
-                                # else:
-                                #     logger.info("No se encontraron coincidencias para 'formatear'.")
-                            except Exception as check_error:
-                                logger.error(f"Error al verificar caracteres especiales: {str(check_error)}")
-                            
-                            questions = []
-                            raise sql_error # Levantar el error para que se maneje en el bloque exterior
-                            
-                    except Exception as e:
-                        logger.error(f"Error en consulta simple/completa de preguntas: {str(e)}") # Mensaje más descriptivo
-                        questions = [] # Asegurarse de que questions esté definido en caso de error
-                        
-            except Exception as e:
-                logger.error(f"Error general en verificación de datos/consulta: {str(e)}") # Mensaje más descriptivo
-                questions = [] # Asegurarse de que questions esté definido en caso de error
-            
+                    questions = [] # Asegurarse de que questions esté definido en caso de error
+                    
             # 4. Obtener lista de usuarios
             logger.info("=== OBTENIENDO LISTA DE USUARIOS ===")
             try:
@@ -543,23 +475,11 @@ def add_question():
     # Verificar si es una solicitud AJAX
     is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
     
-    logger.info("="*50)
-    logger.info("INICIANDO PROCESO DE CREACIÓN DE PREGUNTA")
-    logger.info(f"Headers: {request.headers}")
-    logger.info(f"Content-Type: {request.content_type}")
-    logger.info(f"Data recibida: {request.get_data()}")
-    logger.info(f"Es solicitud AJAX: {is_ajax}")
-    
     try:
-        logger.info(f"Headers: {request.headers}")
-        logger.info(f"Content-Type: {request.content_type}")
-        
         # Verificar si la solicitud es JSON o AJAX
         if request.is_json or is_ajax:
-            logger.info("La solicitud es JSON")
             try:
                 data = request.get_json()
-                logger.info(f"Datos JSON recibidos: {data}")
                 text = data.get('text', '').strip()
                 type = data.get('type', 'text')
                 options = data.get('options', '').strip()
@@ -573,8 +493,6 @@ def add_question():
                 if nueva_categoria:
                     categoria = nueva_categoria
                     
-                logger.info(f"Datos procesados - Texto: {text}, Tipo: {type}, Opciones: {options}")
-                    
             except Exception as e:
                 logger.error(f"Error al procesar JSON: {str(e)}")
                 if is_ajax:
@@ -582,7 +500,6 @@ def add_question():
                 flash(f'Error en el formato de los datos: {str(e)}', 'danger')
                 return redirect(url_for('admin'))
         else:
-            logger.info("La solicitud es un formulario tradicional")
             # Manejo para formularios tradicionales (por si acaso)
             text = request.form.get('text', '').strip()
             type = request.form.get('type', 'text')
@@ -596,8 +513,6 @@ def add_question():
             # Si se proporcionó una nueva categoría, usarla
             if nueva_categoria:
                 categoria = nueva_categoria
-                
-            logger.info(f"Datos de formulario - Texto: {text}, Tipo: {type}, Opciones: {options}")
         
         assigned_user_id = current_user.id  # Asignar al usuario actual
         
@@ -780,10 +695,7 @@ def submit_responses():
                             """,
                             (question_id, response_text, date_obj)
                         )
-                        print(f"Respuesta insertada correctamente para la pregunta {question_id}")
-                        
                     except ValueError as ve:
-                        print(f"ID de pregunta inválido: {question_id}")
                         conn.rollback()
                         return jsonify({
                             'status': 'error',
@@ -791,7 +703,6 @@ def submit_responses():
                         }), 400
                         
                     except Exception as e:
-                        print(f"Error al insertar respuesta para pregunta {question_id}: {str(e)}")
                         conn.rollback()
                         return jsonify({
                             'status': 'error',
@@ -801,21 +712,18 @@ def submit_responses():
                 
                 # Si todo salió bien, hacemos commit
                 conn.commit()
-                print("Todas las respuestas se guardaron exitosamente")
                 return jsonify({
                     'status': 'success',
                     'message': 'Respuestas guardadas correctamente'
                 })
                 
     except ValueError as ve:
-        print(f"Error en el formato de fecha: {str(ve)}")
         return jsonify({
             'status': 'error',
             'message': 'Formato de fecha inválido. Use YYYY-MM-DD'
         }), 400
         
     except Exception as e:
-        print(f"Error en submit_responses: {str(e)}")
         return jsonify({
             'status': 'error', 
             'message': f'Error en el servidor: {str(e)}'
@@ -826,7 +734,6 @@ def submit_responses():
 def stats():
     try:
         # Obtener la fecha actual en formato YYYY-MM-DD
-        print("\n=== INICIO DE LA RUTA STATS ===")
         today = datetime.now().strftime('%Y-%m-%d')
         
         # Obtener las preguntas del usuario con sus respuestas de hoy
@@ -885,15 +792,15 @@ def stats():
                 )
                 
     except Exception as e:
-        print(f"Error en stats: {str(e)}")
         flash('Error al cargar las estadísticas', 'error')
+        return redirect(url_for('index'))
         return render_template('stats.html', preguntas=[], estadisticas={})
 
 @app.route('/api/stats/weekly_responses')
 @login_required
 def get_weekly_responses():
+    conn = None
     try:
-        logger.info("Iniciando get_weekly_responses")
         conn = get_db_connection()
         cursor = conn.cursor()
         
@@ -904,8 +811,6 @@ def get_weekly_responses():
         # Formatear fechas para la consulta SQL
         start_date = days[0].strftime('%Y-%m-%d')
         end_date = days[-1].strftime('%Y-%m-%d')
-        
-        logger.info(f"Consultando respuestas entre {start_date} y {end_date}")
         
         # Obtener todas las respuestas de la semana
         cursor.execute('''
@@ -926,13 +831,10 @@ def get_weekly_responses():
                     if hasattr(date_value, 'strftime'):
                         date_str = date_value.strftime('%Y-%m-%d')
                     else:
-                        # Si ya es string, intentar formatear si es necesario
                         try:
-                            # Si es un string con formato de fecha, intentar convertirlo
                             date_obj = datetime.strptime(str(date_value), '%Y-%m-%d')
                             date_str = date_obj.strftime('%Y-%m-%d')
                         except (ValueError, TypeError):
-                            # Si no se puede convertir, usar el valor tal cual
                             date_str = str(date_value)
                 else:
                     date_str = None
@@ -946,21 +848,19 @@ def get_weekly_responses():
                 })
                 
             except Exception as e:
-                logger.error(f"Error procesando fila: {row}. Error: {str(e)}")
                 continue
         
-        logger.info(f"Se encontraron {len(responses)} respuestas")
         return jsonify(responses)
         
     except Exception as e:
-        logger.error(f"Error en get_weekly_responses: {str(e)}", exc_info=True)
         return jsonify({'error': 'Error al obtener las respuestas semanales'}), 500
         
     finally:
-        try:
-            conn.close()
-        except:
-            pass
+        if conn:
+            try:
+                conn.close()
+            except:
+                pass
 
 @app.route('/api/stats')
 @login_required
@@ -1016,10 +916,9 @@ def get_stats():
                 })
                 
     except Exception as e:
-        print(f"Error en get_stats: {str(e)}")
         return jsonify({
             'status': 'error',
-            'message': f'Error al obtener estadísticas: {str(e)}'
+            'message': 'Error al obtener estadísticas'
         }), 500
 
 @app.route('/question/<int:question_id>', methods=['PUT', 'POST'])
