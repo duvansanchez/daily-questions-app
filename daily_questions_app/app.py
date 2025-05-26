@@ -167,7 +167,7 @@ class Question:
             cursor = conn.cursor()
             cursor.execute(
                 'SELECT id, text, type, options, active, created_at, assigned_user_id, descripcion, is_required, categoria '
-                'FROM question WHERE active = 1 AND (assigned_user_id = ? OR assigned_user_id IS NULL OR assigned_user_id = 0)',
+                'FROM question WHERE assigned_user_id = ?',
                 (user_id,)
             )
             rows = cursor.fetchall()
@@ -176,13 +176,22 @@ class Question:
 
     @classmethod
     def create(cls, text, type, options=None, assigned_user_id=None, descripcion=None, is_required=0, categoria='General', active=1):
-        with get_db_connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute(
-                'INSERT INTO question (text, type, options, assigned_user_id, descripcion, is_required, categoria, active, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, GETDATE())',
-                (text, type, options, assigned_user_id, descripcion, is_required, categoria, active)
-            )
-            conn.commit()
+        try:
+            logger.info(f"Creando pregunta: text={text}, type={type}, options={options}")
+            with get_db_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute(
+                    'INSERT INTO question (text, type, options, assigned_user_id, descripcion, is_required, categoria, active, created_at) OUTPUT INSERTED.id VALUES (?, ?, ?, ?, ?, ?, ?, ?, GETDATE())',
+                    (text, type, options, assigned_user_id, descripcion, is_required, categoria, active)
+                )
+                # Obtener el ID de la pregunta insertada
+                question_id = cursor.fetchone()[0]
+                conn.commit()
+                logger.info(f"Pregunta creada con ID: {question_id}")
+                return question_id
+        except Exception as e:
+            logger.error(f"Error al crear pregunta: {str(e)}")
+            raise
 
 class Response:
     def __init__(self, id, question_id, response, date, created_at):
@@ -309,36 +318,25 @@ def admin():
     
     try:
         # Crear conexión con manejo explícito
-        logger.info("Intentando crear conexión a la base de datos...")
+        # logger.info("Intentando crear conexión a la base de datos...")
         connection_context = get_db_connection()
         
         with connection_context as conn:
             cursor = conn.cursor()
-            logger.info("Conexión establecida y cursor creado exitosamente")
+            # logger.info("Conexión establecida y cursor creado exitosamente")
             
-            # 1. Verificar si el usuario existe y es administrador
-            logger.info("=== VERIFICACIÓN DE USUARIO ADMINISTRADOR ===")
+            # Verificar si el usuario existe
             try:
-                user_query = 'SELECT id, is_admin FROM [user] WHERE id = ?'
-                logger.info(f"Query de verificación de usuario: {user_query}")
-                logger.info(f"Parámetro: {current_user.id}")
-                
+                user_query = 'SELECT id, username FROM [user] WHERE id = ?'
                 cursor.execute(user_query, (current_user.id,))
                 user_data = cursor.fetchone()
-                logger.info(f"Resultado de verificación de usuario: {user_data}")
                 
                 if not user_data:
                     logger.error(f"Error: Usuario {current_user.id} no encontrado en la base de datos")
                     flash('Error: Usuario no encontrado', 'error')
                     return redirect(url_for('index'))
                     
-                user_id, is_admin = user_data
-                logger.info(f"Usuario {user_id}, es admin: {is_admin}")
-                
-                if not is_admin:
-                    logger.warning(f"Intento de acceso no autorizado a /admin por el usuario {user_id}")
-                    flash('No tienes permisos para acceder a esta sección', 'error')
-                    return redirect(url_for('index'))
+                user_id, username = user_data
                     
             except Exception as e:
                 logger.error(f"Error en verificación de usuario: {str(e)}", exc_info=True)
@@ -356,7 +354,7 @@ def admin():
                 """)
                 
                 columns = cursor.fetchall()
-                logger.info("Estructura de la tabla 'question':")
+                # logger.info("Estructura de la tabla 'question':")
                 for col in columns:
                     logger.info(f"  - {col[0]}: {col[1]}")
                     
@@ -369,25 +367,24 @@ def admin():
                 cursor.execute("SELECT COUNT(*) FROM question")
                 count_result = cursor.fetchone()
                 record_count = count_result[0] if count_result else 0
-                logger.info(f"Número total de registros en 'question': {record_count}")
+                # logger.info(f"Número total de registros en 'question': {record_count}")
                 
                 if record_count == 0:
-                    logger.info("La tabla 'question' está vacía")
+                    # logger.info("La tabla 'question' está vacía")
                     questions = []
                     stats['total_preguntas'] = 0
                     stats['preguntas_activas'] = 0
                 else:
                     # Intentar una consulta muy simple primero
-                    logger.info("=== CONSULTA SIMPLE DE PRUEBA ===")
                     try:
                         simple_query = "SELECT TOP 1 id, text FROM question"
-                        logger.info(f"Ejecutando consulta simple: {simple_query}")
+                        # logger.info(f"Ejecutando consulta simple: {simple_query}")
                         cursor.execute(simple_query)
                         sample_row = cursor.fetchone()
-                        logger.info(f"Resultado de consulta simple: {sample_row}")
+                        # logger.info(f"Resultado de consulta simple: {sample_row}")
                         
                         # Si la consulta simple funciona, intentar la consulta completa
-                        logger.info("=== CONSULTA COMPLETA ===")
+                        # logger.info("=== CONSULTA COMPLETA ===")
                         
                         # Usar consulta sin COALESCE primero para aislar el problema
                         basic_query = """
@@ -406,23 +403,19 @@ def admin():
                             ORDER BY q.[created_at] DESC
                         """
                         
-                        logger.info("=== CONSULTA SQL BÁSICA A EJECUTAR ===")
-                        logger.info(basic_query.replace('\n', ' ').strip())
-                        logger.info("=== FIN DE CONSULTA SQL BÁSICA ===")
+                        # logger.info("=== CONSULTA SQL BÁSICA A EJECUTAR ===")
+                        # logger.info(basic_query.replace('\n', ' ').strip())
+                        # logger.info("=== FIN DE CONSULTA SQL BÁSICA ===")
                         
                         # Capturar cualquier error específico de SQL
                         try:
-                            logger.info("Ejecutando consulta básica...")
                             cursor.execute(basic_query)
-                            logger.info("Consulta ejecutada exitosamente, obteniendo resultados...")
                             
                             questions_data = cursor.fetchall()
-                            logger.info(f"Se obtuvieron {len(questions_data)} registros")
                             
                             # Procesar los resultados
                             questions = []
                             for i, row in enumerate(questions_data):
-                                logger.info(f"Procesando fila {i+1}: {row}")
                                 
                                 # Manejo seguro de la fecha
                                 created_at_value = row[5]
@@ -464,14 +457,13 @@ def admin():
                                 logger.error(f"Argumentos del error: {sql_error.args}")
                             
                             # Verificar si hay caracteres especiales en los datos (simplificado para evitar errores previos)
-                            logger.info("=== VERIFICACIÓN DE CARACTERES ESPECIALES (simplificado) ===")
                             try:
                                 cursor.execute("SELECT id FROM question WHERE text LIKE '%formatear%'")
                                 problematic_rows = cursor.fetchone() # Solo necesitamos saber si hay al menos uno
-                                if problematic_rows:
-                                    logger.info("Posibles caracteres problemáticos encontrados.")
-                                else:
-                                    logger.info("No se encontraron coincidencias para 'formatear'.")
+                                # if problematic_rows:
+                                #     logger.info("Posibles caracteres problemáticos encontrados.")
+                                # else:
+                                #     logger.info("No se encontraron coincidencias para 'formatear'.")
                             except Exception as check_error:
                                 logger.error(f"Error al verificar caracteres especiales: {str(check_error)}")
                             
@@ -491,7 +483,6 @@ def admin():
             try:
                 cursor.execute('SELECT id, username FROM [user] ORDER BY username')
                 users = [{'id': row[0], 'username': row[1]} for row in cursor.fetchall()]
-                logger.info(f"Se obtuvieron {len(users)} usuarios")
             except Exception as e:
                 logger.error(f"Error obteniendo usuarios: {str(e)}")
                 users = []
@@ -508,7 +499,6 @@ def admin():
                     categories.insert(0, 'General')
                 categories.insert(0, 'Todas') # Asegurarse de que 'Todas' esté al inicio
 
-                logger.info(f"Categorías encontradas: {categories}")
             except Exception as e:
                 logger.error(f"Error obteniendo categorías: {str(e)}")
                 categories = ['Todas', 'General'] # Default en caso de error o tabla vacía
@@ -517,7 +507,6 @@ def admin():
             logger.info("=== CONTEO DE RESPUESTAS HOY ===")
             try:
                 today_str = datetime.now().strftime('%Y-%m-%d')
-                logger.info(f"Fecha de hoy: {today_str}")
                 
                 cursor.execute('SELECT COUNT(*) FROM response WHERE CONVERT(date, date) = ?', (today_str,))
                 count_result = cursor.fetchone()
@@ -526,17 +515,11 @@ def admin():
                     stats['respuestas_hoy'] = int(count_result[0])
                 else:
                     stats['respuestas_hoy'] = 0
-                    
-                logger.info(f"Respuestas hoy: {stats['respuestas_hoy']}")
-                
+                                    
             except Exception as e:
                 logger.error(f"Error en conteo de respuestas: {str(e)}")
                 stats['respuestas_hoy'] = 0
             
-            logger.info(f"Estadísticas finales: {stats}")
-            logger.info(f"Número de preguntas: {len(questions)}")
-            logger.info(f"Número de usuarios: {len(users)}")
-            logger.info(f"Categorías para plantilla: {categories}") # Nuevo log
             
             return render_template('admin.html', 
                                 stats=stats, 
@@ -557,16 +540,81 @@ def admin():
 @app.route('/add_question', methods=['POST'])
 @login_required
 def add_question():
+    # Verificar si es una solicitud AJAX
+    is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+    
+    logger.info("="*50)
+    logger.info("INICIANDO PROCESO DE CREACIÓN DE PREGUNTA")
+    logger.info(f"Headers: {request.headers}")
+    logger.info(f"Content-Type: {request.content_type}")
+    logger.info(f"Data recibida: {request.get_data()}")
+    logger.info(f"Es solicitud AJAX: {is_ajax}")
+    
     try:
-        # Obtener datos del formulario
-        text = request.form.get('text', '').strip()
-        descripcion = request.form.get('descripcion', '').strip()
-        type = request.form.get('type', 'text')
-        categoria = request.form.get('categoria', 'General')
-        options = request.form.get('options', '').strip() if 'options' in request.form else None
-        # Switches
-        is_required = 1 if request.form.get('is_required') == 'on' else 0
-        active = 1 if request.form.get('active') == 'on' else 0
+        logger.info(f"Headers: {request.headers}")
+        logger.info(f"Content-Type: {request.content_type}")
+        
+        # Verificar si la solicitud es JSON o AJAX
+        if request.is_json or is_ajax:
+            logger.info("La solicitud es JSON")
+            try:
+                data = request.get_json()
+                logger.info(f"Datos JSON recibidos: {data}")
+                text = data.get('text', '').strip()
+                type = data.get('type', 'text')
+                options = data.get('options', '').strip()
+                descripcion = data.get('descripcion', '').strip()
+                is_required = 1 if data.get('is_required') else 0
+                active = 1 if data.get('active', True) else 0
+                categoria = data.get('categoria_existente', 'General')
+                nueva_categoria = data.get('nueva_categoria', '').strip()
+                
+                # Si se proporcionó una nueva categoría, usarla
+                if nueva_categoria:
+                    categoria = nueva_categoria
+                    
+                logger.info(f"Datos procesados - Texto: {text}, Tipo: {type}, Opciones: {options}")
+                    
+            except Exception as e:
+                logger.error(f"Error al procesar JSON: {str(e)}")
+                if is_ajax:
+                    return jsonify({'status': 'error', 'message': f'Error en el formato de los datos: {str(e)}'}), 400
+                flash(f'Error en el formato de los datos: {str(e)}', 'danger')
+                return redirect(url_for('admin'))
+        else:
+            logger.info("La solicitud es un formulario tradicional")
+            # Manejo para formularios tradicionales (por si acaso)
+            text = request.form.get('text', '').strip()
+            type = request.form.get('type', 'text')
+            options = request.form.get('options', '').strip()
+            descripcion = request.form.get('descripcion', '').strip()
+            is_required = 1 if request.form.get('is_required') == 'on' else 0
+            active = 1 if request.form.get('active') == 'on' else 0
+            categoria = request.form.get('categoria_existente', 'General')
+            nueva_categoria = request.form.get('nueva_categoria', '').strip()
+            
+            # Si se proporcionó una nueva categoría, usarla
+            if nueva_categoria:
+                categoria = nueva_categoria
+                
+            logger.info(f"Datos de formulario - Texto: {text}, Tipo: {type}, Opciones: {options}")
+        
+        assigned_user_id = current_user.id  # Asignar al usuario actual
+        
+        # Validar campos requeridos
+        if not text:
+            return jsonify({'status': 'error', 'message': 'El texto de la pregunta es requerido'}), 400
+            
+        if type in ['checkbox', 'radio'] and not options:
+            return jsonify({'status': 'error', 'message': 'Debes proporcionar al menos una opción para este tipo de pregunta'}), 400
+        
+        # Depuración: Imprimir los valores obtenidos
+        print(f"Tipo de pregunta: {type}")
+        print(f"Opciones recibidas: {options}")
+        print(f"Texto de la pregunta: {text}")
+        print(f"Descripción: {descripcion}")
+        print(f"Es requerida: {is_required}")
+        print(f"Activa: {active}")
         assigned_user_id = request.form.get('assigned_user_id')
         if not assigned_user_id or not assigned_user_id.isdigit():
             assigned_user_id = current_user.id
@@ -579,23 +627,83 @@ def add_question():
             flash('Tipo de pregunta no válido', 'error')
             return redirect(url_for('admin'))
         
-        # Insertar la pregunta
-        Question.create(
-            text=text,
-            type=type,
-            options=options,
-            assigned_user_id=assigned_user_id,
-            descripcion=descripcion,
-            is_required=is_required,
-            categoria=categoria,
-            active=active
-        )
-        flash('Pregunta agregada exitosamente', 'success')
-        return redirect(url_for('admin'))
+        # Procesar opciones si es necesario
+        processed_options = None
+        try:
+            if type in ['checkbox', 'radio', 'multiple_choice'] and options:
+                logger.info(f"Procesando opciones: {options}")
+                # Dividir por líneas, eliminar espacios en blanco y filtrar líneas vacías
+                options_list = []
+                for opt in options.split('\n'):
+                    opt = opt.strip()
+                    if opt:
+                        # Eliminar guión inicial si existe
+                        if opt.startswith('-'):
+                            opt = opt[1:].strip()
+                        options_list.append(opt)
+                
+                logger.info(f"Opciones después de procesar: {options_list}")
+                
+                # Unir con comas para guardar en la base de datos
+                processed_options = ','.join(options_list)
+                logger.info(f"Opciones procesadas: {processed_options}")
+                
+                # Si no hay opciones válidas, establecer el tipo a 'text'
+                if not options_list and type != 'text':
+                    type = 'text'
+                    logger.warning('No se proporcionaron opciones válidas. Convirtiendo a tipo texto.')
+            else:
+                logger.info(f"No se requiere procesar opciones para el tipo: {type}")
+        except Exception as e:
+            logger.error(f"Error al procesar opciones: {str(e)}")
+            return jsonify({
+                'status': 'error',
+                'message': f'Error al procesar las opciones: {str(e)}'
+            }), 400
+        
+        try:
+            # Insertar la pregunta
+            question_id = Question.create(
+                text=text,
+                type=type,
+                options=processed_options,
+                assigned_user_id=assigned_user_id,
+                descripcion=descripcion,
+                is_required=is_required,
+                categoria=categoria,
+                active=active
+            )
+            
+            logger.info(f"Pregunta creada exitosamente con ID: {question_id}")
+            
+            if is_ajax:
+                return jsonify({
+                    'status': 'success',
+                    'message': 'Pregunta creada exitosamente',
+                    'question_id': question_id,
+                    'redirect': url_for('admin')
+                }), 200
+            else:
+                flash('Pregunta creada exitosamente', 'success')
+                return redirect(url_for('admin'))
+            
+        except Exception as e:
+            logger.error(f"Error al guardar en la base de datos: {str(e)}")
+            if is_ajax:
+                return jsonify({
+                    'status': 'error',
+                    'message': f'Error al guardar la pregunta en la base de datos: {str(e)}'
+                }), 500
+            else:
+                flash(f'Error al guardar la pregunta: {str(e)}', 'danger')
+                return redirect(url_for('admin'))
+            
     except Exception as e:
         print(f"Error al agregar pregunta: {str(e)}")
-        flash('Error al agregar la pregunta. Por favor, intente de nuevo.', 'error')
-        return redirect(url_for('admin'))
+        return jsonify({
+            'status': 'error',
+            'message': f'Error al agregar la pregunta: {str(e)}'
+        }), 500
 
 @app.route('/submit_responses', methods=['POST'])
 @login_required
@@ -993,17 +1101,41 @@ def delete_question(question_id):
         response.status_code = 500
         return response
 
+# Manejadores de error globales
+@app.errorhandler(404)
+def page_not_found(e):
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return jsonify({'status': 'error', 'message': 'Recurso no encontrado'}), 404
+    return render_template('404.html'), 404
+
+@app.errorhandler(500)
+def internal_server_error(e):
+    logger.error(f'Error 500: {str(e)}', exc_info=True)
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return jsonify({
+            'status': 'error', 
+            'message': 'Error interno del servidor',
+            'error': str(e)
+        }), 500
+    return render_template('500.html'), 500
+
+@app.errorhandler(Exception)
+def handle_exception(e):
+    logger.error(f'Excepción no manejada: {str(e)}', exc_info=True)
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return jsonify({
+            'status': 'error',
+            'message': 'Ha ocurrido un error inesperado',
+            'error': str(e)
+        }), 500
+    return render_template('500.html'), 500
+
+# Configuración de la aplicación
 if __name__ == '__main__':
     try:
         port = 5002
-        # print(f"Iniciando la aplicación en http://localhost:{port}")
-        # print("Presiona Ctrl+C para detener el servidor")
-        app.run(debug=True, port=port, use_reloader=False)
+        logger.info(f"Iniciando la aplicación en http://0.0.0.0:{port}")
+        app.run(host='0.0.0.0', port=port, debug=True)
     except Exception as e:
-        print(f"\nError al iniciar la aplicación: {str(e)}")
-        import traceback
-        traceback.print_exc()
-        # print("\nPosibles soluciones:")
-        # print("1. Verifica que el puerto 5001 no esté en uso")
-        # print("2. Cierra otras instancias de la aplicación")
-        # print("3. Prueba con otro puerto (ej: 5002, 8000)")
+        logger.error(f"Error al iniciar la aplicación: {str(e)}")
+        sys.exit(1)

@@ -81,7 +81,7 @@
 <div class="modal fade" id="nuevaPreguntaModal" tabindex="-1" aria-labelledby="nuevaPreguntaModalLabel" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content rounded-4">
-      <form action="{{ url_for('add_question') }}" method="POST">
+      <form id="add-question-form">
         <div class="modal-header border-0 pb-0">
           <h5 class="modal-title fw-bold" id="nuevaPreguntaModalLabel">Nueva Pregunta</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
@@ -92,7 +92,7 @@
           </div>
           <div class="mb-3">
             <label for="text" class="form-label fw-semibold">Pregunta</label>
-            <input type="text" class="form-control" id="text" name="text" placeholder="Escribe la pregunta aquí..." required>
+            <textarea class="form-control" id="text" name="text" rows="3" placeholder="Escribe la pregunta aquí..." required></textarea>
           </div>
           <div class="mb-3">
             <label for="descripcion" class="form-label">Descripción (opcional)</label>
@@ -101,11 +101,11 @@
           <div class="row g-2 mb-3">
             <div class="col-6">
               <label for="type" class="form-label">Tipo de Pregunta</label>
-              <select class="form-select" id="type" name="type" required>
+              <select class="form-select" id="type" name="type" onchange="toggleOptionsField()" required>
                 <option value="select">Sí/No</option>
                 <option value="text">Texto Libre</option>
-                <option value="checkbox">Casillas de Verificación</option>
-                <option value="radio">Botones de Radio</option>
+                <option value="checkbox">Selección Múltiple</option>
+                <option value="radio">Opción Única</option>
               </select>
             </div>
             <div class="col-6">
@@ -121,10 +121,140 @@
             <label for="nueva-categoria-input" class="form-label">O Añadir Nueva Categoría</label>
             <input type="text" class="form-control" id="nueva-categoria-input" name="nueva_categoria" placeholder="Escribe un nombre para una nueva categoría (opcional)">
           </div>
+          <div class="mb-3" id="options-container" style="display: none;">
+            <label for="options" class="form-label">Opciones (una por línea, con guion al inicio)</label>
+            <textarea class="form-control" id="options" name="options" rows="3" placeholder="- Opción 1
+- Opción 2
+- Opción 3"></textarea>
+            <div class="form-text">Escribe cada opción en una línea separada, comenzando con un guion medio (-) y un espacio. Ejemplo: "- Manzana" (sin comillas).</div>
+          </div>
           <div class="form-check form-switch mb-2">
             <input class="form-check-input" type="checkbox" id="is_required" name="is_required">
             <label class="form-check-label" for="is_required">¿Es obligatorio responder esta pregunta?</label>
           </div>
+          <script>
+          function toggleOptionsField() {
+            const typeSelect = document.getElementById('type');
+            const optionsContainer = document.getElementById('options-container');
+            
+            if (typeSelect.value === 'checkbox' || typeSelect.value === 'radio') {
+              optionsContainer.style.display = 'block';
+            } else {
+              optionsContainer.style.display = 'none';
+            }
+          }
+          
+          // Inicializar el estado al cargar la página
+          document.addEventListener('DOMContentLoaded', function() {
+            toggleOptionsField();
+            
+            // Manejar el envío del formulario
+            const form = document.getElementById('add-question-form');
+            if (form) {
+              form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                // Mostrar mensaje de carga
+                const submitBtn = document.getElementById('submit-question');
+                const originalBtnText = submitBtn.innerHTML;
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Guardando...';
+                
+                // Obtener los datos del formulario
+                const formData = new FormData(form);
+                const data = {
+                    text: formData.get('text') || '',
+                    type: formData.get('type') || 'text',
+                    options: formData.get('options') || '',
+                    descripcion: formData.get('descripcion') || '',
+                    is_required: document.getElementById('is_required').checked,
+                    active: document.getElementById('active').checked,
+                    categoria_existente: formData.get('categoria_existente') || 'General',
+                    nueva_categoria: formData.get('nueva_categoria') || ''
+                };
+                
+                console.log('Datos a enviar:', data);
+                
+                // Procesar opciones si es necesario
+                if (data.type === 'checkbox' || data.type === 'radio') {
+                  if (!data.options || data.options.trim() === '') {
+                    showError('Por favor ingresa al menos una opción para este tipo de pregunta.');
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalBtnText;
+                    return;
+                  }
+                }
+                
+                // Mostrar datos que se enviarán
+                console.log('Enviando datos al servidor:', data);
+                
+                // Enviar datos al servidor
+                fetch("{{ url_for('add_question') }}", {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                  },
+                  credentials: 'same-origin',
+                  body: JSON.stringify(data)
+                })
+                .then(async response => {
+                  console.log('Estado de la respuesta:', response.status);
+                  const contentType = response.headers.get('content-type');
+                  console.log('Tipo de contenido de la respuesta:', contentType);
+                  
+                  // Intentar analizar la respuesta como JSON
+                  try {
+                    const responseData = await response.json();
+                    console.log('Datos de la respuesta:', responseData);
+                    
+                    if (!response.ok) {
+                      throw new Error(responseData.message || 'Error en la petición');
+                    }
+                    
+                    return responseData;
+                  } catch (jsonError) {
+                    // Si no se puede analizar como JSON, obtener el texto de la respuesta
+                    const text = await response.text();
+                    console.error('Error al analizar la respuesta JSON. Texto de respuesta:', text);
+                    throw new Error(`Error en el servidor: ${response.status} - ${text.substring(0, 200)}`);
+                  }
+                })
+                .then(data => {
+                  console.log('Datos de respuesta:', data);
+                  if (data.status === 'success') {
+                    // Cerrar el modal y recargar la página
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('nuevaPreguntaModal'));
+                    if (modal) {
+                      modal.hide();
+                    }
+                    location.reload();
+                  } else {
+                    throw new Error(data.message || 'Error al guardar la pregunta');
+                  }
+                })
+                .catch(error => {
+                  console.error('Error en la petición:', error);
+                  showError(error.message || 'Error al conectar con el servidor');
+                })
+                .finally(() => {
+                  submitBtn.disabled = false;
+                  submitBtn.innerHTML = originalBtnText;
+                });
+              });
+            }
+            
+            function showError(message) {
+              const errorDiv = document.getElementById('form-error');
+              errorDiv.textContent = message;
+              errorDiv.style.display = 'block';
+              setTimeout(() => {
+                errorDiv.style.display = 'none';
+              }, 5000);
+            }
+          });
+          </script>
           <div class="form-check form-switch mb-2">
             <input class="form-check-input" type="checkbox" id="active" name="active" checked>
             <label class="form-check-label" for="active">¿La pregunta está activa para los usuarios?</label>
@@ -132,7 +262,8 @@
         </div>
         <div class="modal-footer border-0 pt-0">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-          <button type="submit" class="btn btn-primary">Crear Pregunta</button>
+          <button type="submit" class="btn btn-primary" id="submit-question">Crear Pregunta</button>
+          <div id="form-error" class="text-danger mt-2" style="display: none;"></div>
         </div>
       </form>
     </div>
