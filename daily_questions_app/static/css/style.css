@@ -84,6 +84,72 @@ body {
     gap: 1rem;
 }
 
+/* Estilos específicos para el admin */
+#preguntas-lista {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.pregunta-item {
+    display: flex !important;
+    opacity: 1 !important;
+    background-color: transparent !important;
+}
+
+/* Asegurar que el texto sea siempre azul */
+.pregunta-item .fw-semibold {
+    color: #0d6efd !important;
+}
+
+/* Mantener el texto azul en hover */
+.pregunta-item:hover .fw-semibold {
+    color: #0d6efd !important;
+}
+
+/* Eliminar efecto hover del contenedor */
+.pregunta-item:hover {
+    background-color: transparent !important;
+}
+
+.pregunta-item[style*="display: none"] {
+    display: none !important;
+}
+
+/* Restaurar estilos de los botones */
+.btn-outline-primary, .btn-outline-danger {
+    color: #0d6efd;
+    border-color: #0d6efd;
+}
+
+.btn-outline-primary:hover, .btn-outline-danger:hover {
+    color: #fff;
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+}
+
+.btn-outline-danger {
+    color: #dc3545;
+    border-color: #dc3545;
+}
+
+.btn-outline-danger:hover {
+    background-color: #dc3545;
+    border-color: #dc3545;
+}
+
+.pregunta-item > div:first-child {
+    flex-grow: 1;
+}
+
+.pregunta-item .fw-semibold {
+    margin-bottom: 0.25rem;
+}
+
+.pregunta-item .text-muted {
+    font-size: 0.85rem;
+}
+
 .option-btn {
     background: white;
     border: 2px solid #dee2e6;

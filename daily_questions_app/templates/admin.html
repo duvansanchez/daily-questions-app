@@ -17,17 +17,24 @@
             </div>
             <!-- Tabs de filtro -->
             <div class="mb-4">
-                <div class="btn-group" role="group" aria-label="Filtros de categoría">
-                    <button type="button" class="btn btn-outline-primary active" data-category="Todas">Todas</button>
+                <div class="d-flex flex-wrap gap-2" role="group" aria-label="Filtros de categoría">
+                    <button type="button" class="btn btn-outline-primary active" data-category="Todas">
+                        <i class="bi bi-grid me-1"></i> Todas
+                    </button>
                     {% for cat in categories if cat != 'Todas' %}
-                    <button type="button" class="btn btn-outline-primary" data-category="{{ cat }}">{{ cat }}</button>
+                    <button type="button" class="btn btn-outline-primary d-flex align-items-center" data-category="{{ cat }}">
+                        <i class="bi bi-tag me-1"></i> {{ cat }}
+                    </button>
                     {% endfor %}
+                </div>
+                <div class="mt-2">
+                    <small class="text-muted">Mostrando: <span id="categoria-actual">Todas las categorías</span></small>
                 </div>
             </div>
             <!-- Lista de preguntas -->
             <div id="preguntas-lista">
                 {% for question in questions %}
-                <div class="d-flex align-items-center justify-content-between py-3 border-bottom pregunta-item" data-category="{{ question.categoria }}">
+                <div class="d-flex align-items-center justify-content-between py-3 border-bottom pregunta-item" data-category="{{ question.categoria }}" style="display: flex !important;">
                     <div>
                         <div class="fw-semibold" style="font-size:1.1rem;">{{ question.text }}</div>
                         <div class="text-muted small">{{ question.categoria }}</div>
@@ -42,6 +49,10 @@
                             </div>
                         </div>
                         <div class="text-center">
+                            {% set options_value = question.options if question.options is not none else '[]' %}
+                            {% if options_value is string %}
+                                {% set options_value = options_value|replace("'", "\"")|replace("[", "")|replace("]", "")|split(", ") %}
+                            {% endif %}
                             <button class="btn btn-sm btn-outline-primary edit-question mb-1" 
                                 data-id="{{ question.id }}"
                                 data-text="{{ question.text|e }}"
@@ -49,12 +60,13 @@
                                 data-type="{{ question.type }}"
                                 data-categoria="{{ question.categoria }}"
                                 data-is_required="{{ question.is_required }}"
-                                data-active="{{ question.active }}">
+                                data-active="{{ question.active }}"
+                                data-options='{{ options_value|tojson|safe }}'>
                                 <i class="bi bi-pencil"></i>
                             </button>
                         </div>
                         <div class="text-center">
-                            <button class="btn btn-sm btn-outline-danger delete-question mb-1" data-id="{{ question.id }}">
+                            <button class="btn btn-sm btn-outline-danger delete-question mb-1" data-id="{{ question.id }}" onclick="$('#deleteQuestionModal').modal('show');">
                                 <i class="bi bi-trash"></i>
                             </button>
                         </div>
@@ -133,6 +145,185 @@
             <label class="form-check-label" for="is_required">¿Es obligatorio responder esta pregunta?</label>
           </div>
           <script>
+          // Función para limpiar y normalizar texto (eliminar espacios y convertir a minúsculas)
+          function normalizarTexto(texto) {
+            if (!texto) return '';
+            return texto.toString()
+                      .trim()
+                      .toLowerCase()
+                      .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // Eliminar acentos
+                      .replace(/[^a-z0-9\s]/g, '') // Eliminar caracteres especiales
+                      .replace(/\s+/g, ' '); // Reemplazar múltiples espacios por uno solo
+          }
+
+          // Función para filtrar preguntas por categoría
+          function filtrarPorCategoria(categoriaSeleccionada) {
+            console.log('=== INICIO DE FILTRADO ===');
+            console.log('Categoría seleccionada:', categoriaSeleccionada);
+            console.log('Todas las categorías de los botones:');
+            document.querySelectorAll('[data-category]').forEach(b => {
+              console.log(`- Botón: ${b.textContent.trim()} | data-category: ${b.getAttribute('data-category')}`);
+            });
+            
+            const contenedorPreguntas = document.getElementById('preguntas-lista');
+            const preguntas = contenedorPreguntas.getElementsByClassName('pregunta-item');
+            const categoriaActualElement = document.getElementById('categoria-actual');
+            let totalPreguntasVisibles = 0;
+            
+            console.log(`Total de preguntas encontradas: ${preguntas.length}`);
+            
+            // Actualizar el texto de la categoría actual
+            if (categoriaSeleccionada === 'Todas') {
+              categoriaActualElement.textContent = 'Todas las categorías';
+            } else {
+              categoriaActualElement.textContent = `Categoría: ${categoriaSeleccionada}`;
+            }
+            
+            // Ocultar todas las preguntas primero y registrar sus datos
+            console.log('=== DETALLES DE LAS PREGUNTAS ===');
+            Array.from(preguntas).forEach((pregunta, index) => {
+              const categoriaPregunta = pregunta.getAttribute('data-category') || '[sin-categoría]';
+              console.log(`Pregunta ${index + 1}:`);
+              console.log('- Texto:', pregunta.querySelector('.fw-semibold')?.textContent);
+              console.log('- Categoría (data-category):', categoriaPregunta);
+              console.log('- Categoría normalizada:', normalizarTexto(categoriaPregunta));
+              console.log('---');
+              
+              // Asegurarse de que la pregunta esté oculta inicialmente
+              pregunta.style.display = 'none';
+              // Forzar el estilo display a flex cuando se muestre
+              if (categoriaSeleccionada === 'Todas' || 
+                  normalizarTexto(categoriaPregunta) === normalizarTexto(categoriaSeleccionada)) {
+                pregunta.style.display = 'flex';
+              }
+            });
+            console.log('=== FIN DETALLES ===');
+            
+            // Si es 'Todas', mostrar todas las preguntas
+            if (categoriaSeleccionada === 'Todas') {
+              Array.from(preguntas).forEach(pregunta => {
+                pregunta.style.display = 'flex';
+                totalPreguntasVisibles++;
+              });
+            } else {
+              // Filtrar por categoría específica
+              const categoriaBuscada = normalizarTexto(categoriaSeleccionada);
+              console.log('Categoría buscada (normalizada):', categoriaBuscada);
+              
+              Array.from(preguntas).forEach(pregunta => {
+                const categoriaPregunta = pregunta.getAttribute('data-category') || '';
+                const categoriaPreguntaNormalizada = normalizarTexto(categoriaPregunta);
+                
+                console.log('Comparando categorías:', {
+                  pregunta: pregunta.querySelector('.fw-semibold')?.textContent,
+                  categoriaPregunta: categoriaPregunta,
+                  categoriaPreguntaNormalizada: categoriaPreguntaNormalizada,
+                  categoriaBuscada: categoriaBuscada,
+                  sonIguales: (categoriaPreguntaNormalizada === categoriaBuscada)
+                });
+                
+                if (categoriaPreguntaNormalizada === categoriaBuscada) {
+                  pregunta.style.display = 'flex';
+                  totalPreguntasVisibles++;
+                  console.log('✓ Mostrando pregunta:', pregunta.querySelector('.fw-semibold')?.textContent);
+                } else {
+                  pregunta.style.display = 'none';
+                  console.log('✗ Ocultando pregunta:', pregunta.querySelector('.fw-semibold')?.textContent);
+                }
+              });
+            }
+            
+            console.log(`Mostrando ${totalPreguntasVisibles} preguntas de la categoría:`, categoriaSeleccionada);
+            
+            // Actualizar estado activo de los botones
+            document.querySelectorAll('[data-category]').forEach(btn => {
+              const btnCategory = btn.getAttribute('data-category');
+              if (btnCategory === categoriaSeleccionada) {
+                btn.classList.remove('btn-outline-primary');
+                btn.classList.add('btn-primary');
+              } else {
+                btn.classList.remove('btn-primary');
+                btn.classList.add('btn-outline-primary');
+              }
+            });
+            
+            // Manejar el mensaje de "No hay preguntas"
+            const mensajeNoPreguntas = document.getElementById('mensaje-no-preguntas');
+            const existeMensaje = mensajeNoPreguntas !== null;
+            
+            if (totalPreguntasVisibles === 0) {
+              if (!existeMensaje) {
+                const mensaje = document.createElement('div');
+                mensaje.id = 'mensaje-no-preguntas';
+                mensaje.className = 'text-center text-muted py-5';
+                mensaje.innerHTML = `
+                  <i class="bi bi-question-circle display-4 mb-3"></i>
+                  <h5>No hay preguntas en esta categoría</h5>
+                  <p>No se encontraron preguntas en la categoría "${categoriaSeleccionada}"</p>
+                `;
+                contenedorPreguntas.appendChild(mensaje);
+              }
+            } else if (existeMensaje) {
+              mensajeNoPreguntas.remove();
+            }
+          }
+          
+          // Función para inicializar los manejadores de eventos de los botones de categoría
+          function inicializarFiltroCategorias() {
+            console.log('Inicializando filtro de categorías...');
+            
+            // Configurar manejadores de eventos para los botones de categoría
+            document.querySelectorAll('[data-category]').forEach(btn => {
+              // Primero, eliminar cualquier manejador de eventos existente
+              const nuevoBtn = btn.cloneNode(true);
+              btn.parentNode.replaceChild(nuevoBtn, btn);
+              
+              // Agregar el manejador al nuevo botón
+              nuevoBtn.addEventListener('click', function(e) {
+                // Solo cambiar la categoría si el clic NO fue en un botón de editar, eliminar ni dentro de .pregunta-item
+                if (e.target.closest('.edit-question') || e.target.closest('.delete-question') || e.target.closest('.pregunta-item')) {
+                    return;
+                }
+                document.querySelectorAll('[data-category]').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                const cat = this.getAttribute('data-category');
+                document.querySelectorAll('.pregunta-item').forEach(item => {
+                    if (cat === 'Todas' || item.getAttribute('data-category') === cat) {
+                        item.style.display = '';
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
+              });
+            });
+            
+            // Cargar la categoría guardada al cargar la página
+            const categoriaGuardada = localStorage.getItem('categoriaSeleccionada') || 'Todas';
+            console.log('Categoría guardada:', categoriaGuardada);
+            
+            // Filtrar por la categoría guardada
+            filtrarPorCategoria(categoriaGuardada);
+            
+            // Actualizar el botón activo
+            const botonActivo = document.querySelector(`[data-category="${categoriaGuardada}"]`);
+            if (botonActivo) {
+              botonActivo.classList.remove('btn-outline-primary');
+              botonActivo.classList.add('btn-primary');
+            }
+          }
+          
+          // Manejador de eventos para los botones de categoría
+          function manejarClickCategoria(e) {
+            // Solo procesar si se hizo clic directamente en el botón o en su ícono
+            if (e.target.closest('[data-category]')) {
+              const categoria = this.getAttribute('data-category');
+              filtrarPorCategoria(categoria);
+              
+              // Guardar la categoría seleccionada en localStorage
+              localStorage.setItem('categoriaSeleccionada', categoria);
+            }
+          }
+          
           function toggleOptionsField() {
             const typeSelect = document.getElementById('type');
             const optionsContainer = document.getElementById('options-container');
@@ -148,6 +339,9 @@
           document.addEventListener('DOMContentLoaded', function() {
             toggleOptionsField();
             
+            // Inicializar el filtro de categorías
+            inicializarFiltroCategorias();
+            
             // Manejar el envío del formulario
             const form = document.getElementById('add-question-form');
             if (form) {
@@ -162,6 +356,12 @@
                 
                 // Obtener los datos del formulario
                 const formData = new FormData(form);
+                const nuevaCategoriaInput = formData.get('nueva_categoria') || '';
+                const categoriaExistente = formData.get('categoria_existente') || 'General';
+                
+                // Determinar qué categoría usar
+                const categoria = nuevaCategoriaInput.trim() ? nuevaCategoriaInput.trim() : categoriaExistente;
+                
                 const data = {
                     text: formData.get('text') || '',
                     type: formData.get('type') || 'text',
@@ -169,9 +369,12 @@
                     descripcion: formData.get('descripcion') || '',
                     is_required: document.getElementById('is_required').checked,
                     active: document.getElementById('active').checked,
-                    categoria_existente: formData.get('categoria_existente') || 'General',
-                    nueva_categoria: formData.get('nueva_categoria') || ''
+                    categoria_existente: categoria, // Usamos la categoría determinada
+                    nueva_categoria: nuevaCategoriaInput.trim()
                 };
+                
+                console.log('Categoría seleccionada:', categoria);
+                console.log('Datos del formulario:', data);
                 
                 console.log('Datos a enviar:', data);
                 
@@ -286,30 +489,41 @@
           <input type="hidden" id="edit-id" name="id">
           <div class="mb-3">
             <label for="edit-text" class="form-label fw-semibold">Pregunta</label>
-            <input type="text" class="form-control" id="edit-text" name="text" required>
+            <textarea class="form-control" id="edit-text" name="text" rows="3" placeholder="Escribe la pregunta aquí..." required></textarea>
           </div>
           <div class="mb-3">
             <label for="edit-descripcion" class="form-label">Descripción (opcional)</label>
-            <textarea class="form-control" id="edit-descripcion" name="descripcion" rows="2"></textarea>
+            <textarea class="form-control" id="edit-descripcion" name="descripcion" rows="2" placeholder="Añade una descripción o instrucciones adicionales..."></textarea>
           </div>
           <div class="row g-2 mb-3">
             <div class="col-6">
               <label for="edit-type" class="form-label">Tipo de Pregunta</label>
-              <select class="form-select" id="edit-type" name="type" required>
+              <select class="form-select" id="edit-type" name="type" onchange="toggleEditOptionsField()" required>
                 <option value="select">Sí/No</option>
                 <option value="text">Texto Libre</option>
-                <option value="checkbox">Casillas de Verificación</option>
-                <option value="radio">Botones de Radio</option>
+                <option value="checkbox">Selección Múltiple</option>
+                <option value="radio">Opción Única</option>
               </select>
             </div>
             <div class="col-6">
-              <label for="edit-categoria" class="form-label">Categoría</label>
-              <select class="form-select" id="edit-categoria" name="categoria">
-                <option value="General">General</option>
-                <option value="Salud">Salud</option>
-                <option value="Productividad">Productividad</option>
+              <label for="categoria-select-edit" class="form-label">Categoría Existente</label>
+              <select class="form-select" id="categoria-select-edit" name="categoria_existente">
+                {% for cat in categories if cat != 'Todas' %}
+                <option value="{{ cat }}" {% if cat == 'General' %}selected{% endif %}>{{ cat }}</option>
+                {% endfor %}
               </select>
             </div>
+          </div>
+          <div class="mb-3">
+            <label for="nueva-categoria-edit" class="form-label">O Añadir Nueva Categoría</label>
+            <input type="text" class="form-control" id="nueva-categoria-edit" name="nueva_categoria" placeholder="Escribe un nombre para una nueva categoría (opcional)">
+          </div>
+          <div class="mb-3" id="edit-options-container" style="display: none;">
+            <label for="edit-options" class="form-label">Opciones (una por línea, con guion al inicio)</label>
+            <textarea class="form-control" id="edit-options" name="options" rows="3" placeholder="- Opción 1
+- Opción 2
+- Opción 3"></textarea>
+            <div class="form-text">Escribe cada opción en una línea separada, comenzando con un guion medio (-) y un espacio. Ejemplo: "- Manzana" (sin comillas).</div>
           </div>
           <div class="form-check form-switch mb-2">
             <input class="form-check-input" type="checkbox" id="edit-is_required" name="is_required">
@@ -328,13 +542,248 @@
     </div>
   </div>
 </div>
+
+<script>
+// Inicializar el modal de edición una sola vez al cargar la página
+let editModal = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Inicializar el modal de edición
+    const editModalElement = document.getElementById('editarPreguntaModal');
+    if (editModalElement) {
+        editModal = new bootstrap.Modal(editModalElement);
+        console.log('Modal de edición inicializado correctamente');
+    } else {
+        console.error('No se encontró el elemento del modal de edición');
+    }
+    
+    // Inicializar la función toggle para el modal de edición
+    toggleEditOptionsField();
+    
+    // Agregar el event listener para los botones de edición
+    document.addEventListener('click', function(e) {
+        const editBtn = e.target.closest('.edit-question');
+        if (!editBtn) return;
+        
+        e.preventDefault();
+        e.stopPropagation();
+        
+        console.log('Botón de editar clickeado');
+        console.log('Datos del botón:', editBtn.dataset);
+        
+        // Verificar si el modal está inicializado
+        if (!editModal) {
+            console.error('El modal de edición no está inicializado');
+            return;
+        }
+        
+        // Obtener los datos del botón
+        const questionData = editBtn.dataset;
+        
+        // Establecer valores básicos
+        const idInput = document.getElementById('edit-id');
+        const textInput = document.getElementById('edit-text');
+        const descripcionInput = document.getElementById('edit-descripcion');
+        const typeSelect = document.getElementById('edit-type');
+        
+        if (idInput) idInput.value = questionData.id || '';
+        if (textInput) textInput.value = questionData.text || '';
+        if (descripcionInput) descripcionInput.value = questionData.descripcion || '';
+        if (typeSelect) typeSelect.value = questionData.type || 'select';
+        
+        // Manejar categoría
+        const categoriaSelect = document.getElementById('categoria-select-edit');
+        const nuevaCategoriaInput = document.getElementById('nueva-categoria-edit');
+        
+        if (categoriaSelect && nuevaCategoriaInput) {
+            const categoriaExists = Array.from(categoriaSelect.options).some(opt => opt.value === questionData.categoria);
+            
+            if (categoriaExists) {
+                categoriaSelect.value = questionData.categoria;
+                nuevaCategoriaInput.value = '';
+            } else if (questionData.categoria) {
+                categoriaSelect.value = '';
+                nuevaCategoriaInput.value = questionData.categoria;
+            }
+        }
+        
+        // Manejar opciones
+        const optionsContainer = document.getElementById('edit-options-container');
+        const optionsTextarea = document.getElementById('edit-options');
+        
+        if (questionData.type === 'checkbox' || questionData.type === 'radio') {
+            if (optionsContainer) optionsContainer.style.display = 'block';
+            
+            if (questionData.options && questionData.options !== 'null' && questionData.options !== 'None') {
+                try {
+                    let optionsStr = questionData.options;
+                    if (typeof optionsStr === 'string') {
+                        if (optionsStr.trim().startsWith('[') && optionsStr.trim().endsWith(']')) {
+                            try {
+                                const optionsArray = JSON.parse(optionsStr);
+                                if (Array.isArray(optionsArray)) {
+                                    optionsStr = optionsArray.join('\n');
+                                }
+                            } catch (e) {
+                                console.error('Error al parsear opciones JSON:', e);
+                            }
+                        }
+                        optionsStr = optionsStr.replace(/[\[\]"']/g, '');
+                    }
+                    if (optionsTextarea) optionsTextarea.value = optionsStr;
+                } catch (error) {
+                    console.error('Error al procesar opciones:', error);
+                    if (optionsTextarea) optionsTextarea.value = '';
+                }
+            } else if (optionsTextarea) {
+                optionsTextarea.value = '';
+            }
+        } else if (optionsContainer) {
+            optionsContainer.style.display = 'none';
+        }
+        
+        // Establecer checkboxes
+        const isRequiredCheckbox = document.getElementById('edit-is_required');
+        const activeCheckbox = document.getElementById('edit-active');
+        if (isRequiredCheckbox) {
+            isRequiredCheckbox.checked = questionData.is_required === '1' || questionData.is_required === 'true';
+        }
+        if (activeCheckbox) {
+            activeCheckbox.checked = questionData.active === '1' || questionData.active === 'true';
+        }
+        
+        // Mostrar el modal sin cambiar la categoría actual
+        console.log('Intentando mostrar el modal');
+        editModal.show();
+    });
+});
+
+// Función para mostrar/ocultar opciones en el modal de edición
+function toggleEditOptionsField() {
+    const typeSelect = document.getElementById('edit-type');
+    const optionsContainer = document.getElementById('edit-options-container');
+    
+    if (!typeSelect || !optionsContainer) return;
+    
+    if (typeSelect.value === 'checkbox' || typeSelect.value === 'radio') {
+        optionsContainer.style.display = 'block';
+    } else {
+        optionsContainer.style.display = 'none';
+    }
+}
+
+// Agregar evento change al selector de tipo en el modal de edición
+document.addEventListener('DOMContentLoaded', function() {
+    const typeSelect = document.getElementById('edit-type');
+    if (typeSelect) {
+        typeSelect.addEventListener('change', toggleEditOptionsField);
+    }
+});
+
+// Lógica para enviar la edición por AJAX
+document.addEventListener('DOMContentLoaded', function() {
+    const editForm = document.getElementById('edit-question-form');
+    if (!editForm) return;
+
+    editForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        // Mostrar indicador de carga
+        const submitBtn = editForm.querySelector('button[type="submit"]');
+        const originalBtnText = submitBtn.innerHTML;
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Guardando...';
+        
+        const id = document.getElementById('edit-id').value;
+        const formData = new FormData(editForm);
+        
+        // Preparar los datos para enviar
+        const data = {
+            text: formData.get('text') || '',
+            type: formData.get('type') || 'text',
+            options: formData.get('options') || '',
+            descripcion: formData.get('descripcion') || '',
+            is_required: document.getElementById('edit-is_required').checked ? 1 : 0,
+            active: document.getElementById('edit-active').checked ? 1 : 0,
+            categoria_existente: formData.get('categoria_existente') || 'General',
+            nueva_categoria: formData.get('nueva_categoria') || ''
+        };
+        
+        // Validar opciones si es necesario
+        if ((data.type === 'checkbox' || data.type === 'radio') && !data.options.trim()) {
+            showError('Por favor ingresa al menos una opción para este tipo de pregunta.');
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalBtnText;
+            return;
+        }
+        
+        fetch(`/question/${id}`, {
+            method: 'PUT',
+            headers: { 
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            credentials: 'same-origin',
+            body: JSON.stringify(data)
+        })
+        .then(res => {
+            if (!res.ok) {
+                throw new Error('Error en la respuesta del servidor');
+            }
+            return res.json();
+        })
+        .then(res => {
+            if (res.status === 'success') {
+                // Cerrar el modal y recargar la página manteniendo la categoría actual
+                const modal = bootstrap.Modal.getInstance(document.getElementById('editarPreguntaModal'));
+                modal.hide();
+                
+                // Guardar la categoría actual antes de recargar
+                const categoriaActual = document.querySelector('[data-category].active').getAttribute('data-category');
+                localStorage.setItem('categoriaSeleccionada', categoriaActual);
+                
+                location.reload();
+            } else {
+                throw new Error(res.message || 'Error desconocido');
+            }
+        })
+        .catch(err => {
+            console.error('Error al guardar los cambios:', err);
+            showError('Error al guardar los cambios: ' + (err.message || 'Error desconocido'));
+        })
+        .finally(() => {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalBtnText;
+        });
+    });
+});
+
+// Función para mostrar errores
+function showError(message) {
+    const errorDiv = document.getElementById('form-error');
+    if (errorDiv) {
+        errorDiv.textContent = message;
+        errorDiv.style.display = 'block';
+        setTimeout(() => {
+            errorDiv.style.display = 'none';
+        }, 5000);
+    } else {
+        alert(message);
+    }
+}
+</script>
 {% endblock %}
 
 {% block scripts %}
 <script>
 // Filtro de tabs por categoría (frontend)
 document.querySelectorAll('[data-category]').forEach(btn => {
-    btn.addEventListener('click', function() {
+    btn.addEventListener('click', function(e) {
+        // Solo cambiar la categoría si el clic NO fue en un botón de editar, eliminar ni dentro de .pregunta-item
+        if (e.target.closest('.edit-question') || e.target.closest('.delete-question') || e.target.closest('.pregunta-item')) {
+            return;
+        }
         document.querySelectorAll('[data-category]').forEach(b => b.classList.remove('active'));
         this.classList.add('active');
         const cat = this.getAttribute('data-category');
@@ -347,71 +796,35 @@ document.querySelectorAll('[data-category]').forEach(btn => {
         });
     });
 });
-// Lógica para abrir el modal de edición y precargar datos
-const editModal = new bootstrap.Modal(document.getElementById('editarPreguntaModal'));
-document.querySelectorAll('.edit-question').forEach(btn => {
-    btn.addEventListener('click', function() {
-        document.getElementById('edit-id').value = this.dataset.id;
-        document.getElementById('edit-text').value = this.dataset.text;
-        document.getElementById('edit-descripcion').value = this.dataset.descripcion;
-        document.getElementById('edit-type').value = this.dataset.type;
-        document.getElementById('edit-categoria').value = this.dataset.categoria;
-        document.getElementById('edit-is_required').checked = this.dataset.is_required == '1' || this.dataset.is_required == 'true';
-        document.getElementById('edit-active').checked = this.dataset.active == '1' || this.dataset.active == 'true';
-        editModal.show();
-    });
-});
-// Lógica para enviar la edición por AJAX
-const editForm = document.getElementById('edit-question-form');
-if (editForm) {
-    editForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-        const id = document.getElementById('edit-id').value;
-        const data = {
-            text: document.getElementById('edit-text').value,
-            descripcion: document.getElementById('edit-descripcion').value,
-            type: document.getElementById('edit-type').value,
-            categoria: document.getElementById('edit-categoria').value,
-            is_required: document.getElementById('edit-is_required').checked ? 1 : 0,
-            active: document.getElementById('edit-active').checked ? 1 : 0
-        };
+
+// Lógica para eliminar pregunta por AJAX
+document.addEventListener('click', function(e) {
+    const deleteBtn = e.target.closest('.delete-question');
+    if (!deleteBtn) return;
+    
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const id = deleteBtn.dataset.id;
+    
+    // Mostrar confirmación
+    if (confirm('¿Estás seguro de que deseas eliminar esta pregunta? Esta acción no se puede deshacer.')) {
+        // Eliminar la pregunta
         fetch(`/question/${id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
         })
         .then(res => res.json())
         .then(res => {
             if (res.status === 'success') {
-                location.reload();
+                // Quitar de la lista visualmente
+                deleteBtn.closest('.pregunta-item').remove();
             } else {
-                alert('Error al guardar los cambios: ' + (res.message || ''));
+                alert('Error al eliminar: ' + (res.message || ''));
             }
         })
-        .catch(err => alert('Error al guardar los cambios: ' + err));
-    });
-}
-// Lógica para eliminar pregunta por AJAX
-document.querySelectorAll('.delete-question').forEach(btn => {
-    btn.addEventListener('click', function() {
-        const id = this.dataset.id;
-        if (confirm('¿Estás seguro de que deseas eliminar esta pregunta? Esta acción no se puede deshacer.')) {
-            fetch(`/question/${id}`, {
-                method: 'DELETE',
-                headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
-            })
-            .then(res => res.json())
-            .then(res => {
-                if (res.status === 'success') {
-                    // Quitar de la lista visualmente
-                    this.closest('.pregunta-item').remove();
-                } else {
-                    alert('Error al eliminar: ' + (res.message || ''));
-                }
-            })
-            .catch(err => alert('Error al eliminar: ' + err));
-        }
-    });
+        .catch(err => alert('Error al eliminar: ' + err));
+    }
 });
 </script>
 {% endblock %}

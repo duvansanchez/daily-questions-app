@@ -1,12 +1,14 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, make_response
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, make_response, session
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timedelta
 import os
+from flask_session import Session
 import pyodbc
 from dotenv import load_dotenv
 import logging
 import sys
+import traceback
 
 load_dotenv()
 
@@ -25,7 +27,20 @@ werkzeug_logger = logging.getLogger('werkzeug')
 werkzeug_logger.setLevel(logging.ERROR)  # Reducir el nivel de registro de werkzeug
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'your-secret-key-here')
+# Configuración de la sesión
+app.secret_key = os.urandom(24)  # Clave secreta aleatoria
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=1)
+app.config['SESSION_TYPE'] = 'filesystem'
+app.config['SESSION_FILE_DIR'] = os.path.join(os.getcwd(), 'flask_session')
+
+# Asegurarse de que el directorio de sesiones exista
+try:
+    os.makedirs(app.config['SESSION_FILE_DIR'], exist_ok=True)
+except Exception as e:
+    print(f"Error al crear el directorio de sesiones: {e}")
+
+# Inicializar la extensión de sesión
+Session(app)
 
 # Configuración de la base de datos
 # La cadena de conexión ahora se maneja dentro de get_db_connection
@@ -101,12 +116,24 @@ login_manager.login_view = 'login'
 
 @login_manager.unauthorized_handler
 def unauthorized():
-    # Modificar la condición para verificar si el cliente acepta JSON
-    if request.accept_mimetypes.accept_json:
-        response = jsonify({'status': 'error', 'message': 'No autenticado. Por favor, inicie sesión de nuevo.'})
+    # Si es una petición AJAX o API que espera JSON
+    if request.is_json or '/api/' in request.path:
+        response = jsonify({
+            'status': 'error', 
+            'message': 'No autenticado. Por favor, inicie sesión de nuevo.'
+        })
         response.status_code = 401
         return response
-    # Si no acepta JSON, o no es una petición AJAX/API que esperamos JSON, redirigir al login por defecto
+    
+    # Para peticiones normales de navegador, redirigir al login
+    try:
+        # Guardar la URL actual para redirigir después del login
+        if request.endpoint != 'login' and not request.path.startswith(('/static/', '/favicon.ico')):
+            session['next_url'] = request.url
+    except Exception as e:
+        print(f"Error al guardar la URL de redirección: {e}")
+    
+    # Redirigir a la página de login
     return redirect(url_for('login'))
 
 # Modelos
@@ -220,13 +247,25 @@ def index():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    # Si el usuario ya está autenticado, redirigir a la página principal
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+    
+    # Obtener la URL de redirección de los parámetros de la solicitud o de la sesión
+    next_url = request.args.get('next') or session.pop('next_url', None)
+    
     if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
+        username = request.form.get('username', '').strip()
+        password = request.form.get('password', '')
+        
+        if not username or not password:
+            flash('Por favor ingrese usuario y contraseña')
+            return render_template('login.html', next=next_url)
+            
         print(f"Intento de inicio de sesión para el usuario: {username}")
         
         try:
-            # Obtener el usuario directamente para depuración
+            # Obtener el usuario
             with get_db_connection() as conn:
                 cursor = conn.cursor()
                 cursor.execute('SELECT id, username, password FROM [user] WHERE username = ?', (username,))
@@ -235,27 +274,29 @@ def login():
             if db_user:
                 user_id, db_username, db_password = db_user
                 print(f"Usuario encontrado en DB - ID: {user_id}, Username: {db_username}")
-                print(f"Hash almacenado en DB: {db_password}")
-                print(f"Contraseña ingresada: {password}")
                 
                 # Verificar la contraseña
-                is_valid = check_password_hash(db_password, password)
-                print(f"¿Contraseña válida? {is_valid}")
-                
-                if is_valid:
+                if check_password_hash(db_password, password):
                     user = User(user_id, db_username, db_password)
                     login_user(user)
                     print("Inicio de sesión exitoso")
+                    
+                    # Redirigir a la URL guardada o al índice
+                    next_page = next_url or url_for('index')
+                    # Validar que la URL de redirección sea relativa al host actual
+                    if next_page and not next_page.startswith(('http://', 'https://')):
+                        return redirect(next_page)
                     return redirect(url_for('index'))
-            else:
-                print("Usuario no encontrado en la base de datos")
                 
+            # Si llegamos aquí, las credenciales son inválidas
             flash('Usuario o contraseña inválidos')
+            
         except Exception as e:
             print(f"Error durante el inicio de sesión: {str(e)}")
             flash('Error al procesar la solicitud de inicio de sesión')
     
-    return render_template('login.html')
+    # Para solicitudes GET o si hay un error, mostrar el formulario de login
+    return render_template('login.html', next=next_url)
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -367,11 +408,32 @@ def admin():
                     questions = []
                     for row in questions_data:
                         try:
+                            # Procesar opciones
+                            options = row[3]  # Índice 3 es donde está options en la consulta
+                            if options and isinstance(options, str):
+                                # Si las opciones están en formato de lista de Python, limpiarlas
+                                if options.startswith('[') and options.endswith(']'):
+                                    try:
+                                        # Intentar evaluar como lista de Python
+                                        options_list = eval(options)
+                                        if isinstance(options_list, list):
+                                            options = [str(opt).strip() for opt in options_list if opt]
+                                        else:
+                                            options = []
+                                    except:
+                                        # Si falla, tratar como cadena simple
+                                        options = [opt.strip() for opt in options.split(',') if opt.strip()]
+                                else:
+                                    # Si es una cadena simple, dividir por comas
+                                    options = [opt.strip() for opt in options.split(',') if opt.strip()]
+                            else:
+                                options = []
+                            
                             question = Question(
                                 id=row[0],
                                 text=row[1],
                                 type=row[2],
-                                options=row[3],
+                                options=options,  # Ahora es una lista limpia
                                 active=row[4],
                                 created_at=row[5],
                                 assigned_user_id=row[6],
@@ -381,7 +443,7 @@ def admin():
                             )
                             questions.append(question)
                         except Exception as e:
-                            logger.error(f"Error al procesar pregunta: {str(e)}")
+                            logger.error(f"Error al procesar pregunta {row[0] if row else 'N/A'}: {str(e)}", exc_info=True)
                             continue
                     
                     # Actualizar estadísticas
@@ -422,18 +484,32 @@ def admin():
             # 5. Obtener lista de categorías únicas
             logger.info("=== OBTENIENDO LISTA DE CATEGORIAS ===")
             try:
-                cursor.execute('SELECT DISTINCT categoria FROM question WHERE categoria IS NOT NULL AND categoria != '' ORDER BY categoria')
-                categories_from_db = [row[0] for row in cursor.fetchall()]
+                # Usar parámetros para evitar problemas de inyección SQL
+                cursor.execute("SELECT DISTINCT categoria FROM question WHERE categoria IS NOT NULL AND categoria <> '' ORDER BY categoria")
+                categories_from_db = [row[0] for row in cursor.fetchall() if row[0]]  # Filtrar valores None o vacíos
+                
+                # Depuración
+                logger.info(f"Categorías encontradas en BD: {categories_from_db}")
+                
                 # Asegurarse de que 'General' esté siempre si no hay otras y ordenarlas
-                categories = [cat for cat in categories_from_db if cat != 'Todas' and cat != 'General']
-                categories.sort() # Ordenar alfabéticamente las categorías de la DB
-                if 'General' in categories_from_db or not categories: # Incluir General si existe en DB o si no hay categorías de DB
-                    categories.insert(0, 'General')
-                categories.insert(0, 'Todas') # Asegurarse de que 'Todas' esté al inicio
-
+                categories = [cat for cat in categories_from_db if cat and cat != 'Todas' and cat != 'General']
+                categories = list(set(categories))  # Eliminar duplicados por si acaso
+                categories.sort()  # Ordenar alfabéticamente las categorías
+                
+                # Asegurarse de que 'General' esté presente
+                if 'General' in categories_from_db or not categories:
+                    if 'General' not in categories:
+                        categories.insert(0, 'General')
+                
+                # Asegurarse de que 'Todas' esté al inicio
+                if 'Todas' not in categories:
+                    categories.insert(0, 'Todas')
+                
+                logger.info(f"Categorías finales: {categories}")
+                
             except Exception as e:
-                logger.error(f"Error obteniendo categorías: {str(e)}")
-                categories = ['Todas', 'General'] # Default en caso de error o tabla vacía
+                logger.error(f"Error obteniendo categorías: {str(e)}", exc_info=True)
+                categories = ['Todas', 'General']  # Default en caso de error o tabla vacía
 
             # 6. Contar respuestas de hoy (simplificado)
             logger.info("=== CONTEO DE RESPUESTAS HOY ===")
@@ -464,7 +540,39 @@ def admin():
         logger.error(f"Tipo de error: {type(e)}")
         logger.error(f"Error: {str(e)}")
         logger.error("Traceback completo:", exc_info=True)
-        flash('Error al cargar el panel de administración', 'error')
+        
+        # Intentar obtener más información sobre el error
+        error_details = {
+            'type': str(type(e).__name__),
+            'message': str(e),
+            'traceback': str(traceback.format_exc())
+        }
+        
+        # Registrar información adicional del estado actual
+        logger.error(f"Estado actual - Preguntas: {len(questions)}, Usuarios: {len(users)}")
+        
+        # Mostrar un mensaje de error más descriptivo
+        error_msg = f"Error al cargar el panel de administración: {str(e)}"
+        if 'categorías' in str(e).lower():
+            error_msg = "Error al cargar las categorías. Por favor, verifica la base de datos."
+        elif 'preguntas' in str(e).lower():
+            error_msg = "Error al cargar las preguntas. Por favor, verifica la base de datos."
+            
+        flash(error_msg, 'error')
+        
+        # Si es un error de base de datos, intentar una recuperación básica
+        if 'pyodbc' in str(type(e).__module__):
+            logger.error("Error de base de datos detectado, intentando recuperación...")
+            try:
+                # Intentar devolver una versión simplificada de la página
+                return render_template('admin.html', 
+                                    stats=stats, 
+                                    questions=[],
+                                    users=[],
+                                    categories=['Todas', 'General'])
+            except Exception as recovery_error:
+                logger.error(f"Error en la recuperación: {str(recovery_error)}")
+        
         return redirect(url_for('index'))
     finally:
         logger.info("=== FIN DE LA RUTA ADMIN ===\n")
@@ -489,9 +597,12 @@ def add_question():
                 categoria = data.get('categoria_existente', 'General')
                 nueva_categoria = data.get('nueva_categoria', '').strip()
                 
-                # Si se proporcionó una nueva categoría, usarla
-                if nueva_categoria:
-                    categoria = nueva_categoria
+                # Si se proporcionó una nueva categoría, usarla en lugar de la existente
+                if nueva_categoria and nueva_categoria.strip():
+                    categoria = nueva_categoria.strip()
+                    logger.info(f"Usando nueva categoría: {categoria}")
+                else:
+                    logger.info(f"Usando categoría existente: {categoria}")
                     
             except Exception as e:
                 logger.error(f"Error al procesar JSON: {str(e)}")
@@ -510,9 +621,12 @@ def add_question():
             categoria = request.form.get('categoria_existente', 'General')
             nueva_categoria = request.form.get('nueva_categoria', '').strip()
             
-            # Si se proporcionó una nueva categoría, usarla
-            if nueva_categoria:
-                categoria = nueva_categoria
+            # Si se proporcionó una nueva categoría, usarla en lugar de la existente
+            if nueva_categoria and nueva_categoria.strip():
+                categoria = nueva_categoria.strip()
+                logger.info(f"[Form] Usando nueva categoría: {categoria}")
+            else:
+                logger.info(f"[Form] Usando categoría existente: {categoria}")
         
         assigned_user_id = current_user.id  # Asignar al usuario actual
         
@@ -933,9 +1047,29 @@ def update_question(question_id):
             question = cursor.fetchone()
             if not question or (question[0] not in (None, 0, current_user.id)):
                 return jsonify({'status': 'error', 'message': 'No autorizado'}), 403
+            
+            # Procesar opciones si es necesario
+            options = None
+            if data.get('type') in ['checkbox', 'radio'] and 'options' in data:
+                # Procesar las opciones del formulario
+                options_text = data['options'].strip()
+                if options_text:
+                    # Dividir por líneas, limpiar y eliminar guiones iniciales
+                    options_list = []
+                    for opt in options_text.split('\n'):
+                        opt = opt.strip()
+                        if opt.startswith('-'):
+                            opt = opt[1:].strip()
+                        if opt:  # Solo agregar si no está vacío
+                            options_list.append(opt)
+                    
+                    # Unir las opciones con comas para almacenar en la base de datos
+                    options = ','.join(options_list)
+            
             # Actualizar campos
             cursor.execute(
-                'UPDATE question SET text = ?, descripcion = ?, type = ?, categoria = ?, is_required = ?, active = ? WHERE id = ?',
+                'UPDATE question SET text = ?, descripcion = ?, type = ?, categoria = ?, is_required = ?, active = ?' + 
+                (', options = ?' if options is not None else '') + ' WHERE id = ?',
                 (
                     data.get('text', ''),
                     data.get('descripcion', ''),
@@ -943,6 +1077,7 @@ def update_question(question_id):
                     data.get('categoria', 'General'),
                     1 if data.get('is_required') in ['on', '1', 1, True, 'true'] else 0,
                     1 if data.get('active') in ['on', '1', 1, True, 'true'] else 0,
+                    *([options] if options is not None else []),  # Agregar options solo si existe
                     question_id
                 )
             )
@@ -1009,14 +1144,12 @@ def page_not_found(e):
 
 @app.errorhandler(500)
 def internal_server_error(e):
-    logger.error(f'Error 500: {str(e)}', exc_info=True)
-    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        return jsonify({
-            'status': 'error', 
-            'message': 'Error interno del servidor',
-            'error': str(e)
-        }), 500
-    return render_template('500.html'), 500
+    logger.error(f'500 Error: {str(e)}')
+    # Si no existe la plantilla 500.html, devolver un mensaje simple
+    try:
+        return render_template('500.html'), 500
+    except:
+        return "<h1>Error 500 - Error interno del servidor</h1><p>Ha ocurrido un error inesperado.</p>", 500
 
 @app.errorhandler(Exception)
 def handle_exception(e):
