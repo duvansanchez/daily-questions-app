@@ -2,7 +2,7 @@ import pyodbc
 
 conn_str = (
     "DRIVER={SQL Server};"
-    "SERVER=DESKTOP-32COF63;"
+    "SERVER=DESKTOP-PIDFCJG;"
     "DATABASE=DailyQuestions;"
     "Trusted_Connection=yes;"
 )

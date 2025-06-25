@@ -1,8 +1,36 @@
 import pyodbc
 
+# Primero conectarse a la base de datos master para crear DailyQuestions si no existe
+master_conn_str = (
+    "DRIVER={SQL Server};"
+    "SERVER=DESKTOP-PIDFCJG;"
+    "DATABASE=master;"
+    "Trusted_Connection=yes;"
+)
+
+try:
+    # Conectar a master y crear la base de datos si no existe
+    master_conn = pyodbc.connect(master_conn_str, autocommit=True)
+    master_cursor = master_conn.cursor()
+    
+    # Crear la base de datos DailyQuestions si no existe
+    master_cursor.execute("""
+        IF NOT EXISTS (SELECT name FROM sys.databases WHERE name = 'DailyQuestions')
+        BEGIN
+            CREATE DATABASE DailyQuestions;
+        END
+    """)
+    master_conn.close()
+    print("Base de datos DailyQuestions creada/verificada exitosamente!")
+    
+except Exception as e:
+    print(f"Error creando la base de datos: {str(e)}")
+    exit(1)
+
+# Ahora conectarse a DailyQuestions para crear las tablas
 conn_str = (
     "DRIVER={SQL Server};"
-    "SERVER=DESKTOP-32COF63;"
+    "SERVER=DESKTOP-PIDFCJG;"
     "DATABASE=DailyQuestions;"
     "Trusted_Connection=yes;"
 )

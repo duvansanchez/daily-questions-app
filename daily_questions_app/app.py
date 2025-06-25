@@ -66,7 +66,7 @@ def get_db_connection():
                 try:
                     conn_str = (
                         f"DRIVER={{{driver}}};"
-                        "SERVER=DESKTOP-32COF63;"
+                        "SERVER=localhost;"
                         "DATABASE=DailyQuestions;"
                         "Trusted_Connection=yes;"
                         "TrustServerCertificate=yes;"
@@ -1164,10 +1164,4 @@ def handle_exception(e):
 
 # Configuración de la aplicación
 if __name__ == '__main__':
-    try:
-        port = 5002
-        logger.info(f"Iniciando la aplicación en http://0.0.0.0:{port}")
-        app.run(host='0.0.0.0', port=port, debug=True)
-    except Exception as e:
-        logger.error(f"Error al iniciar la aplicación: {str(e)}")
-        sys.exit(1)
+    app.run(host='0.0.0.0', port=5000, debug=True)
