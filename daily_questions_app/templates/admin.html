@@ -48,7 +48,8 @@
                         {% endif %}
                     </div>
                     <div class="d-flex align-items-center gap-4">
-                        <div class="text-center">
+                        <div class="text-center d-flex align-items-center gap-2">
+                            <!-- Íconos de ojo abierto/cerrado eliminados -->
                             <div class="form-check form-switch mb-1">
                                 <input class="form-check-input toggle-status" type="checkbox" data-question-id="{{ question.id }}" {% if question.active %}checked{% endif %}>
                             </div>
@@ -58,22 +59,33 @@
                             {% if options_value is string %}
                                 {% set options_value = options_value|replace("'", "\"")|replace("[", "")|replace("]", "")|split(", ") %}
                             {% endif %}
-                            <button class="btn btn-sm btn-outline-primary edit-question mb-1" 
-                                data-id="{{ question.id }}"
-                                data-text="{{ question.text|e }}"
-                                data-descripcion="{{ question.descripcion|e }}"
-                                data-type="{{ question.type }}"
-                                data-categoria="{{ question.categoria }}"
-                                data-is_required="{{ question.is_required }}"
-                                data-active="{{ question.active }}"
-                                data-options='{{ options_value|tojson|safe }}'>
-                                <i class="bi bi-pencil"></i>
-                            </button>
-                        </div>
-                        <div class="text-center">
-                            <button class="btn btn-sm btn-outline-danger delete-question mb-1" data-id="{{ question.id }}" onclick="$('#deleteQuestionModal').modal('show');">
-                                <i class="bi bi-trash"></i>
-                            </button>
+                            <!-- Botón de menú de tres puntos -->
+                            <div class="dropdown">
+                                <button class="btn btn-link p-0 m-0 text-secondary" type="button" id="dropdownMenu{{ question.id }}" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="bi bi-three-dots-vertical" style="font-size: 1.5rem;"></i>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenu{{ question.id }}">
+                                    <li>
+                                        <a class="dropdown-item edit-question"
+                                            href="#"
+                                            data-id="{{ question.id }}"
+                                            data-text="{{ question.text|e }}"
+                                            data-descripcion="{{ question.descripcion|e }}"
+                                            data-type="{{ question.type }}"
+                                            data-categoria="{{ question.categoria }}"
+                                            data-is_required="{{ question.is_required }}"
+                                            data-active="{{ question.active }}"
+                                            data-options='{{ options_value|tojson|safe }}'>
+                                            Editar
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item text-danger delete-question" href="#" data-id="{{ question.id }}">
+                                            Eliminar
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -700,6 +712,23 @@ document.addEventListener('click', function(e) {
                 }
             })
             .catch(err => showError('Error al eliminar: ' + err));
+        }
+    });
+});
+
+// Alternar íconos de ojo según el estado del switch
+document.querySelectorAll('.toggle-status').forEach(function(switchEl) {
+    switchEl.addEventListener('change', function(e) {
+        const parent = switchEl.closest('.d-flex.align-items-center');
+        if (!parent) return;
+        const iconEye = parent.querySelector('.icon-eye');
+        const iconEyeSlash = parent.querySelector('.icon-eye-slash');
+        if (switchEl.checked) {
+            if (iconEye) iconEye.style.display = 'inline';
+            if (iconEyeSlash) iconEyeSlash.style.display = 'none';
+        } else {
+            if (iconEye) iconEye.style.display = 'none';
+            if (iconEyeSlash) iconEyeSlash.style.display = 'inline';
         }
     });
 });

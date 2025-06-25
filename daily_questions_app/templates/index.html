@@ -27,6 +27,9 @@
             <div class="question-body">
                 <div class="question-text">
                     {{ question.text }}
+                    {% if question.is_required %}
+                        <span style="color: red; font-weight: bold;" title="Obligatorio">*</span>
+                    {% endif %}
                 </div>
                 
                 <div class="options-container">
@@ -159,7 +162,6 @@ document.getElementById('daily-questions-form')?.addEventListener('submit', asyn
         console.error('Error:', error);
         alert('Error al guardar la respuesta');
     }
-});
 });
 </script>
 {% endblock %}
