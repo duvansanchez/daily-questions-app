@@ -123,6 +123,7 @@
             <div class="col-6">
               <label for="categoria-select" class="form-label">Categoría Existente</label>
               <select class="form-select" id="categoria-select" name="categoria_existente">
+                <option value="">Selecciona una categoría</option>
                 {% for cat in categories if cat != 'Todas' %}
                 <option value="{{ cat }}" {% if cat == 'General' %}selected{% endif %}>{{ cat }}</option>
                 {% endfor %}
@@ -359,6 +360,16 @@
                 const nuevaCategoriaInput = formData.get('nueva_categoria') || '';
                 const categoriaExistente = formData.get('categoria_existente') || 'General';
                 
+                // Validar que no se seleccionen dos categorías a la vez
+                if (categoriaExistente && nuevaCategoriaInput) {
+                  e.preventDefault();
+                  const submitBtn = document.getElementById('submit-question');
+                  submitBtn.disabled = false;
+                  submitBtn.innerHTML = 'Crear Pregunta';
+                  showError('No puedes seleccionar una categoría existente y escribir una nueva al mismo tiempo.');
+                  return false;
+                }
+                
                 // Determinar qué categoría usar
                 const categoria = nuevaCategoriaInput.trim() ? nuevaCategoriaInput.trim() : categoriaExistente;
                 
@@ -503,6 +514,7 @@
             <div class="col-6">
               <label for="categoria-select-edit" class="form-label">Categoría Existente</label>
               <select class="form-select" id="categoria-select-edit" name="categoria_existente">
+                <option value="">Selecciona una categoría</option>
                 {% for cat in categories if cat != 'Todas' %}
                 <option value="{{ cat }}" {% if cat == 'General' %}selected{% endif %}>{{ cat }}</option>
                 {% endfor %}
@@ -742,6 +754,18 @@ document.addEventListener('DOMContentLoaded', function() {
         const id = document.getElementById('edit-id').value;
         const formData = new FormData(editForm);
         
+        // Validar que no se seleccionen dos categorías a la vez
+        const categoriaExistente = formData.get('categoria_existente') || 'General';
+        const nuevaCategoria = formData.get('nueva_categoria') || '';
+        if (categoriaExistente && nuevaCategoria) {
+          e.preventDefault();
+          const submitBtn = editForm.querySelector('button[type="submit"]');
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = 'Guardar Cambios';
+          showError('No puedes seleccionar una categoría existente y escribir una nueva al mismo tiempo.');
+          return false;
+        }
+        
         // Preparar los datos para enviar
         const data = {
             text: formData.get('text') || '',
@@ -749,9 +773,8 @@ document.addEventListener('DOMContentLoaded', function() {
             options: formData.get('options') || '',
             descripcion: formData.get('descripcion') || '',
             is_required: document.getElementById('edit-is_required').checked ? 1 : 0,
-            active: document.getElementById('edit-active').checked ? 1 : 0,
-            categoria_existente: formData.get('categoria_existente') || 'General',
-            nueva_categoria: formData.get('nueva_categoria') || ''
+            categoria_existente: categoriaExistente,
+            nueva_categoria: nuevaCategoria
         };
         
         // Validar opciones si es necesario

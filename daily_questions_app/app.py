@@ -594,13 +594,16 @@ def add_question():
                 descripcion = data.get('descripcion', '').strip()
                 is_required = 1 if data.get('is_required') else 0
                 active = 1 if data.get('active', True) else 0
-                categoria = data.get('categoria_existente', 'General')
+                categoria = data.get('categoria_existente', '').strip()
                 nueva_categoria = data.get('nueva_categoria', '').strip()
                 
                 # Si se proporcionó una nueva categoría, usarla en lugar de la existente
-                if nueva_categoria and nueva_categoria.strip():
-                    categoria = nueva_categoria.strip()
+                if nueva_categoria:
+                    categoria = nueva_categoria
                     logger.info(f"Usando nueva categoría: {categoria}")
+                elif not categoria:
+                    categoria = 'Sin Categoría'
+                    logger.info("No se seleccionó categoría, usando 'Sin Categoría'")
                 else:
                     logger.info(f"Usando categoría existente: {categoria}")
                     
@@ -618,13 +621,16 @@ def add_question():
             descripcion = request.form.get('descripcion', '').strip()
             is_required = 1 if request.form.get('is_required') == 'on' else 0
             active = 1 if request.form.get('active') == 'on' else 0
-            categoria = request.form.get('categoria_existente', 'General')
+            categoria = request.form.get('categoria_existente', '').strip()
             nueva_categoria = request.form.get('nueva_categoria', '').strip()
             
             # Si se proporcionó una nueva categoría, usarla en lugar de la existente
-            if nueva_categoria and nueva_categoria.strip():
-                categoria = nueva_categoria.strip()
+            if nueva_categoria:
+                categoria = nueva_categoria
                 logger.info(f"[Form] Usando nueva categoría: {categoria}")
+            elif not categoria:
+                categoria = 'Sin Categoría'
+                logger.info("[Form] No se seleccionó categoría, usando 'Sin Categoría'")
             else:
                 logger.info(f"[Form] Usando categoría existente: {categoria}")
         
@@ -1066,17 +1072,24 @@ def update_question(question_id):
                     # Unir las opciones con comas para almacenar en la base de datos
                     options = ','.join(options_list)
             
-            # Actualizar campos
+            # Procesar categoría para edición
+            categoria = data.get('categoria_existente', '').strip() if 'categoria_existente' in data else data.get('categoria', '').strip()
+            nueva_categoria = data.get('nueva_categoria', '').strip() if 'nueva_categoria' in data else ''
+            if nueva_categoria:
+                categoria = nueva_categoria
+            elif not categoria:
+                categoria = 'Sin Categoría'
+            
+            # Actualizar campos (sin modificar 'active')
             cursor.execute(
-                'UPDATE question SET text = ?, descripcion = ?, type = ?, categoria = ?, is_required = ?, active = ?' + 
+                'UPDATE question SET text = ?, descripcion = ?, type = ?, categoria = ?, is_required = ?' + 
                 (', options = ?' if options is not None else '') + ' WHERE id = ?',
                 (
                     data.get('text', ''),
                     data.get('descripcion', ''),
                     data.get('type', 'text'),
-                    data.get('categoria', 'General'),
+                    categoria,
                     1 if data.get('is_required') in ['on', '1', 1, True, 'true'] else 0,
-                    1 if data.get('active') in ['on', '1', 1, True, 'true'] else 0,
                     *([options] if options is not None else []),  # Agregar options solo si existe
                     question_id
                 )

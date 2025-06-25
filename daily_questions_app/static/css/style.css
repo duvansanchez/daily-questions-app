@@ -277,10 +277,17 @@ body {
     }
 }
 
-.swal2-custom-text {
-    font-size: 0.95rem;
+.swal2-custom-text, .swal2-popup .swal2-html-container, .swal2-popup .swal2-content {
+    font-size: 16px !important;
 }
+
 .swal2-custom-title {
     font-size: 1.05rem;
     font-weight: 600;
+}
+
+.swal2-popup.swal2-toast {
+    width: 95% !important;
+    min-width: 300px;
+    max-width: 600px;
 }
