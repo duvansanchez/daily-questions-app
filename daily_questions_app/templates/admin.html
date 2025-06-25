@@ -368,7 +368,6 @@
                     options: formData.get('options') || '',
                     descripcion: formData.get('descripcion') || '',
                     is_required: document.getElementById('is_required').checked,
-                    active: document.getElementById('active').checked,
                     categoria_existente: categoria, // Usamos la categoría determinada
                     nueva_categoria: nuevaCategoriaInput.trim()
                 };
@@ -458,10 +457,6 @@
             }
           });
           </script>
-          <div class="form-check form-switch mb-2">
-            <input class="form-check-input" type="checkbox" id="active" name="active" checked>
-            <label class="form-check-label" for="active">¿La pregunta está activa para los usuarios?</label>
-          </div>
         </div>
         <div class="modal-footer border-0 pt-0">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
@@ -528,10 +523,6 @@
           <div class="form-check form-switch mb-2">
             <input class="form-check-input" type="checkbox" id="edit-is_required" name="is_required">
             <label class="form-check-label" for="edit-is_required">¿Es obligatorio responder esta pregunta?</label>
-          </div>
-          <div class="form-check form-switch mb-2">
-            <input class="form-check-input" type="checkbox" id="edit-active" name="active">
-            <label class="form-check-label" for="edit-active">¿La pregunta está activa para los usuarios?</label>
           </div>
         </div>
         <div class="modal-footer border-0 pt-0">
@@ -656,6 +647,60 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('Intentando mostrar el modal');
         editModal.show();
     });
+
+    // Lógica para activar/desactivar pregunta
+    document.querySelectorAll('.toggle-status').forEach(function(switchEl) {
+        switchEl.addEventListener('change', function(e) {
+            const questionId = this.getAttribute('data-question-id');
+            const isChecked = this.checked;
+            const switchInput = this;
+            // Deshabilitar el switch mientras se procesa
+            switchInput.disabled = true;
+            // Si se va a desactivar, pedir confirmación
+            if (!isChecked) {
+                showConfirm('¿Seguro que deseas desactivar esta pregunta?').then((result) => {
+                    if (result.isConfirmed) {
+                        toggleQuestionStatus(questionId, isChecked, switchInput);
+                    } else {
+                        // Si cancela, volver a activar el switch
+                        switchInput.checked = true;
+                        switchInput.disabled = false;
+                    }
+                });
+            } else {
+                // Activar sin confirmación
+                toggleQuestionStatus(questionId, isChecked, switchInput);
+            }
+        });
+    });
+
+    function toggleQuestionStatus(questionId, newStatus, switchInput) {
+        fetch(`/question/${questionId}/toggle`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(res => res.json())
+        .then(res => {
+            if (res.status === 'success') {
+                if (newStatus) {
+                    showSuccess('Pregunta activada correctamente.');
+                } else {
+                    showSuccess('Pregunta desactivada correctamente.');
+                }
+            } else {
+                showError('Error al cambiar el estado: ' + (res.message || ''));
+                // Revertir el cambio visual si hay error
+                switchInput.checked = !newStatus;
+            }
+        })
+        .catch(err => {
+            showError('Error al cambiar el estado: ' + err);
+            switchInput.checked = !newStatus;
+        })
+        .finally(() => {
+            switchInput.disabled = false;
+        });
+    }
 });
 
 // Función para mostrar/ocultar opciones en el modal de edición
@@ -808,23 +853,26 @@ document.addEventListener('click', function(e) {
     const id = deleteBtn.dataset.id;
     
     // Mostrar confirmación
-    if (confirm('¿Estás seguro de que deseas eliminar esta pregunta? Esta acción no se puede deshacer.')) {
-        // Eliminar la pregunta
-        fetch(`/question/${id}`, {
-            method: 'DELETE',
-            headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
-        })
-        .then(res => res.json())
-        .then(res => {
-            if (res.status === 'success') {
-                // Quitar de la lista visualmente
-                deleteBtn.closest('.pregunta-item').remove();
-            } else {
-                alert('Error al eliminar: ' + (res.message || ''));
-            }
-        })
-        .catch(err => alert('Error al eliminar: ' + err));
-    }
+    showConfirm('¿Estás seguro de que deseas eliminar esta pregunta? Esta acción no se puede deshacer.').then((result) => {
+        if (result.isConfirmed) {
+            // Eliminar la pregunta
+            fetch(`/question/${id}`, {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+            })
+            .then(res => res.json())
+            .then(res => {
+                if (res.status === 'success') {
+                    // Quitar de la lista visualmente
+                    deleteBtn.closest('.pregunta-item').remove();
+                    showSuccess('Pregunta eliminada correctamente.');
+                } else {
+                    showError('Error al eliminar: ' + (res.message || ''));
+                }
+            })
+            .catch(err => showError('Error al eliminar: ' + err));
+        }
+    });
 });
 </script>
 {% endblock %}

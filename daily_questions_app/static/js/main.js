@@ -3,6 +3,76 @@ let currentQuestionIndex = 0;
 let questions = [];
 let responses = {};
 
+// Integración de SweetAlert2 para alertas globales
+// Asegúrate de incluir el script de SweetAlert2 en tu HTML
+
+// Alerta de éxito
+function showSuccess(message) {
+    Swal.fire({
+        icon: 'success',
+        title: 'Éxito',
+        text: message,
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 2500,
+        timerProgressBar: true
+    });
+}
+
+// Alerta de error
+function showError(message) {
+    Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: message,
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true
+    });
+}
+
+// Alerta de información
+function showInfo(message) {
+    Swal.fire({
+        icon: 'info',
+        title: 'Información',
+        text: message,
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 2500,
+        timerProgressBar: true
+    });
+}
+
+// Confirmación (retorna una promesa)
+function showConfirm(message) {
+    return Swal.fire({
+        title: '¿Estás seguro?',
+        text: message,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Sí, continuar',
+        cancelButtonText: 'Cancelar',
+        width: '23rem',
+        customClass: {
+            title: 'swal2-custom-title',
+            htmlContainer: 'swal2-custom-text'
+        }
+    });
+}
+
+// Exportar funciones globalmente
+window.showSuccess = showSuccess;
+window.showError = showError;
+window.showInfo = showInfo;
+window.showConfirm = showConfirm;
+
 // Función para mostrar notificaciones
 function showNotification(message, type = 'success') {
     const alertDiv = document.createElement('div');
@@ -173,9 +243,11 @@ document.addEventListener('DOMContentLoaded', function() {
     if (submitBtn) {
         submitBtn.addEventListener('click', function() {
             saveCurrentResponse();
-            if (confirm('¿Estás seguro de que deseas enviar tus respuestas?')) {
-                submitResponses();
-            }
+            showConfirm('¿Estás seguro de que deseas enviar tus respuestas?').then((result) => {
+                if (result.isConfirmed) {
+                    submitResponses();
+                }
+            });
         });
     }
 });
