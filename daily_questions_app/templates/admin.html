@@ -36,7 +36,12 @@
                 {% for question in questions %}
                 <div class="d-flex align-items-center justify-content-between py-3 border-bottom pregunta-item" data-category="{{ question.categoria }}" style="display: flex !important;">
                     <div>
-                        <div class="fw-semibold" style="font-size:1.1rem;">{{ question.text }}</div>
+                        <div class="fw-semibold" style="font-size:1.1rem;">
+                            {{ question.text }}
+                            {% if question.is_required %}
+                                <span style="color: red; font-weight: bold;" title="Obligatorio">*</span>
+                            {% endif %}
+                        </div>
                         <div class="text-muted small">{{ question.categoria }}</div>
                         {% if question.descripcion %}
                         <div class="text-muted small mt-1">{{ question.descripcion }}</div>
@@ -107,12 +112,12 @@
             <textarea class="form-control" id="text" name="text" rows="3" placeholder="Escribe la pregunta aquí..." required></textarea>
           </div>
           <div class="mb-3">
-            <label for="descripcion" class="form-label">Descripción (opcional)</label>
+            <label for="descripcion" class="form-label fw-semibold">Descripción (opcional)</label>
             <textarea class="form-control" id="descripcion" name="descripcion" rows="2" placeholder="Añade una descripción o instrucciones adicionales..."></textarea>
           </div>
           <div class="row g-2 mb-3">
-            <div class="col-6">
-              <label for="type" class="form-label">Tipo de Pregunta</label>
+            <div class="col-12 mb-2">
+              <label for="type" class="form-label fw-semibold">Tipo de Pregunta</label>
               <select class="form-select" id="type" name="type" onchange="toggleOptionsField()" required>
                 <option value="select">Sí/No</option>
                 <option value="text">Texto Libre</option>
@@ -120,8 +125,8 @@
                 <option value="radio">Opción Única</option>
               </select>
             </div>
-            <div class="col-6">
-              <label for="categoria-select" class="form-label">Categoría Existente</label>
+            <div class="col-12 mb-2" id="bloque-categoria-existente-nueva">
+              <label for="categoria-select" class="form-label fw-semibold">Categoría Existente</label>
               <select class="form-select" id="categoria-select" name="categoria_existente">
                 <option value="">Selecciona una categoría</option>
                 {% for cat in categories if cat != 'Todas' %}
@@ -129,345 +134,27 @@
                 {% endfor %}
               </select>
             </div>
-          </div>
-          <div class="mb-3">
-            <label for="nueva-categoria-input" class="form-label">O Añadir Nueva Categoría</label>
-            <input type="text" class="form-control" id="nueva-categoria-input" name="nueva_categoria" placeholder="Escribe un nombre para una nueva categoría (opcional)">
+            <div class="col-12 mb-2 d-flex align-items-end">
+              <button type="button" class="btn btn-dark w-100" id="btn-toggle-categoria-nueva">
+                + Nueva Categoría
+              </button>
+            </div>
+            <div class="col-12" id="bloque-nueva-categoria-nueva" style="display:none;">
+              <label for="nueva-categoria-input" class="form-label fw-semibold">Nueva Categoría</label>
+              <input type="text" class="form-control" id="nueva-categoria-input" name="nueva_categoria" placeholder="Escribe un nombre para una nueva categoría">
+            </div>
           </div>
           <div class="mb-3" id="options-container" style="display: none;">
-            <label for="options" class="form-label">Opciones (una por línea, con guion al inicio)</label>
-            <textarea class="form-control" id="options" name="options" rows="3" placeholder="- Opción 1
-- Opción 2
-- Opción 3"></textarea>
-            <div class="form-text">Escribe cada opción en una línea separada, comenzando con un guion medio (-) y un espacio. Ejemplo: "- Manzana" (sin comillas).</div>
+            <label for="options" class="form-label fw-semibold">Opciones (una por línea)</label>
+            <textarea class="form-control" id="options" name="options" rows="3" placeholder="Opción 1\nOpción 2\nOpción 3"></textarea>
+            <div class="form-text">Escribe cada opción en una línea separada</div>
           </div>
-          <div class="form-check form-switch mb-2">
-            <input class="form-check-input" type="checkbox" id="is_required" name="is_required">
-            <label class="form-check-label" for="is_required">¿Es obligatorio responder esta pregunta?</label>
+          <div class="d-flex align-items-center mb-2" style="justify-content: space-between;">
+            <label class="form-label fw-semibold mb-0" for="is_required">¿Es obligatorio responder esta pregunta?</label>
+            <div class="form-check form-switch m-0">
+              <input class="form-check-input" type="checkbox" id="is_required" name="is_required">
+            </div>
           </div>
-          <script>
-          // Función para limpiar y normalizar texto (eliminar espacios y convertir a minúsculas)
-          function normalizarTexto(texto) {
-            if (!texto) return '';
-            return texto.toString()
-                      .trim()
-                      .toLowerCase()
-                      .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // Eliminar acentos
-                      .replace(/[^a-z0-9\s]/g, '') // Eliminar caracteres especiales
-                      .replace(/\s+/g, ' '); // Reemplazar múltiples espacios por uno solo
-          }
-
-          // Función para filtrar preguntas por categoría
-          function filtrarPorCategoria(categoriaSeleccionada) {
-            console.log('=== INICIO DE FILTRADO ===');
-            console.log('Categoría seleccionada:', categoriaSeleccionada);
-            console.log('Todas las categorías de los botones:');
-            document.querySelectorAll('[data-category]').forEach(b => {
-              console.log(`- Botón: ${b.textContent.trim()} | data-category: ${b.getAttribute('data-category')}`);
-            });
-            
-            const contenedorPreguntas = document.getElementById('preguntas-lista');
-            const preguntas = contenedorPreguntas.getElementsByClassName('pregunta-item');
-            const categoriaActualElement = document.getElementById('categoria-actual');
-            let totalPreguntasVisibles = 0;
-            
-            console.log(`Total de preguntas encontradas: ${preguntas.length}`);
-            
-            // Actualizar el texto de la categoría actual
-            if (categoriaSeleccionada === 'Todas') {
-              categoriaActualElement.textContent = 'Todas las categorías';
-            } else {
-              categoriaActualElement.textContent = `Categoría: ${categoriaSeleccionada}`;
-            }
-            
-            // Ocultar todas las preguntas primero y registrar sus datos
-            console.log('=== DETALLES DE LAS PREGUNTAS ===');
-            Array.from(preguntas).forEach((pregunta, index) => {
-              const categoriaPregunta = pregunta.getAttribute('data-category') || '[sin-categoría]';
-              console.log(`Pregunta ${index + 1}:`);
-              console.log('- Texto:', pregunta.querySelector('.fw-semibold')?.textContent);
-              console.log('- Categoría (data-category):', categoriaPregunta);
-              console.log('- Categoría normalizada:', normalizarTexto(categoriaPregunta));
-              console.log('---');
-              
-              // Asegurarse de que la pregunta esté oculta inicialmente
-              pregunta.style.display = 'none';
-              // Forzar el estilo display a flex cuando se muestre
-              if (categoriaSeleccionada === 'Todas' || 
-                  normalizarTexto(categoriaPregunta) === normalizarTexto(categoriaSeleccionada)) {
-                pregunta.style.display = 'flex';
-              }
-            });
-            console.log('=== FIN DETALLES ===');
-            
-            // Si es 'Todas', mostrar todas las preguntas
-            if (categoriaSeleccionada === 'Todas') {
-              Array.from(preguntas).forEach(pregunta => {
-                pregunta.style.display = 'flex';
-                totalPreguntasVisibles++;
-              });
-            } else {
-              // Filtrar por categoría específica
-              const categoriaBuscada = normalizarTexto(categoriaSeleccionada);
-              console.log('Categoría buscada (normalizada):', categoriaBuscada);
-              
-              Array.from(preguntas).forEach(pregunta => {
-                const categoriaPregunta = pregunta.getAttribute('data-category') || '';
-                const categoriaPreguntaNormalizada = normalizarTexto(categoriaPregunta);
-                
-                console.log('Comparando categorías:', {
-                  pregunta: pregunta.querySelector('.fw-semibold')?.textContent,
-                  categoriaPregunta: categoriaPregunta,
-                  categoriaPreguntaNormalizada: categoriaPreguntaNormalizada,
-                  categoriaBuscada: categoriaBuscada,
-                  sonIguales: (categoriaPreguntaNormalizada === categoriaBuscada)
-                });
-                
-                if (categoriaPreguntaNormalizada === categoriaBuscada) {
-                  pregunta.style.display = 'flex';
-                  totalPreguntasVisibles++;
-                  console.log('✓ Mostrando pregunta:', pregunta.querySelector('.fw-semibold')?.textContent);
-                } else {
-                  pregunta.style.display = 'none';
-                  console.log('✗ Ocultando pregunta:', pregunta.querySelector('.fw-semibold')?.textContent);
-                }
-              });
-            }
-            
-            console.log(`Mostrando ${totalPreguntasVisibles} preguntas de la categoría:`, categoriaSeleccionada);
-            
-            // Actualizar estado activo de los botones
-            document.querySelectorAll('[data-category]').forEach(btn => {
-              const btnCategory = btn.getAttribute('data-category');
-              if (btnCategory === categoriaSeleccionada) {
-                btn.classList.remove('btn-outline-primary');
-                btn.classList.add('btn-primary');
-              } else {
-                btn.classList.remove('btn-primary');
-                btn.classList.add('btn-outline-primary');
-              }
-            });
-            
-            // Manejar el mensaje de "No hay preguntas"
-            const mensajeNoPreguntas = document.getElementById('mensaje-no-preguntas');
-            const existeMensaje = mensajeNoPreguntas !== null;
-            
-            if (totalPreguntasVisibles === 0) {
-              if (!existeMensaje) {
-                const mensaje = document.createElement('div');
-                mensaje.id = 'mensaje-no-preguntas';
-                mensaje.className = 'text-center text-muted py-5';
-                mensaje.innerHTML = `
-                  <i class="bi bi-question-circle display-4 mb-3"></i>
-                  <h5>No hay preguntas en esta categoría</h5>
-                  <p>No se encontraron preguntas en la categoría "${categoriaSeleccionada}"</p>
-                `;
-                contenedorPreguntas.appendChild(mensaje);
-              }
-            } else if (existeMensaje) {
-              mensajeNoPreguntas.remove();
-            }
-          }
-          
-          // Función para inicializar los manejadores de eventos de los botones de categoría
-          function inicializarFiltroCategorias() {
-            console.log('Inicializando filtro de categorías...');
-            
-            // Configurar manejadores de eventos para los botones de categoría
-            document.querySelectorAll('[data-category]').forEach(btn => {
-              // Primero, eliminar cualquier manejador de eventos existente
-              const nuevoBtn = btn.cloneNode(true);
-              btn.parentNode.replaceChild(nuevoBtn, btn);
-              
-              // Agregar el manejador al nuevo botón
-              nuevoBtn.addEventListener('click', function(e) {
-                // Solo cambiar la categoría si el clic NO fue en un botón de editar, eliminar ni dentro de .pregunta-item
-                if (e.target.closest('.edit-question') || e.target.closest('.delete-question') || e.target.closest('.pregunta-item')) {
-                    return;
-                }
-                document.querySelectorAll('[data-category]').forEach(b => b.classList.remove('active'));
-                this.classList.add('active');
-                const cat = this.getAttribute('data-category');
-                document.querySelectorAll('.pregunta-item').forEach(item => {
-                    if (cat === 'Todas' || item.getAttribute('data-category') === cat) {
-                        item.style.display = '';
-                    } else {
-                        item.style.display = 'none';
-                    }
-                });
-              });
-            });
-            
-            // Cargar la categoría guardada al cargar la página
-            const categoriaGuardada = localStorage.getItem('categoriaSeleccionada') || 'Todas';
-            console.log('Categoría guardada:', categoriaGuardada);
-            
-            // Filtrar por la categoría guardada
-            filtrarPorCategoria(categoriaGuardada);
-            
-            // Actualizar el botón activo
-            const botonActivo = document.querySelector(`[data-category="${categoriaGuardada}"]`);
-            if (botonActivo) {
-              botonActivo.classList.remove('btn-outline-primary');
-              botonActivo.classList.add('btn-primary');
-            }
-          }
-          
-          // Manejador de eventos para los botones de categoría
-          function manejarClickCategoria(e) {
-            // Solo procesar si se hizo clic directamente en el botón o en su ícono
-            if (e.target.closest('[data-category]')) {
-              const categoria = this.getAttribute('data-category');
-              filtrarPorCategoria(categoria);
-              
-              // Guardar la categoría seleccionada en localStorage
-              localStorage.setItem('categoriaSeleccionada', categoria);
-            }
-          }
-          
-          function toggleOptionsField() {
-            const typeSelect = document.getElementById('type');
-            const optionsContainer = document.getElementById('options-container');
-            
-            if (typeSelect.value === 'checkbox' || typeSelect.value === 'radio') {
-              optionsContainer.style.display = 'block';
-            } else {
-              optionsContainer.style.display = 'none';
-            }
-          }
-          
-          // Inicializar el estado al cargar la página
-          document.addEventListener('DOMContentLoaded', function() {
-            toggleOptionsField();
-            
-            // Inicializar el filtro de categorías
-            inicializarFiltroCategorias();
-            
-            // Manejar el envío del formulario
-            const form = document.getElementById('add-question-form');
-            if (form) {
-              form.addEventListener('submit', function(e) {
-                e.preventDefault();
-                
-                // Mostrar mensaje de carga
-                const submitBtn = document.getElementById('submit-question');
-                const originalBtnText = submitBtn.innerHTML;
-                submitBtn.disabled = true;
-                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Guardando...';
-                
-                // Obtener los datos del formulario
-                const formData = new FormData(form);
-                const nuevaCategoriaInput = formData.get('nueva_categoria') || '';
-                const categoriaExistente = formData.get('categoria_existente') || 'General';
-                
-                // Validar que no se seleccionen dos categorías a la vez
-                if (categoriaExistente && nuevaCategoriaInput) {
-                  e.preventDefault();
-                  const submitBtn = document.getElementById('submit-question');
-                  submitBtn.disabled = false;
-                  submitBtn.innerHTML = 'Crear Pregunta';
-                  showError('No puedes seleccionar una categoría existente y escribir una nueva al mismo tiempo.');
-                  return false;
-                }
-                
-                // Determinar qué categoría usar
-                const categoria = nuevaCategoriaInput.trim() ? nuevaCategoriaInput.trim() : categoriaExistente;
-                
-                const data = {
-                    text: formData.get('text') || '',
-                    type: formData.get('type') || 'text',
-                    options: formData.get('options') || '',
-                    descripcion: formData.get('descripcion') || '',
-                    is_required: document.getElementById('is_required').checked,
-                    categoria_existente: categoria, // Usamos la categoría determinada
-                    nueva_categoria: nuevaCategoriaInput.trim()
-                };
-                
-                console.log('Categoría seleccionada:', categoria);
-                console.log('Datos del formulario:', data);
-                
-                console.log('Datos a enviar:', data);
-                
-                // Procesar opciones si es necesario
-                if (data.type === 'checkbox' || data.type === 'radio') {
-                  if (!data.options || data.options.trim() === '') {
-                    showError('Por favor ingresa al menos una opción para este tipo de pregunta.');
-                    submitBtn.disabled = false;
-                    submitBtn.innerHTML = originalBtnText;
-                    return;
-                  }
-                }
-                
-                // Mostrar datos que se enviarán
-                console.log('Enviando datos al servidor:', data);
-                
-                // Enviar datos al servidor
-                fetch("{{ url_for('add_question') }}", {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
-                  },
-                  credentials: 'same-origin',
-                  body: JSON.stringify(data)
-                })
-                .then(async response => {
-                  console.log('Estado de la respuesta:', response.status);
-                  const contentType = response.headers.get('content-type');
-                  console.log('Tipo de contenido de la respuesta:', contentType);
-                  
-                  // Intentar analizar la respuesta como JSON
-                  try {
-                    const responseData = await response.json();
-                    console.log('Datos de la respuesta:', responseData);
-                    
-                    if (!response.ok) {
-                      throw new Error(responseData.message || 'Error en la petición');
-                    }
-                    
-                    return responseData;
-                  } catch (jsonError) {
-                    // Si no se puede analizar como JSON, obtener el texto de la respuesta
-                    const text = await response.text();
-                    console.error('Error al analizar la respuesta JSON. Texto de respuesta:', text);
-                    throw new Error(`Error en el servidor: ${response.status} - ${text.substring(0, 200)}`);
-                  }
-                })
-                .then(data => {
-                  console.log('Datos de respuesta:', data);
-                  if (data.status === 'success') {
-                    // Cerrar el modal y recargar la página
-                    const modal = bootstrap.Modal.getInstance(document.getElementById('nuevaPreguntaModal'));
-                    if (modal) {
-                      modal.hide();
-                    }
-                    location.reload();
-                  } else {
-                    throw new Error(data.message || 'Error al guardar la pregunta');
-                  }
-                })
-                .catch(error => {
-                  console.error('Error en la petición:', error);
-                  showError(error.message || 'Error al conectar con el servidor');
-                })
-                .finally(() => {
-                  submitBtn.disabled = false;
-                  submitBtn.innerHTML = originalBtnText;
-                });
-              });
-            }
-            
-            function showError(message) {
-              const errorDiv = document.getElementById('form-error');
-              errorDiv.textContent = message;
-              errorDiv.style.display = 'block';
-              setTimeout(() => {
-                errorDiv.style.display = 'none';
-              }, 5000);
-            }
-          });
-          </script>
         </div>
         <div class="modal-footer border-0 pt-0">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
@@ -498,12 +185,12 @@
             <textarea class="form-control" id="edit-text" name="text" rows="3" placeholder="Escribe la pregunta aquí..." required></textarea>
           </div>
           <div class="mb-3">
-            <label for="edit-descripcion" class="form-label">Descripción (opcional)</label>
+            <label for="edit-descripcion" class="form-label fw-semibold">Descripción (opcional)</label>
             <textarea class="form-control" id="edit-descripcion" name="descripcion" rows="2" placeholder="Añade una descripción o instrucciones adicionales..."></textarea>
           </div>
           <div class="row g-2 mb-3">
-            <div class="col-6">
-              <label for="edit-type" class="form-label">Tipo de Pregunta</label>
+            <div class="col-12 mb-2">
+              <label for="edit-type" class="form-label fw-semibold">Tipo de Pregunta</label>
               <select class="form-select" id="edit-type" name="type" onchange="toggleEditOptionsField()" required>
                 <option value="select">Sí/No</option>
                 <option value="text">Texto Libre</option>
@@ -511,8 +198,8 @@
                 <option value="radio">Opción Única</option>
               </select>
             </div>
-            <div class="col-6">
-              <label for="categoria-select-edit" class="form-label">Categoría Existente</label>
+            <div class="col-12 mb-2" id="bloque-categoria-existente-edit">
+              <label for="categoria-select-edit" class="form-label fw-semibold">Categoría Existente</label>
               <select class="form-select" id="categoria-select-edit" name="categoria_existente">
                 <option value="">Selecciona una categoría</option>
                 {% for cat in categories if cat != 'Todas' %}
@@ -520,21 +207,26 @@
                 {% endfor %}
               </select>
             </div>
-          </div>
-          <div class="mb-3">
-            <label for="nueva-categoria-edit" class="form-label">O Añadir Nueva Categoría</label>
-            <input type="text" class="form-control" id="nueva-categoria-edit" name="nueva_categoria" placeholder="Escribe un nombre para una nueva categoría (opcional)">
+            <div class="col-12 mb-2 d-flex align-items-end">
+              <button type="button" class="btn btn-dark w-100" id="btn-toggle-categoria-edit">
+                + Nueva Categoría
+              </button>
+            </div>
+            <div class="col-12" id="bloque-nueva-categoria-edit" style="display:none;">
+              <label for="nueva-categoria-edit" class="form-label fw-semibold">Nueva Categoría</label>
+              <input type="text" class="form-control" id="nueva-categoria-edit" name="nueva_categoria" placeholder="Escribe un nombre para una nueva categoría">
+            </div>
           </div>
           <div class="mb-3" id="edit-options-container" style="display: none;">
-            <label for="edit-options" class="form-label">Opciones (una por línea, con guion al inicio)</label>
-            <textarea class="form-control" id="edit-options" name="options" rows="3" placeholder="- Opción 1
-- Opción 2
-- Opción 3"></textarea>
-            <div class="form-text">Escribe cada opción en una línea separada, comenzando con un guion medio (-) y un espacio. Ejemplo: "- Manzana" (sin comillas).</div>
+            <label for="edit-options" class="form-label fw-semibold">Opciones (una por línea)</label>
+            <textarea class="form-control" id="edit-options" name="options" rows="3" placeholder="- Opción 1\n- Opción 2\n- Opción 3"></textarea>
+            <div class="form-text">Escribe cada opción en una línea separada</div>
           </div>
-          <div class="form-check form-switch mb-2">
-            <input class="form-check-input" type="checkbox" id="edit-is_required" name="is_required">
-            <label class="form-check-label" for="edit-is_required">¿Es obligatorio responder esta pregunta?</label>
+          <div class="d-flex align-items-center mb-2" style="justify-content: space-between;">
+            <label class="form-label fw-semibold mb-0" for="edit-is_required">¿Es obligatorio responder esta pregunta?</label>
+            <div class="form-check form-switch m-0">
+              <input class="form-check-input" type="checkbox" id="edit-is_required" name="is_required">
+            </div>
           </div>
         </div>
         <div class="modal-footer border-0 pt-0">
@@ -713,6 +405,42 @@ document.addEventListener('DOMContentLoaded', function() {
             switchInput.disabled = false;
         });
     }
+
+    // Lógica para alternar entre selector y campo de nueva categoría en edición
+    const btnToggleCatEdit = document.getElementById('btn-toggle-categoria-edit');
+    const bloqueCatExistenteEdit = document.getElementById('bloque-categoria-existente-edit');
+    const bloqueNuevaCatEdit = document.getElementById('bloque-nueva-categoria-edit');
+    let mostrandoNuevaCatEdit = false;
+    if (btnToggleCatEdit && bloqueCatExistenteEdit && bloqueNuevaCatEdit) {
+        btnToggleCatEdit.addEventListener('click', function() {
+            mostrandoNuevaCatEdit = !mostrandoNuevaCatEdit;
+            if (mostrandoNuevaCatEdit) {
+                bloqueCatExistenteEdit.style.display = 'none';
+                bloqueNuevaCatEdit.style.display = '';
+                btnToggleCatEdit.textContent = 'Usar categoría existente';
+                document.getElementById('categoria-select-edit').selectedIndex = 0;
+                document.getElementById('categoria-select-edit').value = '';
+            } else {
+                bloqueCatExistenteEdit.style.display = '';
+                bloqueNuevaCatEdit.style.display = 'none';
+                btnToggleCatEdit.textContent = '+ Nueva Categoría';
+                document.getElementById('nueva-categoria-edit').value = '';
+            }
+        });
+        // Al cambiar manualmente el valor de nueva categoría, limpiar el selector
+        document.getElementById('nueva-categoria-edit').addEventListener('input', function() {
+            if (mostrandoNuevaCatEdit) {
+                document.getElementById('categoria-select-edit').selectedIndex = 0;
+                document.getElementById('categoria-select-edit').value = '';
+            }
+        });
+        // Al cambiar el selector, limpiar el input de nueva categoría
+        document.getElementById('categoria-select-edit').addEventListener('change', function() {
+            if (!mostrandoNuevaCatEdit) {
+                document.getElementById('nueva-categoria-edit').value = '';
+            }
+        });
+    }
 });
 
 // Función para mostrar/ocultar opciones en el modal de edición
@@ -754,12 +482,18 @@ document.addEventListener('DOMContentLoaded', function() {
         const id = document.getElementById('edit-id').value;
         const formData = new FormData(editForm);
         
-        // Validar que no se seleccionen dos categorías a la vez
-        const categoriaExistente = formData.get('categoria_existente') || 'General';
-        const nuevaCategoria = formData.get('nueva_categoria') || '';
+        // Validar categorías según el campo visible
+        const bloqueCatExistenteEdit = document.getElementById('bloque-categoria-existente-edit');
+        const bloqueNuevaCatEdit = document.getElementById('bloque-nueva-categoria-edit');
+        let categoriaExistente = '';
+        let nuevaCategoria = '';
+        if (bloqueCatExistenteEdit && bloqueCatExistenteEdit.style.display !== 'none') {
+            categoriaExistente = formData.get('categoria_existente') || '';
+        }
+        if (bloqueNuevaCatEdit && bloqueNuevaCatEdit.style.display !== 'none') {
+            nuevaCategoria = formData.get('nueva_categoria') || '';
+        }
         if (categoriaExistente && nuevaCategoria) {
-          e.preventDefault();
-          const submitBtn = editForm.querySelector('button[type="submit"]');
           submitBtn.disabled = false;
           submitBtn.innerHTML = 'Guardar Cambios';
           showError('No puedes seleccionar una categoría existente y escribir una nueva al mismo tiempo.');
@@ -840,6 +574,78 @@ function showError(message) {
         alert(message);
     }
 }
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Alternancia de categoría en modal de nueva pregunta
+  const btnToggleCatNueva = document.getElementById('btn-toggle-categoria-nueva');
+  const bloqueCatExistenteNueva = document.getElementById('bloque-categoria-existente-nueva');
+  const bloqueNuevaCatNueva = document.getElementById('bloque-nueva-categoria-nueva');
+  let mostrandoNuevaCatNueva = false;
+  if (btnToggleCatNueva && bloqueCatExistenteNueva && bloqueNuevaCatNueva) {
+    btnToggleCatNueva.addEventListener('click', function() {
+      mostrandoNuevaCatNueva = !mostrandoNuevaCatNueva;
+      if (mostrandoNuevaCatNueva) {
+        bloqueCatExistenteNueva.style.display = 'none';
+        bloqueNuevaCatNueva.style.display = '';
+        btnToggleCatNueva.textContent = 'Usar categoría existente';
+        document.getElementById('categoria-select').selectedIndex = 0;
+        document.getElementById('categoria-select').value = '';
+      } else {
+        bloqueCatExistenteNueva.style.display = '';
+        bloqueNuevaCatNueva.style.display = 'none';
+        btnToggleCatNueva.textContent = '+ Nueva Categoría';
+        document.getElementById('nueva-categoria-input').value = '';
+      }
+    });
+    document.getElementById('nueva-categoria-input').addEventListener('input', function() {
+      if (mostrandoNuevaCatNueva) {
+        document.getElementById('categoria-select').selectedIndex = 0;
+        document.getElementById('categoria-select').value = '';
+      }
+    });
+    document.getElementById('categoria-select').addEventListener('change', function() {
+      if (!mostrandoNuevaCatNueva) {
+        document.getElementById('nueva-categoria-input').value = '';
+      }
+    });
+  }
+  // Validación del submit solo del campo visible
+  const form = document.getElementById('add-question-form');
+  if (form) {
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+      const submitBtn = document.getElementById('submit-question');
+      const originalBtnText = submitBtn.innerHTML;
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Guardando...';
+      const formData = new FormData(form);
+      let categoriaExistente = '';
+      let nuevaCategoria = '';
+      if (bloqueCatExistenteNueva && bloqueCatExistenteNueva.style.display !== 'none') {
+        categoriaExistente = formData.get('categoria_existente') || '';
+      }
+      if (bloqueNuevaCatNueva && bloqueNuevaCatNueva.style.display !== 'none') {
+        nuevaCategoria = formData.get('nueva_categoria') || '';
+      }
+      if (categoriaExistente && nuevaCategoria) {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = 'Crear Pregunta';
+        const errorDiv = document.getElementById('form-error');
+        if (errorDiv) {
+          errorDiv.textContent = 'No puedes seleccionar una categoría existente y escribir una nueva al mismo tiempo.';
+          errorDiv.style.display = 'block';
+          setTimeout(() => { errorDiv.style.display = 'none'; }, 5000);
+        } else {
+          alert('No puedes seleccionar una categoría existente y escribir una nueva al mismo tiempo.');
+        }
+        return false;
+      }
+      form.submit();
+    });
+  }
+});
 </script>
 {% endblock %}
 
