@@ -19,19 +19,17 @@
 
         {% for question in questions %}
         <!-- Tarjeta de pregunta -->
-        <div class="question-card">
-            <div class="question-header">
-                <span>Pregunta {{ loop.index }}</span>
-                <span class="question-number">{{ loop.index }} de {{ questions|length }}</span>
-            </div>
-            <div class="question-body">
-                <div class="question-text">
+        <div class="question-card mb-4" data-question-id="{{ question.id }}">
+            <div class="question-header d-flex justify-content-between align-items-center">
+                <span class="fw-semibold">
                     {{ question.text }}
                     {% if question.is_required %}
                         <span style="color: red; font-weight: bold;" title="Obligatorio">*</span>
                     {% endif %}
-                </div>
-                
+                </span>
+                <span class="question-number">{{ loop.index }} de {{ questions|length }}</span>
+            </div>
+            <div class="question-body">
                 <div class="options-container">
                     {% if question.type == 'multiple_choice' and question.options %}
                         {% set options = question.options.split(',') %}

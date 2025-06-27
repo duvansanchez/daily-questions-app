@@ -1,166 +1,153 @@
 {% extends "base.html" %}
 
-{% block title %}Estadísticas Diarias{% endblock %}
+{% block title %}Estadísticas y Análisis{% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>Estadísticas del Día</h2>
-        <div class="text-muted">{{ fecha_actual }}</div>
-    </div>
-    
-    <!-- Tarjetas de resumen -->
-    <div class="row mb-4">
-        <div class="col-md-4">
-            <div class="card bg-primary text-white">
-                <div class="card-body">
-                    <h5 class="card-title">Preguntas Totales</h5>
-                    <h2 class="mb-0">{{ estadisticas.total_preguntas }}</h2>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card bg-success text-white">
-                <div class="card-body">
-                    <h5 class="card-title">Días de Seguimiento</h5>
-                    <h2 class="mb-0">{{ estadisticas.dias_respondidos }}</h2>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card bg-info text-white">
-                <div class="card-body">
-                    <h5 class="card-title">Respuestas Totales</h5>
-                    <h2 class="mb-0">{{ estadisticas.total_respuestas }}</h2>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Tabla de respuestas del día -->
-    <div class="card">
-        <div class="card-header bg-dark text-white">
-            <h5 class="mb-0">Respuestas de Hoy</h5>
-        </div>
-        <div class="card-body p-0">
-            {% if preguntas %}
-                <div class="list-group list-group-flush">
-                    {% for pregunta in preguntas %}
-                    <div class="list-group-item">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div class="flex-grow-1">
-                                <h6 class="mb-1">{{ pregunta.texto }}</h6>
-                                <p class="mb-1">
-                                    {% if pregunta.tipo == 'yes_no' %}
-                                        <span class="badge bg-{{ 'success' if pregunta.respuesta == 'Sí' else 'danger' }}">
-                                            {{ pregunta.respuesta }}
-                                        </span>
-                                    {% elif pregunta.tipo == 'multiple_choice' %}
-                                        <span class="badge bg-info">{{ pregunta.respuesta }}</span>
-                                    {% else %}
-                                        <span class="text-muted">{{ pregunta.respuesta }}</span>
-                                    {% endif %}
-                                </p>
-                                <small class="text-muted">
-                                    Última actualización: {{ pregunta.fecha }}
-                                </small>
+<div class="container py-4">
+    <h2 class="fw-bold mb-1">Estadísticas y Análisis</h2>
+    <p class="text-muted mb-4">Analiza tu progreso con diferentes niveles de detalle y obtén insights sobre tus hábitos diarios.</p>
+
+    <!-- Tabs de nivel de detalle -->
+    <ul class="nav nav-tabs mb-4" id="statsTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="basicas-tab" data-bs-toggle="tab" data-bs-target="#basicas" type="button" role="tab">Básicas</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="intermedias-tab" data-bs-toggle="tab" data-bs-target="#intermedias" type="button" role="tab">Intermedias</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="avanzadas-tab" data-bs-toggle="tab" data-bs-target="#avanzadas" type="button" role="tab">Avanzadas</button>
+        </li>
+    </ul>
+
+    <div class="tab-content" id="statsTabsContent">
+        <!-- Tab Básicas -->
+        <div class="tab-pane fade show active" id="basicas" role="tabpanel">
+            <!-- Resumen Diario -->
+            <h5 class="fw-bold mb-3">Resumen Diario</h5>
+            <div class="row g-3 mb-4">
+                <div class="col-md-3">
+                    <div class="card shadow-sm border-0 h-100">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center mb-2">
+                                <span class="badge bg-success me-2"><i class="bi bi-check-circle"></i></span>
+                                <span>Respondidas Hoy</span>
                             </div>
-                            <div>
-                                <span class="badge bg-secondary">{{ pregunta.tipo|replace('_', ' ')|title }}</span>
+                            <h2 class="fw-bold text-success mb-0">{{ resumen_diario.respondidas_hoy or 0 }}</h2>
+                            <small class="text-muted">preguntas completadas</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card shadow-sm border-0 h-100">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center mb-2">
+                                <span class="badge bg-warning text-dark me-2"><i class="bi bi-exclamation-circle"></i></span>
+                                <span>Pendientes Hoy</span>
+                            </div>
+                            <h2 class="fw-bold text-warning mb-0">{{ resumen_diario.pendientes_hoy or 0 }}</h2>
+                            <small class="text-muted">por responder</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card shadow-sm border-0 h-100">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center mb-2">
+                                <span class="badge bg-primary me-2"><i class="bi bi-bar-chart"></i></span>
+                                <span>Completitud Diaria</span>
+                            </div>
+                            <h2 class="fw-bold text-primary mb-0">{{ resumen_diario.completitud_diaria or 0 }}%</h2>
+                            <div class="progress mt-1" style="height: 6px;">
+                                <div class="progress-bar bg-primary" role="progressbar" style="width: {{ resumen_diario.completitud_diaria or 0 }}%"></div>
                             </div>
                         </div>
                     </div>
-                    {% endfor %}
                 </div>
-            {% else %}
-                <div class="text-center p-4">
-                    <p class="text-muted">No hay respuestas registradas para hoy.</p>
-                    <a href="{{ url_for('index') }}" class="btn btn-primary">Responder preguntas</a>
+                <div class="col-md-3">
+                    <div class="card shadow-sm border-0 h-100">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center mb-2">
+                                <span class="badge bg-info text-dark me-2"><i class="bi bi-clock-history"></i></span>
+                                <span>Última Respuesta</span>
+                            </div>
+                            <div class="mb-0">
+                                <span class="text-info fw-bold">{{ resumen_diario.ultima_respuesta.fecha or '-' }}</span>
+                            </div>
+                            <small class="text-muted">{{ resumen_diario.ultima_respuesta.relativo or '' }}</small>
+                        </div>
+                    </div>
                 </div>
-            {% endif %}
+            </div>
+
+            <!-- Resumen General -->
+            <h5 class="fw-bold mb-3">Resumen General</h5>
+            <div class="row g-3 mb-4">
+                <div class="col-md-6">
+                    <div class="card shadow-sm border-0 h-100">
+                        <div class="card-body">
+                            <span class="mb-2 d-block">Preguntas y Respuestas</span>
+                            <div class="d-flex align-items-center">
+                                <span class="badge bg-primary me-2"><i class="bi bi-list-check"></i></span>
+                                <span>Total Asignadas</span>
+                                <span class="ms-auto fw-bold text-primary">{{ resumen_general.total_asignadas or 0 }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card shadow-sm border-0 h-100">
+                        <div class="card-body">
+                            <span class="mb-2 d-block">Consistencia</span>
+                            <div class="d-flex align-items-center mb-2">
+                                <span class="badge bg-warning text-dark me-2"><i class="bi bi-fire"></i></span>
+                                <span>Días Consecutivos</span>
+                                <span class="ms-auto fw-bold text-warning">{{ resumen_general.dias_consecutivos or 0 }} días</span>
+                            </div>
+                            <div class="d-flex align-items-center">
+                                <span class="badge bg-info text-dark me-2"><i class="bi bi-calendar-check"></i></span>
+                                <span>Total Días Activos</span>
+                                <span class="ms-auto fw-bold text-info">{{ resumen_general.total_dias_activos or 0 }} días</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Indicadores de Rendimiento -->
+            <h5 class="fw-bold mb-3">Indicadores de Rendimiento</h5>
+            <div class="row g-3 mb-4">
+                <div class="col-md-3">
+                    <div class="card shadow-sm border-0 h-100">
+                        <div class="card-body text-center">
+                            <h2 class="fw-bold text-success mb-0">{{ indicadores.eficiencia or 0 }}%</h2>
+                            <div class="text-muted">Eficiencia Hoy</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card shadow-sm border-0 h-100">
+                        <div class="card-body text-center">
+                            <h2 class="fw-bold text-primary mb-0">{{ indicadores.promedio_diario or 0 }}</h2>
+                            <div class="text-muted">Promedio Diario</div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Puedes agregar más indicadores aquí -->
+            </div>
         </div>
-    </div>
-    
-    <!-- Gráfico de progreso semanal -->
-    <div class="card mt-4">
-        <div class="card-header bg-dark text-white">
-            <h5 class="mb-0">Progreso Semanal</h5>
+        <!-- Tabs Intermedias y Avanzadas pueden ir aquí -->
+        <div class="tab-pane fade" id="intermedias" role="tabpanel">
+            <div class="alert alert-info">Próximamente: Estadísticas intermedias.</div>
         </div>
-        <div class="card-body
-            <canvas id="weeklyProgressChart"></canvas>
+        <div class="tab-pane fade" id="avanzadas" role="tabpanel">
+            <div class="alert alert-info">Próximamente: Estadísticas avanzadas.</div>
         </div>
     </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Configuración del gráfico de progreso semanal
-    const ctx = document.getElementById('weeklyProgressChart').getContext('2d');
-    
-    // Datos de ejemplo - reemplazar con datos reales de la API
-    const weeklyData = {
-        labels: ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'],
-        datasets: [{
-            label: 'Preguntas respondidas',
-            data: [3, 5, 2, 4, 5, 1, 0],
-            backgroundColor: 'rgba(54, 162, 235, 0.2)',
-            borderColor: 'rgba(54, 162, 235, 1)',
-            borderWidth: 1,
-            tension: 0.3
-        }]
-    };
-    
-    // Opciones del gráfico
-    const chartOptions = {
-        responsive: true,
-        scales: {
-            y: {
-                beginAtZero: true,
-                ticks: {
-                    stepSize: 1
-                }
-            }
-        }
-    };
-    
-    // Crear el gráfico
-    new Chart(ctx, {
-        type: 'line',
-        data: weeklyData,
-        options: chartOptions
-    });
-    
-    // Función para mostrar/ocultar respuestas largas
-    $(document).on('click', '.text-truncate', function() {
-        const fullText = $(this).text().trim();
-        if (fullText.length > 100) {
-            const modal = `
-                <div class="modal fade" id="responseModal" tabindex="-1">
-                    <div class="modal-dialog">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <h5 class="modal-title">Respuesta Completa</h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                            </div>
-                            <div class="modal-body">
-                                <p>${fullText}</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>`;
-            $('body').append(modal);
-            const modalElement = new bootstrap.Modal(document.getElementById('responseModal'));
-            modalElement.show();
-            
-            // Remove modal from DOM after it's hidden
-            document.getElementById('responseModal').addEventListener('hidden.bs.modal', function () {
-                document.getElementById('responseModal').remove();
-            });
-        }
-    });
-});
-</script>
+<!-- Bootstrap Icons -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
 {% endblock %}

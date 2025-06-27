@@ -190,7 +190,7 @@ class Question:
             cursor = conn.cursor()
             cursor.execute(
                 'SELECT id, text, type, options, active, created_at, assigned_user_id, descripcion, is_required, categoria '
-                'FROM question WHERE assigned_user_id = ?',
+                'FROM question WHERE assigned_user_id = ? AND active = 1',
                 (user_id,)
             )
             rows = cursor.fetchall()
@@ -200,20 +200,19 @@ class Question:
     @classmethod
     def create(cls, text, type, options=None, assigned_user_id=None, descripcion=None, is_required=0, categoria='General', active=1):
         try:
-            logger.info(f"Creando pregunta: text={text}, type={type}, options={options}")
+            logger.info(f"[DEBUG] Ejecutando INSERT: text={text}, type={type}, options={options}, assigned_user_id={assigned_user_id}, descripcion={descripcion}, is_required={is_required}, categoria={categoria}, active={active}")
             with get_db_connection() as conn:
                 cursor = conn.cursor()
                 cursor.execute(
                     'INSERT INTO question (text, type, options, assigned_user_id, descripcion, is_required, categoria, active, created_at) OUTPUT INSERTED.id VALUES (?, ?, ?, ?, ?, ?, ?, ?, GETDATE())',
                     (text, type, options, assigned_user_id, descripcion, is_required, categoria, active)
                 )
-                # Obtener el ID de la pregunta insertada
                 question_id = cursor.fetchone()[0]
                 conn.commit()
-                logger.info(f"Pregunta creada con ID: {question_id}")
+                logger.info(f"[DEBUG] Pregunta creada con ID: {question_id}")
                 return question_id
         except Exception as e:
-            logger.error(f"Error al crear pregunta: {str(e)}")
+            logger.error(f"[DEBUG] Error al crear pregunta: {str(e)}")
             raise
 
 class Response:
@@ -580,11 +579,8 @@ def admin():
 @app.route('/add_question', methods=['POST'])
 @login_required
 def add_question():
-    # Verificar si es una solicitud AJAX
     is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
-    
     try:
-        # Verificar si la solicitud es JSON o AJAX
         if request.is_json or is_ajax:
             try:
                 data = request.get_json()
@@ -596,8 +592,6 @@ def add_question():
                 active = 1 if data.get('active', True) else 0
                 categoria = data.get('categoria_existente', '').strip()
                 nueva_categoria = data.get('nueva_categoria', '').strip()
-                
-                # Si se proporcionó una nueva categoría, usarla en lugar de la existente
                 if nueva_categoria:
                     categoria = nueva_categoria
                     logger.info(f"Usando nueva categoría: {categoria}")
@@ -606,7 +600,6 @@ def add_question():
                     logger.info("No se seleccionó categoría, usando 'Sin Categoría'")
                 else:
                     logger.info(f"Usando categoría existente: {categoria}")
-                    
             except Exception as e:
                 logger.error(f"Error al procesar JSON: {str(e)}")
                 if is_ajax:
@@ -614,7 +607,6 @@ def add_question():
                 flash(f'Error en el formato de los datos: {str(e)}', 'danger')
                 return redirect(url_for('admin'))
         else:
-            # Manejo para formularios tradicionales (por si acaso)
             text = request.form.get('text', '').strip()
             type = request.form.get('type', 'text')
             options = request.form.get('options', '').strip()
@@ -623,8 +615,6 @@ def add_question():
             active = 1 if request.form.get('active') == 'on' else 0
             categoria = request.form.get('categoria_existente', '').strip()
             nueva_categoria = request.form.get('nueva_categoria', '').strip()
-            
-            # Si se proporcionó una nueva categoría, usarla en lugar de la existente
             if nueva_categoria:
                 categoria = nueva_categoria
                 logger.info(f"[Form] Usando nueva categoría: {categoria}")
@@ -633,57 +623,46 @@ def add_question():
                 logger.info("[Form] No se seleccionó categoría, usando 'Sin Categoría'")
             else:
                 logger.info(f"[Form] Usando categoría existente: {categoria}")
-        
-        assigned_user_id = current_user.id  # Asignar al usuario actual
-        
+        assigned_user_id = int(current_user.id)
         # Validar campos requeridos
         if not text:
-            return jsonify({'status': 'error', 'message': 'El texto de la pregunta es requerido'}), 400
-            
+            logger.error('El texto de la pregunta es requerido')
+            if is_ajax:
+                return jsonify({'status': 'error', 'message': 'El texto de la pregunta es requerido'}), 400
+            flash('El texto de la pregunta es requerido', 'error')
+            return redirect(url_for('admin'))
         if type in ['checkbox', 'radio'] and not options:
-            return jsonify({'status': 'error', 'message': 'Debes proporcionar al menos una opción para este tipo de pregunta'}), 400
-        
-        # Depuración: Imprimir los valores obtenidos
+            logger.error('Debes proporcionar al menos una opción para este tipo de pregunta')
+            if is_ajax:
+                return jsonify({'status': 'error', 'message': 'Debes proporcionar al menos una opción para este tipo de pregunta'}), 400
+            flash('Debes proporcionar al menos una opción para este tipo de pregunta', 'error')
+            return redirect(url_for('admin'))
         print(f"Tipo de pregunta: {type}")
         print(f"Opciones recibidas: {options}")
         print(f"Texto de la pregunta: {text}")
         print(f"Descripción: {descripcion}")
         print(f"Es requerida: {is_required}")
         print(f"Activa: {active}")
-        assigned_user_id = request.form.get('assigned_user_id')
-        if not assigned_user_id or not assigned_user_id.isdigit():
-            assigned_user_id = current_user.id
-        
-        # Validar campos requeridos
-        if not text:
-            flash('El texto de la pregunta es requerido', 'error')
-            return redirect(url_for('admin'))
         if type not in ['text', 'select', 'checkbox', 'radio']:
+            logger.error('Tipo de pregunta no válido')
+            if is_ajax:
+                return jsonify({'status': 'error', 'message': 'Tipo de pregunta no válido'}), 400
             flash('Tipo de pregunta no válido', 'error')
             return redirect(url_for('admin'))
-        
-        # Procesar opciones si es necesario
         processed_options = None
         try:
             if type in ['checkbox', 'radio', 'multiple_choice'] and options:
                 logger.info(f"Procesando opciones: {options}")
-                # Dividir por líneas, eliminar espacios en blanco y filtrar líneas vacías
                 options_list = []
                 for opt in options.split('\n'):
                     opt = opt.strip()
                     if opt:
-                        # Eliminar guión inicial si existe
                         if opt.startswith('-'):
                             opt = opt[1:].strip()
                         options_list.append(opt)
-                
                 logger.info(f"Opciones después de procesar: {options_list}")
-                
-                # Unir con comas para guardar en la base de datos
                 processed_options = ','.join(options_list)
                 logger.info(f"Opciones procesadas: {processed_options}")
-                
-                # Si no hay opciones válidas, establecer el tipo a 'text'
                 if not options_list and type != 'text':
                     type = 'text'
                     logger.warning('No se proporcionaron opciones válidas. Convirtiendo a tipo texto.')
@@ -691,13 +670,13 @@ def add_question():
                 logger.info(f"No se requiere procesar opciones para el tipo: {type}")
         except Exception as e:
             logger.error(f"Error al procesar opciones: {str(e)}")
-            return jsonify({
-                'status': 'error',
-                'message': f'Error al procesar las opciones: {str(e)}'
-            }), 400
-        
+            if is_ajax:
+                return jsonify({'status': 'error', 'message': f'Error al procesar las opciones: {str(e)}'}), 400
+            flash(f'Error al procesar las opciones: {str(e)}', 'danger')
+            return redirect(url_for('admin'))
+        print(f"[DEBUG] Valores a insertar: text={text}, type={type}, options={processed_options}, assigned_user_id={assigned_user_id}, descripcion={descripcion}, is_required={is_required}, categoria={categoria}, active={active}")
+        logger.info(f"[DEBUG] Valores a insertar: text={text}, type={type}, options={processed_options}, assigned_user_id={assigned_user_id}, descripcion={descripcion}, is_required={is_required}, categoria={categoria}, active={active}")
         try:
-            # Insertar la pregunta
             question_id = Question.create(
                 text=text,
                 type=type,
@@ -708,9 +687,7 @@ def add_question():
                 categoria=categoria,
                 active=active
             )
-            
-            logger.info(f"Pregunta creada exitosamente con ID: {question_id}")
-            
+            logger.info(f"[DEBUG] ID de pregunta insertada: {question_id}")
             if is_ajax:
                 return jsonify({
                     'status': 'success',
@@ -721,7 +698,6 @@ def add_question():
             else:
                 flash('Pregunta creada exitosamente', 'success')
                 return redirect(url_for('admin'))
-            
         except Exception as e:
             logger.error(f"Error al guardar en la base de datos: {str(e)}")
             if is_ajax:
@@ -729,22 +705,25 @@ def add_question():
                     'status': 'error',
                     'message': f'Error al guardar la pregunta en la base de datos: {str(e)}'
                 }), 500
-            else:
-                flash(f'Error al guardar la pregunta: {str(e)}', 'danger')
-                return redirect(url_for('admin'))
-            
+            flash(f'Error al guardar la pregunta: {str(e)}', 'danger')
+            return redirect(url_for('admin'))
     except Exception as e:
         print(f"Error al agregar pregunta: {str(e)}")
-        return jsonify({
-            'status': 'error',
-            'message': f'Error al agregar la pregunta: {str(e)}'
-        }), 500
+        logger.error(f"Error inesperado en add_question: {str(e)}")
+        if is_ajax:
+            return jsonify({
+                'status': 'error',
+                'message': f'Error inesperado al agregar la pregunta: {str(e)}'
+            }), 500
+        flash(f'Error inesperado al agregar la pregunta: {str(e)}', 'danger')
+        return redirect(url_for('admin'))
 
 @app.route('/submit_responses', methods=['POST'])
 @login_required
 def submit_responses():
     try:
         data = request.get_json()
+        print("Datos recibidos en submit_responses:", data)  # <-- DEPURACIÓN
         if not data or 'date' not in data or 'responses' not in data:
             return jsonify({'status': 'error', 'message': 'Datos de solicitud inválidos'}), 400
             
@@ -853,68 +832,101 @@ def submit_responses():
 @login_required
 def stats():
     try:
-        # Obtener la fecha actual en formato YYYY-MM-DD
         today = datetime.now().strftime('%Y-%m-%d')
-        
-        # Obtener las preguntas del usuario con sus respuestas de hoy
         with get_db_connection() as conn:
             with conn.cursor() as cursor:
-                # Obtener preguntas con respuestas de hoy
+                # Preguntas asignadas al usuario
+                cursor.execute('SELECT COUNT(*) FROM question WHERE assigned_user_id = ?', (current_user.id,))
+                total_asignadas = cursor.fetchone()[0] or 0
+
+                # Respuestas de hoy
                 cursor.execute('''
-                    SELECT 
-                        q.id,
-                        q.text as pregunta,
-                        q.type as tipo,
-                        r.response as respuesta,
-                        r.date as fecha_respuesta
-                    FROM question q
-                    LEFT JOIN response r ON q.id = r.question_id 
-                        AND CONVERT(DATE, r.date) = ?
+                    SELECT COUNT(*) FROM response r
+                    JOIN question q ON r.question_id = q.id
+                    WHERE q.assigned_user_id = ? AND CONVERT(DATE, r.date) = ?
+                ''', (current_user.id, today))
+                respondidas_hoy = cursor.fetchone()[0] or 0
+
+                # Última respuesta
+                cursor.execute('''
+                    SELECT TOP 1 r.date FROM response r
+                    JOIN question q ON r.question_id = q.id
                     WHERE q.assigned_user_id = ?
-                    ORDER BY q.id
-                ''', (today, current_user.id))
-                
-                preguntas = []
-                for row in cursor.fetchall():
-                    preguntas.append({
-                        'id': row.id,
-                        'texto': row.pregunta,
-                        'tipo': row.tipo,
-                        'respuesta': row.respuesta if row.respuesta else 'Sin responder',
-                        'fecha': row.fecha_respuesta.strftime('%Y-%m-%d %H:%M') if row.fecha_respuesta else 'No respondida'
-                    })
-                
-                # Obtener estadísticas generales
+                    ORDER BY r.date DESC
+                ''', (current_user.id,))
+                row = cursor.fetchone()
+                if row and row[0]:
+                    ultima_fecha = row[0]
+                    if hasattr(ultima_fecha, 'strftime'):
+                        ultima_fecha_str = ultima_fecha.strftime('%d de %B, %H:%M')
+                        relativo = 'hace 2 horas'  # Aquí puedes calcular el tiempo relativo real
+                    else:
+                        ultima_fecha_str = str(ultima_fecha)
+                        relativo = ''
+                else:
+                    ultima_fecha_str = '-'
+                    relativo = ''
+
+                # Preguntas pendientes hoy
+                pendientes_hoy = total_asignadas - respondidas_hoy
+                completitud_diaria = int((respondidas_hoy / total_asignadas) * 100) if total_asignadas > 0 else 0
+
+                resumen_diario = {
+                    'respondidas_hoy': respondidas_hoy,
+                    'pendientes_hoy': pendientes_hoy,
+                    'completitud_diaria': completitud_diaria,
+                    'ultima_respuesta': {
+                        'fecha': ultima_fecha_str,
+                        'relativo': relativo
+                    }
+                }
+
+                # Días consecutivos y días activos
                 cursor.execute('''
-                    SELECT 
-                        COUNT(DISTINCT CONVERT(DATE, r.date)) as dias_respondidos,
-                        COUNT(r.id) as total_respuestas,
-                        (SELECT COUNT(*) FROM question WHERE assigned_user_id = ?) as total_preguntas
+                    SELECT CONVERT(DATE, r.date) as dia
                     FROM response r
                     JOIN question q ON r.question_id = q.id
                     WHERE q.assigned_user_id = ?
-                ''', (current_user.id, current_user.id))
-                
-                stats = cursor.fetchone()
-                
-                estadisticas = {
-                    'dias_respondidos': stats.dias_respondidos if stats and stats.dias_respondidos else 0,
-                    'total_respuestas': stats.total_respuestas if stats and stats.total_respuestas else 0,
-                    'total_preguntas': stats.total_preguntas if stats and stats.total_preguntas else 0,
-                    'fecha_actual': today
+                    GROUP BY CONVERT(DATE, r.date)
+                    ORDER BY dia DESC
+                ''', (current_user.id,))
+                dias = [row[0] for row in cursor.fetchall()]
+                total_dias_activos = len(dias)
+                dias_consecutivos = 0
+                if dias:
+                    from datetime import timedelta
+                    dias_ordenados = sorted([d if isinstance(d, datetime) else datetime.strptime(str(d), '%Y-%m-%d') for d in dias], reverse=True)
+                    hoy = datetime.now().date()
+                    for i, d in enumerate(dias_ordenados):
+                        if (hoy - d.date()).days == i:
+                            dias_consecutivos += 1
+                        else:
+                            break
+
+                resumen_general = {
+                    'total_asignadas': total_asignadas,
+                    'dias_consecutivos': dias_consecutivos,
+                    'total_dias_activos': total_dias_activos
                 }
-                
+
+                # Indicadores de rendimiento
+                eficiencia = completitud_diaria
+                promedio_diario = respondidas_hoy  # Puedes calcular un promedio real si lo deseas
+                indicadores = {
+                    'eficiencia': eficiencia,
+                    'promedio_diario': promedio_diario
+                }
+
                 return render_template(
                     'stats.html',
-                    preguntas=preguntas,
-                    estadisticas=estadisticas,
-                    fecha_actual=today
+                    resumen_diario=resumen_diario,
+                    resumen_general=resumen_general,
+                    indicadores=indicadores
                 )
-                
     except Exception as e:
+        logger.error(f"Error al cargar las estadísticas: {str(e)}")
         flash('Error al cargar las estadísticas', 'error')
         return redirect(url_for('index'))
-        return render_template('stats.html', preguntas=[], estadisticas={})
 
 @app.route('/api/stats/weekly_responses')
 @login_required

@@ -353,7 +353,13 @@ document.addEventListener('DOMContentLoaded', function() {
         const isRequiredCheckbox = document.getElementById('edit-is_required');
         const activeCheckbox = document.getElementById('edit-active');
         if (isRequiredCheckbox) {
-            isRequiredCheckbox.checked = questionData.is_required === '1' || questionData.is_required === 'true';
+            isRequiredCheckbox.checked = (
+                questionData.is_required === '1' ||
+                questionData.is_required === 'true' ||
+                questionData.is_required === 'True' ||
+                questionData.is_required === 1 ||
+                questionData.is_required === true
+            );
         }
         if (activeCheckbox) {
             activeCheckbox.checked = questionData.active === '1' || questionData.active === 'true';
