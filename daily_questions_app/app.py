@@ -225,12 +225,12 @@ class Response:
         self.created_at = created_at
 
     @classmethod
-    def create(cls, question_id, response_text, date):
+    def create(cls, question_id, response, date):
         with get_db_connection() as conn:
             cursor = conn.cursor()
             cursor.execute(
                 'INSERT INTO response (question_id, response, date) VALUES (?, ?, ?)',
-                (question_id, response_text, date)
+                (question_id, response, date)
             )
             conn.commit()
 
@@ -781,10 +781,19 @@ def submit_responses():
                     }), 500
                 
                 # Luego insertamos las nuevas respuestas
-                for question_id_str, response_text in responses.items():
+                for question_id_str, response_data in responses.items():
                     try:
                         question_id = int(question_id_str)  # Asegurar que el ID sea entero
-                        response_text = str(response_text) if response_text is not None else ""
+                        
+                        # Manejar tanto el formato antiguo (solo texto) como el nuevo (objeto con tiempo)
+                        if isinstance(response_data, dict):
+                            response_text = str(response_data.get('answer', '')) if response_data.get('answer') is not None else ""
+                            start_time_str = response_data.get('start_time')
+                            response_time = response_data.get('response_time')
+                        else:
+                            response_text = str(response_data) if response_data is not None else ""
+                            start_time_str = None
+                            response_time = None
                         
                         print(f"Procesando pregunta {question_id}: {response_text[:50]}...")
                         
@@ -793,13 +802,21 @@ def submit_responses():
                             print(f"Advertencia: La pregunta {question_id} no está asignada al usuario {current_user.id}")
                             continue
                         
-                        # Insertar la respuesta con parámetros explícitos
+                        # Convertir start_time si está presente
+                        start_time = None
+                        if start_time_str:
+                            try:
+                                start_time = datetime.fromisoformat(start_time_str.replace('Z', '+00:00'))
+                            except:
+                                start_time = None
+                        
+                        # Insertar la respuesta con los nuevos campos de tiempo
                         cursor.execute(
                             """
-                            INSERT INTO response (question_id, response, date)
-                            VALUES (?, ?, ?)
+                            INSERT INTO response (question_id, response, date, user_id, start_time, response_time)
+                            VALUES (?, ?, ?, ?, ?, ?)
                             """,
-                            (question_id, response_text, date_with_time)
+                            (question_id, response_text, date_with_time, current_user.id, start_time, response_time)
                         )
                     except ValueError as ve:
                         conn.rollback()
@@ -1058,6 +1075,65 @@ def stats():
                     ultimos7.append(1 if dia in dias_respondidos_set else 0)
                 racha_zip = list(zip(ultimos7, [dias_letras[(hoy - datetime.timedelta(days=i)).weekday()] for i in range(6, -1, -1)]))
 
+                # === Tiempo de Respuesta ===
+                # Calcular tiempo promedio de respuesta
+                cursor.execute('''
+                    SELECT AVG(CAST(r.response_time AS FLOAT)) as tiempo_promedio
+                    FROM response r
+                    JOIN question q ON r.question_id = q.id
+                    WHERE q.assigned_user_id = ?
+                    AND r.response_time IS NOT NULL
+                    AND r.response_time > 0
+                ''', (current_user.id,))
+                tiempo_promedio_row = cursor.fetchone()
+                tiempo_respuesta_promedio = round(tiempo_promedio_row[0] / 60, 1) if tiempo_promedio_row[0] else 0.0
+
+                # Calcular tiempo más rápido y más lento
+                cursor.execute('''
+                    SELECT 
+                        MIN(CAST(r.response_time AS FLOAT)) as tiempo_minimo,
+                        MAX(CAST(r.response_time AS FLOAT)) as tiempo_maximo,
+                        COUNT(r.response_time) as total_con_tiempo
+                    FROM response r
+                    JOIN question q ON r.question_id = q.id
+                    WHERE q.assigned_user_id = ?
+                    AND r.response_time IS NOT NULL
+                    AND r.response_time > 0
+                ''', (current_user.id,))
+                tiempo_stats = cursor.fetchone()
+                
+                tiempo_respuesta_rapido = round(tiempo_stats[0] / 60, 1) if tiempo_stats[0] else 0.0
+                tiempo_respuesta_lento = round(tiempo_stats[1] / 60, 1) if tiempo_stats[1] else 0.0
+                total_respuestas_tiempo = tiempo_stats[2] if tiempo_stats[2] else 0
+
+                # Obtener preguntas que requieren más reflexión (top 3 con mayor tiempo)
+                cursor.execute('''
+                    SELECT TOP 3 
+                        q.text,
+                        AVG(CAST(r.response_time AS FLOAT)) as tiempo_promedio
+                    FROM response r
+                    JOIN question q ON r.question_id = q.id
+                    WHERE q.assigned_user_id = ?
+                    AND r.response_time IS NOT NULL
+                    AND r.response_time > 0
+                    GROUP BY q.id, q.text
+                    ORDER BY tiempo_promedio DESC
+                ''', (current_user.id,))
+                
+                preguntas_reflexion = []
+                for row in cursor.fetchall():
+                    tiempo_minutos = round(row[1] / 60, 1) if row[1] else 0.0
+                    preguntas_reflexion.append({
+                        'texto': row[0][:50] + '...' if len(row[0]) > 50 else row[0],
+                        'tiempo': tiempo_minutos
+                    })
+
+                # Si no hay datos de tiempo, usar valores por defecto
+                if not preguntas_reflexion:
+                    preguntas_reflexion = [
+                        {'texto': 'No hay datos suficientes', 'tiempo': 0.0},
+                    ]
+
                 return render_template(
                     'stats.html',
                     resumen_diario=resumen_diario,
@@ -1071,12 +1147,11 @@ def stats():
                     eficiencia_anterior=82,
                     productividad_dias=productividad_dias,
                     mejor_dia=mejor_dia,
-                    tiempo_respuesta_promedio=2.3,
-                    preguntas_reflexion=[
-                        {'texto': '¿Qué has aprendido hoy?', 'tiempo': 4.2},
-                        {'texto': '¿Cómo te sientes?', 'tiempo': 1.8},
-                        {'texto': '¿Qué mejorarías?', 'tiempo': 5.1},
-                    ],
+                    tiempo_respuesta_promedio=tiempo_respuesta_promedio,
+                    tiempo_respuesta_rapido=tiempo_respuesta_rapido,
+                    tiempo_respuesta_lento=tiempo_respuesta_lento,
+                    total_respuestas_tiempo=total_respuestas_tiempo,
+                    preguntas_reflexion=preguntas_reflexion,
                     racha_actual=racha_actual,
                     mejor_racha=mejor_racha,
                     total_dias=total_dias,
@@ -1322,6 +1397,39 @@ def delete_question(question_id):
         response = jsonify({'status': 'error', 'message': str(e)})
         response.status_code = 500
         return response
+
+@app.route('/api/question/<int:question_id>/start', methods=['POST'])
+@login_required
+def start_question_timer(question_id):
+    """Registra el tiempo de inicio para una pregunta específica"""
+    try:
+        with get_db_connection() as conn:
+            with conn.cursor() as cursor:
+                # Verificar que la pregunta esté asignada al usuario
+                cursor.execute(
+                    'SELECT id FROM question WHERE id = ? AND assigned_user_id = ?',
+                    (question_id, current_user.id)
+                )
+                if not cursor.fetchone():
+                    return jsonify({
+                        'status': 'error',
+                        'message': 'Pregunta no encontrada o no asignada al usuario'
+                    }), 404
+                
+                # Registrar el tiempo de inicio
+                start_time = datetime.now()
+                
+                return jsonify({
+                    'status': 'success',
+                    'start_time': start_time.isoformat(),
+                    'question_id': question_id
+                })
+                
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': f'Error al registrar tiempo de inicio: {str(e)}'
+        }), 500
 
 # Manejadores de error globales
 @app.errorhandler(404)

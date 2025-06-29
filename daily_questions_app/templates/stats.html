@@ -133,7 +133,6 @@
                         </div>
                     </div>
                 </div>
-                <!-- Puedes agregar más indicadores aquí -->
             </div>
         </div>
         <!-- Tab Intermedias -->
@@ -227,14 +226,30 @@
                     <div class="col-lg-6 d-flex">
                         <div class="card shadow-sm border-0 flex-fill mb-4">
                             <div class="card-body">
-                                <div class="d-flex align-items-center mb-2">
+                                <div class="d-flex align-items-center mb-3">
                                     <span class="me-2"><i class="bi bi-clock-history"></i></span>
                                     <h6 class="fw-bold mb-0">Tiempo de Respuesta</h6>
                                 </div>
+                                
+                                <!-- Tiempo promedio principal -->
                                 <div class="bg-primary bg-opacity-10 rounded-3 py-3 mb-3 text-center">
                                     <div class="display-5 fw-bold text-primary mb-0">{{ tiempo_respuesta_promedio }}</div>
                                     <div class="text-muted" style="font-size:1.1rem;">minutos promedio</div>
                                 </div>
+                                
+                                <!-- Estadísticas adicionales de tiempo -->
+                                <div class="row text-center mb-3">
+                                    <div class="col-6">
+                                        <div class="fw-bold text-success" style="font-size:1.2rem;">{{ tiempo_respuesta_rapido or '0.0' }}</div>
+                                        <div class="text-muted" style="font-size:0.9rem;">Más rápido</div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="fw-bold text-warning" style="font-size:1.2rem;">{{ tiempo_respuesta_lento or '0.0' }}</div>
+                                        <div class="text-muted" style="font-size:0.9rem;">Más lento</div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Preguntas que requieren más reflexión -->
                                 <div class="fw-semibold mb-2" style="color:#222;">Preguntas que requieren más reflexión:</div>
                                 <div class="list-group list-group-flush">
                                     {% for pregunta in preguntas_reflexion %}
@@ -243,6 +258,14 @@
                                         <span class="badge rounded-pill bg-light text-dark fw-semibold me-2" style="font-size:1em;">{{ pregunta.tiempo }} min</span>
                                     </div>
                                     {% endfor %}
+                                </div>
+                                
+                                <!-- Información adicional -->
+                                <div class="mt-3 p-2 bg-light rounded">
+                                    <small class="text-muted">
+                                        <i class="bi bi-info-circle me-1"></i>
+                                        Basado en {{ total_respuestas_tiempo or 0 }} respuestas con tiempo registrado
+                                    </small>
                                 </div>
                             </div>
                         </div>

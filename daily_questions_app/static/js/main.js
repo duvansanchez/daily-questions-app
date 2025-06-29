@@ -2,6 +2,8 @@
 let currentQuestionIndex = 0;
 let questions = [];
 let responses = {};
+let questionTimers = {}; // Para almacenar los timers de cada pregunta
+let questionStartTimes = {}; // Para almacenar los tiempos de inicio
 
 // Integración de SweetAlert2 para alertas globales
 // Asegúrate de incluir el script de SweetAlert2 en tu HTML
@@ -73,6 +75,66 @@ window.showError = showError;
 window.showInfo = showInfo;
 window.showConfirm = showConfirm;
 
+// Funciones para manejar el contador de tiempo
+function startQuestionTimer(questionId) {
+    // Detener timer anterior si existe
+    if (questionTimers[questionId]) {
+        clearInterval(questionTimers[questionId]);
+    }
+    
+    // Registrar tiempo de inicio
+    questionStartTimes[questionId] = Date.now();
+    
+    // Crear elemento de timer si no existe
+    let timerElement = document.getElementById(`timer-${questionId}`);
+    if (!timerElement) {
+        const questionCard = document.querySelector(`[data-question-id="${questionId}"]`);
+        if (questionCard) {
+            // Crear el elemento del timer
+            const timerContainer = document.createElement('div');
+            timerContainer.className = 'timer-container';
+            timerContainer.innerHTML = `
+                <div class="timer-display">
+                    <i class="fas fa-clock"></i>
+                    <span id="timer-${questionId}">0:00</span>
+                </div>
+            `;
+            
+            // Insertar el timer en la pregunta
+            const questionHeader = questionCard.querySelector('.question-header');
+            if (questionHeader) {
+                questionHeader.appendChild(timerContainer);
+            }
+        }
+        timerElement = document.getElementById(`timer-${questionId}`);
+    }
+    
+    // Iniciar el contador
+    questionTimers[questionId] = setInterval(() => {
+        const elapsed = Math.floor((Date.now() - questionStartTimes[questionId]) / 1000);
+        const minutes = Math.floor(elapsed / 60);
+        const seconds = elapsed % 60;
+        
+        if (timerElement) {
+            timerElement.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        }
+    }, 1000);
+}
+
+function stopQuestionTimer(questionId) {
+    if (questionTimers[questionId]) {
+        clearInterval(questionTimers[questionId]);
+        delete questionTimers[questionId];
+    }
+}
+
+function getQuestionResponseTime(questionId) {
+    if (questionStartTimes[questionId]) {
+        return Math.floor((Date.now() - questionStartTimes[questionId]) / 1000);
+    }
+    return null;
+}
+
 // Función para mostrar notificaciones
 function showNotification(message, type = 'success') {
     const alertDiv = document.createElement('div');
@@ -132,8 +194,11 @@ function showQuestion(index) {
         submitBtn.style.display = 'none';
     }
     
-    // Restaurar respuesta guardada si existe
+    // Iniciar timer para la pregunta actual
     const questionId = questions[index].id;
+    startQuestionTimer(questionId);
+    
+    // Restaurar respuesta guardada si existe
     if (responses[questionId]) {
         const optionBtns = document.querySelectorAll(`.question-card[style*='display: block'] .option-btn`);
         optionBtns.forEach(btn => {
@@ -203,6 +268,23 @@ function saveCurrentResponse() {
 async function submitResponses() {
     try {
         console.log('Respuestas que se enviarán:', responses);
+        
+        // Preparar respuestas con tiempo
+        const responsesWithTime = {};
+        for (const [questionId, answer] of Object.entries(responses)) {
+            const responseTime = getQuestionResponseTime(questionId);
+            const startTime = questionStartTimes[questionId] ? new Date(questionStartTimes[questionId]).toISOString() : null;
+            
+            responsesWithTime[questionId] = {
+                answer: answer,
+                start_time: startTime,
+                response_time: responseTime
+            };
+            
+            // Detener el timer de esta pregunta
+            stopQuestionTimer(questionId);
+        }
+        
         const response = await fetch('/submit_responses', {
             method: 'POST',
             headers: {
@@ -210,7 +292,7 @@ async function submitResponses() {
             },
             body: JSON.stringify({
                 date: new Date().toISOString().split('T')[0],
-                responses: responses
+                responses: responsesWithTime
             })
         });
         
