@@ -9,6 +9,7 @@ from dotenv import load_dotenv
 import logging
 import sys
 import traceback
+import datetime
 
 load_dotenv()
 
@@ -242,7 +243,7 @@ def load_user(user_id):
 @login_required
 def index():
     questions = Question.get_by_user(current_user.id)
-    return render_template('index.html', questions=questions, date=datetime.now())
+    return render_template('index.html', questions=questions, date=datetime.datetime.now())
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -515,7 +516,7 @@ def admin():
             # 6. Contar respuestas de hoy (simplificado)
             logger.info("=== CONTEO DE RESPUESTAS HOY ===")
             try:
-                today_str = datetime.now().strftime('%Y-%m-%d')
+                today_str = datetime.datetime.now().strftime('%Y-%m-%d')
                 
                 cursor.execute('SELECT COUNT(*) FROM response WHERE CONVERT(date, date) = ?', (today_str,))
                 count_result = cursor.fetchone()
@@ -838,9 +839,44 @@ def submit_responses():
 @login_required
 def stats():
     try:
-        today = datetime.now().strftime('%Y-%m-%d')
+        today = datetime.datetime.now().strftime('%Y-%m-%d')
         with get_db_connection() as conn:
             with conn.cursor() as cursor:
+                # Eficiencia semanal
+                hoy = datetime.datetime.now()
+                inicio_semana = (hoy - datetime.timedelta(days=hoy.weekday())).replace(hour=0, minute=0, second=0, microsecond=0)
+                fin_semana = inicio_semana + datetime.timedelta(days=6, hours=23, minutes=59, seconds=59)
+                inicio_mes = hoy.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+                if hoy.month == 12:
+                    fin_mes = hoy.replace(year=hoy.year+1, month=1, day=1, hour=0, minute=0, second=0, microsecond=0) - datetime.timedelta(seconds=1)
+                else:
+                    fin_mes = hoy.replace(month=hoy.month+1, day=1, hour=0, minute=0, second=0, microsecond=0) - datetime.timedelta(seconds=1)
+
+                # Total asignadas semana
+                cursor.execute('SELECT COUNT(*) FROM question WHERE assigned_user_id = ? AND active = 1', (current_user.id,))
+                total_asignadas = cursor.fetchone()[0] or 0
+                # Respondidas semana
+                cursor.execute('''
+                    SELECT COUNT(*) FROM response r
+                    JOIN question q ON r.question_id = q.id
+                    WHERE q.assigned_user_id = ?
+                    AND r.date >= ? AND r.date <= ?
+                    AND (r.response IS NOT NULL AND LTRIM(RTRIM(r.response)) <> '')
+                ''', (current_user.id, inicio_semana, fin_semana))
+                respondidas_semana = cursor.fetchone()[0] or 0
+                eficiencia_semanal = int((respondidas_semana / total_asignadas) * 100) if total_asignadas > 0 else 0
+
+                # Respondidas mes
+                cursor.execute('''
+                    SELECT COUNT(*) FROM response r
+                    JOIN question q ON r.question_id = q.id
+                    WHERE q.assigned_user_id = ?
+                    AND r.date >= ? AND r.date <= ?
+                    AND (r.response IS NOT NULL AND LTRIM(RTRIM(r.response)) <> '')
+                ''', (current_user.id, inicio_mes, fin_mes))
+                respondidas_mes = cursor.fetchone()[0] or 0
+                eficiencia_mensual = int((respondidas_mes / total_asignadas) * 100) if total_asignadas > 0 else 0
+
                 # Preguntas asignadas al usuario (solo activas)
                 cursor.execute('SELECT COUNT(*) FROM question WHERE assigned_user_id = ? AND active = 1', (current_user.id,))
                 total_asignadas = cursor.fetchone()[0] or 0
@@ -867,7 +903,7 @@ def stats():
                     if hasattr(ultima_fecha, 'strftime'):
                         # Si es date, convertir a datetime
                         if type(ultima_fecha).__name__ == 'date':
-                            ultima_fecha = datetime.combine(ultima_fecha, datetime.min.time())
+                            ultima_fecha = datetime.datetime.combine(ultima_fecha, datetime.datetime.min.time())
                         meses_es = {
                             1: 'enero', 2: 'febrero', 3: 'marzo', 4: 'abril',
                             5: 'mayo', 6: 'junio', 7: 'julio', 8: 'agosto',
@@ -879,7 +915,7 @@ def stats():
                         hora = ultima_fecha.strftime('%H:%M')
                         ultima_fecha_str = f"{dia} de {mes} de {año}, {hora}"
                         # Calcular tiempo relativo real
-                        ahora = datetime.now()
+                        ahora = datetime.datetime.now()
                         diff = ahora - ultima_fecha
                         if diff.days > 0:
                             relativo = f"hace {diff.days} día{'s' if diff.days > 1 else ''}"
@@ -926,8 +962,8 @@ def stats():
                 dias_consecutivos = 0
                 if dias:
                     from datetime import timedelta
-                    dias_ordenados = sorted([d if isinstance(d, datetime) else datetime.strptime(str(d), '%Y-%m-%d') for d in dias], reverse=True)
-                    hoy = datetime.now().date()
+                    dias_ordenados = sorted([d if isinstance(d, datetime.datetime) else datetime.datetime.strptime(str(d), '%Y-%m-%d') for d in dias], reverse=True)
+                    hoy = datetime.datetime.now().date()
                     for i, d in enumerate(dias_ordenados):
                         if (hoy - d.date()).days == i:
                             dias_consecutivos += 1
@@ -948,11 +984,40 @@ def stats():
                     'promedio_diario': promedio_diario
                 }
 
+                dias_letras = ['L','M','X','J','V','S','D']
+                racha_zip = list(zip([1,1,1,1,1,0,1], dias_letras))  # Usa racha_ultimos7 real aquí
                 return render_template(
                     'stats.html',
                     resumen_diario=resumen_diario,
                     resumen_general=resumen_general,
-                    indicadores=indicadores
+                    indicadores=indicadores,
+                    eficiencia_semanal=eficiencia_semanal,
+                    eficiencia_mensual=eficiencia_mensual,
+                    # Placeholders para el front intermedio
+                    comparacion_porcentaje=7,
+                    eficiencia_actual=89,
+                    eficiencia_anterior=82,
+                    productividad_dias=[
+                        {'nombre': 'Lun', 'respuestas': 6, 'porcentaje': 85},
+                        {'nombre': 'Mar', 'respuestas': 7, 'porcentaje': 92},
+                        {'nombre': 'Mié', 'respuestas': 5, 'porcentaje': 78},
+                        {'nombre': 'Jue', 'respuestas': 8, 'porcentaje': 88},
+                        {'nombre': 'Vie', 'respuestas': 8, 'porcentaje': 95},
+                        {'nombre': 'Sáb', 'respuestas': 4, 'porcentaje': 65},
+                        {'nombre': 'Dom', 'respuestas': 4, 'porcentaje': 70},
+                    ],
+                    mejor_dia={'nombre': 'Vie', 'porcentaje': 95},
+                    tiempo_respuesta_promedio=2.3,
+                    preguntas_reflexion=[
+                        {'texto': '¿Qué has aprendido hoy?', 'tiempo': 4.2},
+                        {'texto': '¿Cómo te sientes?', 'tiempo': 1.8},
+                        {'texto': '¿Qué mejorarías?', 'tiempo': 5.1},
+                    ],
+                    racha_actual=7,
+                    mejor_racha=14,
+                    total_dias=23,
+                    racha_ultimos7=[1,1,1,1,1,0,1],
+                    racha_zip=racha_zip,
                 )
     except Exception as e:
         logger.error(f"Error al cargar las estadísticas: {str(e)}")
@@ -968,8 +1033,8 @@ def get_weekly_responses():
         cursor = conn.cursor()
         
         # Obtener los últimos 7 días
-        today = datetime.now()
-        days = [today - timedelta(days=i) for i in range(6, -1, -1)]
+        today = datetime.datetime.now()
+        days = [today - datetime.timedelta(days=i) for i in range(6, -1, -1)]
         
         # Formatear fechas para la consulta SQL
         start_date = days[0].strftime('%Y-%m-%d')
@@ -995,7 +1060,7 @@ def get_weekly_responses():
                         date_str = date_value.strftime('%Y-%m-%d')
                     else:
                         try:
-                            date_obj = datetime.strptime(str(date_value), '%Y-%m-%d')
+                            date_obj = datetime.datetime.strptime(str(date_value), '%Y-%m-%d')
                             date_str = date_obj.strftime('%Y-%m-%d')
                         except (ValueError, TypeError):
                             date_str = str(date_value)
@@ -1030,7 +1095,7 @@ def get_weekly_responses():
 def get_stats():
     try:
         # Obtener la fecha actual en formato YYYY-MM-DD
-        today = datetime.now().strftime('%Y-%m-%d')
+        today = datetime.datetime.now().strftime('%Y-%m-%d')
         
         with get_db_connection() as conn:
             with conn.cursor() as cursor:

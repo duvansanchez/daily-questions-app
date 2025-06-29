@@ -136,10 +136,154 @@
                 <!-- Puedes agregar más indicadores aquí -->
             </div>
         </div>
-        <!-- Tabs Intermedias y Avanzadas pueden ir aquí -->
+        <!-- Tab Intermedias -->
         <div class="tab-pane fade" id="intermedias" role="tabpanel">
-            <div class="alert alert-info">Próximamente: Estadísticas intermedias.</div>
+            <div class="container-fluid px-0">
+                <h5 class="fw-bold mb-3">Tendencias Temporales</h5>
+                <!-- Fila superior: Productividad por Día alineada a la izquierda -->
+                <div class="row g-3 mb-2">
+                    <div class="col-lg-8">
+                        <div class="card shadow-sm border-0 w-100 mb-4" style="max-width:900px;">
+                            <div class="card-body p-0">
+                                <h6 class="fw-bold mb-3 px-4 pt-4">Productividad por Día</h6>
+                                <table class="table mb-0 table-borderless" style="font-size:1.08rem;">
+                                    <tbody>
+                                        {% for dia in productividad_dias %}
+                                        <tr class="align-middle" style="background-color: {% if loop.index0 % 2 == 0 %}#fcfcfc{% else %}#f7f7f7{% endif %};">
+                                            <td class="ps-4" style="width:20%;">{{ dia.nombre }}</td>
+                                            <td class="text-end" style="width:30%;">{{ dia.respuestas }} resp.</td>
+                                            <td class="text-end fw-bold pe-4" style="width:20%;">{{ dia.porcentaje }}%</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                                <div class="alert alert-success py-1 px-4 mb-0" style="font-size: 0.97em; border-radius:0 0 0.5rem 0.5rem;">
+                                    <i class="bi bi-calendar-check me-1"></i> Mejor día: {{ mejor_dia.nombre }} ({{ mejor_dia.porcentaje }}% productividad)
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-4"></div>
+                </div>
+                <!-- Fila inferior: Eficiencia Actual y Comparación -->
+                <div class="row g-3 mb-2 justify-content-center">
+                    <div class="col-lg-6 d-flex">
+                        <div class="card shadow-sm border-0 w-100 mb-0" style="background: #fff; border-radius: 1.2rem;">
+                            <div class="card-body py-4 px-4">
+                                <h6 class="fw-bold mb-2">Eficiencia Actual</h6>
+                                <div class="row g-4">
+                                    <div class="col-12 col-md-6">
+                                        <div class="mb-2 d-flex justify-content-between align-items-center">
+                                            <span class="fw-semibold" style="font-size:1.08rem;">Semanal</span>
+                                            <span class="fw-bold text-primary" style="font-size:1.5rem;">{{ eficiencia_semanal }}%</span>
+                                        </div>
+                                        <div class="progress mb-2" style="height: 12px; background:#e3eafc; border-radius:8px;">
+                                            <div class="progress-bar bg-primary" role="progressbar" style="width: {{ eficiencia_semanal }}%; border-radius:8px;"></div>
+                                        </div>
+                                    </div>
+                                    <div class="col-12 col-md-6">
+                                        <div class="mb-2 d-flex justify-content-between align-items-center">
+                                            <span class="fw-semibold" style="font-size:1.08rem;">Mensual</span>
+                                            <span class="fw-bold text-success" style="font-size:1.5rem;">{{ eficiencia_mensual }}%</span>
+                                        </div>
+                                        <div class="progress mb-2" style="height: 12px; background:#d6f5e6; border-radius:8px;">
+                                            <div class="progress-bar bg-success" role="progressbar" style="width: {{ eficiencia_mensual }}%; border-radius:8px;"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-6 d-flex">
+                        <div class="card shadow-sm border-0 flex-fill mb-0">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <h6 class="fw-bold mb-0">Comparación</h6>
+                                    <select class="form-select form-select-sm w-auto ms-2" style="min-width:100px;" id="select-comparacion-periodo">
+                                        <option value="semana">Semana</option>
+                                        <option value="mes">Mes</option>
+                                    </select>
+                                </div>
+                                <div class="rounded-3 mb-3 px-3 py-2 text-center" style="background: linear-gradient(90deg, #eafaf1 0%, #f3fafd 100%);">
+                                    <span class="fw-bold" style="color:#1db954; font-size:1.5rem;"><i class="bi bi-graph-up-arrow me-1"></i>+{{ comparacion_porcentaje }}%</span>
+                                    <div class="text-muted" style="font-size:1.05rem;">vs. período anterior</div>
+                                </div>
+                                <div class="row text-center">
+                                    <div class="col-6">
+                                        <div class="fw-bold" style="font-size:1.3rem;">{{ eficiencia_actual }}%</div>
+                                        <div class="text-muted" style="font-size:0.98rem;">Actual</div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="fw-bold" style="font-size:1.3rem;">{{ eficiencia_anterior }}%</div>
+                                        <div class="text-muted" style="font-size:0.98rem;">Anterior</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Fila inferior: Tiempo de Respuesta y Racha de Días Consecutivos -->
+                <div class="row g-3 mt-4 justify-content-center align-items-stretch">
+                    <div class="col-lg-6 d-flex">
+                        <div class="card shadow-sm border-0 flex-fill mb-4">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center mb-2">
+                                    <span class="me-2"><i class="bi bi-clock-history"></i></span>
+                                    <h6 class="fw-bold mb-0">Tiempo de Respuesta</h6>
+                                </div>
+                                <div class="bg-primary bg-opacity-10 rounded-3 py-3 mb-3 text-center">
+                                    <div class="display-5 fw-bold text-primary mb-0">{{ tiempo_respuesta_promedio }}</div>
+                                    <div class="text-muted" style="font-size:1.1rem;">minutos promedio</div>
+                                </div>
+                                <div class="fw-semibold mb-2" style="color:#222;">Preguntas que requieren más reflexión:</div>
+                                <div class="list-group list-group-flush">
+                                    {% for pregunta in preguntas_reflexion %}
+                                    <div class="list-group-item d-flex justify-content-between align-items-center px-0 py-2" style="background-color:#f8f9fa; border:none; color:#888;">
+                                        <span class="ps-2">{{ pregunta.texto }}</span>
+                                        <span class="badge rounded-pill bg-light text-dark fw-semibold me-2" style="font-size:1em;">{{ pregunta.tiempo }} min</span>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-6 d-flex">
+                        <div class="card shadow-sm border-0 flex-fill mb-4">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center mb-2">
+                                    <span class="me-2"><i class="bi bi-fire" style="color:#ff6600;"></i></span>
+                                    <h6 class="fw-bold mb-0">Racha de Días Consecutivos</h6>
+                                </div>
+                                <div class="bg-warning bg-opacity-10 rounded-3 py-3 mb-3 text-center">
+                                    <div class="display-5 fw-bold mb-0" style="color:#ff6600;">{{ racha_actual }}</div>
+                                    <div class="text-muted" style="font-size:1.1rem;">días consecutivos</div>
+                                </div>
+                                <div class="row text-center mb-3">
+                                    <div class="col-6">
+                                        <div class="fw-bold" style="font-size:1.3rem;">{{ mejor_racha }}</div>
+                                        <div class="text-muted" style="font-size:0.98rem;">Mejor racha</div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="fw-bold" style="font-size:1.3rem;">{{ total_dias }}</div>
+                                        <div class="text-muted" style="font-size:0.98rem;">Días totales</div>
+                                    </div>
+                                </div>
+                                <div class="text-center mb-1" style="font-size:0.98rem; color:#888;">Últimos 7 días</div>
+                                <div class="d-flex justify-content-center align-items-center gap-2 mb-2">
+                                    {% for dia, letra in racha_zip %}
+                                    <div class="d-flex flex-column align-items-center">
+                                        <div class="rounded-2" style="width:28px; height:28px; background: {% if dia %}#ff6600{% else %}#f7c59f{% endif %}; opacity: {% if dia %}1{% else %}0.5{% endif %};"></div>
+                                        <div style="font-size:0.95em; color:#888;">{{ letra }}</div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
+        <!-- Tab Avanzadas -->
         <div class="tab-pane fade" id="avanzadas" role="tabpanel">
             <div class="alert alert-info">Próximamente: Estadísticas avanzadas.</div>
         </div>
