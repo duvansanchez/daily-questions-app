@@ -4,19 +4,15 @@
 
 {% block content %}
 <div class="container py-4">
-    <div class="mb-4">
-        <h1 class="fw-bold" style="font-size:2rem;">Personaliza tu cuestionario diario</h1>
-        <div class="text-muted" style="font-size:1.1rem;">
-            Crea nuevas preguntas, organiza las existentes por categorías y gestiona su estado (activas o inactivas) sin necesidad de eliminarlas.
-        </div>
-    </div>
+    <h2 class="fw-bold mb-1 mt-4">Personaliza tu cuestionario diario</h2>
+    <p class="text-muted mb-4">Crea nuevas preguntas, organiza las existentes por categorías y gestiona su estado (activas o inactivas) sin necesidad de eliminarlas.</p>
     <div class="card shadow-sm rounded-4 mx-auto" style="max-width:750px; min-height:600px;">
         <div class="card-body p-4">
             <div class="mb-3">
                 <span class="fw-semibold" style="font-size:1.2rem;">Preguntas</span>
             </div>
-            <!-- Tabs de filtro -->
-            <div class="mb-4">
+            <!-- Tabs de filtro y botón añadir pregunta alineados -->
+            <div class="mb-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
                 <div class="d-flex flex-wrap gap-2" role="group" aria-label="Filtros de categoría">
                     <button type="button" class="btn btn-outline-primary active" data-category="Todas">
                         <i class="bi bi-grid me-1"></i> Todas
@@ -27,9 +23,12 @@
                     </button>
                     {% endfor %}
                 </div>
-                <div class="mt-2">
-                    <small class="text-muted">Mostrando: <span id="categoria-actual">Todas las categorías</span></small>
-                </div>
+                <button class="btn btn-primary px-4" data-bs-toggle="modal" data-bs-target="#nuevaPreguntaModal" style="min-width: 180px; font-weight: 600;">
+                    <i class="bi bi-plus-lg me-2"></i>Añadir pregunta
+                </button>
+            </div>
+            <div class="mt-2">
+                <small class="text-muted">Mostrando: <span id="categoria-actual">Todas las categorías</span></small>
             </div>
             <!-- Lista de preguntas -->
             <div id="preguntas-lista">
@@ -96,11 +95,6 @@
                     <p>Comienza creando tu primera pregunta</p>
                 </div>
                 {% endfor %}
-            </div>
-            <div class="d-flex justify-content-end mt-4">
-                <button class="btn btn-primary px-4" data-bs-toggle="modal" data-bs-target="#nuevaPreguntaModal">
-                    <i class="bi bi-plus-lg me-2"></i>Añadir pregunta
-                </button>
             </div>
         </div>
     </div>
@@ -665,9 +659,7 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 });
 </script>
-{% endblock %}
 
-{% block scripts %}
 <script>
 // Filtro de tabs por categoría (frontend)
 document.querySelectorAll('[data-category]').forEach(btn => {
@@ -700,7 +692,7 @@ document.addEventListener('click', function(e) {
     const id = deleteBtn.dataset.id;
     
     // Mostrar confirmación
-    showConfirm('¿Estás seguro de que deseas eliminar esta pregunta? Esta acción no se puede deshacer.').then((result) => {
+    showConfirm('¿Estás seguro de que deseas eliminar esta pregunta? Se eliminarán también todas las respuestas asociadas. Esta acción no se puede deshacer.').then((result) => {
         if (result.isConfirmed) {
             // Eliminar la pregunta
             fetch(`/question/${id}`, {
@@ -738,5 +730,21 @@ document.querySelectorAll('.toggle-status').forEach(function(switchEl) {
         }
     });
 });
+</script>
+
+<script>
+// Función para mostrar/ocultar opciones en el formulario de nueva pregunta
+function toggleOptionsField() {
+    const typeSelect = document.getElementById('type');
+    const optionsContainer = document.getElementById('options-container');
+    
+    if (!typeSelect || !optionsContainer) return;
+    
+    if (typeSelect.value === 'checkbox' || typeSelect.value === 'radio') {
+        optionsContainer.style.display = 'block';
+    } else {
+        optionsContainer.style.display = 'none';
+    }
+}
 </script>
 {% endblock %}

@@ -385,7 +385,7 @@ function initAdminEvents() {
         btn.onclick = function(e) {
             e.preventDefault();
             const id = this.dataset.id;
-            showConfirm('¿Estás seguro de que deseas eliminar esta pregunta? Esta acción no se puede deshacer.').then((result) => {
+            showConfirm('¿Estás seguro de que deseas eliminar esta pregunta? Se eliminarán también todas las respuestas asociadas. Esta acción no se puede deshacer.').then((result) => {
                 if (result.isConfirmed) {
                     fetch(`/question/${id}`, {
                         method: 'DELETE',

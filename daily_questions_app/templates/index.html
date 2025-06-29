@@ -3,163 +3,187 @@
 {% block title %}Preguntas Diarias{% endblock %}
 
 {% block content %}
-<div class="main-container">
-    {% if questions %}
-        <!-- Barra de progreso -->
-        <div class="progress-container">
-            <div class="progress-text">
-                <span>Progreso</span>
-                <span>1 de {{ questions|length }}</span>
-            </div>
-            <div class="progress">
-                <div class="progress-bar" role="progressbar" style="width: {{ (1 / questions|length * 100) }}%;" 
-                     aria-valuenow="{{ 1 }}" aria-valuemin="0" aria-valuemax="{{ questions|length }}"></div>
-            </div>
+<div class="container d-flex flex-column align-items-center justify-content-center" style="padding-top: 0.5rem;">
+    <div id="bienvenida-header">
+        <h1 style="font-size:3.2rem; font-weight:800; background: linear-gradient(90deg, #4f8cff, #a259ff); -webkit-background-clip: text; color: transparent; margin-bottom: 0.5rem; text-align:center;">
+            Hola, {{ current_user.username }}
+        </h1>
+        <div style="font-size:1.5rem; color:#555; margin-bottom:0.5rem; text-align:center; font-weight:500;">
+            {{ date.strftime('%A, %d de %B de %Y')|capitalize }}
         </div>
-
-        {% for question in questions %}
-        <!-- Tarjeta de pregunta -->
-        <div class="question-card mb-4" data-question-id="{{ question.id }}" data-is-required="{{ 1 if question.is_required else 0 }}">
-            <div class="question-header d-flex justify-content-between align-items-center">
-                <span class="fw-semibold">
-                    {{ question.text }}
-                    {% if question.is_required %}
-                        <span style="color: red; font-weight: bold;" title="Obligatorio">*</span>
-                    {% endif %}
-                </span>
-                <span class="question-number">{{ loop.index }} de {{ questions|length }}</span>
-            </div>
-            <div class="question-body">
-                <div class="options-container">
-                    {% if question.type == 'multiple_choice' and question.options %}
-                        {% set options = question.options.split(',') %}
-                        {% for option in options %}
-                            {% set option_letter = ['A', 'B', 'C', 'D', 'E'][loop.index0] %}
-                            <button type="button" class="option-btn" data-question-id="{{ question.id }}" data-option="{{ option|trim }}">
-                                <span class="option-letter">{{ option_letter }}</span>
-                                {{ option|trim }}
-                            </button>
-                        {% endfor %}
-                    {% elif question.type == 'select' or question.type == 'yes_no' %}
-                        <button type="button" class="option-btn" data-question-id="{{ question.id }}" data-option="Sí">
-                            Sí
-                        </button>
-                        <button type="button" class="option-btn" data-question-id="{{ question.id }}" data-option="No">
-                            No
-                        </button>
-                    {% elif question.type == 'checkbox' and question.options %}
-                        {% set options = question.options.split(',') if question.options is string else question.options %}
-                        <div class="checkbox-options">
-                            {% for option in options %}
-                                {% set option = option|trim %}
-                                {% if option %}
-                                <div class="form-check mb-2">
-                                    <input class="form-check-input" type="checkbox" id="option-{{ question.id }}-{{ loop.index }}" name="question-{{ question.id }}" value="{{ option }}">
-                                    <label class="form-check-label" for="option-{{ question.id }}-{{ loop.index }}">
-                                        {{ option }}
-                                    </label>
-                                </div>
-                                {% endif %}
-                            {% endfor %}
-                        </div>
-                    {% elif question.type == 'radio' and question.options %}
-                        {% set options = question.options.split(',') if question.options is string else question.options %}
-                        <div class="radio-options">
-                            {% for option in options %}
-                                {% set option = option|trim %}
-                                {% if option %}
-                                <div class="form-check mb-2">
-                                    <input class="form-check-input" type="radio" id="option-{{ question.id }}-{{ loop.index }}" name="question-{{ question.id }}" value="{{ option }}">
-                                    <label class="form-check-label" for="option-{{ question.id }}-{{ loop.index }}">
-                                        {{ option }}
-                                    </label>
-                                </div>
-                                {% endif %}
-                            {% endfor %}
-                        </div>
-                    {% else %}
-                        <div class="form-group">
-                            <textarea class="form-control" rows="3" placeholder="Escribe tu respuesta aquí..."></textarea>
-                        </div>
-                    {% endif %}
+        <div style="color:#6c63ff; font-size:1.3rem; margin-bottom:1.5rem; text-align:center; font-weight:600;">
+            <i class="fa fa-clock-o"></i> <span id="reloj">00:00:00</span>
+        </div>
+    </div>
+    <div id="bienvenida-card" class="bienvenida-card" {% if not questions %}style="display:none;"{% endif %}>
+        <div class="card p-4 shadow-sm mx-auto" style="max-width:820px; min-width:520px; border-radius: 1.1rem; margin-bottom:1.2rem;">
+            <div class="d-flex flex-column align-items-center">
+                <div style="background: #0d6efd; border-radius:50%; width:60px; height:60px; display:flex; align-items:center; justify-content:center; margin-bottom:12px;">
+                    <i class="fa fa-bullseye" style="color:white; font-size:1.7rem;"></i>
                 </div>
+                <h3 class="mb-2" style="font-weight:800; font-size:1.3rem; text-align:center;">¿Listo para tu reflexión diaria?</h3>
+                <p class="text-center" style="color:#555; font-size:1.05rem; margin-bottom:14px;">Tómate unos minutos para reflexionar sobre tu día.<br>Responde las preguntas que has configurado para tu crecimiento personal.</p>
+                <div class="mb-3 d-flex flex-row justify-content-center gap-2 w-100">
+                    <span class="badge px-4 py-2 d-flex align-items-center" style="background:#6ea8fe; color:#1a237e; font-size:1rem; border-radius: 1.5rem;">
+                        <span style="font-size:1.2em; margin-right:0.5em;">⏱️</span> A tu ritmo
+                    </span>
+                    <span class="badge px-4 py-2 d-flex align-items-center" style="background:#d1f7e8; color:#137333; font-size:1rem; border-radius: 1.5rem;">
+                        <span style="font-size:1.2em; margin-right:0.5em;">🎯</span> Tus preguntas
+                    </span>
+                    <span class="badge px-4 py-2 d-flex align-items-center" style="background:#f3e8ff; color:#7c3aed; font-size:1rem; border-radius: 1.5rem;">
+                        <span style="font-size:1.2em; margin-right:0.5em;">📊</span> Análisis incluido
+                    </span>
+                </div>
+                <button id="iniciar-btn" class="btn btn-primary btn-lg w-100" style="background: #0d6efd; border:none; font-size:1.15rem; padding: 0.8rem 0; border-radius: 0.8rem; color: #fff;">
+                    <i class="fa fa-play"></i> Iniciar Preguntas
+                </button>
             </div>
         </div>
-        {% endfor %}
+        <div class="d-flex justify-content-center gap-4 mb-3" style="width:100%; max-width:900px; margin:0 auto;">
+            <div class="card p-4 flex-fill text-center" style="min-width:260px; border-radius:1.2rem; font-size:1.2rem;">
+                <span class="text-primary" style="font-size:1.25rem;"><i class="fa fa-clock-o"></i> <b>Tiempo Personalizado</b></span>
+                <div style="font-size:1.1rem; color:#555; margin-top:0.5rem;">Responde a tu ritmo, sin presión</div>
+            </div>
+            <div class="card p-4 flex-fill text-center" style="min-width:260px; border-radius:1.2rem; font-size:1.2rem;">
+                <span class="text-success" style="font-size:1.25rem;"><i class="fa fa-bullseye"></i> <b>Progreso Medido</b></span>
+                <div style="font-size:1.1rem; color:#555; margin-top:0.5rem;">Análisis detallado de tus respuestas</div>
+            </div>
+        </div>
+    </div>
+    <div id="preguntas-container" style="display:none; width:100%;">
+        <div class="main-container">
+            {% if questions %}
+                <!-- Barra de progreso -->
+                <div class="progress-container">
+                    <div class="progress-text">
+                        <span>Progreso</span>
+                        <span>1 de {{ questions|length }}</span>
+                    </div>
+                    <div class="progress">
+                        <div class="progress-bar" role="progressbar" style="width: {{ (1 / questions|length * 100) }}%;"
+                             aria-valuenow="1" aria-valuemin="0" aria-valuemax="{{ questions|length }}"></div>
+                    </div>
+                </div>
 
-        <!-- Botones de navegación -->
-        <div class="nav-buttons">
-            <button type="button" class="btn btn-outline-primary" id="prev-btn" disabled>
-                <i class="bi bi-arrow-left"></i> Anterior
-            </button>
-            <button type="button" class="btn btn-primary" id="next-btn">
-                Siguiente <i class="bi bi-arrow-right"></i>
-            </button>
-            <button type="button" class="btn btn-success" id="submit-btn" style="display: none;">
-                Enviar respuestas
-            </button>
+                {% for question in questions %}
+                <!-- Tarjeta de pregunta -->
+                <div class="question-card mb-4" data-question-id="{{ question.id }}" data-is-required="{{ 1 if question.is_required else 0 }}" style="display:none;">
+                    <div class="question-header d-flex justify-content-between align-items-center">
+                        <span class="fw-semibold">
+                            {{ question.text }}
+                            {% if question.is_required %}
+                                <span style="color: red; font-weight: bold;" title="Obligatorio">*</span>
+                            {% endif %}
+                        </span>
+                        <span class="question-number">{{ loop.index }} de {{ questions|length }}</span>
+                    </div>
+                    <div class="question-body">
+                        <div class="options-container">
+                            {% if question.type == 'checkbox' and question.options %}
+                                {% set options = question.options.split(',') %}
+                                <div class="checkbox-options">
+                                    {% for option in options %}
+                                        {% set option = option|trim %}
+                                        {% if option %}
+                                        <div class="form-check mb-2">
+                                            <input class="form-check-input" type="checkbox" id="option-{{ question.id }}-{{ loop.index }}" name="question-{{ question.id }}" value="{{ option }}">
+                                            <label class="form-check-label" for="option-{{ question.id }}-{{ loop.index }}">
+                                                {{ option }}
+                                            </label>
+                                        </div>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                            {% elif (question.type == 'multiple_choice') and question.options %}
+                                {% set options = question.options.split(',') %}
+                                {% for option in options %}
+                                    {% set option_letter = ['A', 'B', 'C', 'D', 'E'][loop.index0] %}
+                                    <button type="button" class="option-btn" data-question-id="{{ question.id }}" data-option="{{ option|trim }}">
+                                        <span class="option-letter">{{ option_letter }}</span>
+                                        {{ option|trim }}
+                                    </button>
+                                {% endfor %}
+                            {% elif question.type == 'select' or question.type == 'yes_no' %}
+                                <button type="button" class="option-btn" data-question-id="{{ question.id }}" data-option="Sí">
+                                    Sí
+                                </button>
+                                <button type="button" class="option-btn" data-question-id="{{ question.id }}" data-option="No">
+                                    No
+                                </button>
+                            {% elif question.type == 'radio' and question.options %}
+                                {% set options = question.options.split(',') if question.options is string else question.options %}
+                                <div class="radio-options">
+                                    {% for option in options %}
+                                        {% set option = option|trim %}
+                                        {% if option %}
+                                        <div class="form-check mb-2">
+                                            <input class="form-check-input" type="radio" id="option-{{ question.id }}-{{ loop.index }}" name="question-{{ question.id }}" value="{{ option }}">
+                                            <label class="form-check-label" for="option-{{ question.id }}-{{ loop.index }}">
+                                                {{ option }}
+                                            </label>
+                                        </div>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <div class="form-group">
+                                    <textarea class="form-control" rows="3" placeholder="Escribe tu respuesta aquí..."></textarea>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+
+                <!-- Botones de navegación -->
+                <div class="nav-buttons">
+                    <button type="button" class="btn btn-outline-primary" id="prev-btn" disabled>
+                        <i class="bi bi-arrow-left"></i> Anterior
+                    </button>
+                    <button type="button" class="btn btn-primary" id="next-btn">
+                        Siguiente <i class="bi bi-arrow-right"></i>
+                    </button>
+                    <button type="button" class="btn btn-success" id="submit-btn" style="display: none;">
+                        Enviar respuestas
+                    </button>
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    No hay preguntas asignadas para hoy. Por favor, contacta al administrador.
+                </div>
+            {% endif %}
         </div>
-    {% else %}
-        <div class="alert alert-info">
-            No hay preguntas asignadas para hoy. Por favor, contacta al administrador.
-        </div>
-    {% endif %}
+    </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
-// Función para manejar la selección de opciones
-document.querySelectorAll('.option-btn').forEach(button => {
-    button.addEventListener('click', function() {
-        // Remover la clase 'selected' de todos los botones
-        document.querySelectorAll('.option-btn').forEach(btn => {
-            btn.classList.remove('selected');
-        });
-        
-        // Agregar la clase 'selected' al botón clickeado
-        this.classList.add('selected');
-    });
-});
+// Reloj en vivo
+function actualizarReloj() {
+    const ahora = new Date();
+    const h = String(ahora.getHours()).padStart(2, '0');
+    const m = String(ahora.getMinutes()).padStart(2, '0');
+    const s = String(ahora.getSeconds()).padStart(2, '0');
+    document.getElementById('reloj').textContent = `${h}:${m}:${s}`;
+}
+setInterval(actualizarReloj, 1000);
+actualizarReloj();
 
-// Función para manejar el envío del formulario
-document.getElementById('daily-questions-form')?.addEventListener('submit', async function(e) {
-    e.preventDefault();
-    
-    const formData = new FormData(this);
-    const data = {
-        date: formData.get('date'),
-        responses: {}
-    };
-    
-    // Obtener la respuesta seleccionada
-    const selectedOption = document.querySelector('.option-btn.selected');
-    if (selectedOption) {
-        const questionId = 'q1'; // Ajustar según sea necesario
-        data.responses[questionId] = selectedOption.textContent.trim();
-    }
-    
-    try {
-        const response = await fetch('/submit_responses', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(data)
-        });
-        
-        const result = await response.json();
-        if (result.status === 'success') {
-            // Actualizar la interfaz para la siguiente pregunta
-            // Por ahora, solo mostramos un mensaje de éxito
-            alert('Respuesta guardada exitosamente');
-        } else {
-            alert(result.message || 'Error al guardar la respuesta');
+// Mostrar preguntas al pulsar el botón
+const iniciarBtn = document.getElementById('iniciar-btn');
+if (iniciarBtn) {
+    iniciarBtn.addEventListener('click', function() {
+        document.getElementById('bienvenida-card').style.display = 'none';
+        document.getElementById('preguntas-container').style.display = 'block';
+        const header = document.getElementById('bienvenida-header');
+        if (header) header.style.display = 'none';
+        // Mostrar la primera pregunta
+        const cards = document.querySelectorAll('.question-card');
+        if (cards.length > 0) {
+            cards[0].style.display = 'block';
         }
-    } catch (error) {
-        console.error('Error:', error);
-        alert('Error al guardar la respuesta');
-    }
-});
+    });
+}
 </script>
 {% endblock %}

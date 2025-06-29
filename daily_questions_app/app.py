@@ -1311,6 +1311,9 @@ def delete_question(question_id):
                 response = jsonify({'status': 'error', 'message': 'No autorizado'})
                 response.status_code = 403
                 return response
+            # Eliminar primero las respuestas asociadas
+            cursor.execute('DELETE FROM response WHERE question_id = ?', (question_id,))
+            # Luego eliminar la pregunta
             cursor.execute('DELETE FROM question WHERE id = ?', (question_id,))
             conn.commit()
         return jsonify({'status': 'success'})
