@@ -19,7 +19,7 @@
 
         {% for question in questions %}
         <!-- Tarjeta de pregunta -->
-        <div class="question-card mb-4" data-question-id="{{ question.id }}">
+        <div class="question-card mb-4" data-question-id="{{ question.id }}" data-is-required="{{ 1 if question.is_required else 0 }}">
             <div class="question-header d-flex justify-content-between align-items-center">
                 <span class="fw-semibold">
                     {{ question.text }}

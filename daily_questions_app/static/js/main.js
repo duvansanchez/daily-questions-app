@@ -185,12 +185,17 @@ function saveCurrentResponse() {
         }
     }
 
-    // Guardar solo si hay valor
-    if (value !== null && value !== undefined && value !== '') {
-        responses[currentQuestion.id] = value;
+    // Guardar siempre la respuesta (vacía o no) para preguntas no obligatorias
+    const isRequired = card.getAttribute('data-is-required') == '1' || card.getAttribute('data-is-required') == 'true';
+    if (isRequired) {
+        if (value !== null && value !== undefined && value !== '') {
+            responses[currentQuestion.id] = value;
+        } else {
+            delete responses[currentQuestion.id];
+        }
     } else {
-        // Si no hay respuesta, eliminar del objeto
-        delete responses[currentQuestion.id];
+        // No obligatoria: guardar aunque esté vacía
+        responses[currentQuestion.id] = value !== null && value !== undefined ? value : '';
     }
 }
 
@@ -281,6 +286,16 @@ document.addEventListener('DOMContentLoaded', function() {
     if (submitBtn) {
         submitBtn.addEventListener('click', function() {
             saveCurrentResponse();
+            // Validar preguntas obligatorias antes de enviar
+            const obligatoriasSinResponder = questions.filter(q => {
+                const card = q.element;
+                const isRequired = card.getAttribute('data-is-required') == '1' || card.getAttribute('data-is-required') == 'true';
+                return isRequired && !(q.id in responses) && !card.querySelector('.option-btn.selected') && !card.querySelector('input[type="checkbox"]:checked') && !card.querySelector('input[type="radio"]:checked') && (!card.querySelector('textarea') || card.querySelector('textarea').value.trim() === '');
+            });
+            if (obligatoriasSinResponder.length > 0) {
+                showError('Debes responder todas las preguntas obligatorias antes de enviar.');
+                return;
+            }
             showConfirm('¿Estás seguro de que deseas enviar tus respuestas?').then((result) => {
                 if (result.isConfirmed) {
                     submitResponses();
@@ -347,7 +362,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (result.status === 'success') {
                     showSuccess('Pregunta creada exitosamente');
                     setTimeout(() => {
-                        window.location.reload();
+                        window.location.href = window.location.href.split('?')[0];
                     }, 1200);
                 } else {
                     showError(result.message || 'Error al crear la pregunta');
@@ -361,3 +376,34 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+
+// Inicializa los eventos de administración de preguntas (editar, eliminar, switches, etc)
+function initAdminEvents() {
+    // Re-inicializar eventos de editar, eliminar, switches, etc.
+    // Eliminar pregunta
+    document.querySelectorAll('.delete-question').forEach(btn => {
+        btn.onclick = function(e) {
+            e.preventDefault();
+            const id = this.dataset.id;
+            showConfirm('¿Estás seguro de que deseas eliminar esta pregunta? Esta acción no se puede deshacer.').then((result) => {
+                if (result.isConfirmed) {
+                    fetch(`/question/${id}`, {
+                        method: 'DELETE',
+                        headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+                    })
+                    .then(res => res.json())
+                    .then(res => {
+                        if (res.status === 'success') {
+                            this.closest('.pregunta-item').remove();
+                            showSuccess('Pregunta eliminada correctamente.');
+                        } else {
+                            showError('Error al eliminar: ' + (res.message || ''));
+                        }
+                    })
+                    .catch(err => showError('Error al eliminar: ' + err));
+                }
+            });
+        };
+    });
+    // Puedes agregar aquí la reinicialización de otros eventos (editar, switches, etc.)
+}

@@ -394,14 +394,16 @@ def admin():
                             [is_required],
                             [categoria]
                         FROM [question] q
+                        WHERE q.[assigned_user_id] = ?
                         ORDER BY q.[created_at] DESC
                     """
                         
-                    # Ejecutar la consulta básica
-                    cursor.execute(basic_query)
+                    # Ejecutar la consulta básica solo para el usuario actual
+                    cursor.execute(basic_query, (current_user.id,))
                     
                     # Procesar resultados
                     questions_data = cursor.fetchall()
+                    print(f"[DEBUG] Preguntas encontradas para usuario {current_user.id}: {[row[0] for row in questions_data]}")
                     
                     # Mapear los resultados a objetos Question
                     questions = []
@@ -687,7 +689,8 @@ def add_question():
                 categoria=categoria,
                 active=active
             )
-            logger.info(f"[DEBUG] ID de pregunta insertada: {question_id}")
+            logger.info(f"[DEBUG] ID de pregunta insertada: {question_id} | Usuario: {assigned_user_id} | Texto: {text} | Activa: {active} | Categoria: {categoria}")
+            print(f"[DEBUG] ID de pregunta insertada: {question_id} | Usuario: {assigned_user_id} | Texto: {text} | Activa: {active} | Categoria: {categoria}")
             if is_ajax:
                 return jsonify({
                     'status': 'success',
@@ -729,7 +732,10 @@ def submit_responses():
             
         # Convertir la fecha al formato correcto para SQL Server
         date_str = data['date']
-        date_obj = datetime.strptime(date_str, '%Y-%m-%d').date()
+        from datetime import datetime
+        date_obj = datetime.strptime(date_str, '%Y-%m-%d')
+        now = datetime.now()
+        date_with_time = now.replace(year=date_obj.year, month=date_obj.month, day=date_obj.day)
         responses = data['responses']
         
         print(f"Recibiendo respuestas para la fecha: {date_obj}")
@@ -792,7 +798,7 @@ def submit_responses():
                             INSERT INTO response (question_id, response, date)
                             VALUES (?, ?, ?)
                             """,
-                            (question_id, response_text, date_obj)
+                            (question_id, response_text, date_with_time)
                         )
                     except ValueError as ve:
                         conn.rollback()
@@ -835,15 +841,16 @@ def stats():
         today = datetime.now().strftime('%Y-%m-%d')
         with get_db_connection() as conn:
             with conn.cursor() as cursor:
-                # Preguntas asignadas al usuario
-                cursor.execute('SELECT COUNT(*) FROM question WHERE assigned_user_id = ?', (current_user.id,))
+                # Preguntas asignadas al usuario (solo activas)
+                cursor.execute('SELECT COUNT(*) FROM question WHERE assigned_user_id = ? AND active = 1', (current_user.id,))
                 total_asignadas = cursor.fetchone()[0] or 0
 
-                # Respuestas de hoy
+                # Respuestas de hoy (solo las que no están vacías)
                 cursor.execute('''
                     SELECT COUNT(*) FROM response r
                     JOIN question q ON r.question_id = q.id
                     WHERE q.assigned_user_id = ? AND CONVERT(DATE, r.date) = ?
+                    AND (r.response IS NOT NULL AND LTRIM(RTRIM(r.response)) <> '')
                 ''', (current_user.id, today))
                 respondidas_hoy = cursor.fetchone()[0] or 0
 
@@ -858,8 +865,32 @@ def stats():
                 if row and row[0]:
                     ultima_fecha = row[0]
                     if hasattr(ultima_fecha, 'strftime'):
-                        ultima_fecha_str = ultima_fecha.strftime('%d de %B, %H:%M')
-                        relativo = 'hace 2 horas'  # Aquí puedes calcular el tiempo relativo real
+                        # Si es date, convertir a datetime
+                        if type(ultima_fecha).__name__ == 'date':
+                            ultima_fecha = datetime.combine(ultima_fecha, datetime.min.time())
+                        meses_es = {
+                            1: 'enero', 2: 'febrero', 3: 'marzo', 4: 'abril',
+                            5: 'mayo', 6: 'junio', 7: 'julio', 8: 'agosto',
+                            9: 'septiembre', 10: 'octubre', 11: 'noviembre', 12: 'diciembre'
+                        }
+                        dia = ultima_fecha.day
+                        mes = meses_es[ultima_fecha.month]
+                        año = ultima_fecha.year
+                        hora = ultima_fecha.strftime('%H:%M')
+                        ultima_fecha_str = f"{dia} de {mes} de {año}, {hora}"
+                        # Calcular tiempo relativo real
+                        ahora = datetime.now()
+                        diff = ahora - ultima_fecha
+                        if diff.days > 0:
+                            relativo = f"hace {diff.days} día{'s' if diff.days > 1 else ''}"
+                        elif diff.seconds >= 3600:
+                            horas = diff.seconds // 3600
+                            relativo = f"hace {horas} hora{'s' if horas > 1 else ''}"
+                        elif diff.seconds >= 60:
+                            minutos = diff.seconds // 60
+                            relativo = f"hace {minutos} minuto{'s' if minutos > 1 else ''}"
+                        else:
+                            relativo = "hace unos segundos"
                     else:
                         ultima_fecha_str = str(ultima_fecha)
                         relativo = ''
