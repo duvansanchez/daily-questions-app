@@ -839,47 +839,44 @@ def submit_responses():
 @login_required
 def stats():
     try:
+        hoy = datetime.datetime.now()
+        inicio_semana = (hoy - datetime.timedelta(days=hoy.weekday())).replace(hour=0, minute=0, second=0, microsecond=0)
+        fin_semana = inicio_semana + datetime.timedelta(days=6, hours=23, minutes=59, seconds=59)
+        inicio_mes = hoy.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        if hoy.month == 12:
+            fin_mes = hoy.replace(year=hoy.year+1, month=1, day=1, hour=0, minute=0, second=0, microsecond=0) - datetime.timedelta(seconds=1)
+        else:
+            fin_mes = hoy.replace(month=hoy.month+1, day=1, hour=0, minute=0, second=0, microsecond=0) - datetime.timedelta(seconds=1)
         today = datetime.datetime.now().strftime('%Y-%m-%d')
         with get_db_connection() as conn:
             with conn.cursor() as cursor:
-                # Eficiencia semanal
-                hoy = datetime.datetime.now()
-                inicio_semana = (hoy - datetime.timedelta(days=hoy.weekday())).replace(hour=0, minute=0, second=0, microsecond=0)
-                fin_semana = inicio_semana + datetime.timedelta(days=6, hours=23, minutes=59, seconds=59)
-                inicio_mes = hoy.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-                if hoy.month == 12:
-                    fin_mes = hoy.replace(year=hoy.year+1, month=1, day=1, hour=0, minute=0, second=0, microsecond=0) - datetime.timedelta(seconds=1)
-                else:
-                    fin_mes = hoy.replace(month=hoy.month+1, day=1, hour=0, minute=0, second=0, microsecond=0) - datetime.timedelta(seconds=1)
-
-                # Total asignadas semana
+                # Total preguntas activas asignadas actualmente
                 cursor.execute('SELECT COUNT(*) FROM question WHERE assigned_user_id = ? AND active = 1', (current_user.id,))
                 total_asignadas = cursor.fetchone()[0] or 0
-                # Respondidas semana
+
+                # Respondidas semana (solo preguntas activas)
                 cursor.execute('''
                     SELECT COUNT(*) FROM response r
                     JOIN question q ON r.question_id = q.id
                     WHERE q.assigned_user_id = ?
                     AND r.date >= ? AND r.date <= ?
+                    AND q.active = 1
                     AND (r.response IS NOT NULL AND LTRIM(RTRIM(r.response)) <> '')
                 ''', (current_user.id, inicio_semana, fin_semana))
                 respondidas_semana = cursor.fetchone()[0] or 0
-                eficiencia_semanal = int((respondidas_semana / total_asignadas) * 100) if total_asignadas > 0 else 0
+                eficiencia_semanal = int((respondidas_semana / (total_asignadas * 7)) * 100) if total_asignadas > 0 else 0
 
-                # Respondidas mes
+                # Respondidas mes (solo preguntas activas)
                 cursor.execute('''
                     SELECT COUNT(*) FROM response r
                     JOIN question q ON r.question_id = q.id
                     WHERE q.assigned_user_id = ?
                     AND r.date >= ? AND r.date <= ?
+                    AND q.active = 1
                     AND (r.response IS NOT NULL AND LTRIM(RTRIM(r.response)) <> '')
                 ''', (current_user.id, inicio_mes, fin_mes))
                 respondidas_mes = cursor.fetchone()[0] or 0
-                eficiencia_mensual = int((respondidas_mes / total_asignadas) * 100) if total_asignadas > 0 else 0
-
-                # Preguntas asignadas al usuario (solo activas)
-                cursor.execute('SELECT COUNT(*) FROM question WHERE assigned_user_id = ? AND active = 1', (current_user.id,))
-                total_asignadas = cursor.fetchone()[0] or 0
+                eficiencia_mensual = int((respondidas_mes / (total_asignadas * (fin_mes.date() - inicio_mes.date()).days + 1)) * 100) if total_asignadas > 0 else 0
 
                 # Respuestas de hoy (solo las que no están vacías)
                 cursor.execute('''
@@ -984,8 +981,83 @@ def stats():
                     'promedio_diario': promedio_diario
                 }
 
-                dias_letras = ['L','M','X','J','V','S','D']
-                racha_zip = list(zip([1,1,1,1,1,0,1], dias_letras))  # Usa racha_ultimos7 real aquí
+                # === Productividad por Día (Lunes a Domingo) ===
+                dias_semana = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
+                productividad_dias = []
+                mejor_dia = {'nombre': '', 'porcentaje': 0}
+                for i, nombre_dia in enumerate(dias_semana):
+                    dia_fecha = (inicio_semana + datetime.timedelta(days=i)).date()
+                    # Preguntas asignadas activas ese día
+                    cursor.execute('''
+                        SELECT COUNT(*) FROM question
+                        WHERE assigned_user_id = ? AND active = 1
+                    ''', (current_user.id,))
+                    asignadas = cursor.fetchone()[0] or 0
+                    # Respuestas dadas ese día (no vacías)
+                    cursor.execute('''
+                        SELECT COUNT(*) FROM response r
+                        JOIN question q ON r.question_id = q.id
+                        WHERE q.assigned_user_id = ?
+                        AND CONVERT(DATE, r.date) = ?
+                        AND (r.response IS NOT NULL AND LTRIM(RTRIM(r.response)) <> '')
+                    ''', (current_user.id, dia_fecha))
+                    respuestas = cursor.fetchone()[0] or 0
+                    porcentaje = int((respuestas / asignadas) * 100) if asignadas > 0 else 0
+                    productividad_dias.append({
+                        'nombre': nombre_dia,
+                        'respuestas': respuestas,
+                        'asignadas': asignadas,
+                        'porcentaje': porcentaje
+                    })
+                    if porcentaje > mejor_dia['porcentaje']:
+                        mejor_dia = {'nombre': nombre_dia, 'porcentaje': porcentaje}
+
+                # === Racha de Días Consecutivos ===
+                cursor.execute('''
+                    SELECT CONVERT(DATE, r.date) as dia
+                    FROM response r
+                    JOIN question q ON r.question_id = q.id
+                    WHERE q.assigned_user_id = ?
+                    GROUP BY CONVERT(DATE, r.date)
+                    ORDER BY dia ASC
+                ''', (current_user.id,))
+                dias_respondidos = [row[0] for row in cursor.fetchall()]
+                dias_respondidos_set = set(dias_respondidos)
+                total_dias = len(dias_respondidos_set)
+                # Mejor racha histórica
+                mejor_racha = 0
+                racha_actual = 0
+                racha_temp = 0
+                prev = None
+                for d in dias_respondidos:
+                    if prev is not None and (d - prev).days == 1:
+                        racha_temp += 1
+                    else:
+                        racha_temp = 1
+                    if racha_temp > mejor_racha:
+                        mejor_racha = racha_temp
+                    prev = d
+                # Racha actual (solo si hoy respondió)
+                hoy = datetime.datetime.now().date()
+                if hoy in dias_respondidos_set:
+                    racha_actual = 1
+                    prev = hoy
+                    while True:
+                        prev = prev - datetime.timedelta(days=1)
+                        if prev in dias_respondidos_set:
+                            racha_actual += 1
+                        else:
+                            break
+                else:
+                    racha_actual = 0
+                # Visualización últimos 7 días corridos
+                ultimos7 = []
+                dias_letras = ['L','M','MI','J','V','S','D']
+                for i in range(6, -1, -1):
+                    dia = hoy - datetime.timedelta(days=i)
+                    ultimos7.append(1 if dia in dias_respondidos_set else 0)
+                racha_zip = list(zip(ultimos7, [dias_letras[(hoy - datetime.timedelta(days=i)).weekday()] for i in range(6, -1, -1)]))
+
                 return render_template(
                     'stats.html',
                     resumen_diario=resumen_diario,
@@ -997,26 +1069,18 @@ def stats():
                     comparacion_porcentaje=7,
                     eficiencia_actual=89,
                     eficiencia_anterior=82,
-                    productividad_dias=[
-                        {'nombre': 'Lun', 'respuestas': 6, 'porcentaje': 85},
-                        {'nombre': 'Mar', 'respuestas': 7, 'porcentaje': 92},
-                        {'nombre': 'Mié', 'respuestas': 5, 'porcentaje': 78},
-                        {'nombre': 'Jue', 'respuestas': 8, 'porcentaje': 88},
-                        {'nombre': 'Vie', 'respuestas': 8, 'porcentaje': 95},
-                        {'nombre': 'Sáb', 'respuestas': 4, 'porcentaje': 65},
-                        {'nombre': 'Dom', 'respuestas': 4, 'porcentaje': 70},
-                    ],
-                    mejor_dia={'nombre': 'Vie', 'porcentaje': 95},
+                    productividad_dias=productividad_dias,
+                    mejor_dia=mejor_dia,
                     tiempo_respuesta_promedio=2.3,
                     preguntas_reflexion=[
                         {'texto': '¿Qué has aprendido hoy?', 'tiempo': 4.2},
                         {'texto': '¿Cómo te sientes?', 'tiempo': 1.8},
                         {'texto': '¿Qué mejorarías?', 'tiempo': 5.1},
                     ],
-                    racha_actual=7,
-                    mejor_racha=14,
-                    total_dias=23,
-                    racha_ultimos7=[1,1,1,1,1,0,1],
+                    racha_actual=racha_actual,
+                    mejor_racha=mejor_racha,
+                    total_dias=total_dias,
+                    racha_ultimos7=ultimos7,
                     racha_zip=racha_zip,
                 )
     except Exception as e:
