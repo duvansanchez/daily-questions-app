@@ -308,7 +308,103 @@
         </div>
         <!-- Tab Avanzadas -->
         <div class="tab-pane fade" id="avanzadas" role="tabpanel">
-            <div class="alert alert-info">Próximamente: Estadísticas avanzadas.</div>
+            <div class="container-fluid px-0">
+                <h5 class="fw-bold mb-3">Cumplimiento de Hábitos</h5>
+                <div class="text-muted mb-3" style="font-size:1rem;">Visualiza tu progreso, tendencias y el rendimiento de tus respuestas diarias.</div>
+                <!-- Tabs internos -->
+                <ul class="nav nav-tabs mb-4" id="cumplimientosTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="cumplimientos-tab" data-bs-toggle="tab" data-bs-target="#cumplimientos" type="button" role="tab">Cumplimientos</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="frecuencia-tab" data-bs-toggle="tab" data-bs-target="#frecuencia" type="button" role="tab">Frecuencia de Respuesta</button>
+                    </li>
+                </ul>
+                <div class="tab-content" id="cumplimientosTabsContent">
+                    <!-- Tab Cumplimientos -->
+                    <div class="tab-pane fade show active" id="cumplimientos" role="tabpanel">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div>
+                                <h6 class="fw-bold mb-1">Cumplimiento de Hábitos</h6>
+                                <div class="text-muted" style="font-size:1rem;">Visualiza qué tan consistente has sido con cada hábito</div>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <select class="form-select form-select-sm" id="periodo-select" style="min-width:120px;">
+                                    <option value="semanal">Semanal</option>
+                                    <option value="mensual">Mensual</option>
+                                </select>
+                                <select class="form-select form-select-sm" style="min-width:150px;">
+                                    <option>Por cumplimiento</option>
+                                    <option>Por categoría</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div id="habitos-tarjetas" class="row g-4"></div>
+                    </div>
+                    <!-- Tab Frecuencia de Respuesta (placeholder) -->
+                    <div class="tab-pane fade" id="frecuencia" role="tabpanel">
+                        <div class="alert alert-info">Próximamente: Frecuencia de Respuesta.</div>
+                    </div>
+                </div>
+            </div>
+            <style>
+            :root {
+                --color-success: #22c55e;
+                --color-warning: #f59e42;
+                --color-danger: #ef4444;
+            }
+            .progress-circle-success svg circle[stroke^="var(--color-success)"] { stroke: var(--color-success); }
+            .progress-circle-warning svg circle[stroke^="var(--color-warning)"] { stroke: var(--color-warning); }
+            .progress-circle-danger svg circle[stroke^="var(--color-danger)"] { stroke: var(--color-danger); }
+            </style>
+            <script>
+                const habitosSemanal = {{ habitos_semanal|tojson }};
+                const habitosMensual = {{ habitos_mensual|tojson }};
+                function renderHabitosTarjetas(periodo) {
+                    const data = periodo === 'mensual' ? habitosMensual : habitosSemanal;
+                    const cont = document.getElementById('habitos-tarjetas');
+                    cont.innerHTML = '';
+                    data.forEach(h => {
+                        cont.innerHTML += `
+                        <div class="col-md-6 col-lg-4">
+                            <div class="card shadow-sm border-0 h-100">
+                                <div class="card-body">
+                                    <div class="d-flex align-items-center justify-content-between mb-2">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <span style="font-size:1.6rem;">${h.icono}</span>
+                                            <span class="fw-semibold" style="font-size:1.08rem;">${h.pregunta}</span>
+                                        </div>
+                                        <span class="badge bg-light text-dark fw-normal" style="font-size:0.95em;">${h.categoria}</span>
+                                    </div>
+                                    <div class="d-flex flex-column align-items-center my-3">
+                                        <div class="progress-circle-${h.color} mb-1" style="position:relative; width:90px; height:90px;">
+                                            <svg width="90" height="90">
+                                                <circle cx="45" cy="45" r="40" stroke="#e5e7eb" stroke-width="8" fill="none" />
+                                                <circle cx="45" cy="45" r="40" stroke="var(--color-${h.color})" stroke-width="8" fill="none" stroke-dasharray="251.2" stroke-dashoffset="${251.2 - (251.2 * h.cumplimiento / 100)}" style="transition:stroke-dashoffset 0.6s;"/>
+                                            </svg>
+                                            <div class="progress-circle-label" style="position:absolute; top:0; left:0; width:90px; height:90px; display:flex; flex-direction:column; align-items:center; justify-content:center;">
+                                                <span class="fw-bold" style="font-size:1.5rem; color:var(--color-${h.color});">${h.cumplimiento}%</span>
+                                            </div>
+                                        </div>
+                                        <span class="text-muted" style="font-size:0.95rem; margin-top:0.1rem;">Cumplimiento</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between mt-2">
+                                        <div class="text-success" style="font-size:1.05rem;"><i class="bi bi-check-circle"></i> ${h.cumplidos} Cumplidos</div>
+                                        <div class="text-danger" style="font-size:1.05rem;"><i class="bi bi-x-circle"></i> ${h.omitidos} Omitidos</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        `;
+                    });
+                }
+                document.addEventListener('DOMContentLoaded', function() {
+                    renderHabitosTarjetas('semanal');
+                    document.getElementById('periodo-select').addEventListener('change', function(e) {
+                        renderHabitosTarjetas(e.target.value);
+                    });
+                });
+            </script>
         </div>
     </div>
 </div>

@@ -856,6 +856,7 @@ def submit_responses():
 @login_required
 def stats():
     try:
+        print('Fecha actual del backend:', datetime.datetime.now())
         hoy = datetime.datetime.now()
         inicio_semana = (hoy - datetime.timedelta(days=hoy.weekday())).replace(hour=0, minute=0, second=0, microsecond=0)
         fin_semana = inicio_semana + datetime.timedelta(days=6, hours=23, minutes=59, seconds=59)
@@ -895,11 +896,12 @@ def stats():
                 respondidas_mes = cursor.fetchone()[0] or 0
                 eficiencia_mensual = int((respondidas_mes / (total_asignadas * (fin_mes.date() - inicio_mes.date()).days + 1)) * 100) if total_asignadas > 0 else 0
 
-                # Respuestas de hoy (solo las que no están vacías)
+                # Respuestas de hoy (solo las que no están vacías y de preguntas activas)
                 cursor.execute('''
-                    SELECT COUNT(*) FROM response r
+                    SELECT COUNT(DISTINCT r.question_id) FROM response r
                     JOIN question q ON r.question_id = q.id
-                    WHERE q.assigned_user_id = ? AND CONVERT(DATE, r.date) = ?
+                    WHERE q.assigned_user_id = ? AND q.active = 1
+                    AND CONVERT(DATE, r.date) = ?
                     AND (r.response IS NOT NULL AND LTRIM(RTRIM(r.response)) <> '')
                 ''', (current_user.id, today))
                 respondidas_hoy = cursor.fetchone()[0] or 0
@@ -1010,11 +1012,12 @@ def stats():
                         WHERE assigned_user_id = ? AND active = 1
                     ''', (current_user.id,))
                     asignadas = cursor.fetchone()[0] or 0
-                    # Respuestas dadas ese día (no vacías)
+                    # Respuestas dadas ese día (no vacías y solo de preguntas activas)
                     cursor.execute('''
-                        SELECT COUNT(*) FROM response r
+                        SELECT COUNT(DISTINCT r.question_id) FROM response r
                         JOIN question q ON r.question_id = q.id
                         WHERE q.assigned_user_id = ?
+                        AND q.active = 1
                         AND CONVERT(DATE, r.date) = ?
                         AND (r.response IS NOT NULL AND LTRIM(RTRIM(r.response)) <> '')
                     ''', (current_user.id, dia_fecha))
@@ -1134,6 +1137,71 @@ def stats():
                         {'texto': 'No hay datos suficientes', 'tiempo': 0.0},
                     ]
 
+                # === Cumplimientos por pregunta (semana y mes) ===
+                # Obtener todas las preguntas activas asignadas al usuario
+                cursor.execute('''
+                    SELECT id, text, categoria
+                    FROM question
+                    WHERE assigned_user_id = ? AND active = 1
+                ''', (current_user.id,))
+                preguntas = cursor.fetchall()
+
+                # Fechas del periodo
+                dias_semana = [(inicio_semana + datetime.timedelta(days=i)).date() for i in range(7)]
+                dias_mes = [(inicio_mes + datetime.timedelta(days=i)).date() for i in range((fin_mes.date() - inicio_mes.date()).days + 1)]
+
+                habitos_semanal = []
+                habitos_mensual = []
+
+                for pregunta in preguntas:
+                    pregunta_id, texto, categoria = pregunta
+                    # --- SEMANAL ---
+                    cumplidos = 0
+                    omitidos = 0
+                    for dia in dias_semana:
+                        cursor.execute('''
+                            SELECT r.response FROM response r
+                            WHERE r.question_id = ? AND CONVERT(DATE, r.date) = ?
+                            AND (r.response IS NOT NULL AND LTRIM(RTRIM(r.response)) <> '')
+                        ''', (pregunta_id, dia))
+                        if cursor.fetchone():
+                            cumplidos += 1
+                        else:
+                            omitidos += 1
+                    porcentaje = int((cumplidos / len(dias_semana)) * 100) if len(dias_semana) > 0 else 0
+                    habitos_semanal.append({
+                        'pregunta': texto,
+                        'categoria': categoria or 'General',
+                        'icono': '✅',  # Puedes personalizar esto luego
+                        'cumplimiento': porcentaje,
+                        'cumplidos': cumplidos,
+                        'omitidos': omitidos,
+                        'color': 'success' if porcentaje >= 80 else 'warning' if porcentaje >= 60 else 'danger',
+                    })
+                    # --- MENSUAL ---
+                    cumplidos_m = 0
+                    omitidos_m = 0
+                    for dia in dias_mes:
+                        cursor.execute('''
+                            SELECT r.response FROM response r
+                            WHERE r.question_id = ? AND CONVERT(DATE, r.date) = ?
+                            AND (r.response IS NOT NULL AND LTRIM(RTRIM(r.response)) <> '')
+                        ''', (pregunta_id, dia))
+                        if cursor.fetchone():
+                            cumplidos_m += 1
+                        else:
+                            omitidos_m += 1
+                    porcentaje_m = int((cumplidos_m / len(dias_mes)) * 100) if len(dias_mes) > 0 else 0
+                    habitos_mensual.append({
+                        'pregunta': texto,
+                        'categoria': categoria or 'General',
+                        'icono': '✅',
+                        'cumplimiento': porcentaje_m,
+                        'cumplidos': cumplidos_m,
+                        'omitidos': omitidos_m,
+                        'color': 'success' if porcentaje_m >= 80 else 'warning' if porcentaje_m >= 60 else 'danger',
+                    })
+
                 return render_template(
                     'stats.html',
                     resumen_diario=resumen_diario,
@@ -1157,6 +1225,8 @@ def stats():
                     total_dias=total_dias,
                     racha_ultimos7=ultimos7,
                     racha_zip=racha_zip,
+                    habitos_semanal=habitos_semanal,
+                    habitos_mensual=habitos_mensual,
                 )
     except Exception as e:
         logger.error(f"Error al cargar las estadísticas: {str(e)}")
