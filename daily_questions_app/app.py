@@ -10,6 +10,7 @@ import logging
 import sys
 import traceback
 import datetime
+from collections import defaultdict
 
 load_dotenv()
 
@@ -1158,6 +1159,7 @@ def stats():
                     # --- SEMANAL ---
                     cumplidos = 0
                     omitidos = 0
+                    frecuencia_semanal = []
                     for dia in dias_semana:
                         cursor.execute('''
                             SELECT r.response FROM response r
@@ -1166,8 +1168,10 @@ def stats():
                         ''', (pregunta_id, dia))
                         if cursor.fetchone():
                             cumplidos += 1
+                            frecuencia_semanal.append(True)
                         else:
                             omitidos += 1
+                            frecuencia_semanal.append(False)
                     porcentaje = int((cumplidos / len(dias_semana)) * 100) if len(dias_semana) > 0 else 0
                     habitos_semanal.append({
                         'pregunta': texto,
@@ -1177,6 +1181,7 @@ def stats():
                         'cumplidos': cumplidos,
                         'omitidos': omitidos,
                         'color': 'success' if porcentaje >= 80 else 'warning' if porcentaje >= 60 else 'danger',
+                        'frecuencia_semanal': frecuencia_semanal,
                     })
                     # --- MENSUAL ---
                     cumplidos_m = 0
@@ -1202,6 +1207,17 @@ def stats():
                         'color': 'success' if porcentaje_m >= 80 else 'warning' if porcentaje_m >= 60 else 'danger',
                     })
 
+                # Obtener preguntas para el selector de Frecuencia de Respuesta
+                cursor.execute('''
+                    SELECT id, text, type
+                    FROM question
+                    WHERE assigned_user_id = ? AND active = 1
+                ''', (current_user.id,))
+                preguntas = [
+                    {'id': row[0], 'texto': row[1], 'tipo': row[2]}
+                    for row in cursor.fetchall()
+                ]
+
                 return render_template(
                     'stats.html',
                     resumen_diario=resumen_diario,
@@ -1209,7 +1225,6 @@ def stats():
                     indicadores=indicadores,
                     eficiencia_semanal=eficiencia_semanal,
                     eficiencia_mensual=eficiencia_mensual,
-                    # Placeholders para el front intermedio
                     comparacion_porcentaje=7,
                     eficiencia_actual=89,
                     eficiencia_anterior=82,
@@ -1227,6 +1242,7 @@ def stats():
                     racha_zip=racha_zip,
                     habitos_semanal=habitos_semanal,
                     habitos_mensual=habitos_mensual,
+                    preguntas=preguntas
                 )
     except Exception as e:
         logger.error(f"Error al cargar las estadísticas: {str(e)}")
@@ -1500,6 +1516,222 @@ def start_question_timer(question_id):
             'status': 'error',
             'message': f'Error al registrar tiempo de inicio: {str(e)}'
         }), 500
+
+@app.route('/stats/intermedias')
+@login_required
+def stats_intermedias():
+    with get_db_connection() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute('''
+                SELECT id, text, type
+                FROM question
+                WHERE assigned_user_id = ? AND active = 1
+            ''', (current_user.id,))
+            preguntas = [
+                {'id': row[0], 'texto': row[1], 'tipo': row[2]}
+                for row in cursor.fetchall()
+            ]
+    habitos = []  # Puedes poner aquí la lógica real si la necesitas
+    return render_template('intermedias.html', preguntas=preguntas, habitos=habitos)
+
+@app.route('/api/stats/frequency/<int:question_id>')
+@login_required
+def get_question_frequency(question_id):
+    try:
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('''
+                SELECT id, text, type, options
+                FROM question
+                WHERE id = ? AND assigned_user_id = ?
+            ''', (question_id, current_user.id))
+            question = cursor.fetchone()
+            if not question:
+                return jsonify({'error': 'Pregunta no encontrada'}), 404
+            question_id, question_text, question_type, options = question
+            
+            if question_type in ['texto', 'text', 'open']:
+                return jsonify({
+                    'error': 'Las preguntas de texto abierto no pueden analizarse cuantitativamente',
+                    'excluded': True
+                }), 400
+            periodo = request.args.get('periodo', 'semanas')
+            hoy = datetime.datetime.now()
+            if periodo == 'semanas':
+                inicio = hoy - datetime.timedelta(weeks=8)
+            elif periodo == 'meses':
+                inicio = hoy - datetime.timedelta(days=365)
+            else:
+                inicio = hoy - datetime.timedelta(days=5*365)
+            cursor.execute('''
+                SELECT r.response, r.date
+                FROM response r
+                WHERE r.question_id = ?
+                AND r.date >= ?
+                AND (r.response IS NOT NULL AND LTRIM(RTRIM(r.response)) <> '')
+                ORDER BY r.date
+            ''', (question_id, inicio))
+            responses = cursor.fetchall()
+            print(f"[DEBUG] Opciones de la pregunta: {options}")
+            print(f"[DEBUG] Tipo de pregunta: {question_type}")
+            print(f"[DEBUG] Respuestas encontradas: {responses}")
+
+            def es_select_si_no(tipo, opciones, respuestas):
+                si_variantes = ['sí', 'si', 'yes', 'true', '1', 'verdadero']
+                no_variantes = ['no', 'false', '0', 'falso']
+                if tipo not in ['select', 'radio']:
+                    return False
+                if opciones:
+                    opts = [o.strip().lower() for o in opciones.split(',') if o.strip()]
+                    if len(opts) != 2:
+                        return False
+                    return (
+                        (opts[0] in si_variantes and opts[1] in no_variantes) or
+                        (opts[1] in si_variantes and opts[0] in no_variantes)
+                    )
+                # Si no hay opciones, revisar las respuestas
+                if respuestas:
+                    valores = set([r[0].strip().lower() for r in respuestas if r[0]])
+                    solo_si_no = all(v in si_variantes + no_variantes for v in valores)
+                    return solo_si_no and len(valores) > 0
+                return False
+
+            if question_type in ['yes_no', 'boolean'] or es_select_si_no(question_type, options, responses):
+                print("[DEBUG] Entrando a if de SÍ/NO")
+                # Contar totales de Sí y No en el periodo
+                si_count = 0
+                no_count = 0
+                for response, date in responses:
+                    response_lower = response.lower().strip()
+                    if response_lower in ['sí', 'si', 'yes', 'true', '1', 'verdadero']:
+                        si_count += 1
+                    elif response_lower in ['no', 'false', '0', 'falso']:
+                        no_count += 1
+                print(f"[DEBUG] Total Sí: {si_count}, Total No: {no_count}")
+                return jsonify({
+                    'tipo': 'barras',
+                    'labels': ['Sí', 'No'],
+                    'datasets': [
+                        {
+                            'label': 'Respuestas',
+                            'data': [si_count, no_count],
+                            'backgroundColor': ['#10b981', '#ef4444'],
+                            'borderColor': ['#059669', '#dc2626'],
+                            'borderWidth': 1
+                        }
+                    ],
+                    'question_text': question_text,
+                    'question_type': question_type
+                })
+            elif question_type in ['radio', 'checkbox']:
+                print("[DEBUG] Entrando a if de opciones múltiples")
+                if options:
+                    opciones_disponibles = [opt.strip() for opt in options.split(',') if opt.strip()]
+                else:
+                    opciones_disponibles = []
+                frecuencia_opciones = {}
+                for opt in opciones_disponibles:
+                    frecuencia_opciones[opt] = 0
+                for response, date in responses:
+                    if question_type == 'radio':
+                        if response in frecuencia_opciones:
+                            frecuencia_opciones[response] += 1
+                    else:
+                        respuestas_seleccionadas = [r.strip() for r in response.split(',') if r.strip()]
+                        for resp in respuestas_seleccionadas:
+                            if resp in frecuencia_opciones:
+                                frecuencia_opciones[resp] += 1
+                labels = list(frecuencia_opciones.keys())
+                data = list(frecuencia_opciones.values())
+                return jsonify({
+                    'tipo': 'barras',
+                    'labels': labels,
+                    'datasets': [{
+                        'label': 'Frecuencia de selección',
+                        'data': data,
+                        'backgroundColor': [
+                            '#3b82f6', '#ef4444', '#10b981', '#f59e0b',
+                            '#8b5cf6', '#06b6d4', '#f97316', '#84cc16'
+                        ][:len(data)],
+                        'borderColor': [
+                            '#2563eb', '#dc2626', '#059669', '#d97706',
+                            '#7c3aed', '#0891b2', '#ea580c', '#65a30d'
+                        ][:len(data)],
+                        'borderWidth': 1
+                    }],
+                    'question_text': question_text,
+                    'question_type': question_type
+                })
+            # Detectar si es pregunta de sí/no aunque el tipo sea select o radio
+            es_si_no = False
+            opciones_si_no = ['sí', 'si', 'no']
+            if question_type in ['yes_no', 'boolean']:
+                es_si_no = True
+            elif question_type in ['select', 'radio'] and options:
+                opts = [o.strip().lower() for o in options.split(',') if o.strip()]
+                if sorted(opts) == sorted(['sí', 'no']) or sorted(opts) == sorted(['si', 'no']):
+                    es_si_no = True
+            if es_si_no:
+                # Agrupar por periodo
+                period_labels = []
+                si_counts = []
+                no_counts = []
+                grouped = defaultdict(lambda: {'Sí': 0, 'No': 0})
+                for response, date in responses:
+                    if not date:
+                        continue
+                    if periodo == 'semanas':
+                        semana = date.isocalendar()[1]
+                        year = date.year
+                        label = f"Semana {semana} ({year})"
+                    elif periodo == 'meses':
+                        label = date.strftime('%m/%Y')
+                    else:
+                        label = str(date.year)
+                    response_lower = response.lower().strip()
+                    if response_lower in ['sí', 'si', 'yes', 'true', '1', 'verdadero']:
+                        grouped[label]['Sí'] += 1
+                    elif response_lower in ['no', 'false', '0', 'falso']:
+                        grouped[label]['No'] += 1
+                sorted_labels = sorted(grouped.keys(), key=lambda x: x)
+                for label in sorted_labels:
+                    period_labels.append(label)
+                    si_counts.append(grouped[label]['Sí'])
+                    no_counts.append(grouped[label]['No'])
+                return jsonify({
+                    'tipo': 'barras',
+                    'labels': period_labels,
+                    'datasets': [
+                        {
+                            'label': 'Sí',
+                            'data': si_counts,
+                            'backgroundColor': '#10b981',
+                            'borderColor': '#059669',
+                            'borderWidth': 1
+                        },
+                        {
+                            'label': 'No',
+                            'data': no_counts,
+                            'backgroundColor': '#ef4444',
+                            'borderColor': '#dc2626',
+                            'borderWidth': 1
+                        }
+                    ],
+                    'question_text': question_text,
+                    'question_type': question_type
+                })
+            # Si no es ninguno de los tipos contemplados, retorna vacío
+            return jsonify({
+                'tipo': 'barras',
+                'labels': [],
+                'datasets': [],
+                'question_text': question_text,
+                'question_type': question_type,
+                'message': 'Tipo de pregunta no soportado para análisis de frecuencia.'
+            })
+    except Exception as e:
+        logger.error(f"Error al obtener frecuencia de pregunta: {str(e)}")
+        return jsonify({'error': 'Error al obtener datos de frecuencia'}), 500
 
 # Manejadores de error globales
 @app.errorhandler(404)
