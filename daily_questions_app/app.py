@@ -1765,12 +1765,19 @@ def objetivos():
 @app.route('/api/objetivos', methods=['GET'])
 @login_required
 def api_list_objetivos():
+    from datetime import datetime, timedelta
+    hoy = datetime.now().date()
+    dia_semana = hoy.weekday()  # 0=lunes
+    primer_dia_semana = hoy - timedelta(days=dia_semana)
+    primer_dia_mes = hoy.replace(day=1)
+    primer_dia_anio = hoy.replace(month=1, day=1)
     with get_db_connection() as conn:
         cursor = conn.cursor()
-        cursor.execute('''SELECT id, titulo, descripcion, prioridad, categoria, completado, fecha_creacion, fecha_completado, objetivo_padre_id, es_padre, estado, fecha_inicio, fecha_fin, horas_estimadas, dificultad, etiquetas, recompensa, notas_adicionales FROM objetivos WHERE user_id = ? ORDER BY fecha_creacion DESC''', (current_user.id,))
+        cursor.execute('''SELECT id, titulo, descripcion, prioridad, categoria, completado, fecha_creacion, fecha_completado, objetivo_padre_id, es_padre, estado, fecha_inicio, fecha_fin, horas_estimadas, dificultad, etiquetas, recompensa, notas_adicionales, recurrente, frecuencia FROM objetivos WHERE user_id = ? ORDER BY fecha_creacion DESC''', (current_user.id,))
         rows = cursor.fetchall()
-        objetivos = [
-            {
+        objetivos = []
+        for row in rows:
+            obj = {
                 'id': row[0],
                 'titulo': row[1],
                 'descripcion': row[2],
@@ -1788,10 +1795,33 @@ def api_list_objetivos():
                 'dificultad': row[14],
                 'etiquetas': row[15],
                 'recompensa': row[16],
-                'notas_adicionales': row[17]
+                'notas_adicionales': row[17],
+                'recurrente': bool(row[18]) if len(row) > 18 else False,
+                'frecuencia': row[19] if len(row) > 19 else None
             }
-            for row in rows
-        ]
+            # Lógica para mostrar recurrentes activos
+            if obj['recurrente']:
+                freq = (obj['frecuencia'] or '').lower()
+                if freq == 'diario':
+                    objetivos.append(obj)
+                elif freq == 'semanal' and obj['fecha_inicio']:
+                    # Mostrar si la semana coincide
+                    fecha_inicio = obj['fecha_inicio'].date() if hasattr(obj['fecha_inicio'], 'date') else obj['fecha_inicio']
+                    if fecha_inicio <= hoy and hoy >= primer_dia_semana:
+                        objetivos.append(obj)
+                elif freq == 'mensual' and obj['fecha_inicio']:
+                    fecha_inicio = obj['fecha_inicio'].date() if hasattr(obj['fecha_inicio'], 'date') else obj['fecha_inicio']
+                    if fecha_inicio <= hoy and hoy >= primer_dia_mes:
+                        objetivos.append(obj)
+                elif freq == 'anual' and obj['fecha_inicio']:
+                    fecha_inicio = obj['fecha_inicio'].date() if hasattr(obj['fecha_inicio'], 'date') else obj['fecha_inicio']
+                    if fecha_inicio <= hoy and hoy >= primer_dia_anio:
+                        objetivos.append(obj)
+                else:
+                    objetivos.append(obj)  # Si no hay fecha_inicio, mostrar siempre
+            else:
+                # Objetivos normales
+                objetivos.append(obj)
         return jsonify(objetivos)
 
 def parse_fecha(fecha_str):
@@ -1820,6 +1850,8 @@ def api_create_objetivo():
     etiquetas = data.get('etiquetas')
     recompensa = data.get('recompensa')
     notas_adicionales = data.get('notas_adicionales')
+    recurrente = int(bool(data.get('recurrente', False)))
+    frecuencia = data.get('frecuencia') if recurrente else None
     if not titulo:
         return jsonify({'error': 'El título es obligatorio'}), 400
     
@@ -1828,7 +1860,7 @@ def api_create_objetivo():
     
     with get_db_connection() as conn:
         cursor = conn.cursor()
-        cursor.execute('''INSERT INTO objetivos (user_id, titulo, descripcion, prioridad, categoria, completado, fecha_creacion, objetivo_padre_id, es_padre, estado, fecha_inicio, fecha_fin, horas_estimadas, dificultad, etiquetas, recompensa, notas_adicionales) VALUES (?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''', (current_user.id, titulo, descripcion, prioridad, categoria, fecha_creacion, objetivo_padre_id, es_padre, estado, fecha_inicio, fecha_fin, horas_estimadas, dificultad, etiquetas, recompensa, notas_adicionales))
+        cursor.execute('''INSERT INTO objetivos (user_id, titulo, descripcion, prioridad, categoria, completado, fecha_creacion, objetivo_padre_id, es_padre, estado, fecha_inicio, fecha_fin, horas_estimadas, dificultad, etiquetas, recompensa, notas_adicionales, recurrente, frecuencia) VALUES (?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''', (current_user.id, titulo, descripcion, prioridad, categoria, fecha_creacion, objetivo_padre_id, es_padre, estado, fecha_inicio, fecha_fin, horas_estimadas, dificultad, etiquetas, recompensa, notas_adicionales, recurrente, frecuencia))
         conn.commit()
         return jsonify({'status': 'success'})
 
@@ -1837,9 +1869,8 @@ def api_create_objetivo():
 def api_update_objetivo(objetivo_id):
     data = request.get_json()
     campos = {}
-    for campo in ['titulo', 'descripcion', 'prioridad', 'categoria', 'objetivo_padre_id', 'es_padre', 'estado', 'fecha_inicio', 'fecha_fin', 'horas_estimadas', 'dificultad', 'etiquetas', 'recompensa', 'notas_adicionales']:
+    for campo in ['titulo', 'descripcion', 'prioridad', 'categoria', 'objetivo_padre_id', 'es_padre', 'estado', 'fecha_inicio', 'fecha_fin', 'horas_estimadas', 'dificultad', 'etiquetas', 'recompensa', 'notas_adicionales', 'recurrente', 'frecuencia']:
         if campo in data:
-            # Convertir fechas si corresponde
             if campo in ['fecha_inicio', 'fecha_fin']:
                 campos[campo] = parse_fecha(data[campo])
             else:

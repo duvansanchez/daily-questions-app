@@ -481,202 +481,202 @@ document.addEventListener('DOMContentLoaded', function() {
     // Solo inicializar si existe el tab de frecuencia
     const frecuenciaTab = document.getElementById('frecuencia');
     if (frecuenciaTab) {
-        // Elementos
-        const preguntaSelector = document.getElementById('preguntaSelector');
-        const periodoBtns = document.querySelectorAll('.periodo-btn');
-        const tipoGraficoBtns = document.querySelectorAll('.tipo-grafico-btn');
-        const graficoFrecuencia = document.getElementById('graficoFrecuencia');
-        const mensajeExclusion = document.getElementById('mensajeExclusion');
-        const periodoTitulo = document.getElementById('periodoTitulo');
+    // Elementos
+    const preguntaSelector = document.getElementById('preguntaSelector');
+    const periodoBtns = document.querySelectorAll('.periodo-btn');
+    const tipoGraficoBtns = document.querySelectorAll('.tipo-grafico-btn');
+    const graficoFrecuencia = document.getElementById('graficoFrecuencia');
+    const mensajeExclusion = document.getElementById('mensajeExclusion');
+    const periodoTitulo = document.getElementById('periodoTitulo');
 
-        let chartInstance = null;
-        let preguntasData = window.preguntasData || [];
+    let chartInstance = null;
+    let preguntasData = window.preguntasData || [];
 
-        // Helper para saber si es texto abierto
-        function esTextoAbierto(tipo) {
-            return tipo === 'texto' || tipo === 'text' || tipo === 'open';
-        }
+    // Helper para saber si es texto abierto
+    function esTextoAbierto(tipo) {
+        return tipo === 'texto' || tipo === 'text' || tipo === 'open';
+    }
 
-        // Fetch real de datos desde el backend
-        async function fetchFrecuenciaDatos(preguntaId, periodo) {
-            try {
-                const response = await fetch(`/api/stats/frequency/${preguntaId}?periodo=${periodo}`, {
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
-                });
-                
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    if (errorData.excluded) {
-                        throw new Error('excluded');
-                    }
-                    throw new Error(errorData.error || 'Error al obtener datos');
+    // Fetch real de datos desde el backend
+    async function fetchFrecuenciaDatos(preguntaId, periodo) {
+        try {
+            const response = await fetch(`/api/stats/frequency/${preguntaId}?periodo=${periodo}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
                 }
-                
-                const data = await response.json();
-                return data;
-            } catch (error) {
-                if (error.message === 'excluded') {
-                    throw error;
-                }
-                console.error('Error fetching frequency data:', error);
-                throw new Error('Error al obtener datos de frecuencia');
-            }
-        }
-
-        // Renderizar gráfico
-        function renderGrafico(datos, tipoGrafico) {
-            if (chartInstance) {
-                chartInstance.destroy();
-            }
-            const ctx = document.createElement('canvas');
-            ctx.height = 350;
-            graficoFrecuencia.innerHTML = '';
-            graficoFrecuencia.appendChild(ctx);
-
-            const chartType = datos.tipo === 'barras' ? 'bar' : (tipoGrafico === 'lineas' ? 'line' : 'bar');
-
-            const options = {
-                responsive: true,
-                maintainAspectRatio: true,
-                aspectRatio: 2.5,
-                plugins: {
-                    legend: { display: true, position: 'top' },
-                    title: { display: false },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                const label = context.dataset.label || '';
-                                const value = context.parsed.y;
-                                return `${label}: ${value}`;
-                            }
-                        }
-                    },
-                    datalabels: {
-                        display: true,
-                        color: function(context) {
-                            const bg = context.dataset.backgroundColor;
-                            if (Array.isArray(bg)) {
-                                return bg[context.dataIndex] === '#ef4444' ? '#fff' : '#fff';
-                            }
-                            return '#fff';
-                        },
-                        anchor: 'end',
-                        align: 'start',
-                        font: {
-                            weight: 'bold',
-                            size: 16
-                        },
-                        formatter: function(value) {
-                            return value;
-                        }
-                    }
-                },
-                scales: {
-                    y: { beginAtZero: true, ticks: { stepSize: 1 } },
-                    x: { ticks: { maxRotation: 45, minRotation: 0 } }
-                }
-            };
-
-            chartInstance = new Chart(ctx, {
-                type: chartType,
-                data: {
-                    labels: datos.labels,
-                    datasets: datos.datasets
-                },
-                options: options,
-                plugins: [ChartDataLabels]
             });
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                if (errorData.excluded) {
+                    throw new Error('excluded');
+                }
+                throw new Error(errorData.error || 'Error al obtener datos');
+            }
+            
+            const data = await response.json();
+            return data;
+        } catch (error) {
+            if (error.message === 'excluded') {
+                throw error;
+            }
+            console.error('Error fetching frequency data:', error);
+            throw new Error('Error al obtener datos de frecuencia');
+        }
+    }
+
+    // Renderizar gráfico
+    function renderGrafico(datos, tipoGrafico) {
+        if (chartInstance) {
+            chartInstance.destroy();
+        }
+        const ctx = document.createElement('canvas');
+        ctx.height = 350;
+        graficoFrecuencia.innerHTML = '';
+        graficoFrecuencia.appendChild(ctx);
+
+        const chartType = datos.tipo === 'barras' ? 'bar' : (tipoGrafico === 'lineas' ? 'line' : 'bar');
+
+        const options = {
+            responsive: true,
+            maintainAspectRatio: true,
+            aspectRatio: 2.5,
+            plugins: {
+                legend: { display: true, position: 'top' },
+                title: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.dataset.label || '';
+                            const value = context.parsed.y;
+                            return `${label}: ${value}`;
+                        }
+                    }
+                },
+                datalabels: {
+                    display: true,
+                    color: function(context) {
+                        const bg = context.dataset.backgroundColor;
+                        if (Array.isArray(bg)) {
+                            return bg[context.dataIndex] === '#ef4444' ? '#fff' : '#fff';
+                        }
+                        return '#fff';
+                    },
+                    anchor: 'end',
+                    align: 'start',
+                    font: {
+                        weight: 'bold',
+                        size: 16
+                    },
+                    formatter: function(value) {
+                        return value;
+                    }
+                }
+            },
+            scales: {
+                y: { beginAtZero: true, ticks: { stepSize: 1 } },
+                x: { ticks: { maxRotation: 45, minRotation: 0 } }
+            }
+        };
+
+        chartInstance = new Chart(ctx, {
+            type: chartType,
+            data: {
+                labels: datos.labels,
+                datasets: datos.datasets
+            },
+            options: options,
+            plugins: [ChartDataLabels]
+        });
+    }
+
+    // Actualizar todo según selección
+    async function actualizarFrecuencia() {
+        const selectedOption = preguntaSelector.options[preguntaSelector.selectedIndex];
+        const tipo = selectedOption.getAttribute('data-tipo');
+        const periodo = document.querySelector('.periodo-btn.active').getAttribute('data-periodo');
+        const tipoGrafico = document.querySelector('.tipo-grafico-btn.active').getAttribute('data-tipo');
+        periodoTitulo.textContent = periodo;
+
+        // Limpiar estado anterior
+        graficoFrecuencia.innerHTML = '';
+        mensajeExclusion.classList.add('d-none');
+
+        if (esTextoAbierto(tipo)) {
+            mensajeExclusion.classList.remove('d-none');
+            return;
         }
 
-        // Actualizar todo según selección
-        async function actualizarFrecuencia() {
-            const selectedOption = preguntaSelector.options[preguntaSelector.selectedIndex];
-            const tipo = selectedOption.getAttribute('data-tipo');
-            const periodo = document.querySelector('.periodo-btn.active').getAttribute('data-periodo');
-            const tipoGrafico = document.querySelector('.tipo-grafico-btn.active').getAttribute('data-tipo');
-            periodoTitulo.textContent = periodo;
-
-            // Limpiar estado anterior
-            graficoFrecuencia.innerHTML = '';
-            mensajeExclusion.classList.add('d-none');
-
-            if (esTextoAbierto(tipo)) {
-                mensajeExclusion.classList.remove('d-none');
+        try {
+            // Mostrar indicador de carga
+            graficoFrecuencia.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary" role="status"></div><div class="mt-2">Cargando datos...</div></div>';
+            
+            // Obtener datos reales
+            const datos = await fetchFrecuenciaDatos(selectedOption.value, periodo);
+            
+            // Verificar si hay datos
+            if (!datos.labels || datos.labels.length === 0) {
+                graficoFrecuencia.innerHTML = '<div class="text-center py-5 text-muted">No hay datos disponibles para esta pregunta en el período seleccionado.</div>';
                 return;
             }
-
-            try {
-                // Mostrar indicador de carga
-                graficoFrecuencia.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary" role="status"></div><div class="mt-2">Cargando datos...</div></div>';
-                
-                // Obtener datos reales
-                const datos = await fetchFrecuenciaDatos(selectedOption.value, periodo);
-                
-                // Verificar si hay datos
-                if (!datos.labels || datos.labels.length === 0) {
-                    graficoFrecuencia.innerHTML = '<div class="text-center py-5 text-muted">No hay datos disponibles para esta pregunta en el período seleccionado.</div>';
-                    return;
-                }
-                
-                // Renderizar gráfico
-                renderGrafico(datos, tipoGrafico);
-                
-                // Actualizar título del gráfico con información específica
-                const tituloElement = document.querySelector('#graficoFrecuencia').closest('.card').querySelector('h5');
-                if (tituloElement) {
-                    let titulo = `Frecuencia por ${periodo}`;
-                    if (datos.question_type) {
-                        if (['radio', 'checkbox'].includes(datos.question_type)) {
-                            titulo = `Distribución de opciones seleccionadas`;
+            
+            // Renderizar gráfico
+            renderGrafico(datos, tipoGrafico);
+            
+            // Actualizar título del gráfico con información específica
+            const tituloElement = document.querySelector('#graficoFrecuencia').closest('.card').querySelector('h5');
+            if (tituloElement) {
+                let titulo = `Frecuencia por ${periodo}`;
+                if (datos.question_type) {
+                    if (['radio', 'checkbox'].includes(datos.question_type)) {
+                        titulo = `Distribución de opciones seleccionadas`;
                         } else if (['yes_no', 'boolean'].includes(datos.question_type) || (datos.labels && datos.labels.length === 2 && datos.labels.includes('Sí') && datos.labels.includes('No'))) {
                             titulo = `Frecuencia de respuestas Sí/No`;
-                        }
                     }
-                    tituloElement.textContent = titulo;
                 }
-                
-            } catch (error) {
-                console.error('Error en actualizarFrecuencia:', error);
-                
-                if (error.message === 'excluded') {
-                    mensajeExclusion.classList.remove('d-none');
-                } else {
-                    graficoFrecuencia.innerHTML = `
-                        <div class="text-center py-5">
-                            <div class="text-danger mb-2">
-                                <i class="bi bi-exclamation-triangle"></i>
-                            </div>
-                            <div class="text-muted">Error al cargar los datos: ${error.message}</div>
+                tituloElement.textContent = titulo;
+            }
+            
+        } catch (error) {
+            console.error('Error en actualizarFrecuencia:', error);
+            
+            if (error.message === 'excluded') {
+                mensajeExclusion.classList.remove('d-none');
+            } else {
+                graficoFrecuencia.innerHTML = `
+                    <div class="text-center py-5">
+                        <div class="text-danger mb-2">
+                            <i class="bi bi-exclamation-triangle"></i>
                         </div>
-                    `;
-                }
+                        <div class="text-muted">Error al cargar los datos: ${error.message}</div>
+                    </div>
+                `;
             }
         }
+    }
 
-        // Eventos
-        preguntaSelector.addEventListener('change', actualizarFrecuencia);
-        periodoBtns.forEach(btn => {
-            btn.addEventListener('click', function() {
-                periodoBtns.forEach(b => b.classList.remove('active'));
-                this.classList.add('active');
-                actualizarFrecuencia();
-            });
-        });
-        tipoGraficoBtns.forEach(btn => {
-            btn.addEventListener('click', function() {
-                tipoGraficoBtns.forEach(b => b.classList.remove('active'));
-                this.classList.add('active');
-                actualizarFrecuencia();
-            });
-        });
-
-        // Inicializar al cargar el tab
-        if (preguntaSelector) {
+    // Eventos
+    preguntaSelector.addEventListener('change', actualizarFrecuencia);
+    periodoBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            periodoBtns.forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
             actualizarFrecuencia();
+        });
+    });
+    tipoGraficoBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            tipoGraficoBtns.forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            actualizarFrecuencia();
+        });
+    });
+
+    // Inicializar al cargar el tab
+    if (preguntaSelector) {
+        actualizarFrecuencia();
         }
     }
 
@@ -847,7 +847,7 @@ function initAdminEvents() {
 
 // === Objetivos Desarrollo Personal (Integración API) ===
 let objetivos = [];
-let categoriaActual = 'diario';
+let categoriaActual = 'todos';
 
 async function cargarObjetivos() {
     try {
