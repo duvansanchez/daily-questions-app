@@ -1,0 +1,6 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+Prefiere patrones de diseño conocidos (Factory, Strategy, Observer, etc.) si la situación lo requiere, en lugar de inventar soluciones arbitrarias. Y SIEMPRE QUE APLIQUES UNO ME DIGAS.

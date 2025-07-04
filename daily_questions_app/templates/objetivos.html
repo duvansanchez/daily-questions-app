@@ -38,7 +38,8 @@
                 </div>
             </div>
             <ul class="nav nav-pills justify-content-center mb-3">
-                <li class="nav-item"><a class="nav-link active" href="#" data-periodo="diario">Diarios</a></li>
+                <li class="nav-item"><a class="nav-link active" href="#" data-periodo="todos">Todos</a></li>
+                <li class="nav-item"><a class="nav-link" href="#" data-periodo="diario">Diarios</a></li>
                 <li class="nav-item"><a class="nav-link" href="#" data-periodo="semanal">Semanales</a></li>
                 <li class="nav-item"><a class="nav-link" href="#" data-periodo="mensual">Mensuales</a></li>
                 <li class="nav-item"><a class="nav-link" href="#" data-periodo="anual">Anuales</a></li>
@@ -107,6 +108,51 @@
               <!-- Opciones dinámicas por JS -->
             </select>
           </div>
+          <div class="mb-3">
+            <label for="modal-estado-objetivo" class="form-label">Estado</label>
+            <select class="form-select" id="modal-estado-objetivo">
+              <option value="pendiente">Pendiente</option>
+              <option value="en_progreso">En progreso</option>
+              <option value="completado">Completado</option>
+              <option value="cancelado">Cancelado</option>
+            </select>
+          </div>
+          <div class="row">
+            <div class="col mb-3">
+              <label for="modal-fecha-inicio-objetivo" class="form-label">Fecha inicio</label>
+              <input type="date" class="form-control" id="modal-fecha-inicio-objetivo">
+            </div>
+            <div class="col mb-3">
+              <label for="modal-fecha-fin-objetivo" class="form-label">Fecha fin</label>
+              <input type="date" class="form-control" id="modal-fecha-fin-objetivo">
+            </div>
+          </div>
+          <div class="mb-3">
+            <label for="modal-horas-estimadas-objetivo" class="form-label">Horas estimadas</label>
+            <input type="number" class="form-control" id="modal-horas-estimadas-objetivo" min="0" step="0.1">
+          </div>
+          <div class="mb-3">
+            <label for="modal-dificultad-objetivo" class="form-label">Dificultad</label>
+            <select class="form-select" id="modal-dificultad-objetivo">
+              <option value="1">1 - Muy fácil</option>
+              <option value="2">2</option>
+              <option value="3">3 - Media</option>
+              <option value="4">4</option>
+              <option value="5">5 - Muy difícil</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label for="modal-etiquetas-objetivo" class="form-label">Etiquetas</label>
+            <input type="text" class="form-control" id="modal-etiquetas-objetivo" placeholder="Ej: salud, trabajo, familia">
+          </div>
+          <div class="mb-3">
+            <label for="modal-recompensa-objetivo" class="form-label">Recompensa</label>
+            <input type="text" class="form-control" id="modal-recompensa-objetivo" placeholder="Ej: Salir a cenar, comprar algo, etc.">
+          </div>
+          <div class="mb-3">
+            <label for="modal-notas-adicionales-objetivo" class="form-label">Notas adicionales</label>
+            <textarea class="form-control" id="modal-notas-adicionales-objetivo" rows="2" placeholder="Notas, ideas, recordatorios..."></textarea>
+          </div>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
@@ -164,6 +210,51 @@
               <option value="">Seleccionar objetivo padre</option>
               <!-- Opciones dinámicas por JS -->
             </select>
+          </div>
+          <div class="mb-3">
+            <label for="editar-estado-objetivo" class="form-label">Estado</label>
+            <select class="form-select" id="editar-estado-objetivo">
+              <option value="pendiente">Pendiente</option>
+              <option value="en_progreso">En progreso</option>
+              <option value="completado">Completado</option>
+              <option value="cancelado">Cancelado</option>
+            </select>
+          </div>
+          <div class="row">
+            <div class="col mb-3">
+              <label for="editar-fecha-inicio-objetivo" class="form-label">Fecha inicio</label>
+              <input type="date" class="form-control" id="editar-fecha-inicio-objetivo">
+            </div>
+            <div class="col mb-3">
+              <label for="editar-fecha-fin-objetivo" class="form-label">Fecha fin</label>
+              <input type="date" class="form-control" id="editar-fecha-fin-objetivo">
+            </div>
+          </div>
+          <div class="mb-3">
+            <label for="editar-horas-estimadas-objetivo" class="form-label">Horas estimadas</label>
+            <input type="number" class="form-control" id="editar-horas-estimadas-objetivo" min="0" step="0.1">
+          </div>
+          <div class="mb-3">
+            <label for="editar-dificultad-objetivo" class="form-label">Dificultad</label>
+            <select class="form-select" id="editar-dificultad-objetivo">
+              <option value="1">1 - Muy fácil</option>
+              <option value="2">2</option>
+              <option value="3">3 - Media</option>
+              <option value="4">4</option>
+              <option value="5">5 - Muy difícil</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label for="editar-etiquetas-objetivo" class="form-label">Etiquetas</label>
+            <input type="text" class="form-control" id="editar-etiquetas-objetivo" placeholder="Ej: salud, trabajo, familia">
+          </div>
+          <div class="mb-3">
+            <label for="editar-recompensa-objetivo" class="form-label">Recompensa</label>
+            <input type="text" class="form-control" id="editar-recompensa-objetivo" placeholder="Ej: Salir a cenar, comprar algo, etc.">
+          </div>
+          <div class="mb-3">
+            <label for="editar-notas-adicionales-objetivo" class="form-label">Notas adicionales</label>
+            <textarea class="form-control" id="editar-notas-adicionales-objetivo" rows="2" placeholder="Notas, ideas, recordatorios..."></textarea>
           </div>
         </div>
         <div class="modal-footer">

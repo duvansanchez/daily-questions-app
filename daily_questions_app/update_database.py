@@ -63,6 +63,75 @@ def update_database():
         except Exception as e:
             print(f"El índice ya existe o no se pudo crear: {e}")
         
+        # --- INICIO: Migración tabla objetivos ---
+        cursor.execute("""
+            SELECT COLUMN_NAME 
+            FROM INFORMATION_SCHEMA.COLUMNS 
+            WHERE TABLE_NAME = 'objetivos' 
+            AND COLUMN_NAME IN (
+                'estado', 'fecha_inicio', 'fecha_fin', 'horas_estimadas', 'dificultad', 'etiquetas', 'recompensa', 'notas_adicionales'
+            )
+        """)
+        existing_objetivos_columns = [row[0] for row in cursor.fetchall()]
+
+        if 'estado' not in existing_objetivos_columns:
+            print("Agregando campo estado a la tabla objetivos...")
+            cursor.execute("""
+                ALTER TABLE objetivos 
+                ADD estado NVARCHAR(50) NULL
+            """)
+            print("Campo estado agregado exitosamente!")
+        if 'fecha_inicio' not in existing_objetivos_columns:
+            print("Agregando campo fecha_inicio a la tabla objetivos...")
+            cursor.execute("""
+                ALTER TABLE objetivos 
+                ADD fecha_inicio DATETIME NULL
+            """)
+            print("Campo fecha_inicio agregado exitosamente!")
+        if 'fecha_fin' not in existing_objetivos_columns:
+            print("Agregando campo fecha_fin a la tabla objetivos...")
+            cursor.execute("""
+                ALTER TABLE objetivos 
+                ADD fecha_fin DATETIME NULL
+            """)
+            print("Campo fecha_fin agregado exitosamente!")
+        if 'horas_estimadas' not in existing_objetivos_columns:
+            print("Agregando campo horas_estimadas a la tabla objetivos...")
+            cursor.execute("""
+                ALTER TABLE objetivos 
+                ADD horas_estimadas FLOAT NULL
+            """)
+            print("Campo horas_estimadas agregado exitosamente!")
+        if 'dificultad' not in existing_objetivos_columns:
+            print("Agregando campo dificultad a la tabla objetivos...")
+            cursor.execute("""
+                ALTER TABLE objetivos 
+                ADD dificultad INT NULL
+            """)
+            print("Campo dificultad agregado exitosamente!")
+        if 'etiquetas' not in existing_objetivos_columns:
+            print("Agregando campo etiquetas a la tabla objetivos...")
+            cursor.execute("""
+                ALTER TABLE objetivos 
+                ADD etiquetas NVARCHAR(255) NULL
+            """)
+            print("Campo etiquetas agregado exitosamente!")
+        if 'recompensa' not in existing_objetivos_columns:
+            print("Agregando campo recompensa a la tabla objetivos...")
+            cursor.execute("""
+                ALTER TABLE objetivos 
+                ADD recompensa NVARCHAR(255) NULL
+            """)
+            print("Campo recompensa agregado exitosamente!")
+        if 'notas_adicionales' not in existing_objetivos_columns:
+            print("Agregando campo notas_adicionales a la tabla objetivos...")
+            cursor.execute("""
+                ALTER TABLE objetivos 
+                ADD notas_adicionales NVARCHAR(MAX) NULL
+            """)
+            print("Campo notas_adicionales agregado exitosamente!")
+        # --- FIN: Migración tabla objetivos ---
+        
         print("Base de datos actualizada exitosamente!")
         
     except Exception as e:

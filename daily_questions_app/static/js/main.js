@@ -771,7 +771,12 @@ function actualizarResumenObjetivos() {
 function renderObjetivos() {
     const lista = document.getElementById('lista-objetivos');
     lista.innerHTML = '';
-    const filtrados = objetivos.filter(obj => (obj.categoria || 'diario') === categoriaActual);
+    let filtrados;
+    if (categoriaActual === 'todos') {
+        filtrados = objetivos;
+    } else {
+        filtrados = objetivos.filter(obj => (obj.categoria || 'diario') === categoriaActual);
+    }
     if (filtrados.length === 0) {
         lista.innerHTML = '<li class="list-group-item text-center text-muted">No hay objetivos para esta categoría.</li>';
         actualizarResumenObjetivos();
@@ -787,7 +792,17 @@ function renderObjetivos() {
                 <span class="objetivo-titulo">${obj.titulo}</span>
                 <span class="etiqueta-prioridad ${obj.prioridad}">${obj.prioridad.charAt(0).toUpperCase() + obj.prioridad.slice(1)}</span>
                 ${obj.categoria ? `<span class="etiqueta-categoria">${obj.categoria.charAt(0).toUpperCase() + obj.categoria.slice(1)}</span>` : ''}
+                ${obj.estado ? `<span class="badge bg-secondary ms-1">${obj.estado.replace('_', ' ').toUpperCase()}</span>` : ''}
                 ${obj.descripcion ? `<div class="objetivo-desc">${obj.descripcion}</div>` : ''}
+                <div class="objetivo-extra mt-1 small text-muted">
+                    ${obj.fecha_inicio ? `<span><i class='bi bi-calendar-event'></i> ${obj.fecha_inicio.split('T')[0]}</span>` : ''}
+                    ${obj.fecha_fin ? `<span class="ms-2"><i class='bi bi-calendar-check'></i> ${obj.fecha_fin.split('T')[0]}</span>` : ''}
+                    ${obj.horas_estimadas ? `<span class="ms-2"><i class='bi bi-clock'></i> ${obj.horas_estimadas}h</span>` : ''}
+                    ${obj.dificultad ? `<span class="ms-2"><i class='bi bi-bar-chart'></i> Dificultad: ${obj.dificultad}</span>` : ''}
+                    ${obj.etiquetas ? `<span class="ms-2"><i class='bi bi-tags'></i> ${obj.etiquetas}</span>` : ''}
+                    ${obj.recompensa ? `<span class="ms-2"><i class='bi bi-gift'></i> ${obj.recompensa}</span>` : ''}
+                </div>
+                ${obj.notas_adicionales ? `<div class="objetivo-notas small text-info mt-1"><i class='bi bi-info-circle'></i> ${obj.notas_adicionales}</div>` : ''}
             </div>
             <div class="acciones-objetivo">
                 <button class="btn-editar" title="Editar" data-id="${obj.id}"><i class="bi bi-pencil"></i></button>
@@ -818,6 +833,7 @@ if (btnAbrirModalObjetivo) {
         if (selectCategoria) {
             selectCategoria.value = categoriaActual;
         }
+        poblarSelectObjetivoPadre('modal-padre-objetivo');
     });
 }
 
@@ -830,12 +846,37 @@ if (formModal) {
         const descripcion = document.getElementById('modal-desc-objetivo').value.trim();
         const prioridad = document.getElementById('modal-prioridad-objetivo').value;
         const categoria = document.getElementById('modal-categoria-objetivo').value.trim();
+        const esPadre = document.getElementById('modal-es-padre-objetivo').checked;
+        const objetivoPadreId = document.getElementById('modal-padre-objetivo').value || null;
+        const estado = document.getElementById('modal-estado-objetivo').value;
+        const fechaInicio = document.getElementById('modal-fecha-inicio-objetivo').value || null;
+        const fechaFin = document.getElementById('modal-fecha-fin-objetivo').value || null;
+        const horasEstimadas = document.getElementById('modal-horas-estimadas-objetivo').value || null;
+        const dificultad = document.getElementById('modal-dificultad-objetivo').value || null;
+        const etiquetas = document.getElementById('modal-etiquetas-objetivo').value.trim();
+        const recompensa = document.getElementById('modal-recompensa-objetivo').value.trim();
+        const notasAdicionales = document.getElementById('modal-notas-adicionales-objetivo').value.trim();
         if (!titulo) return;
         try {
             const res = await fetch('/api/objetivos', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ titulo, descripcion, prioridad, categoria })
+                body: JSON.stringify({
+                    titulo,
+                    descripcion,
+                    prioridad,
+                    categoria,
+                    es_padre: esPadre,
+                    objetivo_padre_id: objetivoPadreId,
+                    estado,
+                    fecha_inicio: fechaInicio,
+                    fecha_fin: fechaFin,
+                    horas_estimadas: horasEstimadas,
+                    dificultad,
+                    etiquetas,
+                    recompensa,
+                    notas_adicionales: notasAdicionales
+                })
             });
             const result = await res.json();
             if (result.status === 'success') {
@@ -862,13 +903,37 @@ if (formEditar) {
         const descripcion = document.getElementById('editar-desc-objetivo').value.trim();
         const prioridad = document.getElementById('editar-prioridad-objetivo').value;
         const categoria = document.getElementById('editar-categoria-objetivo').value.trim();
-        // TODO: objetivo padre si aplica
+        const esPadre = document.getElementById('editar-es-padre-objetivo').checked;
+        const objetivoPadreId = document.getElementById('editar-padre-objetivo').value || null;
+        const estado = document.getElementById('editar-estado-objetivo').value;
+        const fechaInicio = document.getElementById('editar-fecha-inicio-objetivo').value || null;
+        const fechaFin = document.getElementById('editar-fecha-fin-objetivo').value || null;
+        const horasEstimadas = document.getElementById('editar-horas-estimadas-objetivo').value || null;
+        const dificultad = document.getElementById('editar-dificultad-objetivo').value || null;
+        const etiquetas = document.getElementById('editar-etiquetas-objetivo').value.trim();
+        const recompensa = document.getElementById('editar-recompensa-objetivo').value.trim();
+        const notasAdicionales = document.getElementById('editar-notas-adicionales-objetivo').value.trim();
         if (!id || !titulo) return;
         try {
             const res = await fetch(`/api/objetivos/${id}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ titulo, descripcion, prioridad, categoria })
+                body: JSON.stringify({
+                    titulo,
+                    descripcion,
+                    prioridad,
+                    categoria,
+                    es_padre: esPadre,
+                    objetivo_padre_id: objetivoPadreId,
+                    estado,
+                    fecha_inicio: fechaInicio,
+                    fecha_fin: fechaFin,
+                    horas_estimadas: horasEstimadas,
+                    dificultad,
+                    etiquetas,
+                    recompensa,
+                    notas_adicionales: notasAdicionales
+                })
             });
             const result = await res.json();
             if (result.status === 'success') {
@@ -921,18 +986,24 @@ if (lista) {
                 showError('Error al actualizar objetivo');
             }
         } else if (e.target.closest('.btn-editar')) {
-            // Lógica para abrir el modal de edición
             const id = e.target.closest('.btn-editar').dataset.id;
             const objetivo = objetivos.find(o => o.id == id);
             if (!objetivo) return;
-            // Rellenar los campos del modal
             document.getElementById('editar-id-objetivo').value = objetivo.id;
             document.getElementById('editar-titulo-objetivo').value = objetivo.titulo || '';
             document.getElementById('editar-desc-objetivo').value = objetivo.descripcion || '';
             document.getElementById('editar-prioridad-objetivo').value = objetivo.prioridad || 'media';
             document.getElementById('editar-categoria-objetivo').value = objetivo.categoria || 'diario';
-            // TODO: Opciones de objetivo padre si aplica
-            // Mostrar el modal
+            document.getElementById('editar-es-padre-objetivo').checked = !!objetivo.es_padre;
+            window.objetivoEditandoPadreId = objetivo.objetivo_padre_id || '';
+            document.getElementById('editar-estado-objetivo').value = objetivo.estado || 'pendiente';
+            document.getElementById('editar-fecha-inicio-objetivo').value = objetivo.fecha_inicio ? objetivo.fecha_inicio.split('T')[0] : '';
+            document.getElementById('editar-fecha-fin-objetivo').value = objetivo.fecha_fin ? objetivo.fecha_fin.split('T')[0] : '';
+            document.getElementById('editar-horas-estimadas-objetivo').value = objetivo.horas_estimadas || '';
+            document.getElementById('editar-dificultad-objetivo').value = objetivo.dificultad || '3';
+            document.getElementById('editar-etiquetas-objetivo').value = objetivo.etiquetas || '';
+            document.getElementById('editar-recompensa-objetivo').value = objetivo.recompensa || '';
+            document.getElementById('editar-notas-adicionales-objetivo').value = objetivo.notas_adicionales || '';
             const modalEditar = new bootstrap.Modal(document.getElementById('modalEditarObjetivo'));
             modalEditar.show();
         }
@@ -941,3 +1012,38 @@ if (lista) {
 
 // Render inicial desde API
 cargarObjetivos();
+
+// --- Utilidad para poblar el select de objetivo padre ---
+async function poblarSelectObjetivoPadre(selectId, objetivoActualId = null) {
+    const select = document.getElementById(selectId);
+    if (!select) return;
+    select.innerHTML = '<option value="">Seleccionar objetivo padre</option>';
+    try {
+        const res = await fetch('/api/objetivos_padre');
+        const objetivosPadre = await res.json();
+        objetivosPadre.forEach(obj => {
+            if (objetivoActualId && obj.id == objetivoActualId) return; // No permitir ser su propio padre
+            const option = document.createElement('option');
+            option.value = obj.id;
+            option.textContent = obj.titulo;
+            select.appendChild(option);
+        });
+    } catch (err) {
+        // Si hay error, dejar solo la opción por defecto
+    }
+}
+
+// Al abrir el modal de editar objetivo, poblar el select de padre y setear el valor actual
+if (formEditar) {
+    document.getElementById('modalEditarObjetivo').addEventListener('show.bs.modal', function () {
+        const id = document.getElementById('editar-id-objetivo').value;
+        poblarSelectObjetivoPadre('editar-padre-objetivo', id);
+        // Setear el valor actual si existe
+        setTimeout(() => {
+            const select = document.getElementById('editar-padre-objetivo');
+            if (select && window.objetivoEditandoPadreId) {
+                select.value = window.objetivoEditandoPadreId;
+            }
+        }, 200);
+    });
+}

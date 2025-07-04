@@ -1,0 +1,8 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+Prefiere funciones pequeñas, bien nombradas, con una sola responsabilidad. Refactoriza si una función es demasiado larga.
+
+POR QUÉ: Mantiene la mantenibilidad del código y ayuda a que el proyecto escale sin volverse inentendible.

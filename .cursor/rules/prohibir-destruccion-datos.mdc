@@ -1,0 +1,8 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+Nunca escribas ni ejecutes código SQL que incluya DROP, DELETE o TRUNCATE sin una validación explícita del entorno y autorización del usuario.
+Si alguna acción puede eliminar datos, requiere que el usuario la confirme manualmente antes de ejecutarla. Nunca asumas consentimiento implícito.
+

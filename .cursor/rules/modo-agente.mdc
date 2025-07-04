@@ -1,0 +1,6 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+Si el modo agente esta activado el codigo siempre lo debe de escribir el agente, yo como usuario solo me debo de basar en escribir instrucciones.

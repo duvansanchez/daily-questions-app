@@ -9,7 +9,6 @@ from dotenv import load_dotenv
 import logging
 import sys
 import traceback
-import datetime
 from collections import defaultdict
 
 load_dotenv()
@@ -244,7 +243,7 @@ def load_user(user_id):
 @login_required
 def index():
     questions = Question.get_by_user(current_user.id)
-    return render_template('index.html', questions=questions, date=datetime.datetime.now())
+    return render_template('index.html', questions=questions, date=datetime.now())
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -517,7 +516,7 @@ def admin():
             # 6. Contar respuestas de hoy (simplificado)
             logger.info("=== CONTEO DE RESPUESTAS HOY ===")
             try:
-                today_str = datetime.datetime.now().strftime('%Y-%m-%d')
+                today_str = datetime.now().strftime('%Y-%m-%d')
                 
                 cursor.execute('SELECT COUNT(*) FROM response WHERE CONVERT(date, date) = ?', (today_str,))
                 count_result = cursor.fetchone()
@@ -857,16 +856,16 @@ def submit_responses():
 @login_required
 def stats():
     try:
-        print('Fecha actual del backend:', datetime.datetime.now())
-        hoy = datetime.datetime.now()
-        inicio_semana = (hoy - datetime.timedelta(days=hoy.weekday())).replace(hour=0, minute=0, second=0, microsecond=0)
-        fin_semana = inicio_semana + datetime.timedelta(days=6, hours=23, minutes=59, seconds=59)
+        print('Fecha actual del backend:', datetime.now())
+        hoy = datetime.now()
+        inicio_semana = (hoy - timedelta(days=hoy.weekday())).replace(hour=0, minute=0, second=0, microsecond=0)
+        fin_semana = inicio_semana + timedelta(days=6, hours=23, minutes=59, seconds=59)
         inicio_mes = hoy.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
         if hoy.month == 12:
-            fin_mes = hoy.replace(year=hoy.year+1, month=1, day=1, hour=0, minute=0, second=0, microsecond=0) - datetime.timedelta(seconds=1)
+            fin_mes = hoy.replace(year=hoy.year+1, month=1, day=1, hour=0, minute=0, second=0, microsecond=0) - timedelta(seconds=1)
         else:
-            fin_mes = hoy.replace(month=hoy.month+1, day=1, hour=0, minute=0, second=0, microsecond=0) - datetime.timedelta(seconds=1)
-        today = datetime.datetime.now().strftime('%Y-%m-%d')
+            fin_mes = hoy.replace(month=hoy.month+1, day=1, hour=0, minute=0, second=0, microsecond=0) - timedelta(seconds=1)
+        today = datetime.now().strftime('%Y-%m-%d')
         with get_db_connection() as conn:
             with conn.cursor() as cursor:
                 # Total preguntas activas asignadas actualmente
@@ -920,7 +919,7 @@ def stats():
                     if hasattr(ultima_fecha, 'strftime'):
                         # Si es date, convertir a datetime
                         if type(ultima_fecha).__name__ == 'date':
-                            ultima_fecha = datetime.datetime.combine(ultima_fecha, datetime.datetime.min.time())
+                            ultima_fecha = datetime.combine(ultima_fecha, datetime.min.time())
                         meses_es = {
                             1: 'enero', 2: 'febrero', 3: 'marzo', 4: 'abril',
                             5: 'mayo', 6: 'junio', 7: 'julio', 8: 'agosto',
@@ -932,7 +931,7 @@ def stats():
                         hora = ultima_fecha.strftime('%H:%M')
                         ultima_fecha_str = f"{dia} de {mes} de {año}, {hora}"
                         # Calcular tiempo relativo real
-                        ahora = datetime.datetime.now()
+                        ahora = datetime.now()
                         diff = ahora - ultima_fecha
                         if diff.days > 0:
                             relativo = f"hace {diff.days} día{'s' if diff.days > 1 else ''}"
@@ -978,11 +977,9 @@ def stats():
                 total_dias_activos = len(dias)
                 dias_consecutivos = 0
                 if dias:
-                    from datetime import timedelta
-                    dias_ordenados = sorted([d if isinstance(d, datetime.datetime) else datetime.datetime.strptime(str(d), '%Y-%m-%d') for d in dias], reverse=True)
-                    hoy = datetime.datetime.now().date()
-                    for i, d in enumerate(dias_ordenados):
-                        if (hoy - d.date()).days == i:
+                    hoy = datetime.now().date()
+                    for i, d in enumerate(dias):
+                        if (hoy - d).days == i:
                             dias_consecutivos += 1
                         else:
                             break
@@ -1006,7 +1003,7 @@ def stats():
                 productividad_dias = []
                 mejor_dia = {'nombre': '', 'porcentaje': 0}
                 for i, nombre_dia in enumerate(dias_semana):
-                    dia_fecha = (inicio_semana + datetime.timedelta(days=i)).date()
+                    dia_fecha = (inicio_semana + timedelta(days=i)).date()
                     # Preguntas asignadas activas ese día
                     cursor.execute('''
                         SELECT COUNT(*) FROM question
@@ -1059,12 +1056,12 @@ def stats():
                         mejor_racha = racha_temp
                     prev = d
                 # Racha actual (solo si hoy respondió)
-                hoy = datetime.datetime.now().date()
+                hoy = datetime.now().date()
                 if hoy in dias_respondidos_set:
                     racha_actual = 1
                     prev = hoy
                     while True:
-                        prev = prev - datetime.timedelta(days=1)
+                        prev = prev - timedelta(days=1)
                         if prev in dias_respondidos_set:
                             racha_actual += 1
                         else:
@@ -1075,9 +1072,9 @@ def stats():
                 ultimos7 = []
                 dias_letras = ['L','M','MI','J','V','S','D']
                 for i in range(6, -1, -1):
-                    dia = hoy - datetime.timedelta(days=i)
+                    dia = hoy - timedelta(days=i)
                     ultimos7.append(1 if dia in dias_respondidos_set else 0)
-                racha_zip = list(zip(ultimos7, [dias_letras[(hoy - datetime.timedelta(days=i)).weekday()] for i in range(6, -1, -1)]))
+                racha_zip = list(zip(ultimos7, [dias_letras[(hoy - timedelta(days=i)).weekday()] for i in range(6, -1, -1)]))
 
                 # === Tiempo de Respuesta ===
                 # Calcular tiempo promedio de respuesta
@@ -1148,8 +1145,8 @@ def stats():
                 preguntas = cursor.fetchall()
 
                 # Fechas del periodo
-                dias_semana = [(inicio_semana + datetime.timedelta(days=i)).date() for i in range(7)]
-                dias_mes = [(inicio_mes + datetime.timedelta(days=i)).date() for i in range((fin_mes.date() - inicio_mes.date()).days + 1)]
+                dias_semana = [(inicio_semana + timedelta(days=i)).date() for i in range(7)]
+                dias_mes = [(inicio_mes + timedelta(days=i)).date() for i in range((fin_mes.date() - inicio_mes.date()).days + 1)]
 
                 habitos_semanal = []
                 habitos_mensual = []
@@ -1258,8 +1255,8 @@ def get_weekly_responses():
         cursor = conn.cursor()
         
         # Obtener los últimos 7 días
-        today = datetime.datetime.now()
-        days = [today - datetime.timedelta(days=i) for i in range(6, -1, -1)]
+        today = datetime.now()
+        days = [today - timedelta(days=i) for i in range(6, -1, -1)]
         
         # Formatear fechas para la consulta SQL
         start_date = days[0].strftime('%Y-%m-%d')
@@ -1285,7 +1282,7 @@ def get_weekly_responses():
                         date_str = date_value.strftime('%Y-%m-%d')
                     else:
                         try:
-                            date_obj = datetime.datetime.strptime(str(date_value), '%Y-%m-%d')
+                            date_obj = datetime.strptime(str(date_value), '%Y-%m-%d')
                             date_str = date_obj.strftime('%Y-%m-%d')
                         except (ValueError, TypeError):
                             date_str = str(date_value)
@@ -1320,7 +1317,7 @@ def get_weekly_responses():
 def get_stats():
     try:
         # Obtener la fecha actual en formato YYYY-MM-DD
-        today = datetime.datetime.now().strftime('%Y-%m-%d')
+        today = datetime.now().strftime('%Y-%m-%d')
         
         with get_db_connection() as conn:
             with conn.cursor() as cursor:
@@ -1556,13 +1553,13 @@ def get_question_frequency(question_id):
                     'excluded': True
                 }), 400
             periodo = request.args.get('periodo', 'semanas')
-            hoy = datetime.datetime.now()
+            hoy = datetime.now()
             if periodo == 'semanas':
-                inicio = hoy - datetime.timedelta(weeks=8)
+                inicio = hoy - timedelta(weeks=8)
             elif periodo == 'meses':
-                inicio = hoy - datetime.timedelta(days=365)
+                inicio = hoy - timedelta(days=365)
             else:
-                inicio = hoy - datetime.timedelta(days=5*365)
+                inicio = hoy - timedelta(days=5*365)
             cursor.execute('''
                 SELECT r.response, r.date
                 FROM response r
@@ -1759,6 +1756,141 @@ def handle_exception(e):
             'error': str(e)
         }), 500
     return render_template('500.html'), 500
+
+@app.route('/objetivos')
+@login_required
+def objetivos():
+    return render_template('objetivos.html')
+
+@app.route('/api/objetivos', methods=['GET'])
+@login_required
+def api_list_objetivos():
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute('''SELECT id, titulo, descripcion, prioridad, categoria, completado, fecha_creacion, fecha_completado, objetivo_padre_id, es_padre, estado, fecha_inicio, fecha_fin, horas_estimadas, dificultad, etiquetas, recompensa, notas_adicionales FROM objetivos WHERE user_id = ? ORDER BY fecha_creacion DESC''', (current_user.id,))
+        rows = cursor.fetchall()
+        objetivos = [
+            {
+                'id': row[0],
+                'titulo': row[1],
+                'descripcion': row[2],
+                'prioridad': row[3],
+                'categoria': row[4],
+                'completado': bool(row[5]),
+                'fecha_creacion': row[6],
+                'fecha_completado': row[7],
+                'objetivo_padre_id': row[8],
+                'es_padre': bool(row[9]),
+                'estado': row[10],
+                'fecha_inicio': row[11],
+                'fecha_fin': row[12],
+                'horas_estimadas': row[13],
+                'dificultad': row[14],
+                'etiquetas': row[15],
+                'recompensa': row[16],
+                'notas_adicionales': row[17]
+            }
+            for row in rows
+        ]
+        return jsonify(objetivos)
+
+def parse_fecha(fecha_str):
+    if not fecha_str:
+        return None
+    try:
+        return datetime.strptime(fecha_str, '%Y-%m-%d')
+    except ValueError:
+        return None
+
+@app.route('/api/objetivos', methods=['POST'])
+@login_required
+def api_create_objetivo():
+    data = request.get_json()
+    titulo = data.get('titulo', '').strip()
+    descripcion = data.get('descripcion', '').strip()
+    prioridad = data.get('prioridad', 'media')
+    categoria = data.get('categoria', '').strip()
+    es_padre = int(bool(data.get('es_padre', False)))
+    objetivo_padre_id = data.get('objetivo_padre_id')
+    estado = data.get('estado')
+    fecha_inicio = parse_fecha(data.get('fecha_inicio'))
+    fecha_fin = parse_fecha(data.get('fecha_fin'))
+    horas_estimadas = data.get('horas_estimadas')
+    dificultad = data.get('dificultad')
+    etiquetas = data.get('etiquetas')
+    recompensa = data.get('recompensa')
+    notas_adicionales = data.get('notas_adicionales')
+    if not titulo:
+        return jsonify({'error': 'El título es obligatorio'}), 400
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute('''INSERT INTO objetivos (user_id, titulo, descripcion, prioridad, categoria, completado, objetivo_padre_id, es_padre, estado, fecha_inicio, fecha_fin, horas_estimadas, dificultad, etiquetas, recompensa, notas_adicionales) VALUES (?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''', (current_user.id, titulo, descripcion, prioridad, categoria, objetivo_padre_id, es_padre, estado, fecha_inicio, fecha_fin, horas_estimadas, dificultad, etiquetas, recompensa, notas_adicionales))
+        conn.commit()
+        return jsonify({'status': 'success'})
+
+@app.route('/api/objetivos/<int:objetivo_id>', methods=['PATCH'])
+@login_required
+def api_update_objetivo(objetivo_id):
+    data = request.get_json()
+    campos = {}
+    for campo in ['titulo', 'descripcion', 'prioridad', 'categoria', 'objetivo_padre_id', 'es_padre', 'estado', 'fecha_inicio', 'fecha_fin', 'horas_estimadas', 'dificultad', 'etiquetas', 'recompensa', 'notas_adicionales']:
+        if campo in data:
+            # Convertir fechas si corresponde
+            if campo in ['fecha_inicio', 'fecha_fin']:
+                campos[campo] = parse_fecha(data[campo])
+            else:
+                campos[campo] = data[campo]
+    if 'completado' in data:
+        campos['completado'] = int(bool(data['completado']))
+        if data['completado']:
+            campos['fecha_completado'] = 'GETDATE()'
+        else:
+            campos['fecha_completado'] = 'NULL'
+    if not campos:
+        return jsonify({'error': 'No hay campos para actualizar'}), 400
+    set_clause = []
+    values = []
+    for k, v in campos.items():
+        if k == 'fecha_completado' and v == 'GETDATE()':
+            set_clause.append(f"{k} = GETDATE()")
+        elif k == 'fecha_completado' and v == 'NULL':
+            set_clause.append(f"{k} = NULL")
+        else:
+            set_clause.append(f"{k} = ?")
+            values.append(v)
+    values.extend([objetivo_id, current_user.id])
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute(f"""
+            UPDATE objetivos SET {', '.join(set_clause)} WHERE id = ? AND user_id = ?
+        """, tuple(values))
+        conn.commit()
+        return jsonify({'status': 'success'})
+
+@app.route('/api/objetivos/<int:objetivo_id>', methods=['DELETE'])
+@login_required
+def api_delete_objetivo(objetivo_id):
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute('''DELETE FROM objetivos WHERE id = ? AND user_id = ?''', (objetivo_id, current_user.id))
+        conn.commit()
+        return jsonify({'status': 'success'})
+
+@app.route('/api/objetivos_padre', methods=['GET'])
+@login_required
+def api_list_objetivos_padre():
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute('''SELECT id, titulo FROM objetivos WHERE user_id = ? AND es_padre = 1 ORDER BY titulo ASC''', (current_user.id,))
+        rows = cursor.fetchall()
+        objetivos = [
+            {
+                'id': row[0],
+                'titulo': row[1]
+            }
+            for row in rows
+        ]
+        return jsonify(objetivos)
 
 # Configuración de la aplicación
 if __name__ == '__main__':

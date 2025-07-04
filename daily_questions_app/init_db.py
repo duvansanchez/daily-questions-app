@@ -39,49 +39,70 @@ try:
     conn = pyodbc.connect(conn_str)
     cursor = conn.cursor()
     
-    # Eliminar tablas en orden inverso a las dependencias
-    cursor.execute("""
-        IF EXISTS (SELECT * FROM sys.tables WHERE name = 'response')
-            DROP TABLE response;
-        IF EXISTS (SELECT * FROM sys.tables WHERE name = 'question')
-            DROP TABLE question;
-        IF EXISTS (SELECT * FROM sys.tables WHERE name = 'user')
-            DROP TABLE [user];
-    """)
-    
     # Crear tabla de usuarios
     cursor.execute("""
-        CREATE TABLE [user] (
-            id INT IDENTITY(1,1) PRIMARY KEY,
-            username NVARCHAR(80) UNIQUE NOT NULL,
-            password NVARCHAR(120) NOT NULL
-        )
+        IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'user')
+        BEGIN
+            CREATE TABLE [user] (
+                id INT IDENTITY(1,1) PRIMARY KEY,
+                username NVARCHAR(80) UNIQUE NOT NULL,
+                password NVARCHAR(120) NOT NULL
+            )
+        END
     """)
     
     # Crear tabla de preguntas
     cursor.execute("""
-        CREATE TABLE question (
-            id INT IDENTITY(1,1) PRIMARY KEY,
-            text NVARCHAR(500) NOT NULL,
-            type NVARCHAR(50) NOT NULL,
-            options NVARCHAR(500) NULL,
-            active BIT DEFAULT 1,
-            created_at DATETIME DEFAULT GETDATE(),
-            assigned_user_id INT,
-            FOREIGN KEY (assigned_user_id) REFERENCES [user](id)
-        )
+        IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'question')
+        BEGIN
+            CREATE TABLE question (
+                id INT IDENTITY(1,1) PRIMARY KEY,
+                text NVARCHAR(500) NOT NULL,
+                type NVARCHAR(50) NOT NULL,
+                options NVARCHAR(500) NULL,
+                active BIT DEFAULT 1,
+                created_at DATETIME DEFAULT GETDATE(),
+                assigned_user_id INT,
+                FOREIGN KEY (assigned_user_id) REFERENCES [user](id)
+            )
+        END
     """)
     
     # Crear tabla de respuestas
     cursor.execute("""
-        CREATE TABLE response (
-            id INT IDENTITY(1,1) PRIMARY KEY,
-            question_id INT NOT NULL,
-            response NVARCHAR(500) NOT NULL,
-            date DATE NOT NULL,
-            FOREIGN KEY (question_id) REFERENCES question (id)
-        )
+        IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'response')
+        BEGIN
+            CREATE TABLE response (
+                id INT IDENTITY(1,1) PRIMARY KEY,
+                question_id INT NOT NULL,
+                response NVARCHAR(500) NOT NULL,
+                date DATE NOT NULL,
+                FOREIGN KEY (question_id) REFERENCES question (id)
+            )
+        END
     """)
+    
+    # Crear tabla de objetivos (SQL Server compatible)
+    cursor.execute('''
+        IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'objetivos')
+        BEGIN
+            CREATE TABLE objetivos (
+                id INT IDENTITY(1,1) PRIMARY KEY,
+                user_id INT NOT NULL,
+                titulo NVARCHAR(255) NOT NULL,
+                descripcion NVARCHAR(1000),
+                prioridad NVARCHAR(20) DEFAULT 'media',
+                categoria NVARCHAR(100),
+                completado BIT DEFAULT 0,
+                fecha_creacion DATETIME DEFAULT GETDATE(),
+                fecha_completado DATETIME,
+                objetivo_padre_id INT,
+                es_padre BOOLEAN DEFAULT 0,
+                FOREIGN KEY (user_id) REFERENCES [user](id),
+                FOREIGN KEY (objetivo_padre_id) REFERENCES objetivos(id)
+            )
+        END
+    ''')
     
     conn.commit()
     print("Base de datos inicializada exitosamente!")

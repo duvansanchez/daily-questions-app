@@ -1,0 +1,8 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+Antes de crear nuevas funciones o clases, revisa si ya hay algo similar en el código existente y reutilízalo o extiéndelo.
+
+POR QUÉ: Previene duplicación y hace que el agente aproveche mejor el contexto del proyecto.

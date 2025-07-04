@@ -70,9 +70,47 @@
                 {% endfor %}
             </div>
         </div>
-        <!-- Tab Frecuencia de Respuesta (placeholder) -->
+        <!-- Tab Frecuencia de Respuesta -->
         <div class="tab-pane fade" id="frecuencia" role="tabpanel">
-            <div class="alert alert-info">Próximamente: Frecuencia de Respuesta.</div>
+            <div class="container-fluid px-0">
+                <!-- Card de filtros -->
+                <div class="card mb-4">
+                    <div class="card-body d-flex flex-wrap align-items-center justify-content-between">
+                        <div class="d-flex align-items-center">
+                            <label for="preguntaSelector" class="me-2 mb-0 fw-bold">Frecuencia de Respuesta</label>
+                            <select id="preguntaSelector" class="form-select">
+                                {% for pregunta in preguntas %}
+                                    <option value="{{ pregunta.id }}" data-tipo="{{ pregunta.tipo }}">{{ pregunta.texto }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div>
+                            <button class="btn btn-outline-primary me-2 periodo-btn active" data-periodo="semanas">Semana</button>
+                            <button class="btn btn-outline-primary me-2 periodo-btn" data-periodo="meses">Mes</button>
+                            <button class="btn btn-outline-primary periodo-btn" data-periodo="anios">Año</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gráfico -->
+                <div class="card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h5 class="mb-0">Frecuencia por <span id="periodoTitulo">semana</span></h5>
+                            <div>
+                                <button class="btn btn-sm btn-primary me-2 tipo-grafico-btn active" data-tipo="barras">Barras</button>
+                                <button class="btn btn-sm btn-outline-primary me-2 tipo-grafico-btn" data-tipo="lineas">Líneas</button>
+                            </div>
+                        </div>
+                        <div id="graficoFrecuencia" style="height: 350px;">
+                            <!-- Aquí se renderiza el gráfico dinámicamente -->
+                        </div>
+                        <div id="mensajeExclusion" class="alert alert-warning mt-3 d-none">
+                            Las preguntas de texto abierto no pueden analizarse cuantitativamente.
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
