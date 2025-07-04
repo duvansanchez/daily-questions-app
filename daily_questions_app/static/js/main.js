@@ -1,3 +1,5 @@
+console.log('JS CARGADO');
+
 // Variables globales
 let currentQuestionIndex = 0;
 let questions = [];
@@ -253,10 +255,10 @@ function saveCurrentResponse() {
     // Guardar siempre la respuesta (vacía o no) para preguntas no obligatorias
     const isRequired = card.getAttribute('data-is-required') == '1' || card.getAttribute('data-is-required') == 'true';
     if (isRequired) {
-        if (value !== null && value !== undefined && value !== '') {
-            responses[currentQuestion.id] = value;
-        } else {
-            delete responses[currentQuestion.id];
+    if (value !== null && value !== undefined && value !== '') {
+        responses[currentQuestion.id] = value;
+    } else {
+        delete responses[currentQuestion.id];
         }
     } else {
         // No obligatoria: guardar aunque esté vacía
@@ -457,6 +459,230 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+
+    // ================= FRECUENCIA DE RESPUESTA (Intermedias) =================
+
+    // Solo inicializar si existe el tab de frecuencia
+    const frecuenciaTab = document.getElementById('frecuencia');
+    if (frecuenciaTab) {
+        // Elementos
+        const preguntaSelector = document.getElementById('preguntaSelector');
+        const periodoBtns = document.querySelectorAll('.periodo-btn');
+        const tipoGraficoBtns = document.querySelectorAll('.tipo-grafico-btn');
+        const graficoFrecuencia = document.getElementById('graficoFrecuencia');
+        const mensajeExclusion = document.getElementById('mensajeExclusion');
+        const periodoTitulo = document.getElementById('periodoTitulo');
+
+        let chartInstance = null;
+        let preguntasData = window.preguntasData || [];
+
+        // Helper para saber si es texto abierto
+        function esTextoAbierto(tipo) {
+            return tipo === 'texto' || tipo === 'text' || tipo === 'open';
+        }
+
+        // Fetch real de datos desde el backend
+        async function fetchFrecuenciaDatos(preguntaId, periodo) {
+            try {
+                const response = await fetch(`/api/stats/frequency/${preguntaId}?periodo=${periodo}`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    if (errorData.excluded) {
+                        throw new Error('excluded');
+                    }
+                    throw new Error(errorData.error || 'Error al obtener datos');
+                }
+                
+                const data = await response.json();
+                return data;
+            } catch (error) {
+                if (error.message === 'excluded') {
+                    throw error;
+                }
+                console.error('Error fetching frequency data:', error);
+                throw new Error('Error al obtener datos de frecuencia');
+            }
+        }
+
+        // Renderizar gráfico
+        function renderGrafico(datos, tipoGrafico) {
+            if (chartInstance) {
+                chartInstance.destroy();
+            }
+            const ctx = document.createElement('canvas');
+            ctx.height = 350;
+            graficoFrecuencia.innerHTML = '';
+            graficoFrecuencia.appendChild(ctx);
+
+            const chartType = datos.tipo === 'barras' ? 'bar' : (tipoGrafico === 'lineas' ? 'line' : 'bar');
+
+            const options = {
+                responsive: true,
+                maintainAspectRatio: true,
+                aspectRatio: 2.5,
+                plugins: {
+                    legend: { display: true, position: 'top' },
+                    title: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.dataset.label || '';
+                                const value = context.parsed.y;
+                                return `${label}: ${value}`;
+                            }
+                        }
+                    },
+                    datalabels: {
+                        display: true,
+                        color: function(context) {
+                            const bg = context.dataset.backgroundColor;
+                            if (Array.isArray(bg)) {
+                                return bg[context.dataIndex] === '#ef4444' ? '#fff' : '#fff';
+                            }
+                            return '#fff';
+                        },
+                        anchor: 'end',
+                        align: 'start',
+                        font: {
+                            weight: 'bold',
+                            size: 16
+                        },
+                        formatter: function(value) {
+                            return value;
+                        }
+                    }
+                },
+                scales: {
+                    y: { beginAtZero: true, ticks: { stepSize: 1 } },
+                    x: { ticks: { maxRotation: 45, minRotation: 0 } }
+                }
+            };
+
+            chartInstance = new Chart(ctx, {
+                type: chartType,
+                data: {
+                    labels: datos.labels,
+                    datasets: datos.datasets
+                },
+                options: options,
+                plugins: [ChartDataLabels]
+            });
+        }
+
+        // Actualizar todo según selección
+        async function actualizarFrecuencia() {
+            const selectedOption = preguntaSelector.options[preguntaSelector.selectedIndex];
+            const tipo = selectedOption.getAttribute('data-tipo');
+            const periodo = document.querySelector('.periodo-btn.active').getAttribute('data-periodo');
+            const tipoGrafico = document.querySelector('.tipo-grafico-btn.active').getAttribute('data-tipo');
+            periodoTitulo.textContent = periodo;
+
+            // Limpiar estado anterior
+            graficoFrecuencia.innerHTML = '';
+            mensajeExclusion.classList.add('d-none');
+
+            if (esTextoAbierto(tipo)) {
+                mensajeExclusion.classList.remove('d-none');
+                return;
+            }
+
+            try {
+                // Mostrar indicador de carga
+                graficoFrecuencia.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary" role="status"></div><div class="mt-2">Cargando datos...</div></div>';
+                
+                // Obtener datos reales
+                const datos = await fetchFrecuenciaDatos(selectedOption.value, periodo);
+                
+                // Verificar si hay datos
+                if (!datos.labels || datos.labels.length === 0) {
+                    graficoFrecuencia.innerHTML = '<div class="text-center py-5 text-muted">No hay datos disponibles para esta pregunta en el período seleccionado.</div>';
+                    return;
+                }
+                
+                // Renderizar gráfico
+                renderGrafico(datos, tipoGrafico);
+                
+                // Actualizar título del gráfico con información específica
+                const tituloElement = document.querySelector('#graficoFrecuencia').closest('.card').querySelector('h5');
+                if (tituloElement) {
+                    let titulo = `Frecuencia por ${periodo}`;
+                    if (datos.question_type) {
+                        if (['radio', 'checkbox'].includes(datos.question_type)) {
+                            titulo = `Distribución de opciones seleccionadas`;
+                        } else if (['yes_no', 'boolean'].includes(datos.question_type) || (datos.labels && datos.labels.length === 2 && datos.labels.includes('Sí') && datos.labels.includes('No'))) {
+                            titulo = `Frecuencia de respuestas Sí/No`;
+                        }
+                    }
+                    tituloElement.textContent = titulo;
+                }
+                
+            } catch (error) {
+                console.error('Error en actualizarFrecuencia:', error);
+                
+                if (error.message === 'excluded') {
+                    mensajeExclusion.classList.remove('d-none');
+                } else {
+                    graficoFrecuencia.innerHTML = `
+                        <div class="text-center py-5">
+                            <div class="text-danger mb-2">
+                                <i class="bi bi-exclamation-triangle"></i>
+                            </div>
+                            <div class="text-muted">Error al cargar los datos: ${error.message}</div>
+                        </div>
+                    `;
+                }
+            }
+        }
+
+        // Eventos
+        preguntaSelector.addEventListener('change', actualizarFrecuencia);
+        periodoBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                periodoBtns.forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                actualizarFrecuencia();
+            });
+        });
+        tipoGraficoBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                tipoGraficoBtns.forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                actualizarFrecuencia();
+            });
+        });
+
+        // Inicializar al cargar el tab
+        if (preguntaSelector) {
+            actualizarFrecuencia();
+        }
+    }
+
+    // === Objetivos Desarrollo Personal ===
+    console.log('Buscando botón de modal...');
+    const btnAbrirModalObjetivo = document.getElementById('btn-abrir-modal-objetivo');
+    if (btnAbrirModalObjetivo) {
+        console.log('Botón de modal encontrado');
+        btnAbrirModalObjetivo.addEventListener('click', function(e) {
+            e.preventDefault();
+            const modalNuevoObjetivo = document.getElementById('modalNuevoObjetivo');
+            if (modalNuevoObjetivo) {
+                console.log('[DEBUG] Click en +, abriendo modal');
+                const modal = new bootstrap.Modal(modalNuevoObjetivo);
+                modal.show();
+            } else {
+                console.log('[DEBUG] Modal no encontrado');
+            }
+        });
+    } else {
+        console.log('Botón de modal NO encontrado');
+    }
 });
 
 // Inicializa los eventos de administración de preguntas (editar, eliminar, switches, etc)
@@ -489,3 +715,191 @@ function initAdminEvents() {
     });
     // Puedes agregar aquí la reinicialización de otros eventos (editar, switches, etc.)
 }
+
+// === Objetivos Desarrollo Personal (Integración API) ===
+let objetivos = [];
+let categoriaActual = 'diario';
+
+async function cargarObjetivos() {
+    try {
+        const res = await fetch('/api/objetivos');
+        objetivos = await res.json();
+        renderObjetivos();
+    } catch (err) {
+        objetivos = [];
+        renderObjetivos();
+        showError('Error al cargar objetivos');
+    }
+}
+
+function renderObjetivos() {
+    const lista = document.getElementById('lista-objetivos');
+    lista.innerHTML = '';
+    const filtrados = objetivos.filter(obj => (obj.categoria || 'diario') === categoriaActual);
+    if (filtrados.length === 0) {
+        lista.innerHTML = '<li class="list-group-item text-center text-muted">No hay objetivos para esta categoría.</li>';
+        return;
+    }
+    filtrados.forEach((obj, idx) => {
+        const li = document.createElement('li');
+        li.className = 'list-group-item d-flex align-items-center';
+        if (obj.completado) li.classList.add('objetivo-completado');
+        li.innerHTML = `
+            <div style="flex:1;min-width:0;">
+                <input type="checkbox" class="form-check-input me-2 check-objetivo" ${obj.completado ? 'checked' : ''} data-id="${obj.id}">
+                <span class="objetivo-titulo">${obj.titulo}</span>
+                <span class="etiqueta-prioridad ${obj.prioridad}">${obj.prioridad.charAt(0).toUpperCase() + obj.prioridad.slice(1)}</span>
+                ${obj.categoria ? `<span class="etiqueta-categoria">${obj.categoria.charAt(0).toUpperCase() + obj.categoria.slice(1)}</span>` : ''}
+                ${obj.descripcion ? `<div class="objetivo-desc">${obj.descripcion}</div>` : ''}
+            </div>
+            <div class="acciones-objetivo">
+                <button class="btn-editar" title="Editar" data-id="${obj.id}"><i class="bi bi-pencil"></i></button>
+                <button class="btn-eliminar" title="Eliminar" data-id="${obj.id}"><i class="bi bi-trash"></i></button>
+            </div>
+        `;
+        lista.appendChild(li);
+    });
+}
+
+// Tabs de categoría
+document.querySelectorAll('.nav-pills .nav-link[data-periodo]').forEach(tab => {
+    tab.addEventListener('click', function(e) {
+        e.preventDefault();
+        document.querySelectorAll('.nav-pills .nav-link').forEach(t => t.classList.remove('active'));
+        this.classList.add('active');
+        categoriaActual = this.getAttribute('data-periodo');
+        renderObjetivos();
+    });
+});
+
+// Al abrir el modal, setear la categoría seleccionada en el tab activo
+const btnAbrirModalObjetivo = document.getElementById('btn-abrir-modal-objetivo');
+if (btnAbrirModalObjetivo) {
+    btnAbrirModalObjetivo.addEventListener('click', function() {
+        const selectCategoria = document.getElementById('modal-categoria-objetivo');
+        if (selectCategoria) {
+            selectCategoria.value = categoriaActual;
+        }
+    });
+}
+
+// Capturar submit del modal
+const formModal = document.getElementById('form-modal-nuevo-objetivo');
+if (formModal) {
+    formModal.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const titulo = document.getElementById('modal-titulo-objetivo').value.trim();
+        const descripcion = document.getElementById('modal-desc-objetivo').value.trim();
+        const prioridad = document.getElementById('modal-prioridad-objetivo').value;
+        const categoria = document.getElementById('modal-categoria-objetivo').value.trim();
+        if (!titulo) return;
+        try {
+            const res = await fetch('/api/objetivos', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ titulo, descripcion, prioridad, categoria })
+            });
+            const result = await res.json();
+            if (result.status === 'success') {
+                await cargarObjetivos();
+                formModal.reset();
+                const modal = bootstrap.Modal.getInstance(document.getElementById('modalNuevoObjetivo'));
+                if (modal) modal.hide();
+            } else {
+                showError(result.error || 'Error al crear objetivo');
+            }
+        } catch (err) {
+            showError('Error al crear objetivo');
+        }
+    });
+}
+
+// Capturar submit del modal de edición
+const formEditar = document.getElementById('form-modal-editar-objetivo');
+if (formEditar) {
+    formEditar.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const id = document.getElementById('editar-id-objetivo').value;
+        const titulo = document.getElementById('editar-titulo-objetivo').value.trim();
+        const descripcion = document.getElementById('editar-desc-objetivo').value.trim();
+        const prioridad = document.getElementById('editar-prioridad-objetivo').value;
+        const categoria = document.getElementById('editar-categoria-objetivo').value.trim();
+        // TODO: objetivo padre si aplica
+        if (!id || !titulo) return;
+        try {
+            const res = await fetch(`/api/objetivos/${id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ titulo, descripcion, prioridad, categoria })
+            });
+            const result = await res.json();
+            if (result.status === 'success') {
+                await cargarObjetivos();
+                const modal = bootstrap.Modal.getInstance(document.getElementById('modalEditarObjetivo'));
+                if (modal) modal.hide();
+            } else {
+                showError(result.error || 'Error al actualizar objetivo');
+            }
+        } catch (err) {
+            showError('Error al actualizar objetivo');
+        }
+    });
+}
+
+// Delegar clicks para eliminar y marcar completado
+const lista = document.getElementById('lista-objetivos');
+if (lista) {
+    lista.addEventListener('click', async function(e) {
+        if (e.target.closest('.btn-eliminar')) {
+            const id = e.target.closest('.btn-eliminar').dataset.id;
+            try {
+                const res = await fetch(`/api/objetivos/${id}`, { method: 'DELETE' });
+                const result = await res.json();
+                if (result.status === 'success') {
+                    await cargarObjetivos();
+                } else {
+                    showError(result.error || 'Error al eliminar objetivo');
+                }
+            } catch (err) {
+                showError('Error al eliminar objetivo');
+            }
+        } else if (e.target.classList.contains('check-objetivo')) {
+            const id = e.target.dataset.id;
+            const objetivo = objetivos.find(o => o.id == id);
+            if (!objetivo) return;
+            try {
+                const res = await fetch(`/api/objetivos/${id}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ completado: !objetivo.completado })
+                });
+                const result = await res.json();
+                if (result.status === 'success') {
+                    await cargarObjetivos();
+                } else {
+                    showError(result.error || 'Error al actualizar objetivo');
+                }
+            } catch (err) {
+                showError('Error al actualizar objetivo');
+            }
+        } else if (e.target.closest('.btn-editar')) {
+            // Lógica para abrir el modal de edición
+            const id = e.target.closest('.btn-editar').dataset.id;
+            const objetivo = objetivos.find(o => o.id == id);
+            if (!objetivo) return;
+            // Rellenar los campos del modal
+            document.getElementById('editar-id-objetivo').value = objetivo.id;
+            document.getElementById('editar-titulo-objetivo').value = objetivo.titulo || '';
+            document.getElementById('editar-desc-objetivo').value = objetivo.descripcion || '';
+            document.getElementById('editar-prioridad-objetivo').value = objetivo.prioridad || 'media';
+            document.getElementById('editar-categoria-objetivo').value = objetivo.categoria || 'diario';
+            // TODO: Opciones de objetivo padre si aplica
+            // Mostrar el modal
+            const modalEditar = new bootstrap.Modal(document.getElementById('modalEditarObjetivo'));
+            modalEditar.show();
+        }
+    });
+}
+
+// Render inicial desde API
+cargarObjetivos();
