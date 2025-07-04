@@ -1822,9 +1822,13 @@ def api_create_objetivo():
     notas_adicionales = data.get('notas_adicionales')
     if not titulo:
         return jsonify({'error': 'El título es obligatorio'}), 400
+    
+    # Obtener la fecha actual para la creación
+    fecha_creacion = datetime.now()
+    
     with get_db_connection() as conn:
         cursor = conn.cursor()
-        cursor.execute('''INSERT INTO objetivos (user_id, titulo, descripcion, prioridad, categoria, completado, objetivo_padre_id, es_padre, estado, fecha_inicio, fecha_fin, horas_estimadas, dificultad, etiquetas, recompensa, notas_adicionales) VALUES (?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''', (current_user.id, titulo, descripcion, prioridad, categoria, objetivo_padre_id, es_padre, estado, fecha_inicio, fecha_fin, horas_estimadas, dificultad, etiquetas, recompensa, notas_adicionales))
+        cursor.execute('''INSERT INTO objetivos (user_id, titulo, descripcion, prioridad, categoria, completado, fecha_creacion, objetivo_padre_id, es_padre, estado, fecha_inicio, fecha_fin, horas_estimadas, dificultad, etiquetas, recompensa, notas_adicionales) VALUES (?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''', (current_user.id, titulo, descripcion, prioridad, categoria, fecha_creacion, objetivo_padre_id, es_padre, estado, fecha_inicio, fecha_fin, horas_estimadas, dificultad, etiquetas, recompensa, notas_adicionales))
         conn.commit()
         return jsonify({'status': 'success'})
 
@@ -1887,6 +1891,88 @@ def api_list_objetivos_padre():
             {
                 'id': row[0],
                 'titulo': row[1]
+            }
+            for row in rows
+        ]
+        return jsonify(objetivos)
+
+@app.route('/api/objetivos_historico', methods=['GET'])
+@login_required
+def api_objetivos_historico():
+    """
+    Devuelve objetivos históricos (cumplidos o vencidos) con filtros y paginación.
+    Filtros:
+      - tipo: diario/semanal/mensual/anual
+      - estado: completado/vencido
+      - fecha_inicio, fecha_fin: rango de fechas
+      - q: búsqueda por palabra clave
+      - limit, offset: paginación
+    """
+    tipo = request.args.get('tipo')
+    estado = request.args.get('estado')
+    fecha_inicio = request.args.get('fecha_inicio')
+    fecha_fin = request.args.get('fecha_fin')
+    q = request.args.get('q', '').strip()
+    limit = int(request.args.get('limit', 20))
+    offset = int(request.args.get('offset', 0))
+
+    filtros = ["user_id = ?"]
+    valores = [current_user.id]
+
+    # Solo objetivos históricos: completados o vencidos
+    filtros.append("((completado = 1) OR (completado = 0 AND fecha_fin IS NOT NULL AND fecha_fin < GETDATE()))")
+
+    if tipo:
+        filtros.append("categoria = ?")
+        valores.append(tipo)
+    if estado == 'completado':
+        filtros.append("completado = 1")
+    elif estado == 'vencido':
+        filtros.append("completado = 0 AND fecha_fin IS NOT NULL AND fecha_fin < GETDATE()")
+    if fecha_inicio:
+        filtros.append("fecha_creacion >= ?")
+        valores.append(fecha_inicio)
+    if fecha_fin:
+        filtros.append("fecha_creacion <= ?")
+        valores.append(fecha_fin)
+    if q:
+        filtros.append("(titulo LIKE ? OR descripcion LIKE ? OR etiquetas LIKE ?)")
+        valores.extend([f'%{q}%', f'%{q}%', f'%{q}%'])
+
+    where_clause = ' AND '.join(filtros)
+    sql = f'''
+        SELECT id, titulo, descripcion, prioridad, categoria, completado, fecha_creacion, fecha_completado, objetivo_padre_id, es_padre, estado, fecha_inicio, fecha_fin, horas_estimadas, dificultad, etiquetas, recompensa, notas_adicionales
+        FROM objetivos
+        WHERE {where_clause}
+        ORDER BY fecha_creacion DESC
+        OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
+    '''
+    valores.extend([offset, limit])
+
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute(sql, tuple(valores))
+        rows = cursor.fetchall()
+        objetivos = [
+            {
+                'id': row[0],
+                'titulo': row[1],
+                'descripcion': row[2],
+                'prioridad': row[3],
+                'categoria': row[4],
+                'completado': bool(row[5]),
+                'fecha_creacion': row[6],
+                'fecha_completado': row[7],
+                'objetivo_padre_id': row[8],
+                'es_padre': bool(row[9]),
+                'estado': row[10],
+                'fecha_inicio': row[11],
+                'fecha_fin': row[12],
+                'horas_estimadas': row[13],
+                'dificultad': row[14],
+                'etiquetas': row[15],
+                'recompensa': row[16],
+                'notas_adicionales': row[17]
             }
             for row in rows
         ]

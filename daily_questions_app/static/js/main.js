@@ -699,6 +699,119 @@ document.addEventListener('DOMContentLoaded', function() {
     } else {
         console.log('Botón de modal NO encontrado');
     }
+
+    // === HISTÓRICO DE OBJETIVOS ===
+    let historico = [];
+    let historicoOffset = 0;
+    let historicoLimit = 20;
+    let historicoFin = false;
+
+    function limpiarHistorico() {
+        historico = [];
+        historicoOffset = 0;
+        historicoFin = false;
+        document.getElementById('lista-historico').innerHTML = '';
+    }
+
+    async function cargarHistorico(mas = false) {
+        if (!mas) limpiarHistorico();
+        if (historicoFin) return;
+        const tipo = document.getElementById('filtro-tipo-historico').value;
+        const estado = document.getElementById('filtro-estado-historico').value;
+        const fecha_inicio = document.getElementById('filtro-fecha-inicio-historico').value;
+        const fecha_fin = document.getElementById('filtro-fecha-fin-historico').value;
+        const q = document.getElementById('filtro-busqueda-historico').value.trim();
+        let url = `/api/objetivos_historico?limit=${historicoLimit}&offset=${historicoOffset}`;
+        if (tipo) url += `&tipo=${tipo}`;
+        if (estado) url += `&estado=${estado}`;
+        if (fecha_inicio) url += `&fecha_inicio=${fecha_inicio}`;
+        if (fecha_fin) url += `&fecha_fin=${fecha_fin}`;
+        if (q) url += `&q=${encodeURIComponent(q)}`;
+        try {
+            const res = await fetch(url);
+            const data = await res.json();
+            if (Array.isArray(data)) {
+                historico = historico.concat(data);
+                historicoOffset += historicoLimit;
+                if (data.length < historicoLimit) historicoFin = true;
+                renderHistorico();
+            }
+        } catch (err) {
+            showError('Error al cargar histórico');
+        }
+    }
+
+    function renderHistorico() {
+        const lista = document.getElementById('lista-historico');
+        lista.innerHTML = '';
+        if (historico.length === 0) {
+            lista.innerHTML = '<li class="list-group-item text-center text-muted">No hay objetivos históricos para los filtros seleccionados.</li>';
+            return;
+        }
+        historico.forEach(obj => {
+            const li = document.createElement('li');
+            li.className = 'list-group-item';
+            li.innerHTML = `
+                <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between">
+                    <div style="flex:1;min-width:0;">
+                        <span class="fw-bold objetivo-titulo">${obj.titulo}</span>
+                        <span class="badge bg-secondary ms-2">${obj.categoria ? obj.categoria.charAt(0).toUpperCase() + obj.categoria.slice(1) : ''}</span>
+                        <span class="badge ms-2 ${obj.completado ? 'bg-success' : 'bg-danger'}">${obj.completado ? 'Completado' : 'Vencido'}</span>
+                        <span class="ms-2 text-muted small"><i class="bi bi-calendar-plus"></i> ${obj.fecha_creacion ? obj.fecha_creacion.split('T')[0] : ''}</span>
+                        ${obj.fecha_fin ? `<span class="ms-2 text-muted small"><i class='bi bi-calendar-check'></i> ${obj.fecha_fin.split('T')[0]}</span>` : ''}
+                        ${obj.etiquetas ? `<span class="ms-2 text-info small"><i class='bi bi-tags'></i> ${obj.etiquetas}</span>` : ''}
+                    </div>
+                    <div class="mt-2 mt-md-0 text-muted small">${obj.descripcion ? obj.descripcion : ''}</div>
+                </div>
+            `;
+            lista.appendChild(li);
+        });
+        document.getElementById('btn-cargar-mas-historico').style.display = historicoFin ? 'none' : 'inline-block';
+    }
+
+    // Eventos de pestañas y filtros
+    const tabObj = document.getElementById('tab-objetivos');
+    const tabHist = document.getElementById('tab-historico');
+    const cardObj = document.getElementById('card-objetivos');
+    const cardHist = document.getElementById('card-historico');
+    if (tabObj && tabHist && cardObj && cardHist) {
+        tabObj.addEventListener('click', function(e) {
+            e.preventDefault();
+            tabObj.classList.add('active');
+            tabHist.classList.remove('active');
+            cardObj.style.display = '';
+            cardHist.style.display = 'none';
+        });
+        tabHist.addEventListener('click', function(e) {
+            e.preventDefault();
+            tabHist.classList.add('active');
+            tabObj.classList.remove('active');
+            cardObj.style.display = 'none';
+            cardHist.style.display = '';
+            cargarHistorico();
+        });
+    }
+    // Filtros histórico
+    ['filtro-tipo-historico','filtro-estado-historico','filtro-fecha-inicio-historico','filtro-fecha-fin-historico','filtro-busqueda-historico'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.addEventListener('change', function() {
+                cargarHistorico();
+            });
+            if (id === 'filtro-busqueda-historico') {
+                el.addEventListener('keyup', function(e) {
+                    if (e.key === 'Enter') cargarHistorico();
+                });
+            }
+        }
+    });
+    // Botón cargar más
+    const btnMas = document.getElementById('btn-cargar-mas-historico');
+    if (btnMas) {
+        btnMas.addEventListener('click', function() {
+            cargarHistorico(true);
+        });
+    }
 });
 
 // Inicializa los eventos de administración de preguntas (editar, eliminar, switches, etc)
@@ -811,7 +924,8 @@ function renderObjetivos() {
                 ${obj.estado ? `<span class="badge bg-secondary ms-1">${obj.estado.replace('_', ' ').toUpperCase()}</span>` : ''}
                 ${obj.descripcion ? `<div class="objetivo-desc">${obj.descripcion}</div>` : ''}
                 <div class="objetivo-extra mt-1 small text-muted">
-                    ${obj.fecha_inicio ? `<span><i class='bi bi-calendar-event'></i> ${obj.fecha_inicio.split('T')[0]}</span>` : ''}
+                    ${obj.fecha_creacion ? `<span><i class='bi bi-calendar-plus'></i> Creado: ${obj.fecha_creacion.split('T')[0]}</span>` : ''}
+                    ${obj.fecha_inicio ? `<span class="ms-2"><i class='bi bi-calendar-event'></i> ${obj.fecha_inicio.split('T')[0]}</span>` : ''}
                     ${obj.fecha_fin ? `<span class="ms-2"><i class='bi bi-calendar-check'></i> ${obj.fecha_fin.split('T')[0]}</span>` : ''}
                     ${obj.horas_estimadas ? `<span class="ms-2"><i class='bi bi-clock'></i> ${obj.horas_estimadas}h</span>` : ''}
                     ${obj.dificultad ? `<span class="ms-2"><i class='bi bi-bar-chart'></i> Dificultad: ${obj.dificultad}</span>` : ''}
@@ -830,14 +944,22 @@ function renderObjetivos() {
     actualizarResumenObjetivos();
 }
 
-// Tabs de categoría
+// Tabs de categoría (incluyendo histórico)
 document.querySelectorAll('.nav-pills .nav-link[data-periodo]').forEach(tab => {
     tab.addEventListener('click', function(e) {
         e.preventDefault();
         document.querySelectorAll('.nav-pills .nav-link').forEach(t => t.classList.remove('active'));
         this.classList.add('active');
         categoriaActual = this.getAttribute('data-periodo');
-        renderObjetivos();
+        if (categoriaActual === 'historico') {
+            document.getElementById('card-objetivos').style.display = 'none';
+            document.getElementById('card-historico').style.display = '';
+            cargarHistorico();
+        } else {
+            document.getElementById('card-objetivos').style.display = '';
+            document.getElementById('card-historico').style.display = 'none';
+            renderObjetivos();
+        }
     });
 });
 

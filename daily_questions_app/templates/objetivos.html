@@ -7,7 +7,7 @@
     <div class="card mb-4">
         <div class="card-body">
             <ul class="nav nav-tabs mb-3">
-                <li class="nav-item"><a class="nav-link active" href="#">Objetivos</a></li>
+                <li class="nav-item"><a class="nav-link active" id="tab-objetivos" href="#">Objetivos</a></li>
                 <li class="nav-item"><a class="nav-link disabled" href="#">Audios</a></li>
                 <li class="nav-item"><a class="nav-link disabled" href="#">Progreso</a></li>
             </ul>
@@ -44,8 +44,9 @@
                 <li class="nav-item"><a class="nav-link" href="#" data-periodo="mensual">Mensuales</a></li>
                 <li class="nav-item"><a class="nav-link" href="#" data-periodo="anual">Anuales</a></li>
                 <li class="nav-item"><a class="nav-link" href="#" data-periodo="general">Generales</a></li>
+                <li class="nav-item"><a class="nav-link" id="tab-historico" href="#" data-periodo="historico">Histórico</a></li>
             </ul>
-            <div class="card mt-3">
+            <div class="card mt-3" id="card-objetivos">
                 <div class="card-body">
                     <h5 class="mb-3"><i class="bi bi-bullseye"></i> Objetivos de Hoy</h5>
                     <form id="form-nuevo-objetivo" class="mb-3 d-flex align-items-center">
@@ -55,6 +56,50 @@
                     <ul class="list-group" id="lista-objetivos">
                         <!-- Objetivos se renderizan aquí por JS -->
                     </ul>
+                </div>
+            </div>
+            <!-- Contenedor para el histórico -->
+            <div class="card mt-3" id="card-historico" style="display:none;">
+                <div class="card-body">
+                    <h5 class="mb-3"><i class="bi bi-archive"></i> Histórico de Objetivos</h5>
+                    <div id="filtros-historico" class="mb-3 row g-2">
+                        <div class="col-md-3">
+                            <label for="filtro-tipo-historico" class="form-label">Tipo de objetivo</label>
+                            <select class="form-select" id="filtro-tipo-historico">
+                                <option value="">Todos los tipos</option>
+                                <option value="diario">Diarios</option>
+                                <option value="semanal">Semanales</option>
+                                <option value="mensual">Mensuales</option>
+                                <option value="anual">Anuales</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="filtro-estado-historico" class="form-label">Estado</label>
+                            <select class="form-select" id="filtro-estado-historico">
+                                <option value="">Todos los estados</option>
+                                <option value="completado">Completados</option>
+                                <option value="vencido">Vencidos</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="filtro-fecha-inicio-historico" class="form-label">Desde</label>
+                            <input type="date" class="form-control" id="filtro-fecha-inicio-historico" placeholder="Desde">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="filtro-fecha-fin-historico" class="form-label">Hasta</label>
+                            <input type="date" class="form-control" id="filtro-fecha-fin-historico" placeholder="Hasta">
+                        </div>
+                        <div class="col-md-12 mt-2">
+                            <label for="filtro-busqueda-historico" class="form-label">Buscar por palabra clave</label>
+                            <input type="text" class="form-control" id="filtro-busqueda-historico" placeholder="Ej: salud, trabajo, meta...">
+                        </div>
+                    </div>
+                    <ul class="list-group" id="lista-historico">
+                        <!-- Histórico se renderiza aquí por JS -->
+                    </ul>
+                    <div class="d-flex justify-content-center mt-3">
+                        <button class="btn btn-outline-primary" id="btn-cargar-mas-historico">Cargar más</button>
+                    </div>
                 </div>
             </div>
         </div>
