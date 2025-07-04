@@ -132,18 +132,25 @@
               <option value="baja">Baja</option>
             </select>
           </div>
-          <div class="mb-3">
-            <label for="modal-categoria-objetivo" class="form-label">Categoría</label>
-            <select class="form-select" id="modal-categoria-objetivo" required>
-              <option value="diario">Diarios</option>
-              <option value="semanal">Semanales</option>
-              <option value="mensual">Mensuales</option>
-              <option value="anual">Anuales</option>
-              <option value="general">Generales</option>
-            </select>
+          <div class="mb-3 d-flex align-items-center justify-content-between" style="gap: 0.5rem;">
+            <div style="flex:1;">
+              <label for="modal-categoria-objetivo" class="form-label">Categoría <span style="color:red">*</span></label>
+              <select class="form-select" id="modal-categoria-objetivo" required>
+                <option value="" disabled selected>Selecciona una categoría</option>
+                <option value="diario">Diarios</option>
+                <option value="semanal">Semanales</option>
+                <option value="mensual">Mensuales</option>
+                <option value="anual">Anuales</option>
+                <option value="general">Generales</option>
+              </select>
+            </div>
+            <div class="form-check ms-3" style="white-space:nowrap;">
+              <input class="form-check-input" type="checkbox" id="modal-recurrente-objetivo">
+              <label class="form-check-label" for="modal-recurrente-objetivo">Hacer este objetivo recurrente</label>
+            </div>
           </div>
-          <div class="mb-3 d-flex align-items-center" style="gap: 0.5rem;">
-            <label class="form-label mb-0" for="modal-es-padre-objetivo" style="line-height: 1.5;">¿Este objetivo es padre?</label>
+          <div class="mb-3">
+            <label for="modal-es-padre-objetivo" class="form-label">¿Este objetivo es padre?</label>
             <input class="form-check-input" type="checkbox" id="modal-es-padre-objetivo" style="margin-top: 0.5px;">
           </div>
           <div class="mb-3">
@@ -235,18 +242,25 @@
               <option value="baja">Baja</option>
             </select>
           </div>
-          <div class="mb-3">
-            <label for="editar-categoria-objetivo" class="form-label">Categoría</label>
-            <select class="form-select" id="editar-categoria-objetivo" required>
-              <option value="diario">Diarios</option>
-              <option value="semanal">Semanales</option>
-              <option value="mensual">Mensuales</option>
-              <option value="anual">Anuales</option>
-              <option value="general">Generales</option>
-            </select>
+          <div class="mb-3 d-flex align-items-center justify-content-between" style="gap: 0.5rem;">
+            <div style="flex:1;">
+              <label for="editar-categoria-objetivo" class="form-label">Categoría <span style="color:red">*</span></label>
+              <select class="form-select" id="editar-categoria-objetivo" required>
+                <option value="" disabled selected>Selecciona una categoría</option>
+                <option value="diario">Diarios</option>
+                <option value="semanal">Semanales</option>
+                <option value="mensual">Mensuales</option>
+                <option value="anual">Anuales</option>
+                <option value="general">Generales</option>
+              </select>
+            </div>
+            <div class="form-check ms-3" style="white-space:nowrap;">
+              <input class="form-check-input" type="checkbox" id="editar-recurrente-objetivo">
+              <label class="form-check-label" for="editar-recurrente-objetivo">Hacer este objetivo recurrente</label>
+            </div>
           </div>
-          <div class="mb-3 d-flex align-items-center" style="gap: 0.5rem;">
-            <label class="form-label mb-0" for="editar-es-padre-objetivo" style="line-height: 1.5;">¿Este objetivo es padre?</label>
+          <div class="mb-3">
+            <label for="editar-es-padre-objetivo" class="form-label">¿Este objetivo es padre?</label>
             <input class="form-check-input" type="checkbox" id="editar-es-padre-objetivo" style="margin-top: 0.5px;">
           </div>
           <div class="mb-3">

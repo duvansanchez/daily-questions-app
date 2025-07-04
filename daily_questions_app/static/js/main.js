@@ -963,193 +963,136 @@ document.querySelectorAll('.nav-pills .nav-link[data-periodo]').forEach(tab => {
     });
 });
 
-// Al abrir el modal, setear la categoría seleccionada en el tab activo
-const btnAbrirModalObjetivo = document.getElementById('btn-abrir-modal-objetivo');
-if (btnAbrirModalObjetivo) {
-    btnAbrirModalObjetivo.addEventListener('click', function() {
-        const selectCategoria = document.getElementById('modal-categoria-objetivo');
-        if (selectCategoria) {
-            selectCategoria.value = categoriaActual;
-        }
-        poblarSelectObjetivoPadre('modal-padre-objetivo');
-    });
+// === LÓGICA DE RECURRENCIA SEGÚN CATEGORÍA (ACTUALIZADA) ===
+// Ya no se deshabilita el checkbox, solo se usa para decidir si es recurrente
+// y la frecuencia se toma de la categoría si está marcado
+// Nuevo objetivo
+const formNuevo = document.getElementById('form-modal-nuevo-objetivo');
+if (formNuevo) {
+  formNuevo.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const titulo = document.getElementById('modal-titulo-objetivo').value.trim();
+    const descripcion = document.getElementById('modal-desc-objetivo').value.trim();
+    const prioridad = document.getElementById('modal-prioridad-objetivo').value;
+    const categoria = document.getElementById('modal-categoria-objetivo').value;
+    const esPadre = document.getElementById('modal-es-padre-objetivo').checked;
+    const objetivoPadreId = document.getElementById('modal-padre-objetivo').value || null;
+    const estado = document.getElementById('modal-estado-objetivo').value;
+    const fechaInicio = document.getElementById('modal-fecha-inicio-objetivo').value || null;
+    const fechaFin = document.getElementById('modal-fecha-fin-objetivo').value || null;
+    const horasEstimadas = document.getElementById('modal-horas-estimadas-objetivo').value || null;
+    const dificultad = document.getElementById('modal-dificultad-objetivo').value || null;
+    const etiquetas = document.getElementById('modal-etiquetas-objetivo').value.trim();
+    const recompensa = document.getElementById('modal-recompensa-objetivo').value.trim();
+    const notasAdicionales = document.getElementById('modal-notas-adicionales-objetivo').value.trim();
+    const chkRecNuevo = document.getElementById('modal-recurrente-objetivo');
+    let recurrente = chkRecNuevo.checked;
+    let frecuencia = null;
+    if (recurrente && ["diario", "semanal", "mensual", "anual"].includes(categoria)) {
+      frecuencia = categoria;
+    }
+    if (!titulo || !categoria) {
+      showError('El título y la categoría son obligatorios.');
+      return;
+    }
+    try {
+      const res = await fetch('/api/objetivos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          titulo,
+          descripcion,
+          prioridad,
+          categoria,
+          es_padre: esPadre,
+          objetivo_padre_id: objetivoPadreId,
+          estado,
+          fecha_inicio: fechaInicio,
+          fecha_fin: fechaFin,
+          horas_estimadas: horasEstimadas,
+          dificultad,
+          etiquetas,
+          recompensa,
+          notas_adicionales: notasAdicionales,
+          recurrente,
+          frecuencia
+        })
+      });
+      const result = await res.json();
+      if (result.status === 'success') {
+        await cargarObjetivos();
+        const modal = bootstrap.Modal.getInstance(document.getElementById('modalNuevoObjetivo'));
+        if (modal) modal.hide();
+      } else {
+        showError(result.error || 'Error al crear objetivo');
+      }
+    } catch (err) {
+      showError('Error al crear objetivo');
+    }
+  });
 }
-
-// Capturar submit del modal
-const formModal = document.getElementById('form-modal-nuevo-objetivo');
-if (formModal) {
-    formModal.addEventListener('submit', async function(e) {
-        e.preventDefault();
-        const titulo = document.getElementById('modal-titulo-objetivo').value.trim();
-        const descripcion = document.getElementById('modal-desc-objetivo').value.trim();
-        const prioridad = document.getElementById('modal-prioridad-objetivo').value;
-        const categoria = document.getElementById('modal-categoria-objetivo').value.trim();
-        const esPadre = document.getElementById('modal-es-padre-objetivo').checked;
-        const objetivoPadreId = document.getElementById('modal-padre-objetivo').value || null;
-        const estado = document.getElementById('modal-estado-objetivo').value;
-        const fechaInicio = document.getElementById('modal-fecha-inicio-objetivo').value || null;
-        const fechaFin = document.getElementById('modal-fecha-fin-objetivo').value || null;
-        const horasEstimadas = document.getElementById('modal-horas-estimadas-objetivo').value || null;
-        const dificultad = document.getElementById('modal-dificultad-objetivo').value || null;
-        const etiquetas = document.getElementById('modal-etiquetas-objetivo').value.trim();
-        const recompensa = document.getElementById('modal-recompensa-objetivo').value.trim();
-        const notasAdicionales = document.getElementById('modal-notas-adicionales-objetivo').value.trim();
-        if (!titulo) return;
-        try {
-            const res = await fetch('/api/objetivos', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    titulo,
-                    descripcion,
-                    prioridad,
-                    categoria,
-                    es_padre: esPadre,
-                    objetivo_padre_id: objetivoPadreId,
-                    estado,
-                    fecha_inicio: fechaInicio,
-                    fecha_fin: fechaFin,
-                    horas_estimadas: horasEstimadas,
-                    dificultad,
-                    etiquetas,
-                    recompensa,
-                    notas_adicionales: notasAdicionales
-                })
-            });
-            const result = await res.json();
-            if (result.status === 'success') {
-                await cargarObjetivos();
-                formModal.reset();
-                const modal = bootstrap.Modal.getInstance(document.getElementById('modalNuevoObjetivo'));
-                if (modal) modal.hide();
-            } else {
-                showError(result.error || 'Error al crear objetivo');
-            }
-        } catch (err) {
-            showError('Error al crear objetivo');
-        }
-    });
-}
-
-// Capturar submit del modal de edición
+// Editar objetivo
 const formEditar = document.getElementById('form-modal-editar-objetivo');
 if (formEditar) {
-    formEditar.addEventListener('submit', async function(e) {
-        e.preventDefault();
-        const id = document.getElementById('editar-id-objetivo').value;
-        const titulo = document.getElementById('editar-titulo-objetivo').value.trim();
-        const descripcion = document.getElementById('editar-desc-objetivo').value.trim();
-        const prioridad = document.getElementById('editar-prioridad-objetivo').value;
-        const categoria = document.getElementById('editar-categoria-objetivo').value.trim();
-        const esPadre = document.getElementById('editar-es-padre-objetivo').checked;
-        const objetivoPadreId = document.getElementById('editar-padre-objetivo').value || null;
-        const estado = document.getElementById('editar-estado-objetivo').value;
-        const fechaInicio = document.getElementById('editar-fecha-inicio-objetivo').value || null;
-        const fechaFin = document.getElementById('editar-fecha-fin-objetivo').value || null;
-        const horasEstimadas = document.getElementById('editar-horas-estimadas-objetivo').value || null;
-        const dificultad = document.getElementById('editar-dificultad-objetivo').value || null;
-        const etiquetas = document.getElementById('editar-etiquetas-objetivo').value.trim();
-        const recompensa = document.getElementById('editar-recompensa-objetivo').value.trim();
-        const notasAdicionales = document.getElementById('editar-notas-adicionales-objetivo').value.trim();
-        if (!id || !titulo) return;
-        try {
-            const res = await fetch(`/api/objetivos/${id}`, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    titulo,
-                    descripcion,
-                    prioridad,
-                    categoria,
-                    es_padre: esPadre,
-                    objetivo_padre_id: objetivoPadreId,
-                    estado,
-                    fecha_inicio: fechaInicio,
-                    fecha_fin: fechaFin,
-                    horas_estimadas: horasEstimadas,
-                    dificultad,
-                    etiquetas,
-                    recompensa,
-                    notas_adicionales: notasAdicionales
-                })
-            });
-            const result = await res.json();
-            if (result.status === 'success') {
-                await cargarObjetivos();
-                const modal = bootstrap.Modal.getInstance(document.getElementById('modalEditarObjetivo'));
-                if (modal) modal.hide();
-            } else {
-                showError(result.error || 'Error al actualizar objetivo');
-            }
-        } catch (err) {
-            showError('Error al actualizar objetivo');
-        }
-    });
-}
-
-// Delegar clicks para eliminar y marcar completado
-const lista = document.getElementById('lista-objetivos');
-if (lista) {
-    lista.addEventListener('click', async function(e) {
-        if (e.target.closest('.btn-eliminar')) {
-            const id = e.target.closest('.btn-eliminar').dataset.id;
-            // Confirmación antes de eliminar
-            const confirmed = await (typeof showConfirm === 'function' ? showConfirm('¿Estás seguro de que deseas eliminar este objetivo? Esta acción no se puede deshacer.') : Promise.resolve(confirm('¿Estás seguro de que deseas eliminar este objetivo? Esta acción no se puede deshacer.')));
-            if (confirmed.isConfirmed || confirmed === true) {
-                try {
-                    const res = await fetch(`/api/objetivos/${id}`, { method: 'DELETE' });
-                    const result = await res.json();
-                    if (result.status === 'success') {
-                        await cargarObjetivos();
-                    } else {
-                        showError(result.error || 'Error al eliminar objetivo');
-                    }
-                } catch (err) {
-                    showError('Error al eliminar objetivo');
-                }
-            }
-        } else if (e.target.classList.contains('check-objetivo')) {
-            const id = e.target.dataset.id;
-            const objetivo = objetivos.find(o => o.id == id);
-            if (!objetivo) return;
-            try {
-                const res = await fetch(`/api/objetivos/${id}`, {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ completado: !objetivo.completado })
-                });
-                const result = await res.json();
-                if (result.status === 'success') {
-                    await cargarObjetivos();
-                } else {
-                    showError(result.error || 'Error al actualizar objetivo');
-                }
-            } catch (err) {
-                showError('Error al actualizar objetivo');
-            }
-        } else if (e.target.closest('.btn-editar')) {
-            const id = e.target.closest('.btn-editar').dataset.id;
-            const objetivo = objetivos.find(o => o.id == id);
-            if (!objetivo) return;
-            document.getElementById('editar-id-objetivo').value = objetivo.id;
-            document.getElementById('editar-titulo-objetivo').value = objetivo.titulo || '';
-            document.getElementById('editar-desc-objetivo').value = objetivo.descripcion || '';
-            document.getElementById('editar-prioridad-objetivo').value = objetivo.prioridad || 'media';
-            document.getElementById('editar-categoria-objetivo').value = objetivo.categoria || 'diario';
-            document.getElementById('editar-es-padre-objetivo').checked = !!objetivo.es_padre;
-            window.objetivoEditandoPadreId = objetivo.objetivo_padre_id || '';
-            document.getElementById('editar-estado-objetivo').value = objetivo.estado || 'pendiente';
-            document.getElementById('editar-fecha-inicio-objetivo').value = objetivo.fecha_inicio ? objetivo.fecha_inicio.split('T')[0] : '';
-            document.getElementById('editar-fecha-fin-objetivo').value = objetivo.fecha_fin ? objetivo.fecha_fin.split('T')[0] : '';
-            document.getElementById('editar-horas-estimadas-objetivo').value = objetivo.horas_estimadas || '';
-            document.getElementById('editar-dificultad-objetivo').value = objetivo.dificultad || '3';
-            document.getElementById('editar-etiquetas-objetivo').value = objetivo.etiquetas || '';
-            document.getElementById('editar-recompensa-objetivo').value = objetivo.recompensa || '';
-            document.getElementById('editar-notas-adicionales-objetivo').value = objetivo.notas_adicionales || '';
-            const modalEditar = new bootstrap.Modal(document.getElementById('modalEditarObjetivo'));
-            modalEditar.show();
-        }
-    });
+  formEditar.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const id = document.getElementById('editar-id-objetivo').value;
+    const titulo = document.getElementById('editar-titulo-objetivo').value.trim();
+    const descripcion = document.getElementById('editar-desc-objetivo').value.trim();
+    const prioridad = document.getElementById('editar-prioridad-objetivo').value;
+    const categoria = document.getElementById('editar-categoria-objetivo').value.trim();
+    const esPadre = document.getElementById('editar-es-padre-objetivo').checked;
+    const objetivoPadreId = document.getElementById('editar-padre-objetivo').value || null;
+    const estado = document.getElementById('editar-estado-objetivo').value;
+    const fechaInicio = document.getElementById('editar-fecha-inicio-objetivo').value || null;
+    const fechaFin = document.getElementById('editar-fecha-fin-objetivo').value || null;
+    const horasEstimadas = document.getElementById('editar-horas-estimadas-objetivo').value || null;
+    const dificultad = document.getElementById('editar-dificultad-objetivo').value || null;
+    const etiquetas = document.getElementById('editar-etiquetas-objetivo').value.trim();
+    const recompensa = document.getElementById('editar-recompensa-objetivo').value.trim();
+    const notasAdicionales = document.getElementById('editar-notas-adicionales-objetivo').value.trim();
+    const chkRecEdit = document.getElementById('editar-recurrente-objetivo');
+    let recurrente = chkRecEdit.checked;
+    let frecuencia = null;
+    if (recurrente && ["diario", "semanal", "mensual", "anual"].includes(categoria)) {
+      frecuencia = categoria;
+    }
+    if (!id || !titulo) return;
+    try {
+      const res = await fetch(`/api/objetivos/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          titulo,
+          descripcion,
+          prioridad,
+          categoria,
+          es_padre: esPadre,
+          objetivo_padre_id: objetivoPadreId,
+          estado,
+          fecha_inicio: fechaInicio,
+          fecha_fin: fechaFin,
+          horas_estimadas: horasEstimadas,
+          dificultad,
+          etiquetas,
+          recompensa,
+          notas_adicionales: notasAdicionales,
+          recurrente,
+          frecuencia
+        })
+      });
+      const result = await res.json();
+      if (result.status === 'success') {
+        await cargarObjetivos();
+        const modal = bootstrap.Modal.getInstance(document.getElementById('modalEditarObjetivo'));
+        if (modal) modal.hide();
+      } else {
+        showError(result.error || 'Error al actualizar objetivo');
+      }
+    } catch (err) {
+      showError('Error al actualizar objetivo');
+    }
+  });
 }
 
 // Render inicial desde API
@@ -1185,6 +1128,14 @@ if (formEditar) {
             const select = document.getElementById('editar-padre-objetivo');
             if (select && window.objetivoEditandoPadreId) {
                 select.value = window.objetivoEditandoPadreId;
+            }
+            if (window.objetivoEditandoRecurrente) {
+                chkRecEdit.checked = true;
+                selFreqEdit.style.display = '';
+                selFreqEdit.value = window.objetivoEditandoFrecuencia || 'diario';
+            } else {
+                chkRecEdit.checked = false;
+                selFreqEdit.style.display = 'none';
             }
         }, 200);
     });
