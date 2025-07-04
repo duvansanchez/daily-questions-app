@@ -54,6 +54,15 @@
 <div class="main-container">
     {% if questions %}
         <!-- Barra de progreso -->
+        <div class="d-flex justify-content-end mb-2" style="width:100%;">
+            <div class="input-group" style="max-width:220px;">
+                <label class="input-group-text" for="fecha-respuesta-select" style="font-size:0.98rem;">Fecha</label>
+                <select class="form-select" id="fecha-respuesta-select" style="font-size:0.98rem;">
+                    <option value="hoy" selected>Hoy</option>
+                    <option value="ayer">Ayer</option>
+                </select>
+            </div>
+        </div>
         <div class="progress-container">
             <div class="progress-text">
                 <span>Progreso</span>

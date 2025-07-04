@@ -271,6 +271,22 @@ async function submitResponses() {
     try {
         console.log('Respuestas que se enviarán:', responses);
         
+        // Obtener la fecha seleccionada del dropdown
+        const fechaSelect = document.getElementById('fecha-respuesta-select');
+        let fechaParaEnviar;
+        
+        if (fechaSelect && fechaSelect.value === 'ayer') {
+            // Si seleccionó "Ayer", calcular la fecha de ayer
+            const ayer = new Date();
+            ayer.setDate(ayer.getDate() - 1);
+            fechaParaEnviar = ayer.toISOString().split('T')[0];
+        } else {
+            // Por defecto usar hoy
+            fechaParaEnviar = new Date().toISOString().split('T')[0];
+        }
+        
+        console.log('Fecha que se enviará:', fechaParaEnviar);
+        
         // Preparar respuestas con tiempo
         const responsesWithTime = {};
         for (const [questionId, answer] of Object.entries(responses)) {
@@ -293,7 +309,7 @@ async function submitResponses() {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                date: new Date().toISOString().split('T')[0],
+                date: fechaParaEnviar,
                 responses: responsesWithTime
             })
         });
