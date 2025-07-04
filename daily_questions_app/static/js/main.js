@@ -732,12 +732,49 @@ async function cargarObjetivos() {
     }
 }
 
+function actualizarResumenObjetivos() {
+    // Filtrar por categoría
+    const categorias = ['diario', 'semanal', 'mensual', 'anual'];
+    // Objetivos diarios: mostrar completados/total
+    const diarios = objetivos.filter(obj => (obj.categoria || 'diario') === 'diario');
+    const diariosCompletados = diarios.filter(obj => obj.completado).length;
+    const elDiarios = document.getElementById('objetivos-diarios');
+    if (elDiarios) {
+        elDiarios.textContent = `${diariosCompletados}/${diarios.length}`;
+    }
+    // Progreso semanal
+    const semanales = objetivos.filter(obj => (obj.categoria || 'diario') === 'semanal');
+    const semanalesCompletados = semanales.filter(obj => obj.completado).length;
+    const progresoSemanal = semanales.length > 0 ? Math.round((semanalesCompletados / semanales.length) * 100) : 0;
+    const elSemanal = document.getElementById('progreso-semanal');
+    if (elSemanal) {
+        elSemanal.textContent = `${progresoSemanal}%`;
+    }
+    // Progreso mensual
+    const mensuales = objetivos.filter(obj => (obj.categoria || 'diario') === 'mensual');
+    const mensualesCompletados = mensuales.filter(obj => obj.completado).length;
+    const progresoMensual = mensuales.length > 0 ? Math.round((mensualesCompletados / mensuales.length) * 100) : 0;
+    const elMensual = document.getElementById('progreso-mensual');
+    if (elMensual) {
+        elMensual.textContent = `${progresoMensual}%`;
+    }
+    // Progreso anual
+    const anuales = objetivos.filter(obj => (obj.categoria || 'diario') === 'anual');
+    const anualesCompletados = anuales.filter(obj => obj.completado).length;
+    const progresoAnual = anuales.length > 0 ? Math.round((anualesCompletados / anuales.length) * 100) : 0;
+    const elAnual = document.getElementById('progreso-anual');
+    if (elAnual) {
+        elAnual.textContent = `${progresoAnual}%`;
+    }
+}
+
 function renderObjetivos() {
     const lista = document.getElementById('lista-objetivos');
     lista.innerHTML = '';
     const filtrados = objetivos.filter(obj => (obj.categoria || 'diario') === categoriaActual);
     if (filtrados.length === 0) {
         lista.innerHTML = '<li class="list-group-item text-center text-muted">No hay objetivos para esta categoría.</li>';
+        actualizarResumenObjetivos();
         return;
     }
     filtrados.forEach((obj, idx) => {
@@ -759,6 +796,7 @@ function renderObjetivos() {
         `;
         lista.appendChild(li);
     });
+    actualizarResumenObjetivos();
 }
 
 // Tabs de categoría
