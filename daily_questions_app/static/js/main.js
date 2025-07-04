@@ -955,16 +955,20 @@ if (lista) {
     lista.addEventListener('click', async function(e) {
         if (e.target.closest('.btn-eliminar')) {
             const id = e.target.closest('.btn-eliminar').dataset.id;
-            try {
-                const res = await fetch(`/api/objetivos/${id}`, { method: 'DELETE' });
-                const result = await res.json();
-                if (result.status === 'success') {
-                    await cargarObjetivos();
-                } else {
-                    showError(result.error || 'Error al eliminar objetivo');
+            // Confirmación antes de eliminar
+            const confirmed = await (typeof showConfirm === 'function' ? showConfirm('¿Estás seguro de que deseas eliminar este objetivo? Esta acción no se puede deshacer.') : Promise.resolve(confirm('¿Estás seguro de que deseas eliminar este objetivo? Esta acción no se puede deshacer.')));
+            if (confirmed.isConfirmed || confirmed === true) {
+                try {
+                    const res = await fetch(`/api/objetivos/${id}`, { method: 'DELETE' });
+                    const result = await res.json();
+                    if (result.status === 'success') {
+                        await cargarObjetivos();
+                    } else {
+                        showError(result.error || 'Error al eliminar objetivo');
+                    }
+                } catch (err) {
+                    showError('Error al eliminar objetivo');
                 }
-            } catch (err) {
-                showError('Error al eliminar objetivo');
             }
         } else if (e.target.classList.contains('check-objetivo')) {
             const id = e.target.dataset.id;
