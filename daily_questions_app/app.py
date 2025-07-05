@@ -1,3 +1,4 @@
+print('EJECUTANDO app.py DE daily_questions_app')
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, make_response, session
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -10,6 +11,7 @@ import logging
 import sys
 import traceback
 from collections import defaultdict
+from flask_babel import Babel, format_datetime
 
 load_dotenv()
 
@@ -28,6 +30,15 @@ werkzeug_logger = logging.getLogger('werkzeug')
 werkzeug_logger.setLevel(logging.ERROR)  # Reducir el nivel de registro de werkzeug
 
 app = Flask(__name__)
+app.config['BABEL_DEFAULT_LOCALE'] = 'es'
+babel = Babel(app)
+
+@app.template_filter('format_datetime')
+def jinja2_format_datetime(value, format="EEEE, dd 'de' MMMM 'de' yyyy"):
+    if value is None:
+        return ""
+    return format_datetime(value, format)
+
 # Configuración de la sesión
 app.secret_key = os.urandom(24)  # Clave secreta aleatoria
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=1)

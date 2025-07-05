@@ -5,3 +5,4 @@ python-dotenv==1.0.0
 Flask-Login==0.6.2
 Flask-WTF==1.1.1
 Werkzeug==2.2.3
+Flask-Babel==2.0.0
