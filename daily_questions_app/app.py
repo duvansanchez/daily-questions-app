@@ -1810,9 +1810,9 @@ def api_list_objetivos():
                 'recurrente': bool(row[18]) if len(row) > 18 else False,
                 'frecuencia': row[19] if len(row) > 19 else None
             }
-            
             # Verificar si el objetivo está vencido
-            if es_objetivo_vencido(obj, hoy):
+            vencido = es_objetivo_vencido(obj, hoy)
+            if vencido:
                 # Marcar como vencido en la base de datos si no está completado
                 if not obj['completado']:
                     with get_db_connection() as conn_update:
@@ -1821,32 +1821,9 @@ def api_list_objetivos():
                         conn_update.commit()
                         obj['completado'] = True
                         obj['fecha_completado'] = datetime.now()
-            
-            # Solo mostrar objetivos activos (no vencidos ni completados)
-            if not obj['completado']:
-                # Lógica para mostrar recurrentes activos
-                if obj['recurrente']:
-                    freq = (obj['frecuencia'] or '').lower()
-                    if freq == 'diario':
-                        objetivos.append(obj)
-                    elif freq == 'semanal' and obj['fecha_inicio']:
-                        # Mostrar si la semana coincide
-                        fecha_inicio = obj['fecha_inicio'].date() if hasattr(obj['fecha_inicio'], 'date') else obj['fecha_inicio']
-                        if fecha_inicio <= hoy and hoy >= primer_dia_semana:
-                            objetivos.append(obj)
-                    elif freq == 'mensual' and obj['fecha_inicio']:
-                        fecha_inicio = obj['fecha_inicio'].date() if hasattr(obj['fecha_inicio'], 'date') else obj['fecha_inicio']
-                        if fecha_inicio <= hoy and hoy >= primer_dia_mes:
-                            objetivos.append(obj)
-                    elif freq == 'anual' and obj['fecha_inicio']:
-                        fecha_inicio = obj['fecha_inicio'].date() if hasattr(obj['fecha_inicio'], 'date') else obj['fecha_inicio']
-                        if fecha_inicio <= hoy and hoy >= primer_dia_anio:
-                            objetivos.append(obj)
-                    else:
-                        objetivos.append(obj)  # Si no hay fecha_inicio, mostrar siempre
-                else:
-                    # Objetivos normales (no recurrentes)
-                    objetivos.append(obj)
+            # Mostrar como activo si NO está vencido, aunque esté completado manualmente
+            if not vencido:
+                objetivos.append(obj)
         return jsonify(objetivos)
 
 def parse_fecha(fecha_str):
