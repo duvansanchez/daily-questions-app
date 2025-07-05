@@ -1041,6 +1041,12 @@ if (formNuevo) {
         await cargarObjetivos();
         const modal = bootstrap.Modal.getInstance(document.getElementById('modalNuevoObjetivo'));
         if (modal) modal.hide();
+        // Cambiar a la pestaña de la categoría si aplica
+        const categorias = ['diario', 'semanal', 'mensual', 'anual', 'general'];
+        if (categorias.includes(categoria)) {
+          const tab = document.querySelector(`.nav-pills .nav-link[data-periodo='${categoria}']`);
+          if (tab) tab.click();
+        }
       } else {
         showError(result.error || 'Error al crear objetivo');
       }
