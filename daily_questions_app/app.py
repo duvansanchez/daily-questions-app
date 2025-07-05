@@ -1888,7 +1888,6 @@ def es_objetivo_vencido(objetivo, hoy):
     
     # Si tiene fecha_fin explícita, usar esa
     if objetivo['fecha_fin']:
-        # Convertir string a datetime.date para comparación
         try:
             fecha_vencimiento = datetime.strptime(objetivo['fecha_fin'], '%Y-%m-%d').date()
             return hoy > fecha_vencimiento
@@ -1902,6 +1901,19 @@ def es_objetivo_vencido(objetivo, hoy):
             fecha_vencimiento = calcular_fecha_vencimiento(fecha_inicio, objetivo['frecuencia'])
             if fecha_vencimiento:
                 return hoy > fecha_vencimiento
+        except (ValueError, TypeError):
+            return False
+    
+    # Objetivos NO recurrentes: vencimiento automático según categoría y fecha_creacion
+    if not objetivo['recurrente'] and objetivo['categoria'] and objetivo['fecha_creacion']:
+        try:
+            fecha_creacion = datetime.strptime(objetivo['fecha_creacion'], '%Y-%m-%d').date()
+            if objetivo['categoria'].lower() == 'diario' and hoy > fecha_creacion:
+                return True
+            if objetivo['categoria'].lower() == 'semanal' and hoy > (fecha_creacion + timedelta(days=7)):
+                return True
+            if objetivo['categoria'].lower() == 'mensual' and hoy > (fecha_creacion + timedelta(days=30)):
+                return True
         except (ValueError, TypeError):
             return False
     
