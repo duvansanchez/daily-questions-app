@@ -749,19 +749,35 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         historico.forEach(obj => {
+            // Formateo de fechas en español
+            const fechaCreacion = obj.fecha_creacion ? new Date(obj.fecha_creacion).toLocaleDateString('es-ES', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' }) : '';
+            const fechaInicio = obj.fecha_inicio ? new Date(obj.fecha_inicio).toLocaleDateString('es-ES', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' }) : '';
+            const fechaFin = obj.fecha_fin ? new Date(obj.fecha_fin).toLocaleDateString('es-ES', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' }) : '';
             const li = document.createElement('li');
-            li.className = 'list-group-item';
+            li.className = 'list-group-item d-flex align-items-center';
+            if (obj.completado) li.classList.add('objetivo-completado');
             li.innerHTML = `
-                <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between">
-                    <div style="flex:1;min-width:0;">
-                        <span class="fw-bold objetivo-titulo">${obj.titulo}</span>
-                        <span class="badge bg-secondary ms-2">${obj.categoria ? obj.categoria.charAt(0).toUpperCase() + obj.categoria.slice(1) : ''}</span>
-                        <span class="badge ms-2 ${obj.completado ? 'bg-success' : 'bg-danger'}">${obj.completado ? 'Completado' : 'Vencido'}</span>
-                        <span class="ms-2 text-muted small"><i class="bi bi-calendar-plus"></i> ${obj.fecha_creacion ? obj.fecha_creacion.split('T')[0] : ''}</span>
-                        ${obj.fecha_fin ? `<span class="ms-2 text-muted small"><i class='bi bi-calendar-check'></i> ${obj.fecha_fin.split('T')[0]}</span>` : ''}
-                        ${obj.etiquetas ? `<span class="ms-2 text-info small"><i class='bi bi-tags'></i> ${obj.etiquetas}</span>` : ''}
+                <div style="flex:1;min-width:0;">
+                    <input type="checkbox" class="form-check-input me-2 check-objetivo" ${obj.completado ? 'checked' : ''} data-id="${obj.id}">
+                    <span class="objetivo-titulo">${obj.titulo}</span>
+                    <span class="etiqueta-prioridad ${obj.prioridad}">${obj.prioridad.charAt(0).toUpperCase() + obj.prioridad.slice(1)}</span>
+                    ${obj.categoria ? `<span class="etiqueta-categoria">${obj.categoria.charAt(0).toUpperCase() + obj.categoria.slice(1)}</span>` : ''}
+                    ${obj.estado ? `<span class="badge bg-secondary ms-1">${obj.estado.replace('_', ' ').toUpperCase()}</span>` : ''}
+                    ${obj.descripcion ? `<div class="objetivo-desc">${obj.descripcion}</div>` : ''}
+                    <div class="objetivo-extra mt-1 small text-muted">
+                        ${fechaCreacion ? `<span><i class='bi bi-calendar-plus'></i> Creado: ${fechaCreacion}</span>` : ''}
+                        ${fechaInicio ? `<span class="ms-2"><i class='bi bi-calendar-event'></i> ${fechaInicio}</span>` : ''}
+                        ${fechaFin ? `<span class="ms-2"><i class='bi bi-calendar-check'></i> ${fechaFin}</span>` : ''}
+                        ${obj.horas_estimadas ? `<span class="ms-2"><i class='bi bi-clock'></i> ${obj.horas_estimadas}h</span>` : ''}
+                        ${obj.dificultad ? `<span class="ms-2"><i class='bi bi-bar-chart'></i> Dificultad: ${obj.dificultad}</span>` : ''}
+                        ${obj.etiquetas ? `<span class="ms-2"><i class='bi bi-tags'></i> ${obj.etiquetas}</span>` : ''}
+                        ${obj.recompensa ? `<span class="ms-2"><i class='bi bi-gift'></i> ${obj.recompensa}</span>` : ''}
                     </div>
-                    <div class="mt-2 mt-md-0 text-muted small">${obj.descripcion ? obj.descripcion : ''}</div>
+                    ${obj.notas_adicionales ? `<div class="objetivo-notas small text-info mt-1"><i class='bi bi-info-circle'></i> ${obj.notas_adicionales}</div>` : ''}
+                </div>
+                <div class="acciones-objetivo">
+                    <button class="btn-editar" title="Editar" data-id="${obj.id}"><i class="bi bi-pencil"></i></button>
+                    <button class="btn-eliminar" title="Eliminar" data-id="${obj.id}"><i class="bi bi-trash"></i></button>
                 </div>
             `;
             lista.appendChild(li);
@@ -912,6 +928,10 @@ function renderObjetivos() {
         return;
     }
     filtrados.forEach((obj, idx) => {
+        // Formateo de fechas en español
+        const fechaCreacion = obj.fecha_creacion ? new Date(obj.fecha_creacion).toLocaleDateString('es-ES', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' }) : '';
+        const fechaInicio = obj.fecha_inicio ? new Date(obj.fecha_inicio).toLocaleDateString('es-ES', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' }) : '';
+        const fechaFin = obj.fecha_fin ? new Date(obj.fecha_fin).toLocaleDateString('es-ES', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' }) : '';
         const li = document.createElement('li');
         li.className = 'list-group-item d-flex align-items-center';
         if (obj.completado) li.classList.add('objetivo-completado');
@@ -924,9 +944,9 @@ function renderObjetivos() {
                 ${obj.estado ? `<span class="badge bg-secondary ms-1">${obj.estado.replace('_', ' ').toUpperCase()}</span>` : ''}
                 ${obj.descripcion ? `<div class="objetivo-desc">${obj.descripcion}</div>` : ''}
                 <div class="objetivo-extra mt-1 small text-muted">
-                    ${obj.fecha_creacion ? `<span><i class='bi bi-calendar-plus'></i> Creado: ${obj.fecha_creacion.split('T')[0]}</span>` : ''}
-                    ${obj.fecha_inicio ? `<span class="ms-2"><i class='bi bi-calendar-event'></i> ${obj.fecha_inicio.split('T')[0]}</span>` : ''}
-                    ${obj.fecha_fin ? `<span class="ms-2"><i class='bi bi-calendar-check'></i> ${obj.fecha_fin.split('T')[0]}</span>` : ''}
+                    ${fechaCreacion ? `<span><i class='bi bi-calendar-plus'></i> Creado: ${fechaCreacion}</span>` : ''}
+                    ${fechaInicio ? `<span class="ms-2"><i class='bi bi-calendar-event'></i> ${fechaInicio}</span>` : ''}
+                    ${fechaFin ? `<span class="ms-2"><i class='bi bi-calendar-check'></i> ${fechaFin}</span>` : ''}
                     ${obj.horas_estimadas ? `<span class="ms-2"><i class='bi bi-clock'></i> ${obj.horas_estimadas}h</span>` : ''}
                     ${obj.dificultad ? `<span class="ms-2"><i class='bi bi-bar-chart'></i> Dificultad: ${obj.dificultad}</span>` : ''}
                     ${obj.etiquetas ? `<span class="ms-2"><i class='bi bi-tags'></i> ${obj.etiquetas}</span>` : ''}
@@ -1140,3 +1160,34 @@ if (formEditar) {
         }, 200);
     });
 }
+
+// === EVENTO PARA ABRIR EL MODAL DE EDITAR OBJETIVO ===
+document.addEventListener('click', async function(e) {
+    const btn = e.target.closest('.btn-editar');
+    if (!btn) return;
+    const objetivoId = btn.getAttribute('data-id');
+    if (!objetivoId) return;
+    // Buscar el objetivo en la lista global
+    const objetivo = objetivos.find(obj => obj.id == objetivoId);
+    if (!objetivo) return;
+    // Setear los valores en el modal de edición
+    document.getElementById('editar-id-objetivo').value = objetivo.id;
+    document.getElementById('editar-titulo-objetivo').value = objetivo.titulo || '';
+    document.getElementById('editar-desc-objetivo').value = objetivo.descripcion || '';
+    document.getElementById('editar-prioridad-objetivo').value = objetivo.prioridad || 'media';
+    document.getElementById('editar-categoria-objetivo').value = objetivo.categoria || '';
+    document.getElementById('editar-es-padre-objetivo').checked = !!objetivo.es_padre;
+    document.getElementById('editar-padre-objetivo').value = objetivo.objetivo_padre_id || '';
+    document.getElementById('editar-estado-objetivo').value = objetivo.estado || 'pendiente';
+    document.getElementById('editar-fecha-inicio-objetivo').value = objetivo.fecha_inicio ? objetivo.fecha_inicio.split('T')[0] : '';
+    document.getElementById('editar-fecha-fin-objetivo').value = objetivo.fecha_fin ? objetivo.fecha_fin.split('T')[0] : '';
+    document.getElementById('editar-horas-estimadas-objetivo').value = objetivo.horas_estimadas || '';
+    document.getElementById('editar-dificultad-objetivo').value = objetivo.dificultad || '';
+    document.getElementById('editar-etiquetas-objetivo').value = objetivo.etiquetas || '';
+    document.getElementById('editar-recompensa-objetivo').value = objetivo.recompensa || '';
+    document.getElementById('editar-notas-adicionales-objetivo').value = objetivo.notas_adicionales || '';
+    document.getElementById('editar-recurrente-objetivo').checked = !!objetivo.recurrente;
+    // Mostrar el modal
+    const modal = new bootstrap.Modal(document.getElementById('modalEditarObjetivo'));
+    modal.show();
+});

@@ -9,7 +9,7 @@
             Hola, {{ current_user.username }}
         </h1>
         <div style="font-size:1.5rem; color:#555; margin-bottom:0.5rem; text-align:center; font-weight:500;">
-            {{ date.strftime('%A, %d de %B de %Y')|capitalize }}
+            {{ date|format_datetime|capitalize }}
         </div>
         <div style="color:#6c63ff; font-size:1.3rem; margin-bottom:1.5rem; text-align:center; font-weight:600;">
             <i class="fa fa-clock-o"></i> <span id="reloj">00:00:00</span>
