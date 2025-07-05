@@ -1795,13 +1795,13 @@ def api_list_objetivos():
                 'prioridad': row[3],
                 'categoria': row[4],
                 'completado': bool(row[5]),
-                'fecha_creacion': row[6],
-                'fecha_completado': row[7],
+                'fecha_creacion': row[6].strftime('%Y-%m-%d') if row[6] else None,
+                'fecha_completado': row[7].strftime('%Y-%m-%d') if row[7] else None,
                 'objetivo_padre_id': row[8],
                 'es_padre': bool(row[9]),
                 'estado': row[10],
-                'fecha_inicio': row[11],
-                'fecha_fin': row[12],
+                'fecha_inicio': row[11].strftime('%Y-%m-%d') if row[11] else None,
+                'fecha_fin': row[12].strftime('%Y-%m-%d') if row[12] else None,
                 'horas_estimadas': row[13],
                 'dificultad': row[14],
                 'etiquetas': row[15],
@@ -1810,29 +1810,43 @@ def api_list_objetivos():
                 'recurrente': bool(row[18]) if len(row) > 18 else False,
                 'frecuencia': row[19] if len(row) > 19 else None
             }
-            # Lógica para mostrar recurrentes activos
-            if obj['recurrente']:
-                freq = (obj['frecuencia'] or '').lower()
-                if freq == 'diario':
-                    objetivos.append(obj)
-                elif freq == 'semanal' and obj['fecha_inicio']:
-                    # Mostrar si la semana coincide
-                    fecha_inicio = obj['fecha_inicio'].date() if hasattr(obj['fecha_inicio'], 'date') else obj['fecha_inicio']
-                    if fecha_inicio <= hoy and hoy >= primer_dia_semana:
+            
+            # Verificar si el objetivo está vencido
+            if es_objetivo_vencido(obj, hoy):
+                # Marcar como vencido en la base de datos si no está completado
+                if not obj['completado']:
+                    with get_db_connection() as conn_update:
+                        cursor_update = conn_update.cursor()
+                        cursor_update.execute('''UPDATE objetivos SET completado = 1, fecha_completado = GETDATE() WHERE id = ? AND user_id = ? AND completado = 0''', (obj['id'], current_user.id))
+                        conn_update.commit()
+                        obj['completado'] = True
+                        obj['fecha_completado'] = datetime.now()
+            
+            # Solo mostrar objetivos activos (no vencidos ni completados)
+            if not obj['completado']:
+                # Lógica para mostrar recurrentes activos
+                if obj['recurrente']:
+                    freq = (obj['frecuencia'] or '').lower()
+                    if freq == 'diario':
                         objetivos.append(obj)
-                elif freq == 'mensual' and obj['fecha_inicio']:
-                    fecha_inicio = obj['fecha_inicio'].date() if hasattr(obj['fecha_inicio'], 'date') else obj['fecha_inicio']
-                    if fecha_inicio <= hoy and hoy >= primer_dia_mes:
-                        objetivos.append(obj)
-                elif freq == 'anual' and obj['fecha_inicio']:
-                    fecha_inicio = obj['fecha_inicio'].date() if hasattr(obj['fecha_inicio'], 'date') else obj['fecha_inicio']
-                    if fecha_inicio <= hoy and hoy >= primer_dia_anio:
-                        objetivos.append(obj)
+                    elif freq == 'semanal' and obj['fecha_inicio']:
+                        # Mostrar si la semana coincide
+                        fecha_inicio = obj['fecha_inicio'].date() if hasattr(obj['fecha_inicio'], 'date') else obj['fecha_inicio']
+                        if fecha_inicio <= hoy and hoy >= primer_dia_semana:
+                            objetivos.append(obj)
+                    elif freq == 'mensual' and obj['fecha_inicio']:
+                        fecha_inicio = obj['fecha_inicio'].date() if hasattr(obj['fecha_inicio'], 'date') else obj['fecha_inicio']
+                        if fecha_inicio <= hoy and hoy >= primer_dia_mes:
+                            objetivos.append(obj)
+                    elif freq == 'anual' and obj['fecha_inicio']:
+                        fecha_inicio = obj['fecha_inicio'].date() if hasattr(obj['fecha_inicio'], 'date') else obj['fecha_inicio']
+                        if fecha_inicio <= hoy and hoy >= primer_dia_anio:
+                            objetivos.append(obj)
+                    else:
+                        objetivos.append(obj)  # Si no hay fecha_inicio, mostrar siempre
                 else:
-                    objetivos.append(obj)  # Si no hay fecha_inicio, mostrar siempre
-            else:
-                # Objetivos normales
-                objetivos.append(obj)
+                    # Objetivos normales (no recurrentes)
+                    objetivos.append(obj)
         return jsonify(objetivos)
 
 def parse_fecha(fecha_str):
@@ -1842,6 +1856,56 @@ def parse_fecha(fecha_str):
         return datetime.strptime(fecha_str, '%Y-%m-%d')
     except ValueError:
         return None
+
+def calcular_fecha_vencimiento(fecha_inicio, frecuencia):
+    """
+    Calcula la fecha de vencimiento automática basada en la frecuencia.
+    """
+    if not fecha_inicio:
+        return None
+    
+    fecha_inicio = fecha_inicio.date() if hasattr(fecha_inicio, 'date') else fecha_inicio
+    
+    if frecuencia == 'diario':
+        return fecha_inicio + timedelta(days=1)
+    elif frecuencia == 'semanal':
+        return fecha_inicio + timedelta(days=7)
+    elif frecuencia == 'mensual':
+        # Aproximadamente 30 días para mensual
+        return fecha_inicio + timedelta(days=30)
+    elif frecuencia == 'anual':
+        # Aproximadamente 365 días para anual
+        return fecha_inicio + timedelta(days=365)
+    else:
+        return None
+
+def es_objetivo_vencido(objetivo, hoy):
+    """
+    Determina si un objetivo está vencido basado en su fecha de vencimiento calculada.
+    """
+    if objetivo['completado']:
+        return False
+    
+    # Si tiene fecha_fin explícita, usar esa
+    if objetivo['fecha_fin']:
+        # Convertir string a datetime.date para comparación
+        try:
+            fecha_vencimiento = datetime.strptime(objetivo['fecha_fin'], '%Y-%m-%d').date()
+            return hoy > fecha_vencimiento
+        except (ValueError, TypeError):
+            return False
+    
+    # Si es recurrente, calcular fecha de vencimiento automática
+    if objetivo['recurrente'] and objetivo['frecuencia'] and objetivo['fecha_inicio']:
+        try:
+            fecha_inicio = datetime.strptime(objetivo['fecha_inicio'], '%Y-%m-%d').date()
+            fecha_vencimiento = calcular_fecha_vencimiento(fecha_inicio, objetivo['frecuencia'])
+            if fecha_vencimiento:
+                return hoy > fecha_vencimiento
+        except (ValueError, TypeError):
+            return False
+    
+    return False
 
 @app.route('/api/objetivos', methods=['POST'])
 @login_required
@@ -1962,7 +2026,7 @@ def api_objetivos_historico():
     valores = [current_user.id]
 
     # Solo objetivos históricos: completados o vencidos
-    filtros.append("((completado = 1) OR (completado = 0 AND fecha_fin IS NOT NULL AND fecha_fin < GETDATE()))")
+    filtros.append("completado = 1")
 
     if tipo:
         filtros.append("categoria = ?")
@@ -1970,7 +2034,8 @@ def api_objetivos_historico():
     if estado == 'completado':
         filtros.append("completado = 1")
     elif estado == 'vencido':
-        filtros.append("completado = 0 AND fecha_fin IS NOT NULL AND fecha_fin < GETDATE()")
+        # Los objetivos vencidos ya están marcados como completados = 1
+        filtros.append("completado = 1 AND fecha_completado IS NOT NULL")
     if fecha_inicio:
         filtros.append("fecha_creacion >= ?")
         valores.append(fecha_inicio)
@@ -2003,13 +2068,13 @@ def api_objetivos_historico():
                 'prioridad': row[3],
                 'categoria': row[4],
                 'completado': bool(row[5]),
-                'fecha_creacion': row[6],
-                'fecha_completado': row[7],
+                'fecha_creacion': row[6].strftime('%Y-%m-%d') if row[6] else None,
+                'fecha_completado': row[7].strftime('%Y-%m-%d') if row[7] else None,
                 'objetivo_padre_id': row[8],
                 'es_padre': bool(row[9]),
                 'estado': row[10],
-                'fecha_inicio': row[11],
-                'fecha_fin': row[12],
+                'fecha_inicio': row[11].strftime('%Y-%m-%d') if row[11] else None,
+                'fecha_fin': row[12].strftime('%Y-%m-%d') if row[12] else None,
                 'horas_estimadas': row[13],
                 'dificultad': row[14],
                 'etiquetas': row[15],

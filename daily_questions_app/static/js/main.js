@@ -687,13 +687,11 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('Botón de modal encontrado');
         btnAbrirModalObjetivo.addEventListener('click', function(e) {
             e.preventDefault();
+            limpiarCamposNuevoObjetivo();
             const modalNuevoObjetivo = document.getElementById('modalNuevoObjetivo');
             if (modalNuevoObjetivo) {
-                console.log('[DEBUG] Click en +, abriendo modal');
                 const modal = new bootstrap.Modal(modalNuevoObjetivo);
                 modal.show();
-            } else {
-                console.log('[DEBUG] Modal no encontrado');
             }
         });
     } else {
@@ -750,9 +748,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         historico.forEach(obj => {
             // Formateo de fechas en español
-            const fechaCreacion = obj.fecha_creacion ? new Date(obj.fecha_creacion).toLocaleDateString('es-ES', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' }) : '';
-            const fechaInicio = obj.fecha_inicio ? new Date(obj.fecha_inicio).toLocaleDateString('es-ES', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' }) : '';
-            const fechaFin = obj.fecha_fin ? new Date(obj.fecha_fin).toLocaleDateString('es-ES', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' }) : '';
+            const fechaCreacion = obj.fecha_creacion ? new Date(obj.fecha_creacion + 'T12:00:00').toLocaleDateString('es-ES', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' }) : '';
+            const fechaInicio = obj.fecha_inicio ? new Date(obj.fecha_inicio + 'T12:00:00').toLocaleDateString('es-ES', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' }) : '';
+            const fechaFin = obj.fecha_fin ? new Date(obj.fecha_fin + 'T12:00:00').toLocaleDateString('es-ES', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' }) : '';
             const li = document.createElement('li');
             li.className = 'list-group-item d-flex align-items-center';
             if (obj.completado) li.classList.add('objetivo-completado');
@@ -766,8 +764,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     ${obj.descripcion ? `<div class="objetivo-desc">${obj.descripcion}</div>` : ''}
                     <div class="objetivo-extra mt-1 small text-muted">
                         ${fechaCreacion ? `<span><i class='bi bi-calendar-plus'></i> Creado: ${fechaCreacion}</span>` : ''}
-                        ${fechaInicio ? `<span class="ms-2"><i class='bi bi-calendar-event'></i> ${fechaInicio}</span>` : ''}
-                        ${fechaFin ? `<span class="ms-2"><i class='bi bi-calendar-check'></i> ${fechaFin}</span>` : ''}
+                        ${fechaInicio ? `<span class="ms-2"><i class='bi bi-calendar-event'></i> Inicio: ${fechaInicio}</span>` : ''}
+                        ${fechaFin ? `<span class="ms-2"><i class='bi bi-calendar-check'></i> Fin: ${fechaFin}</span>` : ''}
                         ${obj.horas_estimadas ? `<span class="ms-2"><i class='bi bi-clock'></i> ${obj.horas_estimadas}h</span>` : ''}
                         ${obj.dificultad ? `<span class="ms-2"><i class='bi bi-bar-chart'></i> Dificultad: ${obj.dificultad}</span>` : ''}
                         ${obj.etiquetas ? `<span class="ms-2"><i class='bi bi-tags'></i> ${obj.etiquetas}</span>` : ''}
@@ -929,9 +927,9 @@ function renderObjetivos() {
     }
     filtrados.forEach((obj, idx) => {
         // Formateo de fechas en español
-        const fechaCreacion = obj.fecha_creacion ? new Date(obj.fecha_creacion).toLocaleDateString('es-ES', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' }) : '';
-        const fechaInicio = obj.fecha_inicio ? new Date(obj.fecha_inicio).toLocaleDateString('es-ES', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' }) : '';
-        const fechaFin = obj.fecha_fin ? new Date(obj.fecha_fin).toLocaleDateString('es-ES', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' }) : '';
+        const fechaCreacion = obj.fecha_creacion ? new Date(obj.fecha_creacion + 'T12:00:00').toLocaleDateString('es-ES', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' }) : '';
+        const fechaInicio = obj.fecha_inicio ? new Date(obj.fecha_inicio + 'T12:00:00').toLocaleDateString('es-ES', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' }) : '';
+        const fechaFin = obj.fecha_fin ? new Date(obj.fecha_fin + 'T12:00:00').toLocaleDateString('es-ES', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' }) : '';
         const li = document.createElement('li');
         li.className = 'list-group-item d-flex align-items-center';
         if (obj.completado) li.classList.add('objetivo-completado');
@@ -945,8 +943,8 @@ function renderObjetivos() {
                 ${obj.descripcion ? `<div class="objetivo-desc">${obj.descripcion}</div>` : ''}
                 <div class="objetivo-extra mt-1 small text-muted">
                     ${fechaCreacion ? `<span><i class='bi bi-calendar-plus'></i> Creado: ${fechaCreacion}</span>` : ''}
-                    ${fechaInicio ? `<span class="ms-2"><i class='bi bi-calendar-event'></i> ${fechaInicio}</span>` : ''}
-                    ${fechaFin ? `<span class="ms-2"><i class='bi bi-calendar-check'></i> ${fechaFin}</span>` : ''}
+                    ${fechaInicio ? `<span class="ms-2"><i class='bi bi-calendar-event'></i> Inicio: ${fechaInicio}</span>` : ''}
+                    ${fechaFin ? `<span class="ms-2"><i class='bi bi-calendar-check'></i> Fin: ${fechaFin}</span>` : ''}
                     ${obj.horas_estimadas ? `<span class="ms-2"><i class='bi bi-clock'></i> ${obj.horas_estimadas}h</span>` : ''}
                     ${obj.dificultad ? `<span class="ms-2"><i class='bi bi-bar-chart'></i> Dificultad: ${obj.dificultad}</span>` : ''}
                     ${obj.etiquetas ? `<span class="ms-2"><i class='bi bi-tags'></i> ${obj.etiquetas}</span>` : ''}
@@ -1179,8 +1177,8 @@ document.addEventListener('click', async function(e) {
     document.getElementById('editar-es-padre-objetivo').checked = !!objetivo.es_padre;
     document.getElementById('editar-padre-objetivo').value = objetivo.objetivo_padre_id || '';
     document.getElementById('editar-estado-objetivo').value = objetivo.estado || 'pendiente';
-    document.getElementById('editar-fecha-inicio-objetivo').value = objetivo.fecha_inicio ? objetivo.fecha_inicio.split('T')[0] : '';
-    document.getElementById('editar-fecha-fin-objetivo').value = objetivo.fecha_fin ? objetivo.fecha_fin.split('T')[0] : '';
+    document.getElementById('editar-fecha-inicio-objetivo').value = formatFechaInput(objetivo.fecha_inicio);
+    document.getElementById('editar-fecha-fin-objetivo').value = formatFechaInput(objetivo.fecha_fin);
     document.getElementById('editar-horas-estimadas-objetivo').value = objetivo.horas_estimadas || '';
     document.getElementById('editar-dificultad-objetivo').value = objetivo.dificultad || '';
     document.getElementById('editar-etiquetas-objetivo').value = objetivo.etiquetas || '';
@@ -1190,4 +1188,63 @@ document.addEventListener('click', async function(e) {
     // Mostrar el modal
     const modal = new bootstrap.Modal(document.getElementById('modalEditarObjetivo'));
     modal.show();
+});
+
+function formatFechaInput(fecha) {
+    if (!fecha) return '';
+    // Si ya es string tipo 'YYYY-MM-DD', úsalo directo
+    if (/^\d{4}-\d{2}-\d{2}$/.test(fecha)) return fecha;
+    // Si es string tipo 'YYYY-MM-DDTHH:MM:SS', tomar solo la parte de la fecha
+    if (typeof fecha === 'string' && fecha.includes('T')) return fecha.split('T')[0];
+    // Si es Date o string parseable, formatear a YYYY-MM-DD
+    const d = new Date(fecha);
+    if (!isNaN(d)) {
+        return d.toISOString().split('T')[0];
+    }
+    return '';
+}
+
+function limpiarCamposNuevoObjetivo() {
+    document.getElementById('modal-titulo-objetivo').value = '';
+    document.getElementById('modal-desc-objetivo').value = '';
+    document.getElementById('modal-prioridad-objetivo').value = 'media';
+    document.getElementById('modal-categoria-objetivo').value = '';
+    document.getElementById('modal-es-padre-objetivo').checked = false;
+    document.getElementById('modal-padre-objetivo').value = '';
+    document.getElementById('modal-estado-objetivo').value = 'pendiente';
+    document.getElementById('modal-fecha-inicio-objetivo').value = '';
+    document.getElementById('modal-fecha-fin-objetivo').value = '';
+    document.getElementById('modal-horas-estimadas-objetivo').value = '';
+    document.getElementById('modal-dificultad-objetivo').value = '';
+    document.getElementById('modal-etiquetas-objetivo').value = '';
+    document.getElementById('modal-recompensa-objetivo').value = '';
+    document.getElementById('modal-notas-adicionales-objetivo').value = '';
+    document.getElementById('modal-recurrente-objetivo').checked = false;
+}
+
+document.addEventListener('click', async function(e) {
+    const btnEliminar = e.target.closest('.btn-eliminar');
+    if (btnEliminar) {
+        const objetivoId = btnEliminar.getAttribute('data-id');
+        if (!objetivoId) return;
+        showConfirm('¿Estás seguro de que deseas eliminar este objetivo? Esta acción no se puede deshacer.').then(async (result) => {
+            if (result.isConfirmed) {
+                try {
+                    const res = await fetch(`/api/objetivos/${objetivoId}`, {
+                        method: 'DELETE',
+                        headers: { 'Content-Type': 'application/json' }
+                    });
+                    const result = await res.json();
+                    if (result.status === 'success') {
+                        showSuccess('Objetivo eliminado correctamente.');
+                        await cargarObjetivos();
+                    } else {
+                        showError(result.error || 'Error al eliminar objetivo');
+                    }
+                } catch (err) {
+                    showError('Error al eliminar objetivo');
+                }
+            }
+        });
+    }
 });
