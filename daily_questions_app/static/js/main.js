@@ -1310,3 +1310,49 @@ document.addEventListener('change', async function(e) {
         showError('Error al actualizar el objetivo');
     }
 });
+
+document.getElementById('btn-deseleccionar-recurrentes')?.addEventListener('click', async function() {
+    const recurrentesMarcados = objetivos.filter(obj => obj.recurrente && obj.completado && !es_objetivo_vencido_front(obj));
+    if (recurrentesMarcados.length === 0) {
+        showInfo('No hay objetivos recurrentes marcados para desmarcar.');
+        return;
+    }
+    for (const obj of recurrentesMarcados) {
+        await fetch(`/api/objetivos/${obj.id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ completado: false })
+        });
+    }
+    await cargarObjetivos();
+    showSuccess('Todos los objetivos recurrentes han sido desmarcados.');
+});
+
+function es_objetivo_vencido_front(obj) {
+    // Lógica similar a backend para saber si el objetivo ya está vencido
+    if (!obj) return false;
+    const hoy = new Date();
+    if (obj.fecha_fin) {
+        return new Date(obj.fecha_fin) < hoy;
+    }
+    if (obj.recurrente && obj.frecuencia && obj.fecha_inicio) {
+        const inicio = new Date(obj.fecha_inicio);
+        let vencimiento = null;
+        switch (obj.frecuencia) {
+            case 'diario': vencimiento = new Date(inicio); vencimiento.setDate(inicio.getDate() + 1); break;
+            case 'semanal': vencimiento = new Date(inicio); vencimiento.setDate(inicio.getDate() + 7); break;
+            case 'mensual': vencimiento = new Date(inicio); vencimiento.setDate(inicio.getDate() + 30); break;
+            case 'anual': vencimiento = new Date(inicio); vencimiento.setFullYear(inicio.getFullYear() + 1); break;
+        }
+        return vencimiento && hoy > vencimiento;
+    }
+    if (!obj.recurrente && obj.categoria && obj.fecha_creacion) {
+        const creacion = new Date(obj.fecha_creacion);
+        switch (obj.categoria) {
+            case 'diario': return hoy > creacion;
+            case 'semanal': { let v = new Date(creacion); v.setDate(creacion.getDate() + 7); return hoy > v; }
+            case 'mensual': { let v = new Date(creacion); v.setDate(creacion.getDate() + 30); return hoy > v; }
+        }
+    }
+    return false;
+}
