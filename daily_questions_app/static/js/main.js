@@ -763,13 +763,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     ${obj.estado ? `<span class="badge bg-secondary ms-1">${obj.estado.replace('_', ' ').toUpperCase()}</span>` : ''}
                     ${obj.descripcion ? `<div class="objetivo-desc">${obj.descripcion}</div>` : ''}
                     <div class="objetivo-extra mt-1 small text-muted">
-                        ${fechaCreacion ? `<span><i class='bi bi-calendar-plus'></i> Creado: ${fechaCreacion}</span>` : ''}
-                        ${fechaInicio ? `<span class="ms-2"><i class='bi bi-calendar-event'></i> Inicio: ${fechaInicio}</span>` : ''}
-                        ${fechaFin ? `<span class="ms-2"><i class='bi bi-calendar-check'></i> Fin: ${fechaFin}</span>` : ''}
-                        ${obj.horas_estimadas ? `<span class="ms-2"><i class='bi bi-clock'></i> ${obj.horas_estimadas}h</span>` : ''}
-                        ${obj.dificultad ? `<span class="ms-2"><i class='bi bi-bar-chart'></i> Dificultad: ${obj.dificultad}</span>` : ''}
-                        ${obj.etiquetas ? `<span class="ms-2"><i class='bi bi-tags'></i> ${obj.etiquetas}</span>` : ''}
-                        ${obj.recompensa ? `<span class="ms-2"><i class='bi bi-gift'></i> ${obj.recompensa}</span>` : ''}
+                        ${fechaCreacion ? `<span class="objetivo-fecha"><i class='bi bi-calendar-plus'></i> Creado: ${fechaCreacion}</span>` : ''}
+                        ${obj.recompensa ? `<span class="objetivo-recompensa"><i class='bi bi-gift'></i> ${obj.recompensa}</span>` : ''}
+                        ${fechaInicio ? `<span class="objetivo-fecha"><i class='bi bi-calendar-event'></i> Inicio: ${fechaInicio}</span>` : ''}
+                        ${fechaFin ? `<span class="objetivo-fecha"><i class='bi bi-calendar-check'></i> Fin: ${fechaFin}</span>` : ''}
+                        ${obj.horas_estimadas ? `<span class="objetivo-horas"><i class='bi bi-clock'></i> ${obj.horas_estimadas}h</span>` : ''}
+                        ${obj.dificultad ? `<span class="objetivo-dificultad"><i class='bi bi-bar-chart'></i> Dificultad: ${obj.dificultad}</span>` : ''}
+                        ${obj.etiquetas ? `<span class="objetivo-etiquetas"><i class='bi bi-tags'></i> ${obj.etiquetas}</span>` : ''}
                     </div>
                     ${obj.notas_adicionales ? `<div class="objetivo-notas small text-info mt-1"><i class='bi bi-info-circle'></i> ${obj.notas_adicionales}</div>` : ''}
                 </div>
@@ -942,13 +942,13 @@ function renderObjetivos() {
                 ${obj.estado ? `<span class="badge bg-secondary ms-1">${obj.estado.replace('_', ' ').toUpperCase()}</span>` : ''}
                 ${obj.descripcion ? `<div class="objetivo-desc">${obj.descripcion}</div>` : ''}
                 <div class="objetivo-extra mt-1 small text-muted">
-                    ${fechaCreacion ? `<span><i class='bi bi-calendar-plus'></i> Creado: ${fechaCreacion}</span>` : ''}
-                    ${fechaInicio ? `<span class="ms-2"><i class='bi bi-calendar-event'></i> Inicio: ${fechaInicio}</span>` : ''}
-                    ${fechaFin ? `<span class="ms-2"><i class='bi bi-calendar-check'></i> Fin: ${fechaFin}</span>` : ''}
-                    ${obj.horas_estimadas ? `<span class="ms-2"><i class='bi bi-clock'></i> ${obj.horas_estimadas}h</span>` : ''}
-                    ${obj.dificultad ? `<span class="ms-2"><i class='bi bi-bar-chart'></i> Dificultad: ${obj.dificultad}</span>` : ''}
-                    ${obj.etiquetas ? `<span class="ms-2"><i class='bi bi-tags'></i> ${obj.etiquetas}</span>` : ''}
-                    ${obj.recompensa ? `<span class="ms-2"><i class='bi bi-gift'></i> ${obj.recompensa}</span>` : ''}
+                    ${fechaCreacion ? `<span class="objetivo-fecha"><i class='bi bi-calendar-plus'></i> Creado: ${fechaCreacion}</span>` : ''}
+                    ${obj.recompensa ? `<span class="objetivo-recompensa"><i class='bi bi-gift'></i> ${obj.recompensa}</span>` : ''}
+                    ${fechaInicio ? `<span class="objetivo-fecha"><i class='bi bi-calendar-event'></i> Inicio: ${fechaInicio}</span>` : ''}
+                    ${fechaFin ? `<span class="objetivo-fecha"><i class='bi bi-calendar-check'></i> Fin: ${fechaFin}</span>` : ''}
+                    ${obj.horas_estimadas ? `<span class="objetivo-horas"><i class='bi bi-clock'></i> ${obj.horas_estimadas}h</span>` : ''}
+                    ${obj.dificultad ? `<span class="objetivo-dificultad"><i class='bi bi-bar-chart'></i> Dificultad: ${obj.dificultad}</span>` : ''}
+                    ${obj.etiquetas ? `<span class="objetivo-etiquetas"><i class='bi bi-tags'></i> ${obj.etiquetas}</span>` : ''}
                 </div>
                 ${obj.notas_adicionales ? `<div class="objetivo-notas small text-info mt-1"><i class='bi bi-info-circle'></i> ${obj.notas_adicionales}</div>` : ''}
             </div>

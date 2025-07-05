@@ -475,7 +475,8 @@ h1 {
 .bg-light {
     background: #f5f7fa !important;
 }
-#lista-objetivos .list-group-item {
+#lista-objetivos .list-group-item,
+#lista-historico .list-group-item {
     border: none;
     border-radius: 12px;
     margin-bottom: 10px;
@@ -485,14 +486,16 @@ h1 {
     align-items: center;
     justify-content: space-between;
 }
-#lista-objetivos .objetivo-titulo {
+#lista-objetivos .objetivo-titulo,
+#lista-historico .objetivo-titulo {
     font-weight: 600;
     font-size: 1.08rem;
     color: #2563eb;
     margin-bottom: 2px;
 }
-#lista-objetivos .objetivo-desc {
-    color: #6b7280;
+#lista-objetivos .objetivo-desc,
+#lista-historico .objetivo-desc {
+    color: #111;
     font-size: 0.98rem;
 }
 .etiqueta-prioridad {
@@ -537,18 +540,21 @@ h1 {
     border-color: #2563eb;
     box-shadow: 0 0 0 2px #2563eb22;
 }
-#lista-objetivos .check-objetivo {
+#lista-objetivos .check-objetivo,
+#lista-historico .check-objetivo {
     accent-color: #2563eb;
     width: 1.2em;
     height: 1.2em;
     margin-right: 12px;
 }
-#lista-objetivos .acciones-objetivo {
+#lista-objetivos .acciones-objetivo,
+#lista-historico .acciones-objetivo {
     margin-left: auto;
     display: flex;
     gap: 8px;
 }
-#lista-objetivos .btn-editar {
+#lista-objetivos .btn-editar,
+#lista-historico .btn-editar {
     color: #2563eb;
     background: none;
     border: none;
@@ -558,11 +564,13 @@ h1 {
     border-radius: 6px;
     transition: background 0.2s, color 0.2s;
 }
-#lista-objetivos .btn-editar:hover {
+#lista-objetivos .btn-editar:hover,
+#lista-historico .btn-editar:hover {
     background: #e0e7ff;
     color: #1d4ed8;
 }
-#lista-objetivos .btn-eliminar {
+#lista-objetivos .btn-eliminar,
+#lista-historico .btn-eliminar {
     color: #dc2626;
     background: none;
     border: none;
@@ -573,15 +581,99 @@ h1 {
     padding: 4px 8px;
     transition: background 0.2s, color 0.2s;
 }
-#lista-objetivos .btn-eliminar:hover {
+#lista-objetivos .btn-eliminar:hover,
+#lista-historico .btn-eliminar:hover {
     background: #fee2e2;
     color: #b91c1c;
 }
-#lista-objetivos .objetivo-completado .objetivo-titulo {
+#lista-objetivos .objetivo-completado .objetivo-titulo,
+#lista-historico .objetivo-completado .objetivo-titulo {
     text-decoration: line-through;
     color: #6b7280;
 }
-#lista-objetivos .objetivo-completado {
+#lista-objetivos .objetivo-completado,
+#lista-historico .objetivo-completado {
     background: #f3f4f6;
     opacity: 0.7;
+}
+
+/* === Objetivos: Colores destacados para datos clave === */
+.objetivo-fecha {
+    background: #e0f2fe;
+    color: #0369a1;
+    border-radius: 6px;
+    padding: 2px 8px;
+    margin-right: 6px;
+    font-weight: 500;
+    font-size: 0.93em;
+    display: inline-block;
+}
+.objetivo-horas {
+    background: #fef9c3;
+    color: #b45309;
+    border-radius: 6px;
+    padding: 2px 8px;
+    margin-right: 6px;
+    font-weight: 500;
+    font-size: 0.93em;
+    display: inline-block;
+}
+.objetivo-dificultad {
+    background: #ede9fe;
+    color: #7c3aed;
+    border-radius: 6px;
+    padding: 2px 8px;
+    margin-right: 6px;
+    font-weight: 500;
+    font-size: 0.93em;
+    display: inline-block;
+}
+.objetivo-etiquetas {
+    background: #f1f5f9;
+    color: #334155;
+    border-radius: 6px;
+    padding: 2px 8px;
+    margin-right: 6px;
+    font-weight: 500;
+    font-size: 0.93em;
+    display: inline-block;
+}
+.objetivo-extra {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 8px;
+    margin-bottom: 0.2em;
+}
+.objetivo-fecha,
+.objetivo-horas,
+.objetivo-dificultad,
+.objetivo-etiquetas,
+.objetivo-recompensa {
+    margin-right: 0;
+}
+.objetivo-extra > *:first-child {
+    margin-left: 0;
+}
+.objetivo-recompensa {
+    background: #fef3c7;
+    color: #b45309;
+    border-radius: 6px;
+    padding: 2px 8px;
+    margin-right: 2px;
+    font-weight: 500;
+    font-size: 0.93em;
+    display: inline-block;
+    margin-top: 0 !important;
+    vertical-align: middle;
+}
+.objetivo-notas {
+    color: #111 !important;
+}
+
+.disabled-btn {
+    opacity: 0.5;
+    cursor: not-allowed !important;
+    pointer-events: none;
 }
