@@ -1293,3 +1293,20 @@ function formatearHorasMinutos(valor) {
   if (!res) res = '0h';
   return res;
 }
+
+document.addEventListener('change', async function(e) {
+    const checkbox = e.target.closest('.check-objetivo');
+    if (!checkbox) return;
+    const objetivoId = checkbox.getAttribute('data-id');
+    if (!objetivoId) return;
+    try {
+        await fetch(`/api/objetivos/${objetivoId}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ completado: checkbox.checked })
+        });
+        await cargarObjetivos();
+    } catch (err) {
+        showError('Error al actualizar el objetivo');
+    }
+});
