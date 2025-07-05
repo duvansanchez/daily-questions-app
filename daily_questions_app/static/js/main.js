@@ -6,6 +6,7 @@ let questions = [];
 let responses = {};
 let questionTimers = {}; // Para almacenar los timers de cada pregunta
 let questionStartTimes = {}; // Para almacenar los tiempos de inicio
+let mapaObjetivosPadre = {};
 
 // Integración de SweetAlert2 para alertas globales
 // Asegúrate de incluir el script de SweetAlert2 en tu HTML
@@ -767,7 +768,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         ${obj.recompensa ? `<span class="objetivo-recompensa"><i class='bi bi-gift'></i> ${obj.recompensa}</span>` : ''}
                         ${fechaInicio ? `<span class="objetivo-fecha"><i class='bi bi-calendar-event'></i> Inicio: ${fechaInicio}</span>` : ''}
                         ${fechaFin ? `<span class="objetivo-fecha"><i class='bi bi-calendar-check'></i> Fin: ${fechaFin}</span>` : ''}
-                        ${obj.horas_estimadas ? `<span class="objetivo-horas"><i class='bi bi-clock'></i> ${obj.horas_estimadas}h</span>` : ''}
+                        ${obj.horas_estimadas ? `<span class="objetivo-horas"><i class='bi bi-clock'></i> ${formatearHorasMinutos(obj.horas_estimadas)}</span>` : ''}
                         ${obj.dificultad ? `<span class="objetivo-dificultad"><i class='bi bi-bar-chart'></i> Dificultad: ${obj.dificultad}</span>` : ''}
                         ${obj.etiquetas ? `<span class="objetivo-etiquetas"><i class='bi bi-tags'></i> ${obj.etiquetas}</span>` : ''}
                     </div>
@@ -867,6 +868,13 @@ async function cargarObjetivos() {
     try {
         const res = await fetch('/api/objetivos');
         objetivos = await res.json();
+        // Obtener mapa de objetivos padre
+        try {
+            const resPadre = await fetch('/api/objetivos_padre');
+            const padres = await resPadre.json();
+            mapaObjetivosPadre = {};
+            padres.forEach(p => { mapaObjetivosPadre[p.id] = p.titulo; });
+        } catch {}
         renderObjetivos();
     } catch (err) {
         objetivos = [];
@@ -940,13 +948,14 @@ function renderObjetivos() {
                 <span class="etiqueta-prioridad ${obj.prioridad}">${obj.prioridad.charAt(0).toUpperCase() + obj.prioridad.slice(1)}</span>
                 ${obj.categoria ? `<span class="etiqueta-categoria">${obj.categoria.charAt(0).toUpperCase() + obj.categoria.slice(1)}</span>` : ''}
                 ${obj.estado ? `<span class="badge bg-secondary ms-1">${obj.estado.replace('_', ' ').toUpperCase()}</span>` : ''}
+                ${obj.objetivo_padre_id && mapaObjetivosPadre[obj.objetivo_padre_id] ? `<div class='objetivo-padre small text-primary'><i class='bi bi-diagram-3'></i> Padre: ${mapaObjetivosPadre[obj.objetivo_padre_id]}</div>` : ''}
                 ${obj.descripcion ? `<div class="objetivo-desc">${obj.descripcion}</div>` : ''}
                 <div class="objetivo-extra mt-1 small text-muted">
                     ${fechaCreacion ? `<span class="objetivo-fecha"><i class='bi bi-calendar-plus'></i> Creado: ${fechaCreacion}</span>` : ''}
                     ${obj.recompensa ? `<span class="objetivo-recompensa"><i class='bi bi-gift'></i> ${obj.recompensa}</span>` : ''}
                     ${fechaInicio ? `<span class="objetivo-fecha"><i class='bi bi-calendar-event'></i> Inicio: ${fechaInicio}</span>` : ''}
                     ${fechaFin ? `<span class="objetivo-fecha"><i class='bi bi-calendar-check'></i> Fin: ${fechaFin}</span>` : ''}
-                    ${obj.horas_estimadas ? `<span class="objetivo-horas"><i class='bi bi-clock'></i> ${obj.horas_estimadas}h</span>` : ''}
+                    ${obj.horas_estimadas ? `<span class="objetivo-horas"><i class='bi bi-clock'></i> ${formatearHorasMinutos(obj.horas_estimadas)}</span>` : ''}
                     ${obj.dificultad ? `<span class="objetivo-dificultad"><i class='bi bi-bar-chart'></i> Dificultad: ${obj.dificultad}</span>` : ''}
                     ${obj.etiquetas ? `<span class="objetivo-etiquetas"><i class='bi bi-tags'></i> ${obj.etiquetas}</span>` : ''}
                 </div>
@@ -998,7 +1007,14 @@ if (formNuevo) {
     const estado = document.getElementById('modal-estado-objetivo').value;
     const fechaInicio = document.getElementById('modal-fecha-inicio-objetivo').value || null;
     const fechaFin = document.getElementById('modal-fecha-fin-objetivo').value || null;
-    const horasEstimadas = document.getElementById('modal-horas-estimadas-objetivo').value || null;
+    const horas = document.getElementById('modal-horas-estimadas-objetivo').value;
+    const minutos = document.getElementById('modal-minutos-estimados-objetivo').value;
+    let horasEstimadas = null;
+    if (horas || minutos) {
+      const h = parseInt(horas) || 0;
+      const m = parseInt(minutos) || 0;
+      horasEstimadas = h + (m / 60);
+    }
     const dificultad = document.getElementById('modal-dificultad-objetivo').value || null;
     const etiquetas = document.getElementById('modal-etiquetas-objetivo').value.trim();
     const recompensa = document.getElementById('modal-recompensa-objetivo').value.trim();
@@ -1070,7 +1086,14 @@ if (formEditar) {
     const estado = document.getElementById('editar-estado-objetivo').value;
     const fechaInicio = document.getElementById('editar-fecha-inicio-objetivo').value || null;
     const fechaFin = document.getElementById('editar-fecha-fin-objetivo').value || null;
-    const horasEstimadas = document.getElementById('editar-horas-estimadas-objetivo').value || null;
+    const horasEdit = document.getElementById('editar-horas-estimadas-objetivo').value;
+    const minutosEdit = document.getElementById('editar-minutos-estimados-objetivo').value;
+    let horasEstimadas = null;
+    if (horasEdit || minutosEdit) {
+      const h = parseInt(horasEdit) || 0;
+      const m = parseInt(minutosEdit) || 0;
+      horasEstimadas = h + (m / 60);
+    }
     const dificultad = document.getElementById('editar-dificultad-objetivo').value || null;
     const etiquetas = document.getElementById('editar-etiquetas-objetivo').value.trim();
     const recompensa = document.getElementById('editar-recompensa-objetivo').value.trim();
@@ -1147,11 +1170,12 @@ if (formEditar) {
     document.getElementById('modalEditarObjetivo').addEventListener('show.bs.modal', function () {
         const id = document.getElementById('editar-id-objetivo').value;
         poblarSelectObjetivoPadre('editar-padre-objetivo', id);
-        // Setear el valor actual si existe
+        // Setear el valor actual del objetivo padre tras poblar el select
         setTimeout(() => {
             const select = document.getElementById('editar-padre-objetivo');
-            if (select && window.objetivoEditandoPadreId) {
-                select.value = window.objetivoEditandoPadreId;
+            const padreId = document.getElementById('editar-padre-objetivo').getAttribute('data-valor-padre') || '';
+            if (select && padreId) {
+                select.value = padreId;
             }
             if (window.objetivoEditandoRecurrente) {
                 chkRecEdit.checked = true;
@@ -1185,7 +1209,8 @@ document.addEventListener('click', async function(e) {
     document.getElementById('editar-estado-objetivo').value = objetivo.estado || 'pendiente';
     document.getElementById('editar-fecha-inicio-objetivo').value = formatFechaInput(objetivo.fecha_inicio);
     document.getElementById('editar-fecha-fin-objetivo').value = formatFechaInput(objetivo.fecha_fin);
-    document.getElementById('editar-horas-estimadas-objetivo').value = objetivo.horas_estimadas || '';
+    document.getElementById('editar-horas-estimadas-objetivo').value = objetivo.horas_estimadas ? Math.floor(objetivo.horas_estimadas) : '';
+    document.getElementById('editar-minutos-estimados-objetivo').value = objetivo.horas_estimadas ? Math.round((objetivo.horas_estimadas - Math.floor(objetivo.horas_estimadas)) * 60) : '';
     document.getElementById('editar-dificultad-objetivo').value = objetivo.dificultad || '';
     document.getElementById('editar-etiquetas-objetivo').value = objetivo.etiquetas || '';
     document.getElementById('editar-recompensa-objetivo').value = objetivo.recompensa || '';
@@ -1194,6 +1219,8 @@ document.addEventListener('click', async function(e) {
     // Mostrar el modal
     const modal = new bootstrap.Modal(document.getElementById('modalEditarObjetivo'));
     modal.show();
+    // En el evento de abrir modal de editar, antes de mostrar el modal:
+    document.getElementById('editar-padre-objetivo').setAttribute('data-valor-padre', objetivo.objetivo_padre_id || '');
 });
 
 function formatFechaInput(fecha) {
@@ -1221,6 +1248,7 @@ function limpiarCamposNuevoObjetivo() {
     document.getElementById('modal-fecha-inicio-objetivo').value = '';
     document.getElementById('modal-fecha-fin-objetivo').value = '';
     document.getElementById('modal-horas-estimadas-objetivo').value = '';
+    document.getElementById('modal-minutos-estimados-objetivo').value = '';
     document.getElementById('modal-dificultad-objetivo').value = '';
     document.getElementById('modal-etiquetas-objetivo').value = '';
     document.getElementById('modal-recompensa-objetivo').value = '';
@@ -1254,3 +1282,14 @@ document.addEventListener('click', async function(e) {
         });
     }
 });
+
+function formatearHorasMinutos(valor) {
+  if (!valor) return '';
+  const horas = Math.floor(valor);
+  const minutos = Math.round((valor - horas) * 60);
+  let res = '';
+  if (horas > 0) res += `${horas}h`;
+  if (minutos > 0) res += (horas > 0 ? ' ' : '') + `${minutos}m`;
+  if (!res) res = '0h';
+  return res;
+}
