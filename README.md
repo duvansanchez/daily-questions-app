@@ -1,5 +1,72 @@
 # Daily Questions App
 
+## 🚀 ¿Qué es este proyecto?
+Una aplicación web para gestionar objetivos, preguntas diarias y desarrollo personal, con notificaciones automáticas por correo.
+
+---
+
+## 📦 Estructura del Proyecto
+
+```
+daily-questions-app/
+│
+├── backup/                  # Archivos de respaldo (ej: app.py.bak)
+├── daily_questions_app/     # Código principal de la app
+│   ├── app.py               # Servidor Flask principal
+│   ├── requirements.txt     # Dependencias del proyecto
+│   ├── templates/           # Plantillas HTML (Jinja2)
+│   ├── static/              # Archivos estáticos (CSS, JS, imágenes)
+│   ├── ...
+│
+├── scripts/                 # Scripts utilitarios y de mantenimiento
+│   ├── update_database.py
+│   ├── verificar_proyecciones.py
+│   ├── test_notificacion.py
+│   └── ...
+│
+├── README_NOTIFICACIONES.md # Documentación específica del sistema de notificaciones
+├── env_example.txt          # Ejemplo de archivo de variables de entorno
+└── README.md                # (Este archivo)
+```
+
+---
+
+## 🛠️ ¿Cómo empezar?
+
+1. **Clona el repositorio**
+2. **Instala las dependencias**:
+   ```bash
+   pip install -r daily_questions_app/requirements.txt
+   ```
+3. **Configura tus variables de entorno**:
+   - Copia `env_example.txt` a `.env` y edítalo con tus datos reales.
+4. **Inicializa la base de datos** (si es necesario):
+   ```bash
+   python scripts/update_database.py
+   ```
+5. **Ejecuta la app**:
+   ```bash
+   python daily_questions_app/app.py
+   ```
+
+---
+
+## 📚 Recursos útiles
+- `README_NOTIFICACIONES.md`: Documentación sobre el sistema de notificaciones por correo.
+- `scripts/`: Scripts para mantenimiento, pruebas y utilidades.
+- `backup/`: Archivos de respaldo (no necesarios para producción).
+
+---
+
+## 🧑‍💻 Buenas prácticas
+- Mantén tus variables sensibles solo en `.env` (no lo subas a GitHub).
+- Usa la carpeta `scripts/` para cualquier script auxiliar.
+- Si haces cambios grandes, considera modularizar la lógica en subcarpetas como `modules/` o `services/`.
+
+---
+
+¿Dudas? ¿Sugerencias? ¡Abre un issue o contacta al autor!
+
 ## Requisitos
 
 - Python 3.8+
