@@ -938,10 +938,10 @@ function renderObjetivos() {
         const fechaCreacion = obj.fecha_creacion ? new Date(obj.fecha_creacion + 'T12:00:00').toLocaleDateString('es-ES', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' }) : '';
         const fechaInicio = obj.fecha_inicio ? new Date(obj.fecha_inicio + 'T12:00:00').toLocaleDateString('es-ES', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' }) : '';
         const fechaFin = obj.fecha_fin ? new Date(obj.fecha_fin + 'T12:00:00').toLocaleDateString('es-ES', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' }) : '';
-        const li = document.createElement('li');
-        li.className = 'list-group-item d-flex align-items-center';
-        if (obj.completado) li.classList.add('objetivo-completado');
-        li.innerHTML = `
+        const card = document.createElement('div');
+        card.className = 'objetivo-card mb-3';
+        if (obj.completado) card.classList.add('objetivo-completado');
+        card.innerHTML = `
             <div style="flex:1;min-width:0;">
                 <input type="checkbox" class="form-check-input me-2 check-objetivo" ${obj.completado ? 'checked' : ''} data-id="${obj.id}">
                 <span class="objetivo-titulo">${obj.titulo}</span>
@@ -966,7 +966,7 @@ function renderObjetivos() {
                 <button class="btn-eliminar" title="Eliminar" data-id="${obj.id}"><i class="bi bi-trash"></i></button>
             </div>
         `;
-        lista.appendChild(li);
+        lista.appendChild(card);
     });
     actualizarResumenObjetivos();
 }

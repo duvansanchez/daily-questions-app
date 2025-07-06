@@ -677,3 +677,32 @@ h1 {
     cursor: not-allowed !important;
     pointer-events: none;
 }
+
+/* Grid de objetivos */
+.objetivos-grid {
+  column-count: 3;
+  column-gap: 2.5rem;
+  width: 100%;
+  max-width: 1600px;
+  margin: 0 auto;
+}
+@media (max-width: 1100px) {
+  .objetivos-grid { column-count: 2; }
+}
+@media (max-width: 700px) {
+  .objetivos-grid { column-count: 1; }
+}
+.objetivo-card {
+  display: block;
+  break-inside: avoid;
+  margin-bottom: 2.5rem;
+  max-width: 100%;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+  padding: 1.2rem 1.1rem 1.1rem 1.1rem;
+  transition: box-shadow 0.2s;
+}
+.objetivo-card:hover {
+  box-shadow: 0 4px 16px rgba(0,0,0,0.13);
+}
