@@ -69,7 +69,7 @@ def update_database():
             FROM INFORMATION_SCHEMA.COLUMNS 
             WHERE TABLE_NAME = 'objetivos' 
             AND COLUMN_NAME IN (
-                'estado', 'fecha_inicio', 'fecha_fin', 'horas_estimadas', 'dificultad', 'etiquetas', 'recompensa', 'notas_adicionales', 'recurrente', 'frecuencia'
+                'estado', 'fecha_inicio', 'fecha_fin', 'horas_estimadas', 'dificultad', 'etiquetas', 'recompensa', 'notas_adicionales', 'recurrente', 'frecuencia', 'fecha_proyeccion_comienzo'
             )
         """)
         existing_objetivos_columns = [row[0] for row in cursor.fetchall()]
@@ -144,6 +144,13 @@ def update_database():
                 ADD frecuencia NVARCHAR(20) NULL
             """)
             print("Campo frecuencia agregado exitosamente!")
+        if 'fecha_proyeccion_comienzo' not in existing_objetivos_columns:
+            print("Agregando campo fecha_proyeccion_comienzo a la tabla objetivos...")
+            cursor.execute("""
+                ALTER TABLE objetivos 
+                ADD fecha_proyeccion_comienzo DATETIME NULL
+            """)
+            print("Campo fecha_proyeccion_comienzo agregado exitosamente!")
         # --- FIN: Migración tabla objetivos ---
         
         print("Base de datos actualizada exitosamente!")
