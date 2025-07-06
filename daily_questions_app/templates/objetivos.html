@@ -132,32 +132,26 @@
             <label for="modal-desc-objetivo" class="form-label fw-semibold">Descripción</label>
             <textarea class="form-control" id="modal-desc-objetivo" rows="2" placeholder="Descripción detallada del objetivo"></textarea>
           </div>
-          <div class="mb-3">
-            <label for="modal-prioridad-objetivo" class="form-label fw-semibold">Prioridad</label>
-            <select class="form-select" id="modal-prioridad-objetivo">
-              <option value="alta">Alta</option>
-              <option value="media" selected>Media</option>
-              <option value="baja">Baja</option>
-            </select>
-          </div>
-          <div class="mb-3">
-            <label for="modal-categoria-objetivo" class="form-label fw-semibold">Categoría <span style="color:red">*</span></label>
-            <select class="form-select" id="modal-categoria-objetivo" required>
-              <option value="" disabled selected>Selecciona una categoría</option>
-              <option value="diario">Diarios</option>
-              <option value="semanal">Semanales</option>
-              <option value="mensual">Mensuales</option>
-              <option value="anual">Anuales</option>
-              <option value="general">Generales</option>
-            </select>
-          </div>
-          <div class="mb-3 d-flex align-items-center gap-2">
-            <label class="fw-semibold mb-0" for="modal-recurrente-objetivo">Hacer este objetivo recurrente</label>
-            <input class="form-check-input" type="checkbox" id="modal-recurrente-objetivo" style="margin-top: 0.5px;">
-          </div>
-          <div class="mb-3">
-            <label for="modal-es-padre-objetivo" class="form-label fw-semibold">¿Este objetivo es padre?</label>
-            <input class="form-check-input" type="checkbox" id="modal-es-padre-objetivo" style="margin-top: 0.5px;">
+          <div class="row">
+            <div class="col mb-3">
+              <label for="modal-prioridad-objetivo" class="form-label fw-semibold">Prioridad</label>
+              <select class="form-select" id="modal-prioridad-objetivo">
+                <option value="alta">Alta</option>
+                <option value="media" selected>Media</option>
+                <option value="baja">Baja</option>
+              </select>
+            </div>
+            <div class="col mb-3">
+              <label for="modal-categoria-objetivo" class="form-label fw-semibold">Categoría <span style="color:red">*</span></label>
+              <select class="form-select" id="modal-categoria-objetivo" required>
+                <option value="" disabled selected>Selecciona una categoría</option>
+                <option value="diario">Diarios</option>
+                <option value="semanal">Semanales</option>
+                <option value="mensual">Mensuales</option>
+                <option value="anual">Anuales</option>
+                <option value="general">Generales</option>
+              </select>
+            </div>
           </div>
           <div class="mb-3">
             <label for="modal-padre-objetivo" class="form-label fw-semibold">Objetivo Padre (Opcional)</label>
@@ -166,14 +160,26 @@
               <!-- Opciones dinámicas por JS -->
             </select>
           </div>
-          <div class="mb-3">
-            <label for="modal-estado-objetivo" class="form-label fw-semibold">Estado</label>
-            <select class="form-select" id="modal-estado-objetivo">
-              <option value="pendiente">Pendiente</option>
-              <option value="en_progreso">En progreso</option>
-              <option value="completado">Completado</option>
-              <option value="cancelado">Cancelado</option>
-            </select>
+          <div class="row">
+            <div class="col mb-3">
+              <label for="modal-estado-objetivo" class="form-label fw-semibold">Estado</label>
+              <select class="form-select" id="modal-estado-objetivo">
+                <option value="pendiente">Pendiente</option>
+                <option value="en_progreso">En progreso</option>
+                <option value="completado">Completado</option>
+                <option value="cancelado">Cancelado</option>
+              </select>
+            </div>
+            <div class="col mb-3">
+              <label for="modal-dificultad-objetivo" class="form-label fw-semibold">Dificultad</label>
+              <select class="form-select" id="modal-dificultad-objetivo">
+                <option value="1">1 - Muy fácil</option>
+                <option value="2">2</option>
+                <option value="3">3 - Media</option>
+                <option value="4">4</option>
+                <option value="5">5 - Muy difícil</option>
+              </select>
+            </div>
           </div>
           <div class="row">
             <div class="col mb-3">
@@ -197,16 +203,6 @@
             </div>
           </div>
           <div class="mb-3">
-            <label for="modal-dificultad-objetivo" class="form-label fw-semibold">Dificultad</label>
-            <select class="form-select" id="modal-dificultad-objetivo">
-              <option value="1">1 - Muy fácil</option>
-              <option value="2">2</option>
-              <option value="3">3 - Media</option>
-              <option value="4">4</option>
-              <option value="5">5 - Muy difícil</option>
-            </select>
-          </div>
-          <div class="mb-3">
             <label for="modal-etiquetas-objetivo" class="form-label fw-semibold">Etiquetas</label>
             <input type="text" class="form-control" id="modal-etiquetas-objetivo" placeholder="Ej: salud, trabajo, familia">
           </div>
@@ -217,6 +213,14 @@
           <div class="mb-3">
             <label for="modal-notas-adicionales-objetivo" class="form-label fw-semibold">Notas adicionales</label>
             <textarea class="form-control" id="modal-notas-adicionales-objetivo" rows="2" placeholder="Notas, ideas, recordatorios..."></textarea>
+          </div>
+          <div class="mb-3 d-flex align-items-center gap-2">
+            <label class="fw-semibold mb-0" for="modal-recurrente-objetivo">Hacer este objetivo recurrente</label>
+            <input class="form-check-input" type="checkbox" id="modal-recurrente-objetivo" style="margin-top: 0.5px;">
+          </div>
+          <div class="mb-3">
+            <label for="modal-es-padre-objetivo" class="form-label fw-semibold">¿Este objetivo es padre?</label>
+            <input class="form-check-input" type="checkbox" id="modal-es-padre-objetivo" style="margin-top: 0.5px;">
           </div>
         </div>
         <div class="modal-footer">
@@ -250,32 +254,26 @@
             <label for="editar-desc-objetivo" class="form-label fw-semibold">Descripción</label>
             <textarea class="form-control" id="editar-desc-objetivo" rows="2"></textarea>
           </div>
-          <div class="mb-3">
-            <label for="editar-prioridad-objetivo" class="form-label fw-semibold">Prioridad</label>
-            <select class="form-select" id="editar-prioridad-objetivo">
-              <option value="alta">Alta</option>
-              <option value="media">Media</option>
-              <option value="baja">Baja</option>
-            </select>
-          </div>
-          <div class="mb-3">
-            <label for="editar-categoria-objetivo" class="form-label fw-semibold">Categoría <span style="color:red">*</span></label>
-            <select class="form-select" id="editar-categoria-objetivo" required>
-              <option value="" disabled selected>Selecciona una categoría</option>
-              <option value="diario">Diarios</option>
-              <option value="semanal">Semanales</option>
-              <option value="mensual">Mensuales</option>
-              <option value="anual">Anuales</option>
-              <option value="general">Generales</option>
-            </select>
-          </div>
-          <div class="mb-3 d-flex align-items-center gap-2">
-            <label class="fw-semibold mb-0" for="editar-recurrente-objetivo">Hacer este objetivo recurrente</label>
-            <input class="form-check-input" type="checkbox" id="editar-recurrente-objetivo" style="margin-top: 0.5px;">
-          </div>
-          <div class="mb-3">
-            <label for="editar-es-padre-objetivo" class="form-label fw-semibold">¿Este objetivo es padre?</label>
-            <input class="form-check-input" type="checkbox" id="editar-es-padre-objetivo" style="margin-top: 0.5px;">
+          <div class="row">
+            <div class="col mb-3">
+              <label for="editar-prioridad-objetivo" class="form-label fw-semibold">Prioridad</label>
+              <select class="form-select" id="editar-prioridad-objetivo">
+                <option value="alta">Alta</option>
+                <option value="media">Media</option>
+                <option value="baja">Baja</option>
+              </select>
+            </div>
+            <div class="col mb-3">
+              <label for="editar-categoria-objetivo" class="form-label fw-semibold">Categoría <span style="color:red">*</span></label>
+              <select class="form-select" id="editar-categoria-objetivo" required>
+                <option value="" disabled selected>Selecciona una categoría</option>
+                <option value="diario">Diarios</option>
+                <option value="semanal">Semanales</option>
+                <option value="mensual">Mensuales</option>
+                <option value="anual">Anuales</option>
+                <option value="general">Generales</option>
+              </select>
+            </div>
           </div>
           <div class="mb-3">
             <label for="editar-padre-objetivo" class="form-label fw-semibold">Objetivo Padre (Opcional)</label>
@@ -284,14 +282,26 @@
               <!-- Opciones dinámicas por JS -->
             </select>
           </div>
-          <div class="mb-3">
-            <label for="editar-estado-objetivo" class="form-label fw-semibold">Estado</label>
-            <select class="form-select" id="editar-estado-objetivo">
-              <option value="pendiente">Pendiente</option>
-              <option value="en_progreso">En progreso</option>
-              <option value="completado">Completado</option>
-              <option value="cancelado">Cancelado</option>
-            </select>
+          <div class="row">
+            <div class="col mb-3">
+              <label for="editar-estado-objetivo" class="form-label fw-semibold">Estado</label>
+              <select class="form-select" id="editar-estado-objetivo">
+                <option value="pendiente">Pendiente</option>
+                <option value="en_progreso">En progreso</option>
+                <option value="completado">Completado</option>
+                <option value="cancelado">Cancelado</option>
+              </select>
+            </div>
+            <div class="col mb-3">
+              <label for="editar-dificultad-objetivo" class="form-label fw-semibold">Dificultad</label>
+              <select class="form-select" id="editar-dificultad-objetivo">
+                <option value="1">1 - Muy fácil</option>
+                <option value="2">2</option>
+                <option value="3">3 - Media</option>
+                <option value="4">4</option>
+                <option value="5">5 - Muy difícil</option>
+              </select>
+            </div>
           </div>
           <div class="row">
             <div class="col mb-3">
@@ -315,16 +325,6 @@
             </div>
           </div>
           <div class="mb-3">
-            <label for="editar-dificultad-objetivo" class="form-label fw-semibold">Dificultad</label>
-            <select class="form-select" id="editar-dificultad-objetivo">
-              <option value="1">1 - Muy fácil</option>
-              <option value="2">2</option>
-              <option value="3">3 - Media</option>
-              <option value="4">4</option>
-              <option value="5">5 - Muy difícil</option>
-            </select>
-          </div>
-          <div class="mb-3">
             <label for="editar-etiquetas-objetivo" class="form-label fw-semibold">Etiquetas</label>
             <input type="text" class="form-control" id="editar-etiquetas-objetivo" placeholder="Ej: salud, trabajo, familia">
           </div>
@@ -335,6 +335,14 @@
           <div class="mb-3">
             <label for="editar-notas-adicionales-objetivo" class="form-label fw-semibold">Notas adicionales</label>
             <textarea class="form-control" id="editar-notas-adicionales-objetivo" rows="2" placeholder="Notas, ideas, recordatorios..."></textarea>
+          </div>
+          <div class="mb-3 d-flex align-items-center gap-2">
+            <label class="fw-semibold mb-0" for="editar-recurrente-objetivo">Hacer este objetivo recurrente</label>
+            <input class="form-check-input" type="checkbox" id="editar-recurrente-objetivo" style="margin-top: 0.5px;">
+          </div>
+          <div class="mb-3">
+            <label for="editar-es-padre-objetivo" class="form-label fw-semibold">¿Este objetivo es padre?</label>
+            <input class="form-check-input" type="checkbox" id="editar-es-padre-objetivo" style="margin-top: 0.5px;">
           </div>
         </div>
         <div class="modal-footer">
