@@ -7,6 +7,7 @@ let responses = {};
 let questionTimers = {}; // Para almacenar los timers de cada pregunta
 let questionStartTimes = {}; // Para almacenar los tiempos de inicio
 let mapaObjetivosPadre = {};
+let categoriaActual = 'diario';
 
 // Integración de SweetAlert2 para alertas globales
 // Asegúrate de incluir el script de SweetAlert2 en tu HTML
@@ -862,7 +863,6 @@ function initAdminEvents() {
 
 // === Objetivos Desarrollo Personal (Integración API) ===
 let objetivos = [];
-let categoriaActual = 'todos';
 
 async function cargarObjetivos() {
     try {
@@ -896,26 +896,23 @@ function actualizarResumenObjetivos() {
     // Progreso semanal
     const semanales = objetivos.filter(obj => (obj.categoria || 'diario') === 'semanal');
     const semanalesCompletados = semanales.filter(obj => obj.completado).length;
-    const progresoSemanal = semanales.length > 0 ? Math.round((semanalesCompletados / semanales.length) * 100) : 0;
     const elSemanal = document.getElementById('progreso-semanal');
     if (elSemanal) {
-        elSemanal.textContent = `${progresoSemanal}%`;
+        elSemanal.textContent = `${semanalesCompletados}/${semanales.length}`;
     }
     // Progreso mensual
     const mensuales = objetivos.filter(obj => (obj.categoria || 'diario') === 'mensual');
     const mensualesCompletados = mensuales.filter(obj => obj.completado).length;
-    const progresoMensual = mensuales.length > 0 ? Math.round((mensualesCompletados / mensuales.length) * 100) : 0;
     const elMensual = document.getElementById('progreso-mensual');
     if (elMensual) {
-        elMensual.textContent = `${progresoMensual}%`;
+        elMensual.textContent = `${mensualesCompletados}/${mensuales.length}`;
     }
     // Progreso anual
     const anuales = objetivos.filter(obj => (obj.categoria || 'diario') === 'anual');
     const anualesCompletados = anuales.filter(obj => obj.completado).length;
-    const progresoAnual = anuales.length > 0 ? Math.round((anualesCompletados / anuales.length) * 100) : 0;
     const elAnual = document.getElementById('progreso-anual');
     if (elAnual) {
-        elAnual.textContent = `${progresoAnual}%`;
+        elAnual.textContent = `${anualesCompletados}/${anuales.length}`;
     }
 }
 
@@ -1355,4 +1352,11 @@ function es_objetivo_vencido_front(obj) {
         }
     }
     return false;
+}
+
+const modalNuevo = document.getElementById('modalNuevoObjetivo');
+if (modalNuevo) {
+    modalNuevo.addEventListener('show.bs.modal', function () {
+        poblarSelectObjetivoPadre('modal-padre-objetivo');
+    });
 }
