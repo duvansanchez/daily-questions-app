@@ -1,6 +1,7 @@
 print('EJECUTANDO app.py DE daily_questions_app')
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, make_response, session
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
+from flask_mail import Mail, Message
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timedelta
 import os
@@ -12,6 +13,7 @@ import sys
 import traceback
 from collections import defaultdict
 from flask_babel import Babel, format_datetime
+from apscheduler.schedulers.background import BackgroundScheduler
 
 load_dotenv()
 
@@ -32,6 +34,16 @@ werkzeug_logger.setLevel(logging.ERROR)  # Reducir el nivel de registro de werkz
 app = Flask(__name__)
 app.config['BABEL_DEFAULT_LOCALE'] = 'es'
 babel = Babel(app)
+
+# Configuración de correo electrónico
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+app.config['MAIL_PORT'] = 587
+app.config['MAIL_USE_TLS'] = True
+app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME', 'tu_email@gmail.com')
+app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD', 'tu_password_app')
+app.config['MAIL_DEFAULT_SENDER'] = os.getenv('MAIL_USERNAME', 'tu_email@gmail.com')
+
+mail = Mail(app)
 
 @app.template_filter('format_datetime')
 def jinja2_format_datetime(value, format="EEEE, dd 'de' MMMM 'de' yyyy"):
@@ -1784,7 +1796,7 @@ def api_list_objetivos():
     primer_dia_anio = hoy.replace(month=1, day=1)
     with get_db_connection() as conn:
         cursor = conn.cursor()
-        cursor.execute('''SELECT id, titulo, descripcion, prioridad, categoria, completado, fecha_creacion, fecha_completado, objetivo_padre_id, es_padre, estado, fecha_inicio, fecha_fin, horas_estimadas, dificultad, etiquetas, recompensa, notas_adicionales, recurrente, frecuencia FROM objetivos WHERE user_id = ? ORDER BY fecha_creacion DESC''', (current_user.id,))
+        cursor.execute('''SELECT id, titulo, descripcion, prioridad, categoria, completado, fecha_creacion, fecha_completado, objetivo_padre_id, es_padre, estado, fecha_inicio, fecha_fin, fecha_proyeccion_comienzo, horas_estimadas, dificultad, etiquetas, recompensa, notas_adicionales, recurrente, frecuencia FROM objetivos WHERE user_id = ? ORDER BY fecha_creacion DESC''', (current_user.id,))
         rows = cursor.fetchall()
         objetivos = []
         for row in rows:
@@ -1802,13 +1814,14 @@ def api_list_objetivos():
                 'estado': row[10],
                 'fecha_inicio': row[11].strftime('%Y-%m-%d') if row[11] else None,
                 'fecha_fin': row[12].strftime('%Y-%m-%d') if row[12] else None,
-                'horas_estimadas': row[13],
-                'dificultad': row[14],
-                'etiquetas': row[15],
-                'recompensa': row[16],
-                'notas_adicionales': row[17],
-                'recurrente': bool(row[18]) if len(row) > 18 else False,
-                'frecuencia': row[19] if len(row) > 19 else None
+                'fecha_proyeccion_comienzo': row[13].strftime('%Y-%m-%d') if row[13] else None,
+                'horas_estimadas': row[14],
+                'dificultad': row[15],
+                'etiquetas': row[16],
+                'recompensa': row[17],
+                'notas_adicionales': row[18],
+                'recurrente': bool(row[19]) if len(row) > 19 else False,
+                'frecuencia': row[20] if len(row) > 20 else None
             }
             # Verificar si el objetivo está vencido
             vencido = es_objetivo_vencido(obj, hoy)
@@ -1896,6 +1909,114 @@ def es_objetivo_vencido(objetivo, hoy):
     
     return False
 
+def enviar_notificacion_proyeccion_comienzo(objetivo, usuario_email):
+    """
+    Envía una notificación por correo cuando llega la fecha de proyección de comienzo.
+    """
+    try:
+        subject = f"¡Es hora de comenzar tu objetivo: {objetivo['titulo']}!"
+        
+        html_body = f"""
+        <html>
+        <body>
+            <h2>¡Hola! 👋</h2>
+            <p>Hoy es la fecha que proyectaste para comenzar tu objetivo:</p>
+            
+            <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                <h3 style="color: #007bff; margin-top: 0;">{objetivo['titulo']}</h3>
+                <p><strong>Descripción:</strong> {objetivo.get('descripcion', 'Sin descripción')}</p>
+                <p><strong>Categoría:</strong> {objetivo.get('categoria', 'Sin categoría')}</p>
+                <p><strong>Prioridad:</strong> {objetivo.get('prioridad', 'Media')}</p>
+                <p><strong>Dificultad:</strong> {objetivo.get('dificultad', 'No especificada')}</p>
+            </div>
+            
+            <p>¡Es el momento perfecto para dar el primer paso hacia tu meta!</p>
+            
+            <div style="margin: 30px 0;">
+                <a href="http://localhost:5000/objetivos" 
+                   style="background-color: #007bff; color: white; padding: 12px 24px; 
+                          text-decoration: none; border-radius: 5px; display: inline-block;">
+                    Ver mis objetivos
+                </a>
+            </div>
+            
+            <p style="color: #6c757d; font-size: 14px;">
+                Este correo fue enviado automáticamente por Daily Questions App.
+            </p>
+        </body>
+        </html>
+        """
+        
+        msg = Message(
+            subject=subject,
+            recipients=[usuario_email],
+            html=html_body
+        )
+        
+        mail.send(msg)
+        logger.info(f"Notificación enviada exitosamente a {usuario_email} para el objetivo: {objetivo['titulo']}")
+        return True
+        
+    except Exception as e:
+        logger.error(f"Error enviando notificación de proyección: {str(e)}")
+        return False
+
+def verificar_proyecciones_comienzo():
+    """
+    Verifica los objetivos que tienen fecha de proyección de comienzo para hoy
+    y envía notificaciones por correo.
+    """
+    try:
+        hoy = datetime.now().date()
+        
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            
+            # Buscar objetivos con fecha de proyección de comienzo para hoy
+            cursor.execute("""
+                SELECT o.id, o.titulo, o.descripcion, o.categoria, o.prioridad, o.dificultad,
+                       u.username, u.password
+                FROM objetivos o
+                JOIN [user] u ON o.user_id = u.id
+                WHERE o.fecha_proyeccion_comienzo = ?
+                AND o.completado = 0
+            """, (hoy,))
+            
+            objetivos_hoy = cursor.fetchall()
+            
+            for objetivo_data in objetivos_hoy:
+                objetivo = {
+                    'id': objetivo_data[0],
+                    'titulo': objetivo_data[1],
+                    'descripcion': objetivo_data[2],
+                    'categoria': objetivo_data[3],
+                    'prioridad': objetivo_data[4],
+                    'dificultad': objetivo_data[5]
+                }
+                
+                # Por ahora usamos el username como email (en producción deberías tener un campo email)
+                usuario_email = f"{objetivo_data[6]}@example.com"  # Placeholder
+                
+                # Enviar notificación
+                enviar_notificacion_proyeccion_comienzo(objetivo, usuario_email)
+                
+        logger.info(f"Verificación de proyecciones completada. {len(objetivos_hoy)} objetivos encontrados para hoy.")
+        
+    except Exception as e:
+        logger.error(f"Error verificando proyecciones de comienzo: {str(e)}")
+
+@app.route('/api/verificar-proyecciones', methods=['POST'])
+@login_required
+def api_verificar_proyecciones():
+    """
+    Endpoint para verificar proyecciones de comienzo (puede ser llamado por un cron job)
+    """
+    try:
+        verificar_proyecciones_comienzo()
+        return jsonify({'status': 'success', 'message': 'Verificación de proyecciones completada'})
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
 @app.route('/api/objetivos', methods=['POST'])
 @login_required
 def api_create_objetivo():
@@ -1909,6 +2030,7 @@ def api_create_objetivo():
     estado = data.get('estado')
     fecha_inicio = parse_fecha(data.get('fecha_inicio'))
     fecha_fin = parse_fecha(data.get('fecha_fin'))
+    fecha_proyeccion_comienzo = parse_fecha(data.get('fecha_proyeccion_comienzo'))
     horas_estimadas = data.get('horas_estimadas')
     dificultad = data.get('dificultad')
     etiquetas = data.get('etiquetas')
@@ -1924,7 +2046,7 @@ def api_create_objetivo():
     
     with get_db_connection() as conn:
         cursor = conn.cursor()
-        cursor.execute('''INSERT INTO objetivos (user_id, titulo, descripcion, prioridad, categoria, completado, fecha_creacion, objetivo_padre_id, es_padre, estado, fecha_inicio, fecha_fin, horas_estimadas, dificultad, etiquetas, recompensa, notas_adicionales, recurrente, frecuencia) VALUES (?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''', (current_user.id, titulo, descripcion, prioridad, categoria, fecha_creacion, objetivo_padre_id, es_padre, estado, fecha_inicio, fecha_fin, horas_estimadas, dificultad, etiquetas, recompensa, notas_adicionales, recurrente, frecuencia))
+        cursor.execute('''INSERT INTO objetivos (user_id, titulo, descripcion, prioridad, categoria, completado, fecha_creacion, objetivo_padre_id, es_padre, estado, fecha_inicio, fecha_fin, fecha_proyeccion_comienzo, horas_estimadas, dificultad, etiquetas, recompensa, notas_adicionales, recurrente, frecuencia) VALUES (?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''', (current_user.id, titulo, descripcion, prioridad, categoria, fecha_creacion, objetivo_padre_id, es_padre, estado, fecha_inicio, fecha_fin, fecha_proyeccion_comienzo, horas_estimadas, dificultad, etiquetas, recompensa, notas_adicionales, recurrente, frecuencia))
         conn.commit()
         return jsonify({'status': 'success'})
 
@@ -1933,9 +2055,9 @@ def api_create_objetivo():
 def api_update_objetivo(objetivo_id):
     data = request.get_json()
     campos = {}
-    for campo in ['titulo', 'descripcion', 'prioridad', 'categoria', 'objetivo_padre_id', 'es_padre', 'estado', 'fecha_inicio', 'fecha_fin', 'horas_estimadas', 'dificultad', 'etiquetas', 'recompensa', 'notas_adicionales', 'recurrente', 'frecuencia']:
+    for campo in ['titulo', 'descripcion', 'prioridad', 'categoria', 'objetivo_padre_id', 'es_padre', 'estado', 'fecha_inicio', 'fecha_fin', 'fecha_proyeccion_comienzo', 'horas_estimadas', 'dificultad', 'etiquetas', 'recompensa', 'notas_adicionales', 'recurrente', 'frecuencia']:
         if campo in data:
-            if campo in ['fecha_inicio', 'fecha_fin']:
+            if campo in ['fecha_inicio', 'fecha_fin', 'fecha_proyeccion_comienzo']:
                 campos[campo] = parse_fecha(data[campo])
             else:
                 campos[campo] = data[campo]
@@ -2037,7 +2159,7 @@ def api_objetivos_historico():
 
     where_clause = ' AND '.join(filtros)
     sql = f'''
-        SELECT id, titulo, descripcion, prioridad, categoria, completado, fecha_creacion, fecha_completado, objetivo_padre_id, es_padre, estado, fecha_inicio, fecha_fin, horas_estimadas, dificultad, etiquetas, recompensa, notas_adicionales
+        SELECT id, titulo, descripcion, prioridad, categoria, completado, fecha_creacion, fecha_completado, objetivo_padre_id, es_padre, estado, fecha_inicio, fecha_fin, fecha_proyeccion_comienzo, horas_estimadas, dificultad, etiquetas, recompensa, notas_adicionales
         FROM objetivos
         WHERE {where_clause}
         ORDER BY fecha_creacion DESC
@@ -2064,16 +2186,28 @@ def api_objetivos_historico():
                 'estado': row[10],
                 'fecha_inicio': row[11].strftime('%Y-%m-%d') if row[11] else None,
                 'fecha_fin': row[12].strftime('%Y-%m-%d') if row[12] else None,
-                'horas_estimadas': row[13],
-                'dificultad': row[14],
-                'etiquetas': row[15],
-                'recompensa': row[16],
-                'notas_adicionales': row[17]
+                'fecha_proyeccion_comienzo': row[13].strftime('%Y-%m-%d') if row[13] else None,
+                'horas_estimadas': row[14],
+                'dificultad': row[15],
+                'etiquetas': row[16],
+                'recompensa': row[17],
+                'notas_adicionales': row[18]
             }
             for row in rows
         ]
         return jsonify(objetivos)
 
+# --- Scheduler para notificaciones automáticas ---
+def start_scheduler():
+    from datetime import datetime
+    scheduler = BackgroundScheduler(timezone="America/Bogota")
+    # Ejecutar a las 00:00 y 12:00 todos los días
+    scheduler.add_job(verificar_proyecciones_comienzo, 'cron', hour=0, minute=0, id='notificacion_medianoche')
+    scheduler.add_job(verificar_proyecciones_comienzo, 'cron', hour=12, minute=0, id='notificacion_mediodia')
+    scheduler.start()
+    print("[Scheduler] Notificaciones programadas a las 00:00 y 12:00 todos los días.")
+
 # Configuración de la aplicación
 if __name__ == '__main__':
+    start_scheduler()
     app.run(host='0.0.0.0', port=5000, debug=True)
