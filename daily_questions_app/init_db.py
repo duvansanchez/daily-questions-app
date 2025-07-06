@@ -104,6 +104,18 @@ try:
         END
     ''')
     
+    # Tabla para registrar los saltos de objetivos recurrentes
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS objetivos_saltados (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            objetivo_id INTEGER NOT NULL,
+            user_id INTEGER NOT NULL,
+            fecha_saltada DATE NOT NULL,
+            FOREIGN KEY (objetivo_id) REFERENCES objetivos(id),
+            FOREIGN KEY (user_id) REFERENCES [user](id)
+        )
+    ''')
+    
     conn.commit()
     print("Base de datos inicializada exitosamente!")
     

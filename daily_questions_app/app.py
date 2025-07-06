@@ -1823,18 +1823,22 @@ def api_list_objetivos():
                 'recurrente': bool(row[19]) if len(row) > 19 else False,
                 'frecuencia': row[20] if len(row) > 20 else None
             }
+            # Marcar si el objetivo recurrente fue saltado hoy
+            if obj['recurrente']:
+                cursor.execute('''SELECT 1 FROM objetivos_saltados WHERE objetivo_id = ? AND user_id = ? AND fecha_saltada = ?''', (obj['id'], current_user.id, hoy))
+                obj['saltado_hoy'] = bool(cursor.fetchone())
+            print(f"PROCESANDO OBJETIVO: {obj['titulo']} - Categoría: {obj['categoria']} - Completado: {obj['completado']} - Estado: {obj['estado']}")
             # Verificar si el objetivo está vencido
             vencido = es_objetivo_vencido(obj, hoy)
             if vencido:
-                # Marcar como vencido en la base de datos si no está completado
-                if not obj['completado']:
+                # Mover a históricos si no está ya en histórico
+                if obj['estado'] != 'histórico':
                     with get_db_connection() as conn_update:
                         cursor_update = conn_update.cursor()
-                        cursor_update.execute('''UPDATE objetivos SET completado = 1, fecha_completado = GETDATE() WHERE id = ? AND user_id = ? AND completado = 0''', (obj['id'], current_user.id))
+                        cursor_update.execute('''UPDATE objetivos SET estado = 'histórico' WHERE id = ? AND user_id = ? AND estado != 'histórico' ''', (obj['id'], current_user.id))
                         conn_update.commit()
-                        obj['completado'] = True
-                        obj['fecha_completado'] = datetime.now()
-            # Mostrar como activo si NO está vencido, aunque esté completado manualmente
+                        obj['estado'] = 'histórico'
+            # Solo mostrar como activo si NO está vencido, aunque esté completado manualmente
             if not vencido:
                 objetivos.append(obj)
         return jsonify(objetivos)
@@ -1873,8 +1877,10 @@ def es_objetivo_vencido(objetivo, hoy):
     """
     Determina si un objetivo está vencido basado en su fecha de vencimiento calculada.
     """
-    if objetivo['completado']:
-        return False
+    # Comentamos esta línea para que también se muevan los objetivos completados
+    # if objetivo['completado']:
+    #     print(f"DEBUG - Objetivo completado: {objetivo['titulo']} - NO VENCIDO (ya está completado)")
+    #     return False
     
     # Si tiene fecha_fin explícita, usar esa
     if objetivo['fecha_fin']:
@@ -1884,27 +1890,45 @@ def es_objetivo_vencido(objetivo, hoy):
         except (ValueError, TypeError):
             return False
     
-    # Si es recurrente, calcular fecha de vencimiento automática
-    if objetivo['recurrente'] and objetivo['frecuencia'] and objetivo['fecha_inicio']:
-        try:
-            fecha_inicio = datetime.strptime(objetivo['fecha_inicio'], '%Y-%m-%d').date()
-            fecha_vencimiento = calcular_fecha_vencimiento(fecha_inicio, objetivo['frecuencia'])
-            if fecha_vencimiento:
-                return hoy > fecha_vencimiento
-        except (ValueError, TypeError):
-            return False
+    # Si es recurrente, NO se considera vencido (permanece activo)
+    if objetivo['recurrente']:
+        print(f"DEBUG - Objetivo recurrente: {objetivo['titulo']} - NO VENCIDO (es recurrente)")
+        return False
     
     # Objetivos NO recurrentes: vencimiento automático según categoría y fecha_creacion
-    if not objetivo['recurrente'] and objetivo['categoria'] and objetivo['fecha_creacion']:
+    if objetivo['categoria'] and objetivo['fecha_creacion']:
         try:
             fecha_creacion = datetime.strptime(objetivo['fecha_creacion'], '%Y-%m-%d').date()
-            if objetivo['categoria'].lower() == 'diario' and hoy > fecha_creacion:
+            categoria_lower = objetivo['categoria'].lower()
+            
+            # Debug: imprimir información del objetivo
+            print(f"DEBUG - Objetivo: {objetivo['titulo']}")
+            print(f"  Categoría: '{objetivo['categoria']}' -> '{categoria_lower}'")
+            print(f"  Fecha creación: {objetivo['fecha_creacion']} -> {fecha_creacion}")
+            print(f"  Hoy: {hoy}")
+            print(f"  Es diario: {categoria_lower == 'diario'}")
+            print(f"  Hoy > fecha_creacion: {hoy > fecha_creacion}")
+            
+            if categoria_lower == 'diario' and hoy > fecha_creacion:
+                print(f"  RESULTADO: VENCIDO")
                 return True
-            if objetivo['categoria'].lower() == 'semanal' and hoy > (fecha_creacion + timedelta(days=7)):
+            if categoria_lower == 'semanal' and hoy > (fecha_creacion + timedelta(days=7)):
+                print(f"  RESULTADO: VENCIDO (semanal)")
                 return True
-            if objetivo['categoria'].lower() == 'mensual' and hoy > (fecha_creacion + timedelta(days=30)):
+            # Para objetivos mensuales: vencen después de 30 días
+            if categoria_lower == 'mensual' and hoy > (fecha_creacion + timedelta(days=30)):
+                print(f"  RESULTADO: VENCIDO (mensual)")
                 return True
-        except (ValueError, TypeError):
+            # Para objetivos anuales: vencen después de 365 días
+            if categoria_lower == 'anual' and hoy > (fecha_creacion + timedelta(days=365)):
+                print(f"  RESULTADO: VENCIDO (anual)")
+                return True
+            # Para objetivos generales: vencen al día siguiente (como diarios)
+            if categoria_lower == 'general' and hoy > fecha_creacion:
+                print(f"  RESULTADO: VENCIDO (general)")
+                return True
+        except (ValueError, TypeError) as e:
+            print(f"ERROR parsing fecha: {e}")
             return False
     
     return False
@@ -2206,6 +2230,35 @@ def start_scheduler():
     scheduler.add_job(verificar_proyecciones_comienzo, 'cron', hour=12, minute=0, id='notificacion_mediodia')
     scheduler.start()
     print("[Scheduler] Notificaciones programadas a las 00:00 y 12:00 todos los días.")
+
+@app.route('/api/objetivos/<int:objetivo_id>/saltar', methods=['POST'])
+@login_required
+def api_saltar_objetivo(objetivo_id):
+    from datetime import datetime
+    hoy = datetime.now().date()
+    user_id = current_user.id
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        # Verificar si ya existe un salto para este objetivo y fecha
+        cursor.execute('''SELECT id FROM objetivos_saltados WHERE objetivo_id = ? AND user_id = ? AND fecha_saltada = ?''', (objetivo_id, user_id, hoy))
+        if cursor.fetchone():
+            return jsonify({'status': 'error', 'message': 'Ya saltaste este objetivo hoy'}), 400
+        # Insertar el salto
+        cursor.execute('''INSERT INTO objetivos_saltados (objetivo_id, user_id, fecha_saltada) VALUES (?, ?, ?)''', (objetivo_id, user_id, hoy))
+        conn.commit()
+    return jsonify({'status': 'success', 'message': 'Objetivo saltado para hoy'})
+
+@app.route('/api/objetivos/<int:objetivo_id>/reactivar_hoy', methods=['POST'])
+@login_required
+def api_reactivar_objetivo_hoy(objetivo_id):
+    from datetime import datetime
+    hoy = datetime.now().date()
+    user_id = current_user.id
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute('''DELETE FROM objetivos_saltados WHERE objetivo_id = ? AND user_id = ? AND fecha_saltada = ?''', (objetivo_id, user_id, hoy))
+        conn.commit()
+    return jsonify({'status': 'success', 'message': 'Objetivo reactivado para hoy'})
 
 # Configuración de la aplicación
 if __name__ == '__main__':

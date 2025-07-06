@@ -763,6 +763,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     <span class="etiqueta-prioridad ${obj.prioridad}">${obj.prioridad.charAt(0).toUpperCase() + obj.prioridad.slice(1)}</span>
                     ${obj.categoria ? `<span class="etiqueta-categoria">${obj.categoria.charAt(0).toUpperCase() + obj.categoria.slice(1)}</span>` : ''}
                     ${obj.estado ? `<span class="badge bg-secondary ms-1">${obj.estado.replace('_', ' ').toUpperCase()}</span>` : ''}
+                    ${obj.saltado_hoy ? `<span class='badge bg-secondary ms-1'>No activo hoy</span>` : ''}
+                    ${obj.objetivo_padre_id && mapaObjetivosPadre[obj.objetivo_padre_id] ? `<div class='objetivo-padre small text-primary'><i class='bi bi-diagram-3'></i> Padre: ${mapaObjetivosPadre[obj.objetivo_padre_id]}</div>` : ''}
                     ${obj.descripcion ? `<div class="objetivo-desc">${obj.descripcion}</div>` : ''}
                     <div class="objetivo-extra mt-1 small text-muted">
                         ${fechaCreacion ? `<span class="objetivo-fecha"><i class='bi bi-calendar-plus'></i> Creado: ${fechaCreacion}</span>` : ''}
@@ -886,29 +888,29 @@ async function cargarObjetivos() {
 function actualizarResumenObjetivos() {
     // Filtrar por categoría
     const categorias = ['diario', 'semanal', 'mensual', 'anual'];
-    // Objetivos diarios: mostrar completados/total
-    const diarios = objetivos.filter(obj => (obj.categoria || 'diario') === 'diario');
+    // Objetivos diarios: mostrar completados/total (excluyendo saltados hoy)
+    const diarios = objetivos.filter(obj => (obj.categoria || 'diario') === 'diario' && !(obj.recurrente && obj.saltado_hoy));
     const diariosCompletados = diarios.filter(obj => obj.completado).length;
     const elDiarios = document.getElementById('objetivos-diarios');
     if (elDiarios) {
         elDiarios.textContent = `${diariosCompletados}/${diarios.length}`;
     }
     // Progreso semanal
-    const semanales = objetivos.filter(obj => (obj.categoria || 'diario') === 'semanal');
+    const semanales = objetivos.filter(obj => (obj.categoria || 'diario') === 'semanal' && !(obj.recurrente && obj.saltado_hoy));
     const semanalesCompletados = semanales.filter(obj => obj.completado).length;
     const elSemanal = document.getElementById('progreso-semanal');
     if (elSemanal) {
         elSemanal.textContent = `${semanalesCompletados}/${semanales.length}`;
     }
     // Progreso mensual
-    const mensuales = objetivos.filter(obj => (obj.categoria || 'diario') === 'mensual');
+    const mensuales = objetivos.filter(obj => (obj.categoria || 'diario') === 'mensual' && !(obj.recurrente && obj.saltado_hoy));
     const mensualesCompletados = mensuales.filter(obj => obj.completado).length;
     const elMensual = document.getElementById('progreso-mensual');
     if (elMensual) {
         elMensual.textContent = `${mensualesCompletados}/${mensuales.length}`;
     }
     // Progreso anual
-    const anuales = objetivos.filter(obj => (obj.categoria || 'diario') === 'anual');
+    const anuales = objetivos.filter(obj => (obj.categoria || 'diario') === 'anual' && !(obj.recurrente && obj.saltado_hoy));
     const anualesCompletados = anuales.filter(obj => obj.completado).length;
     const elAnual = document.getElementById('progreso-anual');
     if (elAnual) {
@@ -938,6 +940,8 @@ function renderObjetivos() {
         const card = document.createElement('div');
         card.className = 'objetivo-card mb-3';
         if (obj.completado) card.classList.add('objetivo-completado');
+        if (obj.saltado_hoy) card.classList.add('objetivo-inactivo-hoy');
+        if (!obj.completado && !obj.saltado_hoy && obj.estado !== 'histórico') card.classList.add('resaltado-activo');
         card.innerHTML = `
             <div style="flex:1;min-width:0;">
                 <input type="checkbox" class="form-check-input me-2 check-objetivo" ${obj.completado ? 'checked' : ''} data-id="${obj.id}">
@@ -945,6 +949,7 @@ function renderObjetivos() {
                 <span class="etiqueta-prioridad ${obj.prioridad}">${obj.prioridad.charAt(0).toUpperCase() + obj.prioridad.slice(1)}</span>
                 ${obj.categoria ? `<span class="etiqueta-categoria">${obj.categoria.charAt(0).toUpperCase() + obj.categoria.slice(1)}</span>` : ''}
                 ${obj.estado ? `<span class="badge bg-secondary ms-1">${obj.estado.replace('_', ' ').toUpperCase()}</span>` : ''}
+                ${obj.saltado_hoy ? `<span class='badge bg-secondary ms-1'>No activo hoy</span>` : ''}
                 ${obj.objetivo_padre_id && mapaObjetivosPadre[obj.objetivo_padre_id] ? `<div class='objetivo-padre small text-primary'><i class='bi bi-diagram-3'></i> Padre: ${mapaObjetivosPadre[obj.objetivo_padre_id]}</div>` : ''}
                 ${obj.descripcion ? `<div class="objetivo-desc">${obj.descripcion}</div>` : ''}
                 <div class="objetivo-extra mt-1 small text-muted">
@@ -961,9 +966,47 @@ function renderObjetivos() {
             <div class="acciones-objetivo">
                 <button class="btn-editar" title="Editar" data-id="${obj.id}"><i class="bi bi-pencil"></i></button>
                 <button class="btn-eliminar" title="Eliminar" data-id="${obj.id}"><i class="bi bi-trash"></i></button>
+                ${obj.recurrente && !obj.saltado_hoy && !obj.completado ? `<button class="btn-saltar-hoy" title="Saltar hoy" data-id="${obj.id}"><i class="bi bi-arrow-bar-right"></i> Saltar hoy</button>` : ''}
+                ${obj.recurrente && obj.saltado_hoy && !obj.completado ? `<button class="btn-reactivar-hoy" title="Reactivar hoy" data-id="${obj.id}"><i class="bi bi-arrow-repeat"></i> Reactivar hoy</button>` : ''}
             </div>
         `;
         lista.appendChild(card);
+    });
+    // Evento para el botón Saltar hoy
+    document.querySelectorAll('.btn-saltar-hoy').forEach(btn => {
+        btn.addEventListener('click', async function() {
+            const objetivoId = this.getAttribute('data-id');
+            try {
+                const res = await fetch(`/api/objetivos/${objetivoId}/saltar`, { method: 'POST' });
+                const result = await res.json();
+                if (result.status === 'success') {
+                    showSuccess('Objetivo saltado para hoy');
+                    await cargarObjetivos();
+                } else {
+                    showError(result.message || 'No se pudo saltar el objetivo');
+                }
+            } catch (err) {
+                showError('Error al saltar objetivo');
+            }
+        });
+    });
+    // Evento para el botón Reactivar hoy
+    document.querySelectorAll('.btn-reactivar-hoy').forEach(btn => {
+        btn.addEventListener('click', async function() {
+            const objetivoId = this.getAttribute('data-id');
+            try {
+                const res = await fetch(`/api/objetivos/${objetivoId}/reactivar_hoy`, { method: 'POST' });
+                const result = await res.json();
+                if (result.status === 'success') {
+                    showSuccess('Objetivo reactivado para hoy');
+                    await cargarObjetivos();
+                } else {
+                    showError(result.message || 'No se pudo reactivar el objetivo');
+                }
+            } catch (err) {
+                showError('Error al reactivar objetivo');
+            }
+        });
     });
     actualizarResumenObjetivos();
 }

@@ -117,7 +117,10 @@
     <div class="modal-content">
       <form id="form-modal-nuevo-objetivo">
         <div class="modal-header pt-1">
-          <h5 class="modal-title" id="modalNuevoObjetivoLabel">Agregar Nuevo Objetivo</h5>
+          <div class="d-flex align-items-center gap-2">
+            <span class="modal-icon"><i class="bi bi-bullseye"></i></span>
+            <h5 class="modal-title mb-0" id="modalNuevoObjetivoLabel">Agregar Nuevo Objetivo</h5>
+          </div>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
@@ -199,38 +202,38 @@
           <div class="mb-3">
             <label for="modal-horas-estimadas-objetivo" class="form-label fw-semibold">Duración estimada</label>
             <div class="row g-2">
-              <div class="col-6">
+              <div class="col">
                 <input type="number" class="form-control" id="modal-horas-estimadas-objetivo" min="0" placeholder="Horas">
               </div>
-              <div class="col-6">
+              <div class="col">
                 <input type="number" class="form-control" id="modal-minutos-estimados-objetivo" min="0" max="59" placeholder="Minutos">
               </div>
             </div>
           </div>
           <div class="mb-3">
-            <label for="modal-etiquetas-objetivo" class="form-label fw-semibold">Etiquetas</label>
-            <input type="text" class="form-control" id="modal-etiquetas-objetivo" placeholder="Ej: salud, trabajo, familia">
+            <label for="modal-recompensa-objetivo" class="form-label fw-semibold">Recompensa</label>
+            <input type="text" class="form-control" id="modal-recompensa-objetivo" placeholder="¿Qué te darás si lo logras?">
           </div>
           <div class="mb-3">
-            <label for="modal-recompensa-objetivo" class="form-label fw-semibold">Recompensa</label>
-            <input type="text" class="form-control" id="modal-recompensa-objetivo" placeholder="Ej: Salir a cenar, comprar algo, etc.">
+            <label for="modal-etiquetas-objetivo" class="form-label fw-semibold">Etiquetas</label>
+            <input type="text" class="form-control" id="modal-etiquetas-objetivo" placeholder="Ej: salud, trabajo, meta...">
           </div>
           <div class="mb-3">
             <label for="modal-notas-adicionales-objetivo" class="form-label fw-semibold">Notas adicionales</label>
-            <textarea class="form-control" id="modal-notas-adicionales-objetivo" rows="2" placeholder="Notas, ideas, recordatorios..."></textarea>
+            <textarea class="form-control" id="modal-notas-adicionales-objetivo" rows="1" placeholder="Notas, recordatorios, etc."></textarea>
+          </div>
+          <hr style="border-top: 1.5px dashed #b6d4fe; margin: 1.2rem 0 1rem 0;">
+          <div class="mb-3 d-flex align-items-center gap-2">
+            <label class="form-label label-recurrente mb-0" for="modal-recurrente-objetivo"><i class="bi bi-repeat"></i> Hacer este objetivo recurrente</label>
+            <input type="checkbox" class="form-check-input" id="modal-recurrente-objetivo">
           </div>
           <div class="mb-3 d-flex align-items-center gap-2">
-            <label class="fw-semibold mb-0" for="modal-recurrente-objetivo">Hacer este objetivo recurrente</label>
-            <input class="form-check-input" type="checkbox" id="modal-recurrente-objetivo" style="margin-top: 0.5px;">
-          </div>
-          <div class="mb-3">
-            <label for="modal-es-padre-objetivo" class="form-label fw-semibold">¿Este objetivo es padre?</label>
-            <input class="form-check-input" type="checkbox" id="modal-es-padre-objetivo" style="margin-top: 0.5px;">
+            <label class="form-label fw-semibold mb-0" for="modal-es-padre-objetivo">¿Este objetivo es padre?</label>
+            <input type="checkbox" class="form-check-input" id="modal-es-padre-objetivo">
           </div>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
-          <button type="submit" class="btn btn-primary">Agregar Objetivo</button>
+          <button type="submit" class="btn btn-primary">Guardar objetivo</button>
         </div>
       </form>
     </div>
@@ -243,11 +246,14 @@
     <div class="modal-content">
       <form id="form-modal-editar-objetivo">
         <div class="modal-header pt-1">
-          <h5 class="modal-title" id="modalEditarObjetivoLabel">Editar Objetivo</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          <div class="d-flex align-items-center gap-2">
+            <span class="modal-icon"><i class="bi bi-pencil-square"></i></span>
+            <h5 class="modal-title mb-0" id="modalEditarObjetivoLabel">Editar Objetivo</h5>
+          </div>
+          <button type="button" class="btn-close position-absolute end-0 me-3" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
-          <div class="mb-2 text-muted" style="font-size:1rem;">
+          <div class="mb-2 text-muted text-center" style="font-size:1rem;">
             Modifica los campos que desees y guarda los cambios.
           </div>
           <input type="hidden" id="editar-id-objetivo">
@@ -326,33 +332,34 @@
           <div class="mb-3">
             <label for="editar-horas-estimadas-objetivo" class="form-label fw-semibold">Duración estimada</label>
             <div class="row g-2">
-              <div class="col-6">
+              <div class="col">
                 <input type="number" class="form-control" id="editar-horas-estimadas-objetivo" min="0" placeholder="Horas">
               </div>
-              <div class="col-6">
+              <div class="col">
                 <input type="number" class="form-control" id="editar-minutos-estimados-objetivo" min="0" max="59" placeholder="Minutos">
               </div>
             </div>
           </div>
           <div class="mb-3">
             <label for="editar-etiquetas-objetivo" class="form-label fw-semibold">Etiquetas</label>
-            <input type="text" class="form-control" id="editar-etiquetas-objetivo" placeholder="Ej: salud, trabajo, familia">
+            <input type="text" class="form-control" id="editar-etiquetas-objetivo" placeholder="Ej: salud, trabajo, meta...">
           </div>
           <div class="mb-3">
             <label for="editar-recompensa-objetivo" class="form-label fw-semibold">Recompensa</label>
-            <input type="text" class="form-control" id="editar-recompensa-objetivo" placeholder="Ej: Salir a cenar, comprar algo, etc.">
+            <input type="text" class="form-control" id="editar-recompensa-objetivo" placeholder="¿Qué te darás si lo logras?">
           </div>
           <div class="mb-3">
             <label for="editar-notas-adicionales-objetivo" class="form-label fw-semibold">Notas adicionales</label>
-            <textarea class="form-control" id="editar-notas-adicionales-objetivo" rows="2" placeholder="Notas, ideas, recordatorios..."></textarea>
+            <textarea class="form-control" id="editar-notas-adicionales-objetivo" rows="1" placeholder="Notas, recordatorios, etc."></textarea>
+          </div>
+          <hr style="border-top: 1.5px dashed #b6d4fe; margin: 1.2rem 0 1rem 0;">
+          <div class="mb-3 d-flex align-items-center gap-2">
+            <label class="form-label label-recurrente mb-0" for="editar-recurrente-objetivo"><i class="bi bi-repeat"></i> Hacer este objetivo recurrente</label>
+            <input type="checkbox" class="form-check-input" id="editar-recurrente-objetivo">
           </div>
           <div class="mb-3 d-flex align-items-center gap-2">
-            <label class="fw-semibold mb-0" for="editar-recurrente-objetivo">Hacer este objetivo recurrente</label>
-            <input class="form-check-input" type="checkbox" id="editar-recurrente-objetivo" style="margin-top: 0.5px;">
-          </div>
-          <div class="mb-3">
-            <label for="editar-es-padre-objetivo" class="form-label fw-semibold">¿Este objetivo es padre?</label>
-            <input class="form-check-input" type="checkbox" id="editar-es-padre-objetivo" style="margin-top: 0.5px;">
+            <label class="form-label fw-semibold mb-0" for="editar-es-padre-objetivo">¿Este objetivo es padre?</label>
+            <input type="checkbox" class="form-check-input" id="editar-es-padre-objetivo">
           </div>
         </div>
         <div class="modal-footer">
