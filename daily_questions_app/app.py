@@ -1,4 +1,3 @@
-print('EJECUTANDO app.py DE daily_questions_app')
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, make_response, session
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from flask_mail import Mail, Message
@@ -1923,10 +1922,10 @@ def es_objetivo_vencido(objetivo, hoy):
             if categoria_lower == 'anual' and hoy > (fecha_creacion + timedelta(days=365)):
                 print(f"  RESULTADO: VENCIDO (anual)")
                 return True
-            # Para objetivos generales: vencen al día siguiente (como diarios)
-            if categoria_lower == 'general' and hoy > fecha_creacion:
-                print(f"  RESULTADO: VENCIDO (general)")
-                return True
+            # Para objetivos generales: NO deben vencerse automáticamente
+            # if categoria_lower == 'general' and hoy > fecha_creacion:
+            #     print(f"  RESULTADO: VENCIDO (general)")
+            #     return True
         except (ValueError, TypeError) as e:
             print(f"ERROR parsing fecha: {e}")
             return False
@@ -2048,7 +2047,7 @@ def api_create_objetivo():
     titulo = data.get('titulo', '').strip()
     descripcion = data.get('descripcion', '').strip()
     prioridad = data.get('prioridad', 'media')
-    categoria = data.get('categoria', '').strip()
+    categoria = data.get('categoria', '').strip().lower()
     es_padre = int(bool(data.get('es_padre', False)))
     objetivo_padre_id = data.get('objetivo_padre_id')
     estado = data.get('estado')
@@ -2083,6 +2082,8 @@ def api_update_objetivo(objetivo_id):
         if campo in data:
             if campo in ['fecha_inicio', 'fecha_fin', 'fecha_proyeccion_comienzo']:
                 campos[campo] = parse_fecha(data[campo])
+            elif campo == 'categoria':
+                campos[campo] = data[campo].strip().lower()
             else:
                 campos[campo] = data[campo]
     if 'completado' in data:

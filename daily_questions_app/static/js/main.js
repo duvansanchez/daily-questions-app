@@ -889,28 +889,28 @@ function actualizarResumenObjetivos() {
     // Filtrar por categoría
     const categorias = ['diario', 'semanal', 'mensual', 'anual'];
     // Objetivos diarios: mostrar completados/total (excluyendo saltados hoy)
-    const diarios = objetivos.filter(obj => (obj.categoria || 'diario') === 'diario' && !(obj.recurrente && obj.saltado_hoy));
+    const diarios = objetivos.filter(obj => ((obj.categoria || 'diario').toLowerCase()) === 'diario' && !(obj.recurrente && obj.saltado_hoy));
     const diariosCompletados = diarios.filter(obj => obj.completado).length;
     const elDiarios = document.getElementById('objetivos-diarios');
     if (elDiarios) {
         elDiarios.textContent = `${diariosCompletados}/${diarios.length}`;
     }
     // Progreso semanal
-    const semanales = objetivos.filter(obj => (obj.categoria || 'diario') === 'semanal' && !(obj.recurrente && obj.saltado_hoy));
+    const semanales = objetivos.filter(obj => ((obj.categoria || 'diario').toLowerCase()) === 'semanal' && !(obj.recurrente && obj.saltado_hoy));
     const semanalesCompletados = semanales.filter(obj => obj.completado).length;
     const elSemanal = document.getElementById('progreso-semanal');
     if (elSemanal) {
         elSemanal.textContent = `${semanalesCompletados}/${semanales.length}`;
     }
     // Progreso mensual
-    const mensuales = objetivos.filter(obj => (obj.categoria || 'diario') === 'mensual' && !(obj.recurrente && obj.saltado_hoy));
+    const mensuales = objetivos.filter(obj => ((obj.categoria || 'diario').toLowerCase()) === 'mensual' && !(obj.recurrente && obj.saltado_hoy));
     const mensualesCompletados = mensuales.filter(obj => obj.completado).length;
     const elMensual = document.getElementById('progreso-mensual');
     if (elMensual) {
         elMensual.textContent = `${mensualesCompletados}/${mensuales.length}`;
     }
     // Progreso anual
-    const anuales = objetivos.filter(obj => (obj.categoria || 'diario') === 'anual' && !(obj.recurrente && obj.saltado_hoy));
+    const anuales = objetivos.filter(obj => ((obj.categoria || 'diario').toLowerCase()) === 'anual' && !(obj.recurrente && obj.saltado_hoy));
     const anualesCompletados = anuales.filter(obj => obj.completado).length;
     const elAnual = document.getElementById('progreso-anual');
     if (elAnual) {
@@ -925,7 +925,7 @@ function renderObjetivos() {
     if (categoriaActual === 'todos') {
         filtrados = objetivos;
     } else {
-        filtrados = objetivos.filter(obj => (obj.categoria || 'diario') === categoriaActual);
+        filtrados = objetivos.filter(obj => ((obj.categoria || 'diario').toLowerCase()) === categoriaActual.toLowerCase());
     }
     if (filtrados.length === 0) {
         lista.innerHTML = '<li class="list-group-item text-center text-muted">No hay objetivos para esta categoría.</li>';
