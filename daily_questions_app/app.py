@@ -2141,15 +2141,7 @@ def api_list_objetivos_padre():
 @app.route('/api/objetivos_historico', methods=['GET'])
 @login_required
 def api_objetivos_historico():
-    """
-    Devuelve objetivos históricos (cumplidos o vencidos) con filtros y paginación.
-    Filtros:
-      - tipo: diario/semanal/mensual/anual
-      - estado: completado/vencido
-      - fecha_inicio, fecha_fin: rango de fechas
-      - q: búsqueda por palabra clave
-      - limit, offset: paginación
-    """
+    from datetime import datetime, timedelta
     tipo = request.args.get('tipo')
     estado = request.args.get('estado')
     fecha_inicio = request.args.get('fecha_inicio')
@@ -2161,8 +2153,25 @@ def api_objetivos_historico():
     filtros = ["user_id = ?"]
     valores = [current_user.id]
 
-    # Solo objetivos históricos: completados o vencidos
-    filtros.append("completado = 1")
+    hoy = datetime.now().date()
+    filtros_hist = []
+    valores_hist = []
+
+    # Completados
+    filtros_hist.append("completado = 1")
+    # Vencidos (fecha_fin pasada y no completados)
+    filtros_hist.append("(completado = 0 AND fecha_fin IS NOT NULL AND fecha_fin < ?)")
+    valores_hist.append(hoy)
+    # No recurrentes cuyo periodo natural ya pasó
+    filtros_hist.append("(completado = 0 AND recurrente = 0 AND ((categoria = 'diario' AND fecha_creacion < ?) OR (categoria = 'semanal' AND fecha_creacion < ?) OR (categoria = 'mensual' AND fecha_creacion < ?) OR (categoria = 'anual' AND fecha_creacion < ?)))")
+    valores_hist.extend([
+        hoy - timedelta(days=1),      # diario
+        hoy - timedelta(days=7),      # semanal
+        hoy - timedelta(days=30),     # mensual
+        hoy - timedelta(days=365)     # anual
+    ])
+    filtros.append(f"({' OR '.join(filtros_hist)})")
+    valores += valores_hist
 
     if tipo:
         filtros.append("categoria = ?")
@@ -2170,8 +2179,8 @@ def api_objetivos_historico():
     if estado == 'completado':
         filtros.append("completado = 1")
     elif estado == 'vencido':
-        # Los objetivos vencidos ya están marcados como completados = 1
-        filtros.append("completado = 1 AND fecha_completado IS NOT NULL")
+        filtros.append("completado = 0 AND fecha_fin IS NOT NULL AND fecha_fin < ?")
+        valores.append(hoy)
     if fecha_inicio:
         filtros.append("fecha_creacion >= ?")
         valores.append(fecha_inicio)
@@ -2184,14 +2193,14 @@ def api_objetivos_historico():
 
     where_clause = ' AND '.join(filtros)
     sql = f'''
-        SELECT id, titulo, descripcion, prioridad, categoria, completado, fecha_creacion, fecha_completado, objetivo_padre_id, es_padre, estado, fecha_inicio, fecha_fin, fecha_proyeccion_comienzo, horas_estimadas, dificultad, etiquetas, recompensa, notas_adicionales
+        SELECT id, titulo, descripcion, prioridad, categoria, completado, fecha_creacion, fecha_completado, objetivo_padre_id, es_padre, estado, fecha_inicio, fecha_fin, fecha_proyeccion_comienzo, horas_estimadas, dificultad, etiquetas, recompensa, notas_adicionales, recurrente
         FROM objetivos
         WHERE {where_clause}
         ORDER BY fecha_creacion DESC
-        OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
     '''
-    valores.extend([offset, limit])
-
+    # Log de depuración para ver la consulta y los valores
+    print('SQL HISTORICOS:', sql)
+    print('VALORES HISTORICOS:', valores)
     with get_db_connection() as conn:
         cursor = conn.cursor()
         cursor.execute(sql, tuple(valores))
@@ -2216,11 +2225,13 @@ def api_objetivos_historico():
                 'dificultad': row[15],
                 'etiquetas': row[16],
                 'recompensa': row[17],
-                'notas_adicionales': row[18]
+                'notas_adicionales': row[18],
+                'recurrente': bool(row[19])
             }
             for row in rows
         ]
-        return jsonify(objetivos)
+        paginados = objetivos[offset:offset+limit]
+        return jsonify(paginados)
 
 # --- Scheduler para notificaciones automáticas ---
 def start_scheduler():
