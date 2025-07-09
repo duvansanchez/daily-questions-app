@@ -1826,7 +1826,6 @@ def api_list_objetivos():
             if obj['recurrente']:
                 cursor.execute('''SELECT 1 FROM objetivos_saltados WHERE objetivo_id = ? AND user_id = ? AND fecha_saltada = ?''', (obj['id'], current_user.id, hoy))
                 obj['saltado_hoy'] = bool(cursor.fetchone())
-            print(f"PROCESANDO OBJETIVO: {obj['titulo']} - Categoría: {obj['categoria']} - Completado: {obj['completado']} - Estado: {obj['estado']}")
             # Verificar si el objetivo está vencido
             vencido = es_objetivo_vencido(obj, hoy)
             if vencido:
@@ -1901,12 +1900,18 @@ def es_objetivo_vencido(objetivo, hoy):
             categoria_lower = objetivo['categoria'].lower()
             
             # Debug: imprimir información del objetivo
-            print(f"DEBUG - Objetivo: {objetivo['titulo']}")
-            print(f"  Categoría: '{objetivo['categoria']}' -> '{categoria_lower}'")
-            print(f"  Fecha creación: {objetivo['fecha_creacion']} -> {fecha_creacion}")
-            print(f"  Hoy: {hoy}")
-            print(f"  Es diario: {categoria_lower == 'diario'}")
-            print(f"  Hoy > fecha_creacion: {hoy > fecha_creacion}")
+            # print(f"DEBUG - Objetivo: {objetivo['titulo']}")
+            # print(f"  Categoría: '{objetivo['categoria']}' -> '{categoria_lower}'")
+            # print(f"  Fecha creación: {objetivo['fecha_creacion']} -> {fecha_creacion}")
+            # print(f"  Hoy: {hoy}")
+            # print(f"  Es diario: {categoria_lower == 'diario'}")
+            # print(f"  Hoy > fecha_creacion: {hoy > fecha_creacion}")
+            # print(f"  RESULTADO: VENCIDO")
+            # print(f"  RESULTADO: VENCIDO (semanal)")
+            # print(f"  RESULTADO: VENCIDO (mensual)")
+            # print(f"  RESULTADO: VENCIDO (anual)")
+            # print(f"ERROR parsing fecha: {e}")
+            # print(f"DEBUG - Objetivo recurrente: {objetivo['titulo']} - NO VENCIDO (es recurrente)")
             
             if categoria_lower == 'diario' and hoy > fecha_creacion:
                 print(f"  RESULTADO: VENCIDO")
@@ -2118,6 +2123,10 @@ def api_update_objetivo(objetivo_id):
 def api_delete_objetivo(objetivo_id):
     with get_db_connection() as conn:
         cursor = conn.cursor()
+        # Eliminar registros relacionados en objetivos_saltados y subobjetivos
+        cursor.execute('''DELETE FROM objetivos_saltados WHERE objetivo_id = ?''', (objetivo_id,))
+        cursor.execute('''DELETE FROM subobjetivos WHERE objetivo_id = ?''', (objetivo_id,))
+        # Ahora sí eliminar el objetivo
         cursor.execute('''DELETE FROM objetivos WHERE id = ? AND user_id = ?''', (objetivo_id, current_user.id))
         conn.commit()
         return jsonify({'status': 'success'})
@@ -2271,6 +2280,90 @@ def api_reactivar_objetivo_hoy(objetivo_id):
         cursor.execute('''DELETE FROM objetivos_saltados WHERE objetivo_id = ? AND user_id = ? AND fecha_saltada = ?''', (objetivo_id, user_id, hoy))
         conn.commit()
     return jsonify({'status': 'success', 'message': 'Objetivo reactivado para hoy'})
+
+@app.route('/api/objetivos/<int:objetivo_id>/subobjetivos', methods=['GET'])
+@login_required
+def api_list_subobjetivos(objetivo_id):
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute('''SELECT id, titulo, completado, fecha_creacion, orden FROM subobjetivos WHERE objetivo_id = ? ORDER BY orden ASC, id ASC''', (objetivo_id,))
+        rows = cursor.fetchall()
+        subobjetivos = [
+            {
+                'id': row[0],
+                'titulo': row[1],
+                'completado': bool(row[2]),
+                'fecha_creacion': row[3].strftime('%Y-%m-%d %H:%M') if row[3] else None,
+                'orden': row[4]
+            }
+            for row in rows
+        ]
+        return jsonify(subobjetivos)
+
+@app.route('/api/objetivos/<int:objetivo_id>/subobjetivos', methods=['POST'])
+@login_required
+def api_create_subobjetivo(objetivo_id):
+    data = request.get_json()
+    titulo = data.get('titulo', '').strip()
+    if not titulo:
+        return jsonify({'error': 'El título es obligatorio'}), 400
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        # Validar que no exista un subobjetivo con el mismo título para este objetivo
+        cursor.execute('''SELECT id FROM subobjetivos WHERE objetivo_id = ? AND LOWER(titulo) = LOWER(?)''', (objetivo_id, titulo))
+        if cursor.fetchone():
+            return jsonify({'error': 'Ya existe un subobjetivo con ese título'}), 400
+        # Obtener el mayor valor de orden actual
+        cursor.execute('''SELECT COALESCE(MAX(orden), 0) FROM subobjetivos WHERE objetivo_id = ?''', (objetivo_id,))
+        max_orden = cursor.fetchone()[0]
+        nuevo_orden = max_orden + 1
+        cursor.execute('''INSERT INTO subobjetivos (objetivo_id, titulo, completado, orden) VALUES (?, ?, 0, ?)''', (objetivo_id, titulo, nuevo_orden))
+        conn.commit()
+        return jsonify({'status': 'success'})
+
+@app.route('/api/objetivos/<int:objetivo_id>/subobjetivos/reordenar', methods=['POST'])
+@login_required
+def api_reordenar_subobjetivos(objetivo_id):
+    data = request.get_json()
+    ids = data.get('ids', [])
+    if not isinstance(ids, list) or not all(isinstance(i, int) for i in ids):
+        return jsonify({'error': 'Formato de datos inválido'}), 400
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        for orden, sub_id in enumerate(ids):
+            cursor.execute('''UPDATE subobjetivos SET orden = ? WHERE id = ? AND objetivo_id = ?''', (orden + 1, sub_id, objetivo_id))
+        conn.commit()
+    return jsonify({'status': 'success'})
+
+@app.route('/api/subobjetivos/<int:subobjetivo_id>', methods=['PATCH'])
+@login_required
+def api_update_subobjetivo(subobjetivo_id):
+    data = request.get_json()
+    campos = []
+    valores = []
+    if 'titulo' in data:
+        campos.append('titulo = ?')
+        valores.append(data['titulo'].strip())
+    if 'completado' in data:
+        campos.append('completado = ?')
+        valores.append(int(bool(data['completado'])))
+    if not campos:
+        return jsonify({'error': 'Nada para actualizar'}), 400
+    valores.append(subobjetivo_id)
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute(f'''UPDATE subobjetivos SET {', '.join(campos)} WHERE id = ?''', tuple(valores))
+        conn.commit()
+        return jsonify({'status': 'success'})
+
+@app.route('/api/subobjetivos/<int:subobjetivo_id>', methods=['DELETE'])
+@login_required
+def api_delete_subobjetivo(subobjetivo_id):
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute('''DELETE FROM subobjetivos WHERE id = ?''', (subobjetivo_id,))
+        conn.commit()
+        return jsonify({'status': 'success'})
 
 # Configuración de la aplicación
 if __name__ == '__main__':

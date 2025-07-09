@@ -104,6 +104,28 @@ try:
         END
     ''')
     
+    # Crear tabla subobjetivos si no existe
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute('''
+            IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='subobjetivos' AND xtype='U')
+            CREATE TABLE subobjetivos (
+                id INT IDENTITY(1,1) PRIMARY KEY,
+                objetivo_id INT NOT NULL,
+                titulo NVARCHAR(255) NOT NULL,
+                completado BIT NOT NULL DEFAULT 0,
+                fecha_creacion DATETIME NOT NULL DEFAULT GETDATE(),
+                orden INT NOT NULL DEFAULT 0,
+                FOREIGN KEY (objetivo_id) REFERENCES objetivos(id) ON DELETE CASCADE
+            )
+        ''')
+        # Agregar columna 'orden' si no existe (para migraciones en bases ya creadas)
+        cursor.execute("""
+            IF NOT EXISTS (SELECT * FROM syscolumns WHERE id=OBJECT_ID('subobjetivos') AND name='orden')
+            ALTER TABLE subobjetivos ADD orden INT NOT NULL DEFAULT 0;
+        """)
+        conn.commit()
+    
     # Tabla para registrar los saltos de objetivos recurrentes
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS objetivos_saltados (

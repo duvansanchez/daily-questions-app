@@ -15,6 +15,10 @@ let historicoOffset = 0;
 let historicoLimit = 20;
 let historicoFin = false;
 
+// Variables globales para bloques de categoría (asegura que estén disponibles en todos los handlers)
+const bloqueCatExistenteNueva = document.getElementById('bloque-categoria-existente-nueva');
+const bloqueNuevaCatNueva = document.getElementById('bloque-nueva-categoria-nueva');
+
 // Integración de SweetAlert2 para alertas globales
 // Asegúrate de incluir el script de SweetAlert2 en tu HTML
 
@@ -414,9 +418,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Validación del submit solo del campo visible
     const form = document.getElementById('add-question-form');
-    // Definir las variables necesarias para el handler
-    const bloqueCatExistenteNueva = document.getElementById('bloque-categoria-existente-nueva');
-    const bloqueNuevaCatNueva = document.getElementById('bloque-nueva-categoria-nueva');
     if (form) {
         form.addEventListener('submit', async function(e) {
             e.preventDefault();
@@ -766,6 +767,7 @@ async function cargarObjetivos() {
         showError('Error al cargar objetivos');
     }
 }
+window.cargarObjetivos = cargarObjetivos;
 
 function renderObjetivos() {
     const lista = document.getElementById('lista-objetivos');
@@ -811,6 +813,18 @@ function renderObjetivos() {
                     ${obj.etiquetas ? `<span class="objetivo-etiquetas"><i class='bi bi-tags'></i> ${obj.etiquetas}</span>` : ''}
                 </div>
                 ${obj.notas_adicionales ? `<div class="objetivo-notas small text-info mt-1"><i class='bi bi-info-circle'></i> ${obj.notas_adicionales}</div>` : ''}
+                <div class="subobjetivos-container" id="subobjetivos-container-${obj.id}">
+                    <div class="subobjetivos-list" id="subobjetivos-list-${obj.id}"></div>
+                    <div class="subobjetivos-add" style="display:none;" id="subobjetivos-add-${obj.id}">
+                        <div class="d-flex gap-2 mt-2">
+                            <input type="text" class="form-control form-control-sm subobjetivo-input" placeholder="Nuevo subobjetivo...">
+                            <button class="btn btn-sm btn-primary subobjetivo-add-btn">Agregar</button>
+                        </div>
+                    </div>
+                    <button class="btn btn-outline-secondary btn-sm rounded-circle subobjetivo-toggle-btn" data-objetivo-id="${obj.id}" title="Mostrar checklist" style="padding:0.3rem 0.5rem; font-size:1.1rem;">
+                        <i class="bi bi-list-check"></i>
+                    </button>
+                </div>
             </div>
             <div class="acciones-objetivo">
                 <button class="btn-editar" title="Editar" data-id="${obj.id}"><i class="bi bi-pencil"></i></button>
@@ -820,6 +834,8 @@ function renderObjetivos() {
             </div>
         `;
         lista.appendChild(card);
+        // Cargar y renderizar subobjetivos para este objetivo
+        cargarYRenderizarSubobjetivos(obj.id);
     });
     // Evento para el botón Saltar hoy
     document.querySelectorAll('.btn-saltar-hoy').forEach(btn => {
@@ -858,6 +874,195 @@ function renderObjetivos() {
         });
     });
     actualizarResumenObjetivos();
+}
+
+// --- SUBOBJETIVOS: LÓGICA DE CHECKLIST ---
+async function cargarYRenderizarSubobjetivos(objetivoId) {
+    const contenedor = document.getElementById(`subobjetivos-list-${objetivoId}`);
+    if (!contenedor) return;
+    contenedor.innerHTML = '<div class="text-muted small">Cargando checklist...</div>';
+    try {
+        const res = await fetch(`/api/objetivos/${objetivoId}/subobjetivos`);
+        const subobjetivos = await res.json();
+        contenedor.innerHTML = '';
+        if (subobjetivos.length === 0) {
+            contenedor.innerHTML = '<div class="text-muted small">No hay subobjetivos.</div>';
+        } else {
+            subobjetivos.forEach((sub, idx) => {
+                const subDiv = document.createElement('div');
+                subDiv.className = 'subobjetivo-item';
+                subDiv.innerHTML = `
+                    <input type="checkbox" class="subobjetivo-check" data-id="${sub.id}" ${sub.completado ? 'checked' : ''}>
+                    <span class="subobjetivo-titulo-span${sub.completado ? ' completado' : ''}">${sub.titulo}</span>
+                    <span class="subobjetivo-flex" style="flex:1"></span>
+                    <button class="subobjetivo-up-btn" title="Subir" ${idx === 0 ? 'disabled' : ''}>&#8593;</button>
+                    <button class="subobjetivo-down-btn" title="Bajar" ${idx === subobjetivos.length - 1 ? 'disabled' : ''}>&#8595;</button>
+                    <button class="delete-subobjetivo-btn" data-id="${sub.id}" title="Eliminar">&#10005;</button>
+                `;
+                contenedor.appendChild(subDiv);
+                // Doble click para editar subobjetivo
+                subDiv.querySelector('.subobjetivo-titulo-span').addEventListener('dblclick', function() {
+                    const subId = sub.id;
+                    const oldText = this.textContent;
+                    const parent = this.parentNode;
+                    // Agrega la clase 'editing' al contenedor
+                    parent.classList.add('editing');
+                    const input = document.createElement('input');
+                    input.type = 'text';
+                    input.value = oldText;
+                    input.className = 'subobjetivo-edit-input';
+                    input.style.flex = '1 1 0%';
+                    input.style.minWidth = '0';
+                    this.replaceWith(input);
+                    input.focus();
+                    input.addEventListener('blur', async function() {
+                        const nuevoTexto = input.value.trim();
+                        // Quita la clase 'editing' al terminar
+                        parent.classList.remove('editing');
+                        if (nuevoTexto && nuevoTexto !== oldText) {
+                            try {
+                                const res = await fetch(`/api/subobjetivos/${subId}`, {
+                                    method: 'PATCH',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ titulo: nuevoTexto })
+                                });
+                                if (!res.ok) {
+                                    showError('Error al actualizar subobjetivo');
+                                } else {
+                                    await cargarYRenderizarSubobjetivos(objetivoId);
+                                }
+                            } catch {
+                                showError('Error al actualizar subobjetivo');
+                            }
+                        } else {
+                            // Si no cambia el texto, vuelve a renderizar
+                            await cargarYRenderizarSubobjetivos(objetivoId);
+                        }
+                    });
+                    input.addEventListener('keydown', function(e) {
+                        if (e.key === 'Enter') input.blur();
+                    });
+                });
+                // Lógica de subir/bajar
+                const upBtn = subDiv.querySelector('.subobjetivo-up-btn');
+                const downBtn = subDiv.querySelector('.subobjetivo-down-btn');
+                if (upBtn) {
+                    upBtn.addEventListener('click', async function() {
+                        if (idx > 0) {
+                            const nuevoOrden = [...subobjetivos];
+                            [nuevoOrden[idx - 1], nuevoOrden[idx]] = [nuevoOrden[idx], nuevoOrden[idx - 1]];
+                            await fetch(`/api/objetivos/${objetivoId}/subobjetivos/reordenar`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ ids: nuevoOrden.map(s => s.id) })
+                            });
+                            cargarYRenderizarSubobjetivos(objetivoId);
+                        }
+                    });
+                }
+                if (downBtn) {
+                    downBtn.addEventListener('click', async function() {
+                        if (idx < subobjetivos.length - 1) {
+                            const nuevoOrden = [...subobjetivos];
+                            [nuevoOrden[idx], nuevoOrden[idx + 1]] = [nuevoOrden[idx + 1], nuevoOrden[idx]];
+                            await fetch(`/api/objetivos/${objetivoId}/subobjetivos/reordenar`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ ids: nuevoOrden.map(s => s.id) })
+                            });
+                            cargarYRenderizarSubobjetivos(objetivoId);
+                        }
+                    });
+                }
+            });
+        }
+        // Eventos para check, editar y eliminar
+        contenedor.querySelectorAll('.subobjetivo-check').forEach(chk => {
+            chk.addEventListener('change', async function() {
+                const subId = this.getAttribute('data-id');
+                const completado = this.checked;
+                await fetch(`/api/subobjetivos/${subId}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ completado })
+                });
+                cargarYRenderizarSubobjetivos(objetivoId);
+            });
+        });
+        contenedor.querySelectorAll('.subobjetivo-titulo-span').forEach(span => {
+            span.addEventListener('dblclick', function() {
+                const subId = this.parentElement.querySelector('.subobjetivo-check').getAttribute('data-id');
+                const oldText = this.textContent;
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.value = oldText;
+                input.className = 'subobjetivo-edit-input';
+                input.style.width = '100%';
+                // Elimina el span hermano con flex:1 si existe
+                const next = this.nextSibling;
+                if (next && next.nodeType === 1 && next.tagName === 'SPAN' && next.style.flex === '1') {
+                    next.remove();
+                }
+                this.replaceWith(input);
+                input.focus();
+                input.addEventListener('blur', async function() {
+                    const titulo = this.value.trim();
+                    await fetch(`/api/subobjetivos/${subId}`, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ titulo })
+                    });
+                    cargarYRenderizarSubobjetivos(objetivoId);
+                });
+                input.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter') this.blur();
+                });
+            });
+        });
+        contenedor.querySelectorAll('.delete-subobjetivo-btn').forEach(btn => {
+            btn.addEventListener('click', async function() {
+                const subId = this.getAttribute('data-id');
+                await fetch(`/api/subobjetivos/${subId}`, { method: 'DELETE' });
+                cargarYRenderizarSubobjetivos(objetivoId);
+            });
+        });
+    } catch (err) {
+        contenedor.innerHTML = '<div class="text-danger small">Error al cargar checklist.</div>';
+    }
+    // Mostrar/ocultar input para agregar subobjetivo
+    const toggleBtn = document.querySelector(`#subobjetivos-container-${objetivoId} .subobjetivo-toggle-btn`);
+    const addDiv = document.getElementById(`subobjetivos-add-${objetivoId}`);
+    if (toggleBtn && addDiv) {
+        toggleBtn.addEventListener('click', function() {
+            addDiv.style.display = addDiv.style.display === 'none' ? '' : 'none';
+        });
+        // Evento para agregar subobjetivo (solo una vez)
+        const addBtn = addDiv.querySelector('.subobjetivo-add-btn');
+        const input = addDiv.querySelector('.subobjetivo-input');
+        if (!addBtn.dataset.listener) {
+            addBtn.addEventListener('click', async function() {
+                const titulo = input.value.trim();
+                if (!titulo) return;
+                try {
+                    const res = await fetch(`/api/objetivos/${objetivoId}/subobjetivos`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ titulo })
+                    });
+                    if (!res.ok) {
+                        const errorData = await res.json();
+                        showError(errorData.error || 'Error al agregar subobjetivo');
+                        return;
+                    }
+                    input.value = '';
+                    cargarYRenderizarSubobjetivos(objetivoId);
+                } catch (err) {
+                    showError('Error al agregar subobjetivo');
+                }
+            });
+            addBtn.dataset.listener = 'true';
+        }
+    }
 }
 
 // Tabs de categoría (incluyendo histórico)
@@ -942,7 +1147,19 @@ if (formNuevo) {
         })
       });
       const result = await res.json();
-      if (result.status === 'success') {
+      if (result.status === 'success' && result.id) {
+        // Guardar subobjetivos si hay
+        if (checklistNuevo.length > 0) {
+            for (const sub of checklistNuevo) {
+                if (sub.titulo.trim()) {
+                    await fetch(`/api/objetivos/${result.id}/subobjetivos`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ titulo: sub.titulo, completado: sub.completado })
+                    });
+                }
+            }
+        }
         await cargarObjetivos();
         const modal = bootstrap.Modal.getInstance(document.getElementById('modalNuevoObjetivo'));
         if (modal) modal.hide();
@@ -965,6 +1182,8 @@ const formEditar = document.getElementById('form-modal-editar-objetivo');
 if (formEditar) {
   formEditar.addEventListener('submit', async function(e) {
     e.preventDefault();
+    const btnGuardar = document.querySelector('#modalEditarObjetivo .btn-guardar');
+    if (btnGuardar) btnGuardar.disabled = true;
     const id = document.getElementById('editar-id-objetivo').value;
     const titulo = document.getElementById('editar-titulo-objetivo').value.trim();
     const descripcion = document.getElementById('editar-desc-objetivo').value.trim();
@@ -988,7 +1207,10 @@ if (formEditar) {
     const recompensa = document.getElementById('editar-recompensa-objetivo').value.trim();
     const notasAdicionales = document.getElementById('editar-notas-adicionales-objetivo').value.trim();
     const chkRecEdit = document.getElementById('editar-recurrente-objetivo');
-    let recurrente = chkRecEdit.checked;
+    let recurrente = false;
+    if (chkRecEdit) {
+        recurrente = chkRecEdit.checked;
+    }
     let frecuencia = null;
     if (recurrente && ["diario", "semanal", "mensual", "anual"].includes(categoria)) {
       frecuencia = categoria;
@@ -1019,6 +1241,46 @@ if (formEditar) {
       });
       const result = await res.json();
       if (result.status === 'success') {
+        // Sincronizar subobjetivos: crear, actualizar, eliminar
+        const objetivoId = id;
+        // Obtener subobjetivos actuales del backend
+        let backendSubs = [];
+        try {
+            const res = await fetch(`/api/objetivos/${objetivoId}/subobjetivos`);
+            backendSubs = await res.json();
+        } catch {}
+        // Crear nuevos
+        for (const sub of checklistEditar) {
+            if ((!sub.id || typeof sub.id === 'undefined') && sub.titulo.trim()) {
+                await fetch(`/api/objetivos/${objetivoId}/subobjetivos`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ titulo: sub.titulo, completado: sub.completado })
+                });
+            } else if (sub.id) {
+                // Actualizar si cambió
+                const backendSub = backendSubs.find(s => s.id === sub.id);
+                if (backendSub && (backendSub.titulo !== sub.titulo || backendSub.completado !== sub.completado)) {
+                    await fetch(`/api/subobjetivos/${sub.id}`, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ titulo: sub.titulo, completado: sub.completado })
+                    });
+                }
+            }
+        }
+        // Eliminar los que ya no están
+        for (const backendSub of backendSubs) {
+            if (!checklistEditar.find(s => s.id === backendSub.id)) {
+                await fetch(`/api/subobjetivos/${backendSub.id}`, { method: 'DELETE' });
+            }
+        }
+        // Recargar subobjetivos del backend para limpiar duplicados
+        try {
+            const res = await fetch(`/api/objetivos/${objetivoId}/subobjetivos`);
+            const subs = await res.json();
+            checklistEditar = subs.map(s => ({ id: s.id, titulo: s.titulo, completado: s.completado }));
+        } catch {}
         await cargarObjetivos();
         const modal = bootstrap.Modal.getInstance(document.getElementById('modalEditarObjetivo'));
         if (modal) modal.hide();
@@ -1026,7 +1288,10 @@ if (formEditar) {
         showError(result.error || 'Error al actualizar objetivo');
       }
     } catch (err) {
+      console.error('Error al actualizar objetivo:', err);
       showError('Error al actualizar objetivo');
+    } finally {
+      if (btnGuardar) btnGuardar.disabled = false;
     }
   });
 }
@@ -1380,5 +1645,399 @@ const btnMas = document.getElementById('btn-cargar-mas-historico');
 if (btnMas) {
     btnMas.addEventListener('click', function() {
         cargarHistorico(true);
+    });
+}
+
+// === CHECKLIST DE SUBOBJETIVOS EN MODALES ===
+// --- NUEVO OBJETIVO ---
+let checklistNuevo = [];
+function renderChecklistNuevo() {
+    const list = document.getElementById('checklist-nuevo-list');
+    if (!list) return;
+    list.innerHTML = '';
+    if (checklistNuevo.length === 0) {
+        list.innerHTML = '<div class="text-muted small">No hay subobjetivos.</div>';
+        return;
+    }
+    checklistNuevo.forEach((sub, idx) => {
+        const div = document.createElement('div');
+        div.className = 'd-flex align-items-center mb-1';
+        div.innerHTML = `
+            <input type="checkbox" class="form-check-input me-2" ${sub.completado ? 'checked' : ''} data-idx="${idx}">
+            <input type="text" class="form-control form-control-sm me-2" value="${sub.titulo}" data-idx="${idx}" ${sub.completado ? 'style=\'text-decoration:line-through;color:#888;\'' : ''}>
+            <button class="btn btn-sm btn-outline-secondary me-1 subobjetivo-up-btn" data-idx="${idx}" ${idx === 0 ? 'disabled' : ''} title="Subir">&#8593;</button>
+            <button class="btn btn-sm btn-outline-secondary me-1 subobjetivo-down-btn" data-idx="${idx}" ${idx === checklistNuevo.length - 1 ? 'disabled' : ''} title="Bajar">&#8595;</button>
+            <button class="btn btn-sm btn-outline-danger" data-idx="${idx}"><i class="bi bi-x"></i></button>
+        `;
+        list.appendChild(div);
+    });
+    // Eventos
+    list.querySelectorAll('input[type=checkbox]').forEach(chk => {
+        chk.onchange = function() {
+            const idx = this.getAttribute('data-idx');
+            checklistNuevo[idx].completado = this.checked;
+            renderChecklistNuevo();
+        };
+    });
+    list.querySelectorAll('input[type=text]').forEach(input => {
+        input.onblur = function() {
+            const idx = this.getAttribute('data-idx');
+            checklistNuevo[idx].titulo = this.value;
+            renderChecklistNuevo();
+        };
+    });
+    list.querySelectorAll('button.btn-outline-danger').forEach(btn => {
+        btn.onclick = function() {
+            const idx = this.getAttribute('data-idx');
+            checklistNuevo.splice(idx, 1);
+            renderChecklistNuevo();
+        };
+    });
+    // Subir/bajar
+    list.querySelectorAll('button.subobjetivo-up-btn').forEach(btn => {
+        btn.onclick = function() {
+            const idx = parseInt(this.getAttribute('data-idx'));
+            if (idx > 0) {
+                [checklistNuevo[idx - 1], checklistNuevo[idx]] = [checklistNuevo[idx], checklistNuevo[idx - 1]];
+                renderChecklistNuevo();
+            }
+        };
+    });
+    list.querySelectorAll('button.subobjetivo-down-btn').forEach(btn => {
+        btn.onclick = function() {
+            const idx = parseInt(this.getAttribute('data-idx'));
+            if (idx < checklistNuevo.length - 1) {
+                [checklistNuevo[idx], checklistNuevo[idx + 1]] = [checklistNuevo[idx + 1], checklistNuevo[idx]];
+                renderChecklistNuevo();
+            }
+        };
+    });
+}
+document.getElementById('btn-toggle-checklist-nuevo')?.addEventListener('click', function() {
+    const cont = document.getElementById('checklist-nuevo-container');
+    cont.style.display = cont.style.display === 'none' ? '' : 'none';
+});
+document.getElementById('checklist-nuevo-add-btn')?.addEventListener('click', function() {
+    const input = document.getElementById('checklist-nuevo-input');
+    const titulo = input.value.trim();
+    if (!titulo) return;
+    checklistNuevo.push({ titulo, completado: false });
+    input.value = '';
+    renderChecklistNuevo();
+});
+// Limpiar checklist al abrir modal nuevo
+const modalNuevo = document.getElementById('modalNuevoObjetivo');
+if (modalNuevo) {
+    modalNuevo.addEventListener('show.bs.modal', function() {
+        checklistNuevo = [];
+        renderChecklistNuevo();
+        document.getElementById('checklist-nuevo-input').value = '';
+        document.getElementById('checklist-nuevo-container').style.display = 'none';
+    });
+}
+// --- EDITAR OBJETIVO ---
+let checklistEditar = [];
+function renderChecklistEditar() {
+    const list = document.getElementById('checklist-editar-list');
+    if (!list) return;
+    list.innerHTML = '';
+    if (checklistEditar.length === 0) {
+        list.innerHTML = '<div class="text-muted small">No hay subobjetivos.</div>';
+        return;
+    }
+    checklistEditar.forEach((sub, idx) => {
+        const div = document.createElement('div');
+        div.className = 'd-flex align-items-center mb-1 subobjetivo-item';
+        div.innerHTML = `
+            <input type="checkbox" class="form-check-input me-2" ${sub.completado ? 'checked' : ''} data-idx="${idx}">
+            <textarea class="form-control form-control-sm me-2 subobjetivo-textarea" data-idx="${idx}" rows="1" style="overflow:hidden;resize:none;">${sub.titulo}</textarea>
+            <button class="btn btn-sm btn-outline-secondary me-1 subobjetivo-up-btn" data-idx="${idx}" ${idx === 0 ? 'disabled' : ''} title="Subir">&#8593;</button>
+            <button class="btn btn-sm btn-outline-secondary me-1 subobjetivo-down-btn" data-idx="${idx}" ${idx === checklistEditar.length - 1 ? 'disabled' : ''} title="Bajar">&#8595;</button>
+            <button class="btn btn-sm btn-outline-danger" data-idx="${idx}"><i class="bi bi-x"></i></button>
+        `;
+        list.appendChild(div);
+    });
+    // Eventos
+    list.querySelectorAll('input[type=checkbox]').forEach(chk => {
+        chk.onchange = function() {
+            const idx = this.getAttribute('data-idx');
+            checklistEditar[idx].completado = this.checked;
+            renderChecklistEditar();
+        };
+    });
+    list.querySelectorAll('textarea').forEach(textarea => {
+        // Autoajustar altura
+        textarea.style.height = 'auto';
+        textarea.style.height = textarea.scrollHeight + 'px';
+        textarea.oninput = function() {
+            this.style.height = 'auto';
+            this.style.height = this.scrollHeight + 'px';
+            const idx = this.getAttribute('data-idx');
+            checklistEditar[idx].titulo = this.value;
+        };
+        textarea.onblur = function() {
+            const idx = this.getAttribute('data-idx');
+            checklistEditar[idx].titulo = this.value;
+            renderChecklistEditar();
+        };
+    });
+    list.querySelectorAll('button.btn-outline-danger').forEach(btn => {
+        btn.onclick = function() {
+            const idx = this.getAttribute('data-idx');
+            checklistEditar.splice(idx, 1);
+            renderChecklistEditar();
+        };
+    });
+    // Subir/bajar
+    list.querySelectorAll('button.subobjetivo-up-btn').forEach(btn => {
+        btn.onclick = function() {
+            const idx = parseInt(this.getAttribute('data-idx'));
+            if (idx > 0) {
+                [checklistEditar[idx - 1], checklistEditar[idx]] = [checklistEditar[idx], checklistEditar[idx - 1]];
+                renderChecklistEditar();
+            }
+        };
+    });
+    list.querySelectorAll('button.subobjetivo-down-btn').forEach(btn => {
+        btn.onclick = function() {
+            const idx = parseInt(this.getAttribute('data-idx'));
+            if (idx < checklistEditar.length - 1) {
+                [checklistEditar[idx], checklistEditar[idx + 1]] = [checklistEditar[idx + 1], checklistEditar[idx]];
+                renderChecklistEditar();
+            }
+        };
+    });
+}
+document.getElementById('btn-toggle-checklist-editar')?.addEventListener('click', function() {
+    const cont = document.getElementById('checklist-editar-container');
+    cont.style.display = cont.style.display === 'none' ? '' : 'none';
+});
+document.getElementById('checklist-editar-add-btn')?.addEventListener('click', function() {
+    const input = document.getElementById('checklist-editar-input');
+    const titulo = input.value.trim();
+    if (!titulo) return;
+    checklistEditar.push({ titulo, completado: false });
+    input.value = '';
+    renderChecklistEditar();
+});
+// Al abrir modal editar, cargar subobjetivos del backend
+const modalEditar = document.getElementById('modalEditarObjetivo');
+if (modalEditar) {
+    modalEditar.addEventListener('show.bs.modal', async function() {
+        const objetivoId = document.getElementById('editar-id-objetivo').value;
+        checklistEditar = [];
+        if (objetivoId) {
+            try {
+                const res = await fetch(`/api/objetivos/${objetivoId}/subobjetivos`);
+                const subs = await res.json();
+                checklistEditar = subs.map(s => ({ id: s.id, titulo: s.titulo, completado: s.completado }));
+            } catch {}
+        }
+        renderChecklistEditar();
+        document.getElementById('checklist-editar-input').value = '';
+        // Fuerza visibilidad del checklist de subobjetivos
+        const checklistCont = document.getElementById('checklist-editar-container');
+        if (checklistCont) checklistCont.style.display = '';
+    });
+}
+// --- GUARDAR SUBOBJETIVOS AL CREAR ---
+const formNuevo = document.getElementById('form-modal-nuevo-objetivo');
+if (formNuevo) {
+    formNuevo.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        console.log('Submit capturado'); // Para depuración
+        // Validar existencia de los bloques
+        if (!bloqueCatExistenteNueva || !bloqueNuevaCatNueva) {
+            console.error('No se encontraron los bloques de categoría.');
+            return;
+        }
+        const submitBtn = document.getElementById('submit-question');
+        const originalBtnText = submitBtn.innerHTML;
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Guardando...';
+        const formData = new FormData(form);
+        let categoriaExistente = '';
+        let nuevaCategoria = '';
+        if (bloqueCatExistenteNueva && bloqueCatExistenteNueva.style.display !== 'none') {
+            categoriaExistente = formData.get('categoria_existente') || '';
+        }
+        if (bloqueNuevaCatNueva && bloqueNuevaCatNueva.style.display !== 'none') {
+            nuevaCategoria = formData.get('nueva_categoria') || '';
+        }
+        if (categoriaExistente && nuevaCategoria) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = 'Crear Pregunta';
+            showError('No puedes seleccionar una categoría existente y escribir una nueva al mismo tiempo.');
+            return false;
+        }
+        // Construir el objeto de datos para enviar
+        const data = {
+            text: formData.get('text') || '',
+            type: formData.get('type') || 'text',
+            options: formData.get('options') || '',
+            descripcion: formData.get('descripcion') || '',
+            is_required: document.getElementById('is_required').checked ? 1 : 0,
+            categoria_existente: categoriaExistente,
+            nueva_categoria: nuevaCategoria
+        };
+        try {
+            const response = await fetch('/add_question', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                credentials: 'same-origin',
+                body: JSON.stringify(data)
+            });
+            const result = await response.json();
+            if (result.status === 'success') {
+                showSuccess('Pregunta creada exitosamente');
+                setTimeout(() => {
+                    window.location.href = window.location.href.split('?')[0];
+                }, 1200);
+            } else {
+                showError(result.message || 'Error al crear la pregunta');
+            }
+        } catch (err) {
+            showError('Error al crear la pregunta: ' + (err.message || err));
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = 'Crear Pregunta';
+        }
+        // Después de crear el objetivo principal:
+        if (result.status === 'success' && result.id) {
+            // Guardar subobjetivos si hay
+            if (checklistNuevo.length > 0) {
+                for (const sub of checklistNuevo) {
+                    if (sub.titulo.trim()) {
+                        await fetch(`/api/objetivos/${result.id}/subobjetivos`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ titulo: sub.titulo, completado: sub.completado })
+                        });
+                    }
+                }
+            }
+        }
+    });
+}
+// --- GUARDAR SUBOBJETIVOS AL EDITAR ---
+const formEditar = document.getElementById('form-modal-editar-objetivo');
+if (formEditar) {
+    formEditar.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const btnGuardar = document.querySelector('#modalEditarObjetivo .btn-guardar');
+        if (btnGuardar) btnGuardar.disabled = true;
+        const id = document.getElementById('editar-id-objetivo').value;
+        const titulo = document.getElementById('editar-titulo-objetivo').value.trim();
+        const descripcion = document.getElementById('editar-desc-objetivo').value.trim();
+        const prioridad = document.getElementById('editar-prioridad-objetivo').value;
+        const categoria = document.getElementById('editar-categoria-objetivo').value.trim();
+        const esPadre = document.getElementById('editar-es-padre-objetivo').checked;
+        const objetivoPadreId = document.getElementById('editar-padre-objetivo').value || null;
+        const estado = document.getElementById('editar-estado-objetivo').value;
+        const fechaInicio = document.getElementById('editar-fecha-inicio-objetivo').value || null;
+        const fechaFin = document.getElementById('editar-fecha-fin-objetivo').value || null;
+        const horasEdit = document.getElementById('editar-horas-estimadas-objetivo').value;
+        const minutosEdit = document.getElementById('editar-minutos-estimados-objetivo').value;
+        let horasEstimadas = null;
+        if (horasEdit || minutosEdit) {
+          const h = parseInt(horasEdit) || 0;
+          const m = parseInt(minutosEdit) || 0;
+          horasEstimadas = h + (m / 60);
+        }
+        const dificultad = document.getElementById('editar-dificultad-objetivo').value || null;
+        const etiquetas = document.getElementById('editar-etiquetas-objetivo').value.trim();
+        const recompensa = document.getElementById('editar-recompensa-objetivo').value.trim();
+        const notasAdicionales = document.getElementById('editar-notas-adicionales-objetivo').value.trim();
+        const chkRecEdit = document.getElementById('editar-recurrente-objetivo');
+        let recurrente = false;
+        if (chkRecEdit) {
+            recurrente = chkRecEdit.checked;
+        }
+        let frecuencia = null;
+        if (recurrente && ["diario", "semanal", "mensual", "anual"].includes(categoria)) {
+          frecuencia = categoria;
+        }
+        if (!id || !titulo) return;
+        try {
+          const res = await fetch(`/api/objetivos/${id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              titulo,
+              descripcion,
+              prioridad,
+              categoria,
+              es_padre: esPadre,
+              objetivo_padre_id: objetivoPadreId,
+              estado,
+              fecha_inicio: fechaInicio,
+              fecha_fin: fechaFin,
+              horas_estimadas: horasEstimadas,
+              dificultad,
+              etiquetas,
+              recompensa,
+              notas_adicionales: notasAdicionales,
+              recurrente,
+              frecuencia
+            })
+          });
+          const result = await res.json();
+          if (result.status === 'success') {
+            // Sincronizar subobjetivos: crear, actualizar, eliminar
+            const objetivoId = id;
+            // Obtener subobjetivos actuales del backend
+            let backendSubs = [];
+            try {
+                const res = await fetch(`/api/objetivos/${objetivoId}/subobjetivos`);
+                backendSubs = await res.json();
+            } catch {}
+            // Crear nuevos
+            for (const sub of checklistEditar) {
+                if ((!sub.id || typeof sub.id === 'undefined') && sub.titulo.trim()) {
+                    await fetch(`/api/objetivos/${objetivoId}/subobjetivos`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ titulo: sub.titulo, completado: sub.completado })
+                    });
+                } else if (sub.id) {
+                    // Actualizar si cambió
+                    const backendSub = backendSubs.find(s => s.id === sub.id);
+                    if (backendSub && (backendSub.titulo !== sub.titulo || backendSub.completado !== sub.completado)) {
+                        await fetch(`/api/subobjetivos/${sub.id}`, {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ titulo: sub.titulo, completado: sub.completado })
+                        });
+                    }
+                }
+            }
+            // Eliminar los que ya no están
+            for (const backendSub of backendSubs) {
+                if (!checklistEditar.find(s => s.id === backendSub.id)) {
+                    await fetch(`/api/subobjetivos/${backendSub.id}`, { method: 'DELETE' });
+                }
+            }
+            // Recargar subobjetivos del backend para limpiar duplicados
+            try {
+                const res = await fetch(`/api/objetivos/${objetivoId}/subobjetivos`);
+                const subs = await res.json();
+                checklistEditar = subs.map(s => ({ id: s.id, titulo: s.titulo, completado: s.completado }));
+            } catch {}
+            await cargarObjetivos();
+            const modal = bootstrap.Modal.getInstance(document.getElementById('modalEditarObjetivo'));
+            if (modal) modal.hide();
+          } else {
+            showError(result.error || 'Error al actualizar objetivo');
+          }
+        } catch (err) {
+          console.error('Error al actualizar objetivo:', err);
+          showError('Error al actualizar objetivo');
+        } finally {
+          if (btnGuardar) btnGuardar.disabled = false;
+        }
     });
 }

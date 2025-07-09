@@ -230,12 +230,26 @@
           </div>
           <hr style="border-top: 1.5px dashed #b6d4fe; margin: 1.2rem 0 1rem 0;">
           <div class="mb-3 d-flex align-items-center gap-2">
-            <label class="form-label label-recurrente mb-0" for="modal-recurrente-objetivo"><i class="bi bi-repeat"></i> Hacer este objetivo recurrente</label>
+            <label class="form-label fw-semibold mb-0" for="modal-recurrente-objetivo"><i class="bi bi-repeat"></i> Hacer este objetivo recurrente</label>
             <input type="checkbox" class="form-check-input" id="modal-recurrente-objetivo">
           </div>
           <div class="mb-3 d-flex align-items-center gap-2">
             <label class="form-label fw-semibold mb-0" for="modal-es-padre-objetivo">¿Este objetivo es padre?</label>
             <input type="checkbox" class="form-check-input" id="modal-es-padre-objetivo">
+          </div>
+          <hr style="border-top: 1.5px dashed #b6d4fe; margin: 1.2rem 0 1rem 0;">
+          <div class="mb-3">
+            <button type="button" class="btn btn-outline-info btn-sm" id="btn-toggle-checklist-nuevo">
+              <i class="bi bi-list-check"></i> Agregar checklist (subobjetivos)
+            </button>
+          </div>
+          <div class="mb-3" id="checklist-nuevo-container" style="display:none;">
+            <label class="form-label fw-semibold">Checklist (subobjetivos)</label>
+            <div id="checklist-nuevo-list"></div>
+            <div class="d-flex mt-2">
+              <input type="text" class="form-control form-control-sm me-2" id="checklist-nuevo-input" placeholder="Nuevo subobjetivo...">
+              <button type="button" class="btn btn-sm btn-primary" id="checklist-nuevo-add-btn">Agregar</button>
+            </div>
           </div>
         </div>
         <div class="modal-footer">
@@ -360,12 +374,26 @@
           </div>
           <hr style="border-top: 1.5px dashed #b6d4fe; margin: 1.2rem 0 1rem 0;">
           <div class="mb-3 d-flex align-items-center gap-2">
-            <label class="form-label label-recurrente mb-0" for="editar-recurrente-objetivo"><i class="bi bi-repeat"></i> Hacer este objetivo recurrente</label>
+            <label class="form-label fw-semibold mb-0" for="editar-recurrente-objetivo"><i class="bi bi-repeat"></i> Hacer este objetivo recurrente</label>
             <input type="checkbox" class="form-check-input" id="editar-recurrente-objetivo">
           </div>
           <div class="mb-3 d-flex align-items-center gap-2">
             <label class="form-label fw-semibold mb-0" for="editar-es-padre-objetivo">¿Este objetivo es padre?</label>
             <input type="checkbox" class="form-check-input" id="editar-es-padre-objetivo">
+          </div>
+          <hr style="border-top: 1.5px dashed #b6d4fe; margin: 1.2rem 0 1rem 0;">
+          <div class="mb-3">
+            <button type="button" class="btn btn-outline-info btn-sm" id="btn-toggle-checklist-editar">
+              <i class="bi bi-list-check"></i> Editar checklist (subobjetivos)
+            </button>
+          </div>
+          <div class="mb-3" id="checklist-editar-container" style="display:none;">
+            <label class="form-label fw-semibold">Checklist (subobjetivos)</label>
+            <div id="checklist-editar-list"></div>
+            <div class="d-flex mt-2">
+              <input type="text" class="form-control form-control-sm me-2" id="checklist-editar-input" placeholder="Nuevo subobjetivo...">
+              <button type="button" class="btn btn-sm btn-primary" id="checklist-editar-add-btn">Agregar</button>
+            </div>
           </div>
         </div>
         <div class="modal-footer">
