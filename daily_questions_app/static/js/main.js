@@ -1608,18 +1608,48 @@ function renderHistorico() {
         const fechaFin = obj.fecha_fin ? new Date(obj.fecha_fin + 'T12:00:00').toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' }) : '';
         const li = document.createElement('li');
         li.className = 'list-group-item d-flex align-items-center';
-        // Solo tachar si está completado
         const tituloClass = obj.completado ? 'objetivo-titulo flex-grow-1 text-decoration-line-through' : 'objetivo-titulo flex-grow-1';
-        // Etiqueta visual
         const etiqueta = obj.completado
             ? '<span class="badge bg-success ms-2">Completado</span>'
             : '<span class="badge bg-danger ms-2">No cumplido</span>';
+        // Botón más pequeño, solo ícono
+        const btnReactivar = !obj.recurrente ? `<button class="btn btn-xs btn-outline-primary p-1 ms-2 btn-reactivar-recurrente" data-id="${obj.id}" title="Marcar como recurrente" style="width:28px;height:28px;display:flex;align-items:center;justify-content:center;"><i class="bi bi-arrow-repeat"></i></button>` : '';
         li.innerHTML = `
             <span class="${tituloClass}">${obj.titulo}</span>
             ${etiqueta}
             ${fechaFin ? `<span class="badge bg-light text-dark ms-auto"><i class='bi bi-calendar-check'></i> ${fechaFin}</span>` : ''}
+            ${btnReactivar}
         `;
         lista.appendChild(li);
+    });
+    // Eventos para reactivar como recurrente
+    lista.querySelectorAll('.btn-reactivar-recurrente').forEach(btn => {
+        btn.onclick = async function() {
+            const id = this.getAttribute('data-id');
+            try {
+                const res = await fetch(`/api/objetivos/${id}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ recurrente: true })
+                });
+                const result = await res.json();
+                if (result.status === 'success') {
+                    showSuccess('Objetivo marcado como recurrente');
+                    // Eliminar de históricos en memoria
+                    const idx = historico.findIndex(o => o.id == id);
+                    if (idx !== -1) {
+                        historico.splice(idx, 1);
+                    }
+                    renderHistorico();
+                    // Recargar la lista de activos y contadores desde el backend
+                    await cargarObjetivos();
+                } else {
+                    showError(result.error || 'Error al marcar como recurrente');
+                }
+            } catch (err) {
+                showError('Error de red al marcar como recurrente');
+            }
+        };
     });
     document.getElementById('btn-cargar-mas-historico').style.display = historicoFin ? 'none' : 'inline-block';
 }
