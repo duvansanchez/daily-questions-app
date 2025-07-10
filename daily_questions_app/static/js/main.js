@@ -422,10 +422,14 @@ document.addEventListener('DOMContentLoaded', function() {
         form.addEventListener('submit', async function(e) {
             e.preventDefault();
             console.log('Submit capturado'); // Para depuración
-            // Validar existencia de los bloques
+            // Solo valida los bloques de categoría si es el formulario de preguntas
+            if (form.id === 'add-question-form') {
+                const bloqueCatExistenteNueva = document.getElementById('bloque-categoria-existente-nueva');
+                const bloqueNuevaCatNueva = document.getElementById('bloque-nueva-categoria-nueva');
             if (!bloqueCatExistenteNueva || !bloqueNuevaCatNueva) {
                 console.error('No se encontraron los bloques de categoría.');
                 return;
+                }
             }
             const submitBtn = document.getElementById('submit-question');
             const originalBtnText = submitBtn.innerHTML;
@@ -901,24 +905,26 @@ async function cargarYRenderizarSubobjetivos(objetivoId) {
                 `;
                 contenedor.appendChild(subDiv);
                 // Doble click para editar subobjetivo
-                subDiv.querySelector('.subobjetivo-titulo-span').addEventListener('dblclick', function() {
+                const tituloSpan = subDiv.querySelector('.subobjetivo-titulo-span');
+                if (tituloSpan) {
+                    tituloSpan.addEventListener('dblclick', function() {
                     const subId = sub.id;
                     const oldText = this.textContent;
                     const parent = this.parentNode;
-                    // Agrega la clase 'editing' al contenedor
-                    parent.classList.add('editing');
+                        // Agrega la clase 'editing' al contenedor
+                        parent.classList.add('editing');
                     const input = document.createElement('input');
                     input.type = 'text';
                     input.value = oldText;
                     input.className = 'subobjetivo-edit-input';
                     input.style.flex = '1 1 0%';
-                    input.style.minWidth = '0';
+                        input.style.minWidth = '0';
                     this.replaceWith(input);
                     input.focus();
                     input.addEventListener('blur', async function() {
                         const nuevoTexto = input.value.trim();
-                        // Quita la clase 'editing' al terminar
-                        parent.classList.remove('editing');
+                            // Quita la clase 'editing' al terminar
+                            parent.classList.remove('editing');
                         if (nuevoTexto && nuevoTexto !== oldText) {
                             try {
                                 const res = await fetch(`/api/subobjetivos/${subId}`, {
@@ -939,10 +945,11 @@ async function cargarYRenderizarSubobjetivos(objetivoId) {
                             await cargarYRenderizarSubobjetivos(objetivoId);
                         }
                     });
-                    input.addEventListener('keydown', function(e) {
-                        if (e.key === 'Enter') input.blur();
+                        input.addEventListener('keydown', function(e) {
+                            if (e.key === 'Enter') input.blur();
+                        });
                     });
-                });
+                }
                 // Lógica de subir/bajar
                 const upBtn = subDiv.querySelector('.subobjetivo-up-btn');
                 const downBtn = subDiv.querySelector('.subobjetivo-down-btn');
@@ -1838,89 +1845,6 @@ if (modalEditar) {
         // Fuerza visibilidad del checklist de subobjetivos
         const checklistCont = document.getElementById('checklist-editar-container');
         if (checklistCont) checklistCont.style.display = '';
-    });
-}
-// --- GUARDAR SUBOBJETIVOS AL CREAR ---
-const formNuevo = document.getElementById('form-modal-nuevo-objetivo');
-if (formNuevo) {
-    formNuevo.addEventListener('submit', async function(e) {
-        e.preventDefault();
-        console.log('Submit capturado'); // Para depuración
-        // Validar existencia de los bloques
-        if (!bloqueCatExistenteNueva || !bloqueNuevaCatNueva) {
-            console.error('No se encontraron los bloques de categoría.');
-            return;
-        }
-        const submitBtn = document.getElementById('submit-question');
-        const originalBtnText = submitBtn.innerHTML;
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Guardando...';
-        const formData = new FormData(form);
-        let categoriaExistente = '';
-        let nuevaCategoria = '';
-        if (bloqueCatExistenteNueva && bloqueCatExistenteNueva.style.display !== 'none') {
-            categoriaExistente = formData.get('categoria_existente') || '';
-        }
-        if (bloqueNuevaCatNueva && bloqueNuevaCatNueva.style.display !== 'none') {
-            nuevaCategoria = formData.get('nueva_categoria') || '';
-        }
-        if (categoriaExistente && nuevaCategoria) {
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = 'Crear Pregunta';
-            showError('No puedes seleccionar una categoría existente y escribir una nueva al mismo tiempo.');
-            return false;
-        }
-        // Construir el objeto de datos para enviar
-        const data = {
-            text: formData.get('text') || '',
-            type: formData.get('type') || 'text',
-            options: formData.get('options') || '',
-            descripcion: formData.get('descripcion') || '',
-            is_required: document.getElementById('is_required').checked ? 1 : 0,
-            categoria_existente: categoriaExistente,
-            nueva_categoria: nuevaCategoria
-        };
-        try {
-            const response = await fetch('/add_question', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                credentials: 'same-origin',
-                body: JSON.stringify(data)
-            });
-            const result = await response.json();
-            if (result.status === 'success') {
-                showSuccess('Pregunta creada exitosamente');
-                setTimeout(() => {
-                    window.location.href = window.location.href.split('?')[0];
-                }, 1200);
-            } else {
-                showError(result.message || 'Error al crear la pregunta');
-            }
-        } catch (err) {
-            showError('Error al crear la pregunta: ' + (err.message || err));
-        } finally {
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = 'Crear Pregunta';
-        }
-        // Después de crear el objetivo principal:
-        if (result.status === 'success' && result.id) {
-            // Guardar subobjetivos si hay
-            if (checklistNuevo.length > 0) {
-                for (const sub of checklistNuevo) {
-                    if (sub.titulo.trim()) {
-                        await fetch(`/api/objetivos/${result.id}/subobjetivos`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ titulo: sub.titulo, completado: sub.completado })
-                        });
-                    }
-                }
-            }
-        }
     });
 }
 // --- GUARDAR SUBOBJETIVOS AL EDITAR ---
