@@ -835,7 +835,7 @@ function renderObjetivos() {
     // Forzar booleano robusto
     filtrados = filtrados.map(obj => ({
         ...obj,
-        completado: obj.completado === true || obj.completado === 1 || obj.completado === "true"
+        completado: obj.completado === true || obj.completado === 1 || obj.completado === "true" || obj.completado === "1" || obj.completado === 'True'
     }));
 
     // Aplicar ordenamiento
@@ -868,6 +868,16 @@ function renderObjetivos() {
             }
             prioridadActual = obj.prioridad;
         }
+        // Mostrar número de orden arriba derecha y flechas abajo derecha solo en orden personalizado
+        let ordenNumHtml = '';
+        let ordenFlechasHtml = '';
+        if (ordenActual === 'orden') {
+            ordenNumHtml = `<span class=\"orden-objetivo-num\">${obj.orden}</span>`;
+            ordenFlechasHtml = `<div class=\"orden-objetivo-container orden-objetivo-inline\">
+                <button class=\"objetivo-main-up-btn\" title=\"Subir\" data-id=\"${obj.id}\" ${idx === 0 ? 'disabled' : ''}>&#9650;</button>
+                <button class=\"objetivo-main-down-btn\" title=\"Bajar\" data-id=\"${obj.id}\" ${idx === filtrados.length - 1 ? 'disabled' : ''}>&#9660;</button>
+            </div>`;
+        }
         // Formateo de fechas en español
         const fechaCreacion = obj.fecha_creacion ? new Date(obj.fecha_creacion + 'T12:00:00').toLocaleDateString('es-ES', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' }) : '';
         const fechaInicio = obj.fecha_inicio ? new Date(obj.fecha_inicio + 'T12:00:00').toLocaleDateString('es-ES', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' }) : '';
@@ -878,43 +888,44 @@ function renderObjetivos() {
         if (obj.saltado_hoy) card.classList.add('objetivo-inactivo-hoy');
         if (!obj.completado && !obj.saltado_hoy && obj.estado !== 'histórico') card.classList.add('resaltado-activo');
         card.innerHTML = `
-            <div style="flex:1;min-width:0;">
-                <input type="checkbox" class="form-check-input me-2 check-objetivo" ${obj.completado ? 'checked' : ''} data-id="${obj.id}">
-                <span class="objetivo-titulo">${obj.titulo}</span>
-                <span class="etiqueta-prioridad ${obj.prioridad}">${obj.prioridad.charAt(0).toUpperCase() + obj.prioridad.slice(1)}</span>
-                ${obj.categoria ? `<span class="etiqueta-categoria">${obj.categoria.charAt(0).toUpperCase() + obj.categoria.slice(1)}</span>` : ''}
-                ${obj.estado ? `<span class="badge bg-secondary ms-1">${obj.estado.replace('_', ' ').toUpperCase()}</span>` : ''}
+            <div style=\"flex:1;min-width:0;position:relative;\">
+                <input type=\"checkbox\" class=\"form-check-input me-2 check-objetivo\" ${obj.completado ? 'checked' : ''} data-id=\"${obj.id}\">
+                <span class=\"objetivo-titulo\">${obj.titulo}</span>
+                <span class=\"etiqueta-prioridad ${obj.prioridad}\">${obj.prioridad.charAt(0).toUpperCase() + obj.prioridad.slice(1)}</span>
+                ${obj.categoria ? `<span class=\"etiqueta-categoria\">${obj.categoria.charAt(0).toUpperCase() + obj.categoria.slice(1)}</span>` : ''}
+                ${obj.estado ? `<span class=\"badge bg-secondary ms-1\">${obj.estado.replace('_', ' ').toUpperCase()}</span>` : ''}
                 ${obj.saltado_hoy ? `<span class='badge bg-secondary ms-1'>No activo hoy</span>` : ''}
                 ${obj.objetivo_padre_id && mapaObjetivosPadre[obj.objetivo_padre_id] ? `<div class='objetivo-padre small text-primary'><i class='bi bi-diagram-3'></i> Padre: ${mapaObjetivosPadre[obj.objetivo_padre_id]}</div>` : ''}
-                ${obj.descripcion ? `<div class="objetivo-desc">${obj.descripcion}</div>` : ''}
-                <div class="objetivo-extra mt-1 small text-muted">
-                    ${fechaCreacion ? `<span class="objetivo-fecha"><i class='bi bi-calendar-plus'></i> Creado: ${fechaCreacion}</span>` : ''}
-                    ${obj.recompensa ? `<span class="objetivo-recompensa"><i class='bi bi-gift'></i> ${obj.recompensa}</span>` : ''}
-                    ${fechaInicio ? `<span class="objetivo-fecha"><i class='bi bi-calendar-event'></i> Inicio: ${fechaInicio}</span>` : ''}
-                    ${fechaFin ? `<span class="objetivo-fecha"><i class='bi bi-calendar-check'></i> Fin: ${fechaFin}</span>` : ''}
-                    ${obj.horas_estimadas ? `<span class="objetivo-horas"><i class='bi bi-clock'></i> ${formatearHorasMinutos(obj.horas_estimadas)}</span>` : ''}
-                    ${obj.dificultad ? `<span class="objetivo-dificultad"><i class='bi bi-bar-chart'></i> Dificultad: ${obj.dificultad}</span>` : ''}
-                    ${obj.etiquetas ? `<span class="objetivo-etiquetas"><i class='bi bi-tags'></i> ${obj.etiquetas}</span>` : ''}
+                ${obj.descripcion ? `<div class=\"objetivo-desc\">${obj.descripcion}</div>` : ''}
+                <div class=\"objetivo-extra mt-1 small text-muted\">
+                    ${fechaCreacion ? `<span class=\"objetivo-fecha\"><i class='bi bi-calendar-plus'></i> Creado: ${fechaCreacion}</span>` : ''}
+                    ${obj.recompensa ? `<span class=\"objetivo-recompensa\"><i class='bi bi-gift'></i> ${obj.recompensa}</span>` : ''}
+                    ${fechaInicio ? `<span class=\"objetivo-fecha\"><i class='bi bi-calendar-event'></i> Inicio: ${fechaInicio}</span>` : ''}
+                    ${fechaFin ? `<span class=\"objetivo-fecha\"><i class='bi bi-calendar-check'></i> Fin: ${fechaFin}</span>` : ''}
+                    ${obj.horas_estimadas ? `<span class=\"objetivo-horas\"><i class='bi bi-clock'></i> ${formatearHorasMinutos(obj.horas_estimadas)}</span>` : ''}
+                    ${obj.dificultad ? `<span class=\"objetivo-dificultad\"><i class='bi bi-bar-chart'></i> Dificultad: ${obj.dificultad}</span>` : ''}
+                    ${obj.etiquetas ? `<span class=\"objetivo-etiquetas\"><i class='bi bi-tags'></i> ${obj.etiquetas}</span>` : ''}
                 </div>
-                ${obj.notas_adicionales ? `<div class="objetivo-notas small text-info mt-1"><i class='bi bi-info-circle'></i> ${obj.notas_adicionales}</div>` : ''}
-                <div class="subobjetivos-container" id="subobjetivos-container-${obj.id}">
-                    <div class="subobjetivos-list" id="subobjetivos-list-${obj.id}"></div>
-                    <div class="subobjetivos-add" style="display:none;" id="subobjetivos-add-${obj.id}">
-                        <div class="d-flex gap-2 mt-2">
-                            <input type="text" class="form-control form-control-sm subobjetivo-input" placeholder="Nuevo subobjetivo...">
-                            <button class="btn btn-sm btn-primary subobjetivo-add-btn">Agregar</button>
+                ${obj.notas_adicionales ? `<div class=\"objetivo-notas small text-info mt-1\"><i class='bi bi-info-circle'></i> ${obj.notas_adicionales}</div>` : ''}
+                <div class=\"subobjetivos-container\" id=\"subobjetivos-container-${obj.id}\">
+                    <div class=\"subobjetivos-list\" id=\"subobjetivos-list-${obj.id}\"></div>
+                    <div class=\"subobjetivos-add\" style=\"display:none;\" id=\"subobjetivos-add-${obj.id}\">
+                        <div class=\"d-flex gap-2 mt-2\">
+                            <input type=\"text\" class=\"form-control form-control-sm subobjetivo-input\" placeholder=\"Nuevo subobjetivo...\">
+                            <button class=\"btn btn-sm btn-primary subobjetivo-add-btn\">Agregar</button>
                         </div>
                     </div>
-                    <button class="btn btn-outline-secondary btn-sm rounded-circle subobjetivo-toggle-btn" data-objetivo-id="${obj.id}" title="Mostrar checklist" style="padding:0.3rem 0.5rem; font-size:1.1rem;">
-                        <i class="bi bi-list-check"></i>
+                    <button class=\"btn btn-outline-secondary btn-sm rounded-circle subobjetivo-toggle-btn\" data-objetivo-id=\"${obj.id}\" title=\"Mostrar checklist\" style=\"padding:0.3rem 0.5rem; font-size:1.1rem;\">
+                        <i class=\"bi bi-list-check\"></i>
                     </button>
                 </div>
             </div>
-            <div class="acciones-objetivo">
-                <button class="btn-editar" title="Editar" data-id="${obj.id}"><i class="bi bi-pencil"></i></button>
-                <button class="btn-eliminar" title="Eliminar" data-id="${obj.id}"><i class="bi bi-trash"></i></button>
-                ${obj.recurrente && !obj.saltado_hoy && !obj.completado ? `<button class="btn-saltar-hoy" title="Saltar hoy" data-id="${obj.id}"><i class="bi bi-arrow-bar-right"></i> Saltar hoy</button>` : ''}
-                ${obj.recurrente && obj.saltado_hoy && !obj.completado ? `<button class="btn-reactivar-hoy" title="Reactivar hoy" data-id="${obj.id}"><i class="bi bi-arrow-repeat"></i> Reactivar hoy</button>` : ''}
+            <div class=\"acciones-objetivo\">
+                <button class=\"btn-editar\" title=\"Editar\" data-id=\"${obj.id}\"><i class=\"bi bi-pencil\"></i></button>
+                <button class=\"btn-eliminar\" title=\"Eliminar\" data-id=\"${obj.id}\"><i class=\"bi bi-trash\"></i></button>
+                ${obj.recurrente && !obj.saltado_hoy && !obj.completado ? `<button class=\"btn-saltar-hoy\" title=\"Saltar hoy\" data-id=\"${obj.id}\"><i class=\"bi bi-arrow-bar-right\"></i> Saltar hoy</button>` : ''}
+                ${obj.recurrente && obj.saltado_hoy && !obj.completado ? `<button class=\"btn-reactivar-hoy\" title=\"Reactivar hoy\" data-id=\"${obj.id}\"><i class=\"bi bi-arrow-repeat\"></i> Reactivar hoy</button>` : ''}
+                ${(ordenActual === 'orden') ? ordenFlechasHtml + ordenNumHtml : ''}
             </div>
         `;
         lista.appendChild(card);
@@ -957,6 +968,55 @@ function renderObjetivos() {
             }
         });
     });
+    // Eventos para flechas de reordenar objetivos principales
+    if (ordenActual === 'orden') {
+        document.querySelectorAll('.objetivo-main-up-btn').forEach(btn => {
+            btn.addEventListener('click', async function() {
+                const objetivoId = parseInt(this.getAttribute('data-id'));
+                const idx = filtrados.findIndex(obj => obj.id === objetivoId);
+                if (idx > 0) {
+                    const nuevoOrden = [...filtrados];
+                    [nuevoOrden[idx - 1], nuevoOrden[idx]] = [nuevoOrden[idx], nuevoOrden[idx - 1]];
+                    try {
+                        await fetch('/api/objetivos/reordenar', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                ids: nuevoOrden.map(obj => obj.id),
+                                categoria: categoriaActual
+                            })
+                        });
+                        await cargarObjetivos();
+                    } catch (err) {
+                        showError('Error al reordenar objetivos');
+                    }
+                }
+            });
+        });
+        document.querySelectorAll('.objetivo-main-down-btn').forEach(btn => {
+            btn.addEventListener('click', async function() {
+                const objetivoId = parseInt(this.getAttribute('data-id'));
+                const idx = filtrados.findIndex(obj => obj.id === objetivoId);
+                if (idx < filtrados.length - 1) {
+                    const nuevoOrden = [...filtrados];
+                    [nuevoOrden[idx], nuevoOrden[idx + 1]] = [nuevoOrden[idx + 1], nuevoOrden[idx]];
+                    try {
+                        await fetch('/api/objetivos/reordenar', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                ids: nuevoOrden.map(obj => obj.id),
+                                categoria: categoriaActual
+                            })
+                        });
+                        await cargarObjetivos();
+                    } catch (err) {
+                        showError('Error al reordenar objetivos');
+                    }
+                }
+            });
+        });
+    }
     
     actualizarResumenObjetivos();
 }

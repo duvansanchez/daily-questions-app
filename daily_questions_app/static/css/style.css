@@ -1135,3 +1135,98 @@ h1 {
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
+
+/* Orden y flechas de reordenamiento para objetivos principales */
+.orden-objetivo-container {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  z-index: 2;
+}
+.orden-objetivo-bottom {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  background: #f8fafc;
+  border-radius: 8px;
+  box-shadow: 0 1px 4px rgba(60,80,120,0.06);
+  padding: 2px 6px 2px 6px;
+  min-width: 0;
+  opacity: 0.92;
+}
+.orden-objetivo-num {
+  background: #e0e7ff;
+  color: #3730a3;
+  font-size: 0.95em;
+  font-weight: 700;
+  border-radius: 6px;
+  padding: 1px 10px;
+  margin-right: 6px;
+  min-width: 22px;
+  text-align: center;
+  box-shadow: 0 1px 2px rgba(60,80,120,0.04);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  position: static;
+}
+.orden-objetivo-top {
+  display: none;
+}
+.objetivo-main-up-btn, .objetivo-main-down-btn {
+  background: #f3f6fa;
+  color: #2563eb;
+  border: none;
+  border-radius: 50%;
+  width: 1.5em;
+  height: 1.5em;
+  font-size: 1em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 1px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, box-shadow 0.15s;
+  box-shadow: 0 1px 2px rgba(60,80,120,0.04);
+}
+.objetivo-main-up-btn:disabled, .objetivo-main-down-btn:disabled {
+  color: #b0b8c9;
+  background: #f8f9fb;
+  opacity: 0.6;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+.objetivo-main-up-btn:hover:not(:disabled), .objetivo-main-down-btn:hover:not(:disabled) {
+  background: #e0eaff;
+  color: #1a4d8f;
+}
+
+.orden-objetivo-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: 12px;
+  background: #f8fafc;
+  border-radius: 8px;
+  box-shadow: 0 1px 4px rgba(60,80,120,0.06);
+  padding: 2px 6px 2px 6px;
+  min-width: 0;
+  opacity: 0.92;
+}
+
+.orden-objetivo-top {
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  background: #e0e7ff;
+  color: #3730a3;
+  font-size: 0.85em;
+  font-weight: 700;
+  border-radius: 6px;
+  padding: 2px 7px;
+  min-width: 22px;
+  text-align: center;
+  box-shadow: 0 1px 2px rgba(60,80,120,0.04);
+  z-index: 3;
+}
