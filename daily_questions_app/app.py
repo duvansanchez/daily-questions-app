@@ -1795,7 +1795,7 @@ def api_list_objetivos():
     primer_dia_anio = hoy.replace(month=1, day=1)
     with get_db_connection() as conn:
         cursor = conn.cursor()
-        cursor.execute('''SELECT id, titulo, descripcion, prioridad, categoria, completado, fecha_creacion, fecha_completado, objetivo_padre_id, es_padre, estado, fecha_inicio, fecha_fin, fecha_proyeccion_comienzo, horas_estimadas, dificultad, etiquetas, recompensa, notas_adicionales, recurrente, frecuencia FROM objetivos WHERE user_id = ? ORDER BY fecha_creacion DESC''', (current_user.id,))
+        cursor.execute('''SELECT id, titulo, descripcion, prioridad, categoria, completado, fecha_creacion, fecha_completado, objetivo_padre_id, es_padre, estado, fecha_inicio, fecha_fin, fecha_proyeccion_comienzo, horas_estimadas, dificultad, etiquetas, recompensa, notas_adicionales, recurrente, frecuencia, orden FROM objetivos WHERE user_id = ? ORDER BY orden ASC, fecha_creacion DESC''', (current_user.id,))
         rows = cursor.fetchall()
         objetivos = []
         for row in rows:
@@ -1820,7 +1820,8 @@ def api_list_objetivos():
                 'recompensa': row[17],
                 'notas_adicionales': row[18],
                 'recurrente': bool(row[19]) if len(row) > 19 else False,
-                'frecuencia': row[20] if len(row) > 20 else None
+                'frecuencia': row[20] if len(row) > 20 else None,
+                'orden': row[21] if len(row) > 21 else 0
             }
             # Marcar si el objetivo recurrente fue saltado hoy
             if obj['recurrente']:
@@ -2074,9 +2075,14 @@ def api_create_objetivo():
     
     with get_db_connection() as conn:
         cursor = conn.cursor()
-        cursor.execute('''INSERT INTO objetivos (user_id, titulo, descripcion, prioridad, categoria, completado, fecha_creacion, objetivo_padre_id, es_padre, estado, fecha_inicio, fecha_fin, fecha_proyeccion_comienzo, horas_estimadas, dificultad, etiquetas, recompensa, notas_adicionales, recurrente, frecuencia)
+        # Obtener el mayor valor de orden actual para la categoría
+        cursor.execute('''SELECT COALESCE(MAX(orden), 0) FROM objetivos WHERE user_id = ? AND categoria = ?''', (current_user.id, categoria))
+        max_orden = cursor.fetchone()[0]
+        nuevo_orden = max_orden + 1
+        
+        cursor.execute('''INSERT INTO objetivos (user_id, titulo, descripcion, prioridad, categoria, completado, fecha_creacion, objetivo_padre_id, es_padre, estado, fecha_inicio, fecha_fin, fecha_proyeccion_comienzo, horas_estimadas, dificultad, etiquetas, recompensa, notas_adicionales, recurrente, frecuencia, orden)
         OUTPUT INSERTED.id
-        VALUES (?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''', (current_user.id, titulo, descripcion, prioridad, categoria, fecha_creacion, objetivo_padre_id, es_padre, estado, fecha_inicio, fecha_fin, fecha_proyeccion_comienzo, horas_estimadas, dificultad, etiquetas, recompensa, notas_adicionales, recurrente, frecuencia))
+        VALUES (?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''', (current_user.id, titulo, descripcion, prioridad, categoria, fecha_creacion, objetivo_padre_id, es_padre, estado, fecha_inicio, fecha_fin, fecha_proyeccion_comienzo, horas_estimadas, dificultad, etiquetas, recompensa, notas_adicionales, recurrente, frecuencia, nuevo_orden))
         objetivo_id = cursor.fetchone()[0]
         conn.commit()
         return jsonify({'status': 'success', 'id': objetivo_id})
@@ -2133,6 +2139,24 @@ def api_delete_objetivo(objetivo_id):
         cursor.execute('''DELETE FROM objetivos WHERE id = ? AND user_id = ?''', (objetivo_id, current_user.id))
         conn.commit()
         return jsonify({'status': 'success'})
+
+@app.route('/api/objetivos/reordenar', methods=['POST'])
+@login_required
+def api_reordenar_objetivos():
+    data = request.get_json()
+    ids = data.get('ids', [])
+    categoria = data.get('categoria', '')
+    
+    if not isinstance(ids, list) or not all(isinstance(i, int) for i in ids):
+        return jsonify({'error': 'Formato de datos inválido'}), 400
+    
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        for orden, obj_id in enumerate(ids):
+            cursor.execute('''UPDATE objetivos SET orden = ? WHERE id = ? AND user_id = ? AND categoria = ?''', 
+                         (orden + 1, obj_id, current_user.id, categoria))
+        conn.commit()
+    return jsonify({'status': 'success'})
 
 @app.route('/api/objetivos_padre', methods=['GET'])
 @login_required

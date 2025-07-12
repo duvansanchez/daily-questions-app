@@ -1104,3 +1104,34 @@ h1 {
   background: #e0eaff;
   color: #1a4d8f;
 }
+
+/* Selector de ordenamiento */
+#orden-objetivos {
+  min-width: 180px;
+  border-radius: 8px;
+  border: 1.5px solid #d1d5db;
+  font-size: 0.95em;
+}
+
+#orden-objetivos:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px #2563eb22;
+}
+
+/* Separador de objetivos */
+.separador-objetivos {
+  margin: 1rem 0;
+}
+
+.separador-objetivos hr {
+  border-color: #e5e7eb;
+  border-width: 1px;
+  opacity: 0.6;
+}
+
+.separador-objetivos .text-muted {
+  color: #6b7280 !important;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}

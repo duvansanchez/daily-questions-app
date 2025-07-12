@@ -52,6 +52,18 @@
                 <li class="nav-item"><a class="nav-link" href="#" data-periodo="general">Generales</a></li>
                 <li class="nav-item"><a class="nav-link" id="tab-historico" href="#" data-periodo="historico">Histórico</a></li>
             </ul>
+            <div class="d-flex justify-content-end mb-2">
+                <div class="d-flex align-items-center gap-2">
+                    <label for="orden-objetivos" class="form-label mb-0 fw-semibold">Ordenar por:</label>
+                    <select class="form-select form-select-sm" id="orden-objetivos" style="width: auto;">
+                        <option value="orden">Orden personalizado</option>
+                        <option value="fecha_creacion">Fecha de creación</option>
+                        <option value="completado">Estado (completado/pendiente)</option>
+                        <option value="prioridad">Prioridad</option>
+                        <option value="titulo">Título</option>
+                    </select>
+                </div>
+            </div>
             <div class="card mt-3" id="card-objetivos">
                 <div class="card-body">
                     <h5 class="mb-3"><i class="bi bi-bullseye"></i> Objetivos de Hoy</h5>

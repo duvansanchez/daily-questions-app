@@ -752,6 +752,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // === Objetivos Desarrollo Personal (Integración API) ===
 let objetivos = [];
+let ordenActual = 'orden'; // Variable global para el ordenamiento
 
 async function cargarObjetivos() {
     try {
@@ -773,6 +774,54 @@ async function cargarObjetivos() {
 }
 window.cargarObjetivos = cargarObjetivos;
 
+// Función para ordenar objetivos
+function ordenarObjetivos(objetivos, criterio) {
+    const objetivosOrdenados = [...objetivos];
+    
+    switch (criterio) {
+        case 'orden':
+            return objetivosOrdenados.sort((a, b) => (a.orden || 0) - (b.orden || 0));
+        case 'fecha_creacion':
+            return objetivosOrdenados.sort((a, b) => {
+                const fechaA = a.fecha_creacion ? new Date(a.fecha_creacion) : new Date(0);
+                const fechaB = b.fecha_creacion ? new Date(b.fecha_creacion) : new Date(0);
+                return fechaB - fechaA; // Más recientes primero
+            });
+        case 'completado':
+            return objetivosOrdenados.sort((a, b) => {
+                // Pendientes primero, luego completados
+                if (a.completado !== b.completado) {
+                    return a.completado ? 1 : -1;
+                }
+                // Si ambos tienen el mismo estado, ordenar por fecha de creación descendente
+                const fechaA = a.fecha_creacion ? new Date(a.fecha_creacion) : new Date(0);
+                const fechaB = b.fecha_creacion ? new Date(b.fecha_creacion) : new Date(0);
+                return fechaB - fechaA;
+            });
+        case 'prioridad':
+            const prioridadOrden = { 'alta': 3, 'media': 2, 'baja': 1 };
+            return objetivosOrdenados.sort((a, b) => {
+                const prioridadA = prioridadOrden[a.prioridad] || 0;
+                const prioridadB = prioridadOrden[b.prioridad] || 0;
+                if (prioridadA === prioridadB) {
+                    // Si tienen la misma prioridad, ordenar por fecha de creación
+                    const fechaA = a.fecha_creacion ? new Date(a.fecha_creacion) : new Date(0);
+                    const fechaB = b.fecha_creacion ? new Date(b.fecha_creacion) : new Date(0);
+                    return fechaB - fechaA;
+                }
+                return prioridadB - prioridadA; // Alta prioridad primero
+            });
+        case 'titulo':
+            return objetivosOrdenados.sort((a, b) => {
+                const tituloA = (a.titulo || '').toLowerCase();
+                const tituloB = (b.titulo || '').toLowerCase();
+                return tituloA.localeCompare(tituloB);
+            });
+        default:
+            return objetivosOrdenados;
+    }
+}
+
 function renderObjetivos() {
     const lista = document.getElementById('lista-objetivos');
     lista.innerHTML = '';
@@ -782,12 +831,43 @@ function renderObjetivos() {
     } else {
         filtrados = objetivos.filter(obj => ((obj.categoria || 'diario').toLowerCase()) === categoriaActual.toLowerCase());
     }
+
+    // Forzar booleano robusto
+    filtrados = filtrados.map(obj => ({
+        ...obj,
+        completado: obj.completado === true || obj.completado === 1 || obj.completado === "true"
+    }));
+
+    // Aplicar ordenamiento
+    filtrados = ordenarObjetivos(filtrados, ordenActual);
+
     if (filtrados.length === 0) {
         lista.innerHTML = '<li class="list-group-item text-center text-muted">No hay objetivos para esta categoría.</li>';
         actualizarResumenObjetivos();
         return;
     }
+
+    let primerCompletadoEncontrado = false;
+    let prioridadActual = null;
     filtrados.forEach((obj, idx) => {
+        // Separador visual para completados
+        if (ordenActual === 'completado' && obj.completado && !primerCompletadoEncontrado) {
+            const separador = document.createElement('div');
+            separador.className = 'separador-objetivos';
+            separador.innerHTML = '<hr class="my-3"><div class="text-center text-muted fw-semibold mb-2">Objetivos Completados</div>';
+            lista.appendChild(separador);
+            primerCompletadoEncontrado = true;
+        }
+        // Separador visual para prioridad
+        if (ordenActual === 'prioridad' && obj.prioridad !== prioridadActual) {
+            if (prioridadActual !== null) {
+                const separador = document.createElement('div');
+                separador.className = 'separador-objetivos';
+                separador.innerHTML = '<hr class="my-2">';
+                lista.appendChild(separador);
+            }
+            prioridadActual = obj.prioridad;
+        }
         // Formateo de fechas en español
         const fechaCreacion = obj.fecha_creacion ? new Date(obj.fecha_creacion + 'T12:00:00').toLocaleDateString('es-ES', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' }) : '';
         const fechaInicio = obj.fecha_inicio ? new Date(obj.fecha_inicio + 'T12:00:00').toLocaleDateString('es-ES', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' }) : '';
@@ -877,6 +957,7 @@ function renderObjetivos() {
             }
         });
     });
+    
     actualizarResumenObjetivos();
 }
 
@@ -1305,6 +1386,20 @@ if (formEditar) {
 
 // Render inicial desde API
 cargarObjetivos();
+
+// Event listener para el selector de ordenamiento
+function inicializarSelectorOrdenamiento() {
+    const selectorOrden = document.getElementById('orden-objetivos');
+    if (selectorOrden) {
+        selectorOrden.addEventListener('change', function() {
+            ordenActual = this.value;
+            renderObjetivos();
+        });
+    }
+}
+
+// Inicializar después de que se carguen los objetivos
+setTimeout(inicializarSelectorOrdenamiento, 1000);
 
 // --- Utilidad para poblar el select de objetivo padre ---
 async function poblarSelectObjetivoPadre(selectId, objetivoActualId = null) {

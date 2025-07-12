@@ -98,11 +98,18 @@ try:
                 fecha_completado DATETIME,
                 objetivo_padre_id INT,
                 es_padre BOOLEAN DEFAULT 0,
+                orden INT DEFAULT 0,
                 FOREIGN KEY (user_id) REFERENCES [user](id),
                 FOREIGN KEY (objetivo_padre_id) REFERENCES objetivos(id)
             )
         END
     ''')
+    
+    # Agregar columna 'orden' si no existe (para migraciones en bases ya creadas)
+    cursor.execute("""
+        IF NOT EXISTS (SELECT * FROM syscolumns WHERE id=OBJECT_ID('objetivos') AND name='orden')
+        ALTER TABLE objetivos ADD orden INT NOT NULL DEFAULT 0;
+    """)
     
     # Crear tabla subobjetivos si no existe
     with get_db_connection() as conn:
