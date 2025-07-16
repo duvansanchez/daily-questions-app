@@ -150,21 +150,36 @@ function getQuestionResponseTime(questionId) {
 }
 
 // Función para mostrar notificaciones
-function showNotification(message, type = 'success') {
-    const alertDiv = document.createElement('div');
-    alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
-    alertDiv.role = 'alert';
-    alertDiv.innerHTML = `
-        ${message}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    `;
-    
-    const container = document.querySelector('.main-container');
-    container.insertBefore(alertDiv, container.firstChild);
-    
-    setTimeout(() => {
-        alertDiv.remove();
-    }, 5000);
+function showNotification(message, type = 'info', timeout = 3000) {
+    let container = document.getElementById('notification-container');
+    if (!container) {
+        // Crear contenedor si no existe
+        container = document.createElement('div');
+        container.id = 'notification-container';
+        container.style.position = 'fixed';
+        container.style.top = '20px';
+        container.style.right = '20px';
+        container.style.zIndex = '9999';
+        document.body.appendChild(container);
+    }
+    try {
+        const notif = document.createElement('div');
+        notif.className = `alert alert-${type}`;
+        notif.textContent = message;
+        notif.style.marginBottom = '8px';
+        if (container) {
+            container.insertBefore(notif, container.firstChild);
+            setTimeout(() => {
+                notif.remove();
+            }, timeout);
+        } else {
+            // Fallback si por alguna razón no existe el contenedor
+            alert(message);
+        }
+    } catch (err) {
+        // Fallback si algo falla
+        alert(message);
+    }
 }
 
 // Función para manejar errores de fetch
@@ -1031,152 +1046,106 @@ async function cargarYRenderizarSubobjetivos(objetivoId) {
     contenedor.innerHTML = '<div class="text-muted small">Cargando checklist...</div>';
     try {
         const res = await fetch(`/api/objetivos/${objetivoId}/subobjetivos`);
-        const subobjetivos = await res.json();
+        let subobjetivos = await res.json();
         contenedor.innerHTML = '';
         if (subobjetivos.length === 0) {
             contenedor.innerHTML = '<div class="text-muted small">No hay subobjetivos.</div>';
         } else {
-            subobjetivos.forEach((sub, idx) => {
-                const subDiv = document.createElement('div');
-                subDiv.className = 'subobjetivo-item';
-                subDiv.innerHTML = `
-                    <input type="checkbox" class="subobjetivo-check" data-id="${sub.id}" ${sub.completado ? 'checked' : ''}>
-                    <span class="subobjetivo-titulo-span${sub.completado ? ' completado' : ''}">${sub.titulo}</span>
-                    <span class="subobjetivo-flex" style="flex:1"></span>
-                    <button class="subobjetivo-up-btn" title="Subir" ${idx === 0 ? 'disabled' : ''}>&#8593;</button>
-                    <button class="subobjetivo-down-btn" title="Bajar" ${idx === subobjetivos.length - 1 ? 'disabled' : ''}>&#8595;</button>
-                    <button class="delete-subobjetivo-btn" data-id="${sub.id}" title="Eliminar">&#10005;</button>
-                `;
-                contenedor.appendChild(subDiv);
-                // Doble click para editar subobjetivo
-                const tituloSpan = subDiv.querySelector('.subobjetivo-titulo-span');
-                if (tituloSpan) {
-                    tituloSpan.addEventListener('dblclick', function() {
-                    const subId = sub.id;
-                    const oldText = this.textContent;
-                    const parent = this.parentNode;
-                        // Agrega la clase 'editing' al contenedor
-                        parent.classList.add('editing');
-                    const input = document.createElement('input');
-                    input.type = 'text';
-                    input.value = oldText;
-                    input.className = 'subobjetivo-edit-input';
-                    input.style.flex = '1 1 0%';
-                        input.style.minWidth = '0';
-                    this.replaceWith(input);
-                    input.focus();
-                    input.addEventListener('blur', async function() {
-                        const nuevoTexto = input.value.trim();
-                            // Quita la clase 'editing' al terminar
-                            parent.classList.remove('editing');
-                        if (nuevoTexto && nuevoTexto !== oldText) {
-                            try {
-                                const res = await fetch(`/api/subobjetivos/${subId}`, {
-                                    method: 'PATCH',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({ titulo: nuevoTexto })
-                                });
-                                if (!res.ok) {
-                                    showError('Error al actualizar subobjetivo');
-                                } else {
-                                    await cargarYRenderizarSubobjetivos(objetivoId);
-                                }
-                            } catch {
-                                showError('Error al actualizar subobjetivo');
-                            }
-                        } else {
-                            // Si no cambia el texto, vuelve a renderizar
-                            await cargarYRenderizarSubobjetivos(objetivoId);
-                        }
-                    });
-                        input.addEventListener('keydown', function(e) {
-                            if (e.key === 'Enter') input.blur();
+            // --- NUEVO: mantener array local para UI reactiva ---
+            let subobjetivosLocal = [...subobjetivos];
+            function renderSubobjetivos() {
+                contenedor.innerHTML = '';
+                subobjetivosLocal.forEach((sub, idx) => {
+                    const subDiv = document.createElement('div');
+                    subDiv.className = 'subobjetivo-item';
+                    subDiv.innerHTML = `
+                        <input type="checkbox" class="subobjetivo-check" data-id="${sub.id}" ${sub.completado ? 'checked' : ''}>
+                        <span class="subobjetivo-titulo-span${sub.completado ? ' completado' : ''}">${sub.titulo}</span>
+                        <span class="subobjetivo-flex" style="flex:1"></span>
+                        <button class="subobjetivo-up-btn" title="Subir" ${idx === 0 ? 'disabled' : ''}>&#8593;</button>
+                        <button class="subobjetivo-down-btn" title="Bajar" ${idx === subobjetivosLocal.length - 1 ? 'disabled' : ''}>&#8595;</button>
+                        <button class="delete-subobjetivo-btn" data-id="${sub.id}" title="Eliminar">&#10005;</button>
+                    `;
+                    contenedor.appendChild(subDiv);
+                    // Check
+                    const chk = subDiv.querySelector('.subobjetivo-check');
+                    chk.onchange = async function() {
+                        sub.completado = this.checked;
+                        renderSubobjetivos();
+                        await fetch(`/api/subobjetivos/${sub.id}`, {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ completado: sub.completado })
                         });
-                    });
-                }
-                // Lógica de subir/bajar
-                const upBtn = subDiv.querySelector('.subobjetivo-up-btn');
-                const downBtn = subDiv.querySelector('.subobjetivo-down-btn');
-                if (upBtn) {
-                    upBtn.addEventListener('click', async function() {
+                    };
+                    // Editar (doble click)
+                    const tituloSpan = subDiv.querySelector('.subobjetivo-titulo-span');
+                    if (tituloSpan) {
+                        tituloSpan.ondblclick = function() {
+                            const oldText = sub.titulo;
+                            const input = document.createElement('input');
+                            input.type = 'text';
+                            input.value = oldText;
+                            input.className = 'subobjetivo-edit-input';
+                            input.style.flex = '1 1 0%';
+                            this.replaceWith(input);
+                            input.focus();
+                            input.onblur = async function() {
+                                const nuevoTexto = input.value.trim();
+                                if (nuevoTexto && nuevoTexto !== oldText) {
+                                    sub.titulo = nuevoTexto;
+                                    renderSubobjetivos();
+                                    await fetch(`/api/subobjetivos/${sub.id}`, {
+                                        method: 'PATCH',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ titulo: sub.titulo })
+                                    });
+                                } else {
+                                    renderSubobjetivos();
+                                }
+                            };
+                            input.onkeydown = function(e) { if (e.key === 'Enter') input.blur(); };
+                        };
+                    }
+                    // Subir
+                    const upBtn = subDiv.querySelector('.subobjetivo-up-btn');
+                    upBtn.onclick = async function() {
                         if (idx > 0) {
-                            const nuevoOrden = [...subobjetivos];
-                            [nuevoOrden[idx - 1], nuevoOrden[idx]] = [nuevoOrden[idx], nuevoOrden[idx - 1]];
+                            [subobjetivosLocal[idx - 1], subobjetivosLocal[idx]] = [subobjetivosLocal[idx], subobjetivosLocal[idx - 1]];
+                            renderSubobjetivos();
+                            const ids = subobjetivosLocal.map(s => s.id);
                             await fetch(`/api/objetivos/${objetivoId}/subobjetivos/reordenar`, {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ ids: nuevoOrden.map(s => s.id) })
+                                body: JSON.stringify({ ids })
                             });
-                            cargarYRenderizarSubobjetivos(objetivoId);
                         }
-                    });
-                }
-                if (downBtn) {
-                    downBtn.addEventListener('click', async function() {
-                        if (idx < subobjetivos.length - 1) {
-                            const nuevoOrden = [...subobjetivos];
-                            [nuevoOrden[idx], nuevoOrden[idx + 1]] = [nuevoOrden[idx + 1], nuevoOrden[idx]];
+                    };
+                    // Bajar
+                    const downBtn = subDiv.querySelector('.subobjetivo-down-btn');
+                    downBtn.onclick = async function() {
+                        if (idx < subobjetivosLocal.length - 1) {
+                            [subobjetivosLocal[idx], subobjetivosLocal[idx + 1]] = [subobjetivosLocal[idx + 1], subobjetivosLocal[idx]];
+                            renderSubobjetivos();
+                            const ids = subobjetivosLocal.map(s => s.id);
                             await fetch(`/api/objetivos/${objetivoId}/subobjetivos/reordenar`, {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ ids: nuevoOrden.map(s => s.id) })
+                                body: JSON.stringify({ ids })
                             });
-                            cargarYRenderizarSubobjetivos(objetivoId);
                         }
-                    });
-                }
-            });
+                    };
+                    // Eliminar
+                    const delBtn = subDiv.querySelector('.delete-subobjetivo-btn');
+                    delBtn.onclick = async function() {
+                        subobjetivosLocal.splice(idx, 1);
+                        renderSubobjetivos();
+                        await fetch(`/api/subobjetivos/${sub.id}`, { method: 'DELETE' });
+                    };
+                });
+            }
+            renderSubobjetivos();
         }
-        // Eventos para check, editar y eliminar
-        contenedor.querySelectorAll('.subobjetivo-check').forEach(chk => {
-            chk.addEventListener('change', async function() {
-                const subId = this.getAttribute('data-id');
-                const completado = this.checked;
-                await fetch(`/api/subobjetivos/${subId}`, {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ completado })
-                });
-                cargarYRenderizarSubobjetivos(objetivoId);
-            });
-        });
-        contenedor.querySelectorAll('.subobjetivo-titulo-span').forEach(span => {
-            span.addEventListener('dblclick', function() {
-                const subId = this.parentElement.querySelector('.subobjetivo-check').getAttribute('data-id');
-                const oldText = this.textContent;
-                const input = document.createElement('input');
-                input.type = 'text';
-                input.value = oldText;
-                input.className = 'subobjetivo-edit-input';
-                input.style.width = '100%';
-                // Elimina el span hermano con flex:1 si existe
-                const next = this.nextSibling;
-                if (next && next.nodeType === 1 && next.tagName === 'SPAN' && next.style.flex === '1') {
-                    next.remove();
-                }
-                this.replaceWith(input);
-                input.focus();
-                input.addEventListener('blur', async function() {
-                    const titulo = this.value.trim();
-                    await fetch(`/api/subobjetivos/${subId}`, {
-                        method: 'PATCH',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ titulo })
-                    });
-                    cargarYRenderizarSubobjetivos(objetivoId);
-                });
-                input.addEventListener('keydown', function(e) {
-                    if (e.key === 'Enter') this.blur();
-                });
-            });
-        });
-        contenedor.querySelectorAll('.delete-subobjetivo-btn').forEach(btn => {
-            btn.addEventListener('click', async function() {
-                const subId = this.getAttribute('data-id');
-                await fetch(`/api/subobjetivos/${subId}`, { method: 'DELETE' });
-                cargarYRenderizarSubobjetivos(objetivoId);
-            });
-        });
     } catch (err) {
         contenedor.innerHTML = '<div class="text-danger small">Error al cargar checklist.</div>';
     }
@@ -1194,22 +1163,8 @@ async function cargarYRenderizarSubobjetivos(objetivoId) {
             addBtn.addEventListener('click', async function() {
                 const titulo = input.value.trim();
                 if (!titulo) return;
-                try {
-                    const res = await fetch(`/api/objetivos/${objetivoId}/subobjetivos`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ titulo })
-                    });
-                    if (!res.ok) {
-                        const errorData = await res.json();
-                        showError(errorData.error || 'Error al agregar subobjetivo');
-                        return;
-                    }
-                    input.value = '';
-                    cargarYRenderizarSubobjetivos(objetivoId);
-                } catch (err) {
-                    showError('Error al agregar subobjetivo');
-                }
+                await agregarSubobjetivo(objetivoId, titulo); // Usa la función global reforzada
+                input.value = '';
             });
             addBtn.dataset.listener = 'true';
         }
@@ -2152,4 +2107,298 @@ if (formEditar) {
           if (btnGuardar) btnGuardar.disabled = false;
         }
     });
+}
+
+// --- FUNCIÓN PARA AGREGAR SUBOBJETIVO EN VISTA PRINCIPAL ---
+async function agregarSubobjetivo(objetivoId, texto) {
+    try {
+        console.log('[AgregarSubobjetivo] Enviando POST:', texto);
+        const res = await fetch(`/api/objetivos/${objetivoId}/subobjetivos`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ titulo: texto })
+        });
+        const postResult = await res.json();
+        console.log('[AgregarSubobjetivo] Respuesta POST:', postResult);
+        if (!res.ok) {
+            showNotification(postResult.error || 'Error al agregar subobjetivo', 'danger');
+            return;
+        }
+        // Polling inteligente: intenta hasta 3 veces obtener la lista con el nuevo subobjetivo
+        let subobjetivos = [];
+        let encontrado = false;
+        for (let intento = 1; intento <= 3; intento++) {
+            const res2 = await fetch(`/api/objetivos/${objetivoId}/subobjetivos`);
+            subobjetivos = await res2.json();
+            console.log(`[AgregarSubobjetivo] Lista tras agregar (intento ${intento}):`, subobjetivos);
+            if (Array.isArray(subobjetivos) && subobjetivos.some(s => s.titulo === texto)) {
+                encontrado = true;
+                break;
+            }
+            await new Promise(r => setTimeout(r, 200));
+        }
+        if (!encontrado) {
+            showNotification('Advertencia: El subobjetivo puede tardar en aparecer. Intenta recargar si no lo ves.', 'warning');
+        }
+        // Renderizado inline de la lista de subobjetivos
+        const contenedor = document.getElementById(`subobjetivos-list-${objetivoId}`);
+        if (contenedor) {
+            contenedor.innerHTML = '';
+            if (subobjetivos.length === 0) {
+                contenedor.innerHTML = '<div class="text-muted small">No hay subobjetivos.</div>';
+            } else {
+                subobjetivos.forEach((sub, idx) => {
+                    const subDiv = document.createElement('div');
+                    subDiv.className = 'subobjetivo-item';
+                    subDiv.innerHTML = `
+                        <input type="checkbox" class="subobjetivo-check" data-id="${sub.id}" ${sub.completado ? 'checked' : ''}>
+                        <span class="subobjetivo-titulo-span${sub.completado ? ' completado' : ''}">${sub.titulo}</span>
+                        <span class="subobjetivo-flex" style="flex:1"></span>
+                        <button class="subobjetivo-up-btn" title="Subir" ${idx === 0 ? 'disabled' : ''}>&#8593;</button>
+                        <button class="subobjetivo-down-btn" title="Bajar" ${idx === subobjetivos.length - 1 ? 'disabled' : ''}>&#8595;</button>
+                        <button class="delete-subobjetivo-btn" data-id="${sub.id}" title="Eliminar">&#10005;</button>
+                    `;
+                    contenedor.appendChild(subDiv);
+                    // Check
+                    const chk = subDiv.querySelector('.subobjetivo-check');
+                    chk.onchange = async function() {
+                        sub.completado = this.checked;
+                        await fetch(`/api/subobjetivos/${sub.id}`, {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ completado: sub.completado })
+                        });
+                        // Renderiza de nuevo tras actualizar
+                        agregarSubobjetivo(objetivoId, ''); // Solo para refrescar la lista
+                    };
+                    // Editar (doble click)
+                    const tituloSpan = subDiv.querySelector('.subobjetivo-titulo-span');
+                    if (tituloSpan) {
+                        tituloSpan.ondblclick = function() {
+                            const oldText = sub.titulo;
+                            const input = document.createElement('input');
+                            input.type = 'text';
+                            input.value = oldText;
+                            input.className = 'subobjetivo-edit-input';
+                            input.style.flex = '1 1 0%';
+                            this.replaceWith(input);
+                            input.focus();
+                            input.onblur = async function() {
+                                const nuevoTexto = input.value.trim();
+                                if (nuevoTexto && nuevoTexto !== oldText) {
+                                    sub.titulo = nuevoTexto;
+                                    await fetch(`/api/subobjetivos/${sub.id}`, {
+                                        method: 'PATCH',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ titulo: sub.titulo })
+                                    });
+                                }
+                                // Renderiza de nuevo tras editar
+                                agregarSubobjetivo(objetivoId, '');
+                            };
+                            input.onkeydown = function(e) { if (e.key === 'Enter') input.blur(); };
+                        };
+                    }
+                    // Subir
+                    const upBtn = subDiv.querySelector('.subobjetivo-up-btn');
+                    upBtn.onclick = async function() {
+                        if (idx > 0) {
+                            // Intercambia en el array local y reordena en backend
+                            [subobjetivos[idx - 1], subobjetivos[idx]] = [subobjetivos[idx], subobjetivos[idx - 1]];
+                            const ids = subobjetivos.map(s => s.id);
+                            await fetch(`/api/objetivos/${objetivoId}/subobjetivos/reordenar`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ ids })
+                            });
+                            agregarSubobjetivo(objetivoId, '');
+                        }
+                    };
+                    // Bajar
+                    const downBtn = subDiv.querySelector('.subobjetivo-down-btn');
+                    downBtn.onclick = async function() {
+                        if (idx < subobjetivos.length - 1) {
+                            [subobjetivos[idx], subobjetivos[idx + 1]] = [subobjetivos[idx + 1], subobjetivos[idx]];
+                            const ids = subobjetivos.map(s => s.id);
+                            await fetch(`/api/objetivos/${objetivoId}/subobjetivos/reordenar`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ ids })
+                            });
+                            agregarSubobjetivo(objetivoId, '');
+                        }
+                    };
+                    // Eliminar
+                    const delBtn = subDiv.querySelector('.delete-subobjetivo-btn');
+                    delBtn.onclick = async function() {
+                        await fetch(`/api/subobjetivos/${sub.id}`, { method: 'DELETE' });
+                        agregarSubobjetivo(objetivoId, '');
+                    };
+                });
+            }
+        }
+        // Limpia el input solo tras éxito
+        const addDiv = document.getElementById(`subobjetivos-add-${objetivoId}`);
+        if (addDiv) {
+            const input = addDiv.querySelector('.subobjetivo-input');
+            const addBtn = addDiv.querySelector('.subobjetivo-add-btn');
+            if (input) input.value = '';
+            if (addBtn) addBtn.disabled = false;
+        }
+    } catch (err) {
+        showNotification('Error al agregar subobjetivo: ' + (err.message || err), 'danger');
+        console.error('[AgregarSubobjetivo] Error:', err);
+    }
+}
+
+window.cargarYRenderizarSubobjetivos = cargarYRenderizarSubobjetivos;
+
+// Función para renderizar la lista de subobjetivos
+function renderSubobjetivosList(objetivoId, subobjetivos) {
+    const contenedor = document.getElementById(`subobjetivos-list-${objetivoId}`);
+    if (!contenedor) return;
+    contenedor.innerHTML = '';
+    if (!Array.isArray(subobjetivos) || subobjetivos.length === 0) {
+        contenedor.innerHTML = '<div class="text-muted small">No hay subobjetivos.</div>';
+        return;
+    }
+    subobjetivos.forEach((sub, idx) => {
+        const subDiv = document.createElement('div');
+        subDiv.className = 'subobjetivo-item';
+        subDiv.innerHTML = `
+            <input type="checkbox" class="subobjetivo-check" data-id="${sub.id}" ${sub.completado ? 'checked' : ''}>
+            <span class="subobjetivo-titulo-span${sub.completado ? ' completado' : ''}">${sub.titulo}</span>
+            <span class="subobjetivo-flex" style="flex:1"></span>
+            <button class="subobjetivo-up-btn" title="Subir" ${idx === 0 ? 'disabled' : ''}>&#8593;</button>
+            <button class="subobjetivo-down-btn" title="Bajar" ${idx === subobjetivos.length - 1 ? 'disabled' : ''}>&#8595;</button>
+            <button class="delete-subobjetivo-btn" data-id="${sub.id}" title="Eliminar">&#10005;</button>
+        `;
+        contenedor.appendChild(subDiv);
+        // Check
+        const chk = subDiv.querySelector('.subobjetivo-check');
+        chk.onchange = async function() {
+            sub.completado = this.checked;
+            await fetch(`/api/subobjetivos/${sub.id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ completado: sub.completado })
+            });
+            // Refresca la lista tras actualizar
+            await fetchAndRenderSubobjetivos(objetivoId);
+        };
+        // Editar (doble click)
+        const tituloSpan = subDiv.querySelector('.subobjetivo-titulo-span');
+        if (tituloSpan) {
+            tituloSpan.ondblclick = function() {
+                const oldText = sub.titulo;
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.value = oldText;
+                input.className = 'subobjetivo-edit-input';
+                input.style.flex = '1 1 0%';
+                this.replaceWith(input);
+                input.focus();
+                input.onblur = async function() {
+                    const nuevoTexto = input.value.trim();
+                    if (nuevoTexto && nuevoTexto !== oldText) {
+                        sub.titulo = nuevoTexto;
+                        await fetch(`/api/subobjetivos/${sub.id}`, {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ titulo: sub.titulo })
+                        });
+                    }
+                    await fetchAndRenderSubobjetivos(objetivoId);
+                };
+                input.onkeydown = function(e) { if (e.key === 'Enter') input.blur(); };
+            };
+        }
+        // Subir
+        const upBtn = subDiv.querySelector('.subobjetivo-up-btn');
+        upBtn.onclick = async function() {
+            if (idx > 0) {
+                [subobjetivos[idx - 1], subobjetivos[idx]] = [subobjetivos[idx], subobjetivos[idx - 1]];
+                const ids = subobjetivos.map(s => s.id);
+                await fetch(`/api/objetivos/${objetivoId}/subobjetivos/reordenar`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ids })
+                });
+                await fetchAndRenderSubobjetivos(objetivoId);
+            }
+        };
+        // Bajar
+        const downBtn = subDiv.querySelector('.subobjetivo-down-btn');
+        downBtn.onclick = async function() {
+            if (idx < subobjetivos.length - 1) {
+                [subobjetivos[idx], subobjetivos[idx + 1]] = [subobjetivos[idx + 1], subobjetivos[idx]];
+                const ids = subobjetivos.map(s => s.id);
+                await fetch(`/api/objetivos/${objetivoId}/subobjetivos/reordenar`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ids })
+                });
+                await fetchAndRenderSubobjetivos(objetivoId);
+            }
+        };
+        // Eliminar
+        const delBtn = subDiv.querySelector('.delete-subobjetivo-btn');
+        delBtn.onclick = async function() {
+            await fetch(`/api/subobjetivos/${sub.id}`, { method: 'DELETE' });
+            await fetchAndRenderSubobjetivos(objetivoId);
+        };
+    });
+}
+
+// Función para hacer fetch y renderizar subobjetivos
+async function fetchAndRenderSubobjetivos(objetivoId) {
+    const res = await fetch(`/api/objetivos/${objetivoId}/subobjetivos`);
+    const subobjetivos = await res.json();
+    renderSubobjetivosList(objetivoId, subobjetivos);
+}
+
+// Refactor de agregarSubobjetivo
+async function agregarSubobjetivo(objetivoId, texto) {
+    try {
+        console.log('[AgregarSubobjetivo] Enviando POST:', texto);
+        const res = await fetch(`/api/objetivos/${objetivoId}/subobjetivos`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ titulo: texto })
+        });
+        const postResult = await res.json();
+        console.log('[AgregarSubobjetivo] Respuesta POST:', postResult);
+        if (!res.ok) {
+            showNotification(postResult.error || 'Error al agregar subobjetivo', 'danger');
+            return;
+        }
+        // Polling inteligente: intenta hasta 3 veces obtener la lista con el nuevo subobjetivo
+        let subobjetivos = [];
+        let encontrado = false;
+        for (let intento = 1; intento <= 3; intento++) {
+            const res2 = await fetch(`/api/objetivos/${objetivoId}/subobjetivos`);
+            subobjetivos = await res2.json();
+            console.log(`[AgregarSubobjetivo] Lista tras agregar (intento ${intento}):`, subobjetivos);
+            if (Array.isArray(subobjetivos) && subobjetivos.some(s => s.titulo === texto)) {
+                encontrado = true;
+                break;
+            }
+            await new Promise(r => setTimeout(r, 200));
+        }
+        if (!encontrado) {
+            showNotification('Advertencia: El subobjetivo puede tardar en aparecer. Intenta recargar si no lo ves.', 'warning');
+        }
+        renderSubobjetivosList(objetivoId, subobjetivos);
+        // Limpia el input solo tras éxito
+        const addDiv = document.getElementById(`subobjetivos-add-${objetivoId}`);
+        if (addDiv) {
+            const input = addDiv.querySelector('.subobjetivo-input');
+            const addBtn = addDiv.querySelector('.subobjetivo-add-btn');
+            if (input) input.value = '';
+            if (addBtn) addBtn.disabled = false;
+        }
+    } catch (err) {
+        showNotification('Error al agregar subobjetivo: ' + (err.message || err), 'danger');
+        console.error('[AgregarSubobjetivo] Error:', err);
+    }
 }
