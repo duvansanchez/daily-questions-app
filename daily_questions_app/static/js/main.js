@@ -1163,8 +1163,18 @@ async function cargarYRenderizarSubobjetivos(objetivoId) {
             addBtn.addEventListener('click', async function() {
                 const titulo = input.value.trim();
                 if (!titulo) return;
-                await agregarSubobjetivo(objetivoId, titulo); // Usa la función global reforzada
+                await agregarSubobjetivo(objetivoId, titulo);
                 input.value = '';
+            });
+            // NUEVO: Permitir agregar con Enter
+            input.addEventListener('keydown', async function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const titulo = input.value.trim();
+                    if (!titulo) return;
+                    await agregarSubobjetivo(objetivoId, titulo);
+                    input.value = '';
+                }
             });
             addBtn.dataset.listener = 'true';
         }
