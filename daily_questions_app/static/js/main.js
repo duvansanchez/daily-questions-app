@@ -278,25 +278,28 @@ function saveCurrentResponse() {
     }
 }
 
+// Utilidad para obtener fecha local en formato YYYY-MM-DD
+function getFechaLocalYMD(date) {
+    return date.getFullYear() + '-' +
+        String(date.getMonth() + 1).padStart(2, '0') + '-' +
+        String(date.getDate()).padStart(2, '0');
+}
+
 // Función para enviar las respuestas al servidor
 async function submitResponses() {
     try {
         console.log('Respuestas que se enviarán:', responses);
-        
         // Obtener la fecha seleccionada del dropdown
         const fechaSelect = document.getElementById('fecha-respuesta-select');
         let fechaParaEnviar;
-        
         if (fechaSelect && fechaSelect.value === 'ayer') {
-            // Si seleccionó "Ayer", calcular la fecha de ayer
             const ayer = new Date();
             ayer.setDate(ayer.getDate() - 1);
-            fechaParaEnviar = ayer.toISOString().split('T')[0];
+            fechaParaEnviar = getFechaLocalYMD(ayer);
         } else {
-            // Por defecto usar hoy
-            fechaParaEnviar = new Date().toISOString().split('T')[0];
+            const hoy = new Date();
+            fechaParaEnviar = getFechaLocalYMD(hoy);
         }
-        
         console.log('Fecha que se enviará:', fechaParaEnviar);
         
         // Preparar respuestas con tiempo
