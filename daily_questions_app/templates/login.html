@@ -101,7 +101,7 @@
                 {% endfor %}
             {% endif %}
         {% endwith %}
-        <form method="POST" autocomplete="off">
+        <form method="POST" id="login-form" autocomplete="off">
             <div class="mb-3">
                 <label for="username" class="login-label">Usuario</label>
                 <input type="text" class="login-input w-100" id="username" name="username" placeholder="Ingresa tu nombre de usuario" required autofocus>
@@ -118,4 +118,53 @@
         </div>
     </div>
 </div>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const loginForm = document.getElementById('login-form');
+    if (loginForm) {
+        loginForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const formData = new FormData(loginForm);
+            const submitBtn = loginForm.querySelector('button[type="submit"]');
+            const originalBtnText = submitBtn.innerHTML;
+            try {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = 'Iniciando sesión...';
+                const response = await fetch(loginForm.action, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+                let data;
+                try {
+                    data = await response.json();
+                } catch (jsonErr) {
+                    data = {};
+                }
+                if (response.ok && data.redirect) {
+                    // Guardar flag de login reciente
+                    sessionStorage.setItem('loginReciente', '1');
+                    window.location.href = data.redirect;
+                } else {
+                    if (data.error) {
+                        showError(data.error);
+                    } else {
+                        showError('Error al iniciar sesión. Por favor, inténtalo de nuevo.');
+                    }
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalBtnText;
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showError('Error al procesar la solicitud. Por favor, inténtalo de nuevo.');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalBtnText;
+            }
+        });
+    }
+});
+</script>
 {% endblock %}

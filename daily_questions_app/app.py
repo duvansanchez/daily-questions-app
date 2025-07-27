@@ -271,6 +271,8 @@ def index():
 def login():
     # Si el usuario ya está autenticado, redirigir a la página principal
     if current_user.is_authenticated:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'redirect': url_for('index')})
         return redirect(url_for('index'))
     
     # Obtener la URL de redirección de los parámetros de la solicitud o de la sesión
@@ -281,6 +283,8 @@ def login():
         password = request.form.get('password', '')
         
         if not username or not password:
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return jsonify({'error': 'Por favor ingrese usuario y contraseña'}), 400
             flash('Por favor ingrese usuario y contraseña')
             return render_template('login.html', next=next_url)
             
@@ -305,19 +309,29 @@ def login():
                     
                     # Redirigir a la URL guardada o al índice
                     next_page = next_url or url_for('index')
+                    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                        return jsonify({'redirect': next_page})
                     # Validar que la URL de redirección sea relativa al host actual
                     if next_page and not next_page.startswith(('http://', 'https://')):
                         return redirect(next_page)
                     return redirect(url_for('index'))
                 
             # Si llegamos aquí, las credenciales son inválidas
-            flash('Usuario o contraseña inválidos')
+            error_msg = 'Usuario o contraseña inválidos'
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return jsonify({'error': error_msg}), 401
+            flash(error_msg)
             
         except Exception as e:
             print(f"Error durante el inicio de sesión: {str(e)}")
-            flash('Error al procesar la solicitud de inicio de sesión')
+            error_msg = 'Error al procesar la solicitud de inicio de sesión'
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return jsonify({'error': error_msg}), 500
+            flash(error_msg)
     
     # Para solicitudes GET o si hay un error, mostrar el formulario de login
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return jsonify({'error': 'Método no permitido'}), 405
     return render_template('login.html', next=next_url)
 
 @app.route('/register', methods=['GET', 'POST'])

@@ -1403,7 +1403,17 @@ if (formEditar) {
 }
 
 // Render inicial desde API
-cargarObjetivos();
+if (sessionStorage.getItem('loginReciente') === '1') {
+  cargarObjetivos();
+  sessionStorage.removeItem('loginReciente');
+} else {
+  // Intentar cargar solo si hay sesión activa
+  fetch('/api/objetivos', { method: 'HEAD' })
+    .then(res => {
+      if (res.ok) cargarObjetivos();
+    });
+}
+// cargarObjetivos();
 
 // Event listener para el selector de ordenamiento
 function inicializarSelectorOrdenamiento() {
