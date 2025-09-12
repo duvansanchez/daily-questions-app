@@ -53,3 +53,6 @@ instance/
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+# Kiro IDE
+.kiro/
