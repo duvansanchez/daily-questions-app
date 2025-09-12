@@ -529,9 +529,16 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Fetch real de datos desde el backend
-    async function fetchFrecuenciaDatos(preguntaId, periodo) {
+    async function fetchFrecuenciaDatos(preguntaId, parametrosPeriodo) {
         try {
-            const response = await fetch(`/api/stats/frequency/${preguntaId}?periodo=${periodo}`, {
+            let url = `/api/stats/frequency/${preguntaId}?periodo=${parametrosPeriodo.tipo}`;
+            
+            // Agregar parámetros adicionales si es un mes específico
+            if (parametrosPeriodo.tipo === 'mes') {
+                url += `&mes=${parametrosPeriodo.mes}&anio=${parametrosPeriodo.anio}`;
+            }
+            
+            const response = await fetch(url, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
@@ -649,8 +656,17 @@ document.addEventListener('DOMContentLoaded', function() {
         const tipo = selectedOption.getAttribute('data-tipo');
         const periodoRadio = document.querySelector('.periodo-radio:checked');
         const graficoRadio = document.querySelector('.grafico-radio:checked');
-        const periodo = periodoRadio ? periodoRadio.value : 'semanas';
+        const periodo = periodoRadio ? periodoRadio.value : '7dias';
         const tipoGrafico = graficoRadio ? graficoRadio.value : 'barras';
+
+        // Obtener parámetros específicos según el período
+        let parametrosPeriodo = { tipo: periodo };
+        if (periodo === 'mes') {
+            const selectorMes = document.getElementById('selector-mes');
+            const selectorAnio = document.getElementById('selector-anio');
+            parametrosPeriodo.mes = selectorMes ? parseInt(selectorMes.value) : new Date().getMonth();
+            parametrosPeriodo.anio = selectorAnio ? parseInt(selectorAnio.value) : new Date().getFullYear();
+        }
 
         // Actualizar títulos
         const tituloGrafico = document.getElementById('tituloGrafico');
@@ -661,9 +677,15 @@ document.addEventListener('DOMContentLoaded', function() {
         if (subtituloGrafico) {
             let periodoTexto = '';
             switch(periodo) {
-                case 'semanas': periodoTexto = 'Últimas 8 semanas'; break;
-                case 'meses': periodoTexto = 'Últimos 12 meses'; break;
-                case 'anios': periodoTexto = 'Últimos 5 años'; break;
+                case '7dias': 
+                    periodoTexto = 'Últimos 7 días'; 
+                    break;
+                case 'mes': 
+                    const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+                                  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+                    const mesNombre = meses[parametrosPeriodo.mes] || 'Mes';
+                    periodoTexto = `${mesNombre} ${parametrosPeriodo.anio}`;
+                    break;
             }
             subtituloGrafico.textContent = `${periodoTexto} • Visualización: ${tipoGrafico}`;
         }
@@ -696,7 +718,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             // Obtener datos reales
-            const datos = await fetchFrecuenciaDatos(selectedOption.value, periodo);
+            const datos = await fetchFrecuenciaDatos(selectedOption.value, parametrosPeriodo);
             
             // Verificar si hay datos
             if (!datos.labels || datos.labels.length === 0) {
@@ -796,15 +818,83 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // Inicializar selector de años
+    function inicializarSelectorAnios() {
+        const selectorAnio = document.getElementById('selector-anio');
+        if (selectorAnio) {
+            const anioActual = new Date().getFullYear();
+            selectorAnio.innerHTML = '';
+            
+            // Agregar años desde el actual hacia atrás (últimos 5 años)
+            for (let i = 0; i < 5; i++) {
+                const anio = anioActual - i;
+                const option = document.createElement('option');
+                option.value = anio;
+                option.textContent = anio;
+                if (i === 0) option.selected = true; // Seleccionar año actual por defecto
+                selectorAnio.appendChild(option);
+            }
+        }
+    }
+
+    // Inicializar selector de mes actual
+    function inicializarSelectorMes() {
+        const selectorMes = document.getElementById('selector-mes');
+        if (selectorMes) {
+            const mesActual = new Date().getMonth();
+            selectorMes.value = mesActual;
+        }
+    }
+
     // Eventos para radio buttons de período
     const periodoRadios = document.querySelectorAll('.periodo-radio');
     periodoRadios.forEach(radio => {
         radio.addEventListener('change', function() {
+            const selectorMesContainer = document.getElementById('selector-mes-container');
+            
+            if (this.value === 'mes') {
+                // Mostrar selector de mes
+                if (selectorMesContainer) {
+                    selectorMesContainer.style.display = 'block';
+                }
+            } else {
+                // Ocultar selector de mes
+                if (selectorMesContainer) {
+                    selectorMesContainer.style.display = 'none';
+                }
+            }
+            
             if (this.checked) {
                 actualizarFrecuencia();
             }
         });
     });
+
+    // Eventos para selectores de mes y año
+    const selectorMes = document.getElementById('selector-mes');
+    const selectorAnio = document.getElementById('selector-anio');
+    
+    if (selectorMes) {
+        selectorMes.addEventListener('change', function() {
+            const periodoMes = document.getElementById('periodo-mes');
+            if (periodoMes && periodoMes.checked) {
+                actualizarFrecuencia();
+            }
+        });
+    }
+    
+    if (selectorAnio) {
+        selectorAnio.addEventListener('change', function() {
+            const periodoMes = document.getElementById('periodo-mes');
+            if (periodoMes && periodoMes.checked) {
+                actualizarFrecuencia();
+            }
+        });
+    }
+
+    // Inicializar selectores
+    inicializarSelectorAnios();
+    inicializarSelectorMes();
 
     // Eventos para radio buttons de tipo de gráfico
     const graficoRadios = document.querySelectorAll('.grafico-radio');

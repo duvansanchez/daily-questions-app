@@ -435,21 +435,47 @@
                                             <!-- Período de análisis -->
                                             <div class="mb-3">
                                                 <label class="form-label fw-semibold mb-2">Período de análisis:</label>
-                                                <div class="btn-group w-100" role="group">
-                                                    <input type="radio" class="btn-check periodo-radio" name="periodo" id="periodo-semanas" value="semanas" checked>
-                                                    <label class="btn btn-outline-primary" for="periodo-semanas">
-                                                        <i class="bi bi-calendar-week me-1"></i>Últimas 8 semanas
+                                                <div class="btn-group w-100 mb-2" role="group">
+                                                    <input type="radio" class="btn-check periodo-radio" name="periodo" id="periodo-7dias" value="7dias" checked>
+                                                    <label class="btn btn-outline-primary" for="periodo-7dias">
+                                                        <i class="bi bi-calendar-week me-1"></i>Últimos 7 días
                                                     </label>
                                                     
-                                                    <input type="radio" class="btn-check periodo-radio" name="periodo" id="periodo-meses" value="meses">
-                                                    <label class="btn btn-outline-primary" for="periodo-meses">
-                                                        <i class="bi bi-calendar-month me-1"></i>Últimos 12 meses
+                                                    <input type="radio" class="btn-check periodo-radio" name="periodo" id="periodo-mes" value="mes">
+                                                    <label class="btn btn-outline-primary" for="periodo-mes">
+                                                        <i class="bi bi-calendar-month me-1"></i>Por mes específico
                                                     </label>
-                                                    
-                                                    <input type="radio" class="btn-check periodo-radio" name="periodo" id="periodo-anios" value="anios">
-                                                    <label class="btn btn-outline-primary" for="periodo-anios">
-                                                        <i class="bi bi-calendar-year me-1"></i>Últimos 5 años
-                                                    </label>
+                                                </div>
+                                                
+                                                <!-- Selector de mes (solo visible cuando se selecciona "Por mes específico") -->
+                                                <div id="selector-mes-container" class="mt-2" style="display: none;">
+                                                    <div class="row g-2">
+                                                        <div class="col-7">
+                                                            <select class="form-select" id="selector-mes">
+                                                                <option value="0">Enero</option>
+                                                                <option value="1">Febrero</option>
+                                                                <option value="2">Marzo</option>
+                                                                <option value="3">Abril</option>
+                                                                <option value="4">Mayo</option>
+                                                                <option value="5">Junio</option>
+                                                                <option value="6">Julio</option>
+                                                                <option value="7">Agosto</option>
+                                                                <option value="8">Septiembre</option>
+                                                                <option value="9">Octubre</option>
+                                                                <option value="10">Noviembre</option>
+                                                                <option value="11">Diciembre</option>
+                                                            </select>
+                                                        </div>
+                                                        <div class="col-5">
+                                                            <select class="form-select" id="selector-anio">
+                                                                <!-- Se llena dinámicamente con JavaScript -->
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                    <small class="text-muted mt-1 d-block">
+                                                        <i class="bi bi-info-circle me-1"></i>
+                                                        Selecciona el mes y año específico a analizar
+                                                    </small>
                                                 </div>
                                             </div>
                                             

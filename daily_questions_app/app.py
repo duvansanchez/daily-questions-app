@@ -1588,22 +1588,39 @@ def get_question_frequency(question_id):
                     'error': 'Las preguntas de texto abierto no pueden analizarse cuantitativamente',
                     'excluded': True
                 }), 400
-            periodo = request.args.get('periodo', 'semanas')
+            periodo = request.args.get('periodo', '7dias')
             hoy = datetime.now()
-            if periodo == 'semanas':
-                inicio = hoy - timedelta(weeks=8)
-            elif periodo == 'meses':
-                inicio = hoy - timedelta(days=365)
+            
+            if periodo == '7dias':
+                inicio = hoy - timedelta(days=7)
+                fin = hoy
+            elif periodo == 'mes':
+                # Obtener mes y año específicos de los parámetros
+                mes = int(request.args.get('mes', hoy.month - 1))  # JavaScript envía 0-11
+                anio = int(request.args.get('anio', hoy.year))
+                
+                # Convertir mes de JavaScript (0-11) a Python (1-12)
+                mes_python = mes + 1
+                
+                # Primer y último día del mes
+                inicio = datetime(anio, mes_python, 1)
+                if mes_python == 12:
+                    fin = datetime(anio + 1, 1, 1) - timedelta(seconds=1)
+                else:
+                    fin = datetime(anio, mes_python + 1, 1) - timedelta(seconds=1)
             else:
-                inicio = hoy - timedelta(days=5*365)
+                # Fallback para compatibilidad
+                inicio = hoy - timedelta(days=7)
+                fin = hoy
             cursor.execute('''
                 SELECT r.response, r.date
                 FROM response r
                 WHERE r.question_id = ?
                 AND r.date >= ?
+                AND r.date <= ?
                 AND (r.response IS NOT NULL AND LTRIM(RTRIM(r.response)) <> '')
                 ORDER BY r.date
-            ''', (question_id, inicio))
+            ''', (question_id, inicio, fin))
             responses = cursor.fetchall()
             print(f"[DEBUG] Opciones de la pregunta: {options}")
             print(f"[DEBUG] Tipo de pregunta: {question_type}")
@@ -1713,14 +1730,15 @@ def get_question_frequency(question_id):
                 for response, date in responses:
                     if not date:
                         continue
-                    if periodo == 'semanas':
-                        semana = date.isocalendar()[1]
-                        year = date.year
-                        label = f"Semana {semana} ({year})"
-                    elif periodo == 'meses':
-                        label = date.strftime('%m/%Y')
+                    if periodo == '7dias':
+                        # Para últimos 7 días, agrupar por día
+                        label = date.strftime('%d/%m')
+                    elif periodo == 'mes':
+                        # Para mes específico, agrupar por día del mes
+                        label = f"Día {date.day}"
                     else:
-                        label = str(date.year)
+                        # Fallback
+                        label = date.strftime('%d/%m')
                     response_lower = response.lower().strip()
                     if response_lower in ['sí', 'si', 'yes', 'true', '1', 'verdadero']:
                         grouped[label]['Sí'] += 1
