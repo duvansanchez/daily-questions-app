@@ -989,7 +989,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // === Objetivos Desarrollo Personal (Integración API) ===
 let objetivos = [];
-let ordenActual = 'orden'; // Variable global para el ordenamiento
+let ordenActual = 'completado'; // Variable global para el ordenamiento
 
 async function cargarObjetivos() {
     try {
