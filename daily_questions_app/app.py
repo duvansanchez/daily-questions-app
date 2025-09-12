@@ -1766,6 +1766,171 @@ def get_question_frequency(question_id):
         logger.error(f"Error al obtener frecuencia de pregunta: {str(e)}")
         return jsonify({'error': 'Error al obtener datos de frecuencia'}), 500
 
+@app.route('/api/stats/calendario/<int:question_id>')
+@login_required
+def get_question_calendar(question_id):
+    """
+    Obtiene los datos del calendario de cumplimiento para una pregunta específica
+    """
+    try:
+        mes = int(request.args.get('mes', datetime.now().month - 1))  # JavaScript usa 0-11
+        anio = int(request.args.get('anio', datetime.now().year))
+        
+        logger.info(f"Solicitud calendario - Pregunta: {question_id}, Mes: {mes}, Año: {anio}")
+        
+        # Convertir mes de JavaScript (0-11) a Python (1-12)
+        mes_python = mes + 1
+        logger.info(f"Mes convertido a Python: {mes_python}")
+        
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            
+            # Verificar que la pregunta pertenece al usuario
+            cursor.execute('''
+                SELECT id, text FROM question 
+                WHERE id = ? AND assigned_user_id = ?
+            ''', (question_id, current_user.id))
+            
+            question = cursor.fetchone()
+            if not question:
+                return jsonify({'error': 'Pregunta no encontrada'}), 404
+            
+            # Consulta de prueba para ver si hay respuestas para esta pregunta
+            cursor.execute('''
+                SELECT COUNT(*) FROM response r
+                WHERE r.question_id = ?
+                AND r.response IS NOT NULL 
+                AND LTRIM(RTRIM(r.response)) <> ''
+            ''', (question_id,))
+            total_respuestas = cursor.fetchone()[0]
+            logger.info(f"Total respuestas para pregunta {question_id}: {total_respuestas}")
+            
+            # Obtener el primer y último día del mes
+            primer_dia = datetime(anio, mes_python, 1).date()
+            if mes_python == 12:
+                ultimo_dia = datetime(anio + 1, 1, 1).date() - timedelta(days=1)
+            else:
+                ultimo_dia = datetime(anio, mes_python + 1, 1).date() - timedelta(days=1)
+            
+            # Primero, obtener algunas respuestas de muestra para debug
+            cursor.execute('''
+                SELECT TOP 5 r.date, r.response 
+                FROM response r
+                WHERE r.question_id = ?
+                AND r.response IS NOT NULL 
+                AND LTRIM(RTRIM(r.response)) <> ''
+                ORDER BY r.date DESC
+            ''', (question_id,))
+            muestra_respuestas = cursor.fetchall()
+            logger.info(f"Muestra de respuestas: {muestra_respuestas}")
+            
+            # Obtener todas las respuestas del mes
+            logger.info(f"Buscando respuestas entre {primer_dia} y {ultimo_dia}")
+            
+            # Obtener respuestas del mes con el contenido de la respuesta
+            # Usar una consulta más simple y robusta
+            cursor.execute('''
+                SELECT r.date, r.response
+                FROM response r
+                WHERE r.question_id = ? 
+                AND r.response IS NOT NULL 
+                AND LTRIM(RTRIM(r.response)) <> ''
+                ORDER BY r.date DESC
+            ''', (question_id,))
+            
+            todas_respuestas = cursor.fetchall()
+            logger.info(f"Total respuestas encontradas: {len(todas_respuestas)}")
+            
+            # Filtrar por mes en Python para evitar problemas de SQL
+            respuestas_mes = []
+            for fecha, respuesta in todas_respuestas:
+                if isinstance(fecha, str):
+                    fecha_obj = datetime.strptime(fecha, '%Y-%m-%d %H:%M:%S').date()
+                else:
+                    fecha_obj = fecha.date() if hasattr(fecha, 'date') else fecha
+                
+                if fecha_obj.year == anio and fecha_obj.month == mes_python:
+                    respuestas_mes.append((fecha_obj, respuesta))
+            
+            logger.info(f"Respuestas del mes {mes_python}/{anio}: {len(respuestas_mes)}")
+            respuestas_por_dia = respuestas_mes
+            
+            # Crear diccionario de días con respuestas
+            dias_con_respuestas = {}
+            for fecha_obj, respuesta in respuestas_por_dia:
+                fecha_str = fecha_obj.strftime('%Y-%m-%d')
+                
+                # Si ya existe el día, agregar la respuesta (en caso de múltiples respuestas)
+                if fecha_str in dias_con_respuestas:
+                    # Si hay múltiples respuestas el mismo día, tomar la más reciente
+                    dias_con_respuestas[fecha_str]['respuestas'].append(respuesta)
+                    dias_con_respuestas[fecha_str]['count'] += 1
+                else:
+                    dias_con_respuestas[fecha_str] = {
+                        'respondida': True,
+                        'count': 1,
+                        'respuestas': [respuesta]
+                    }
+                logger.info(f"Día con respuesta: {fecha_str} - Respuesta: {respuesta}")
+            
+            # Generar todos los días del mes y marcar su estado
+            dias_mes = {}
+            dia_actual = primer_dia
+            respondidas = 0
+            no_respondidas = 0
+            
+            while dia_actual <= ultimo_dia:
+                fecha_str = dia_actual.strftime('%Y-%m-%d')
+                if fecha_str in dias_con_respuestas:
+                    dias_mes[fecha_str] = {
+                        'respondida': True,
+                        'count': dias_con_respuestas[fecha_str]['count'],
+                        'respuestas': dias_con_respuestas[fecha_str]['respuestas']
+                    }
+                    respondidas += 1
+                else:
+                    # Solo contar como "no respondida" si es un día pasado o hoy
+                    if dia_actual <= datetime.now().date():
+                        dias_mes[fecha_str] = {
+                            'respondida': False,
+                            'count': 0
+                        }
+                        no_respondidas += 1
+                    else:
+                        # Días futuros no se cuentan
+                        dias_mes[fecha_str] = {
+                            'respondida': None,  # Día futuro
+                            'count': 0
+                        }
+                
+                dia_actual += timedelta(days=1)
+            
+            # Calcular estadísticas
+            estadisticas = {
+                'respondidas': respondidas,
+                'no_respondidas': no_respondidas,
+                'total': respondidas + no_respondidas
+            }
+            
+            logger.info(f"Estadísticas finales: {estadisticas}")
+            logger.info(f"Total días en mes: {len(dias_mes)}")
+            logger.info(f"Días con datos: {len([d for d in dias_mes.values() if d['respondida'] is not None])}")
+            
+            resultado = {
+                'dias': dias_mes,
+                'estadisticas': estadisticas,
+                'pregunta': question[1],
+                'mes': mes,
+                'anio': anio
+            }
+            
+            return jsonify(resultado)
+            
+    except Exception as e:
+        logger.error(f"Error al obtener datos del calendario: {str(e)}")
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        return jsonify({'error': 'Error al obtener datos del calendario', 'details': str(e)}), 500
+
 # Manejadores de error globales
 @app.errorhandler(404)
 def page_not_found(e):

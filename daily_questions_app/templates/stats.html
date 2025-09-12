@@ -325,21 +325,57 @@
                     <div class="tab-pane fade show active" id="cumplimientos" role="tabpanel">
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <div>
-                                <h6 class="fw-bold mb-1">Cumplimiento de Hábitos</h6>
-                                <div class="text-muted" style="font-size:1rem;">Visualiza qué tan consistente has sido con cada hábito</div>
+                                <h6 class="fw-bold mb-1">Cumplimiento de Hábitos - Vista Calendario</h6>
+                                <div class="text-muted" style="font-size:1rem;">Visualiza tu progreso diario en formato calendario para cada pregunta</div>
                             </div>
                             <div class="d-flex gap-2">
-                                <select class="form-select form-select-sm" id="periodo-select" style="min-width:120px;">
-                                    <option value="semanal">Semanal</option>
-                                    <option value="mensual">Mensual</option>
+                                <select class="form-select form-select-sm" id="pregunta-calendario-select" style="min-width:200px;">
+                                    <option value="">Selecciona una pregunta</option>
+                                    {% for pregunta in preguntas %}
+                                        <option value="{{ pregunta.id }}">{{ pregunta.texto }}</option>
+                                    {% endfor %}
                                 </select>
-                                <select class="form-select form-select-sm" style="min-width:150px;">
-                                    <option>Por cumplimiento</option>
-                                    <option>Por categoría</option>
+                                <select class="form-select form-select-sm" id="mes-calendario-select" style="min-width:120px;">
+                                    <!-- Se llena dinámicamente con JavaScript -->
                                 </select>
                             </div>
                         </div>
-                        <div id="habitos-tarjetas" class="row g-4"></div>
+                        
+                        <!-- Calendario de cumplimiento -->
+                        <div class="card shadow-sm border-0">
+                            <div class="card-body">
+                                <div id="calendario-cumplimiento">
+                                    <div class="text-center py-5 text-muted">
+                                        <i class="bi bi-calendar3" style="font-size: 3rem; opacity: 0.3;"></i>
+                                        <div class="mt-2">Selecciona una pregunta para ver el calendario de cumplimiento</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Leyenda del calendario -->
+                        <div class="card mt-3 shadow-sm border-0">
+                            <div class="card-body py-3">
+                                <div class="d-flex justify-content-center align-items-center gap-4 flex-wrap">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="calendario-leyenda-item" style="background-color: #22c55e;"></div>
+                                        <span class="small">Respondida</span>
+                                    </div>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="calendario-leyenda-item" style="background-color: #ef4444;"></div>
+                                        <span class="small">No respondida</span>
+                                    </div>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="calendario-leyenda-item" style="background-color: #e5e7eb;"></div>
+                                        <span class="small">Sin datos</span>
+                                    </div>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="calendario-leyenda-item calendario-hoy"></div>
+                                        <span class="small">Hoy</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     <!-- Tab Frecuencia de Respuesta -->
                     <div class="tab-pane fade" id="frecuencia" role="tabpanel">
@@ -406,60 +442,468 @@
             .progress-circle-success svg circle[stroke^="var(--color-success)"] { stroke: var(--color-success); }
             .progress-circle-warning svg circle[stroke^="var(--color-warning)"] { stroke: var(--color-warning); }
             .progress-circle-danger svg circle[stroke^="var(--color-danger)"] { stroke: var(--color-danger); }
+            
+            /* Estilos del calendario de cumplimiento */
+            .calendario-container {
+                max-width: 100%;
+                overflow-x: auto;
+            }
+            
+            .calendario-grid {
+                display: grid;
+                grid-template-columns: repeat(7, 1fr);
+                gap: 3px;
+                min-width: 350px;
+                max-width: 500px;
+                margin: 0 auto;
+            }
+            
+            .calendario-header {
+                display: grid;
+                grid-template-columns: repeat(7, 1fr);
+                gap: 3px;
+                margin-bottom: 8px;
+                min-width: 350px;
+                max-width: 500px;
+                margin: 0 auto 8px auto;
+            }
+            
+            .calendario-dia-semana {
+                text-align: center;
+                font-weight: 600;
+                font-size: 0.85rem;
+                color: #6b7280;
+                padding: 8px 4px;
+            }
+            
+            .calendario-dia {
+                aspect-ratio: 1;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                border-radius: 4px;
+                font-size: 0.85rem;
+                font-weight: 500;
+                cursor: pointer;
+                transition: all 0.2s ease;
+                position: relative;
+                min-height: 40px;
+                padding: 2px;
+                text-align: center;
+            }
+            
+            .calendario-dia-numero {
+                font-weight: 600;
+                font-size: 0.9rem;
+                line-height: 1;
+            }
+            
+            .calendario-dia-respuesta {
+                font-size: 0.65rem;
+                line-height: 1;
+                margin-top: 1px;
+                opacity: 0.9;
+                word-break: break-word;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                max-height: 20px;
+            }
+            
+            .calendario-dia:hover {
+                transform: scale(1.05);
+                z-index: 2;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            }
+            
+            .calendario-dia.respondida:hover .calendario-dia-respuesta {
+                opacity: 1;
+            }
+            
+            .calendario-dia.respondida {
+                background-color: #22c55e;
+                color: white;
+            }
+            
+            .calendario-dia.no-respondida {
+                background-color: #ef4444;
+                color: white;
+            }
+            
+            .calendario-dia.sin-datos {
+                background-color: #e5e7eb;
+                color: #9ca3af;
+            }
+            
+            .calendario-dia.otro-mes {
+                opacity: 0.3;
+            }
+            
+            .calendario-dia.hoy {
+                border: 2px solid #3b82f6;
+                font-weight: 700;
+            }
+            
+            .calendario-leyenda-item {
+                width: 16px;
+                height: 16px;
+                border-radius: 3px;
+                display: inline-block;
+            }
+            
+            .calendario-leyenda-item.calendario-hoy {
+                background-color: #e5e7eb;
+                border: 2px solid #3b82f6;
+            }
+            
+            .calendario-titulo {
+                text-align: center;
+                font-size: 1.25rem;
+                font-weight: 600;
+                margin-bottom: 1rem;
+                color: #374151;
+            }
+            
+            .calendario-navegacion {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 1rem;
+            }
+            
+            .calendario-nav-btn {
+                background: none;
+                border: 1px solid #d1d5db;
+                border-radius: 6px;
+                padding: 6px 12px;
+                cursor: pointer;
+                transition: all 0.2s ease;
+                color: #374151;
+            }
+            
+            .calendario-nav-btn:hover {
+                background-color: #f3f4f6;
+                border-color: #9ca3af;
+            }
+            
+            .calendario-nav-btn:disabled {
+                opacity: 0.5;
+                cursor: not-allowed;
+            }
+            
+            .calendario-estadisticas {
+                display: flex;
+                justify-content: center;
+                gap: 2rem;
+                margin-top: 1rem;
+                padding: 1rem;
+                background-color: #f8fafc;
+                border-radius: 8px;
+            }
+            
+            .calendario-stat {
+                text-align: center;
+            }
+            
+            .calendario-stat-numero {
+                font-size: 1.5rem;
+                font-weight: 700;
+                margin-bottom: 0.25rem;
+            }
+            
+            .calendario-stat-label {
+                font-size: 0.85rem;
+                color: #6b7280;
+            }
+            
+            @media (max-width: 768px) {
+                .calendario-grid,
+                .calendario-header {
+                    min-width: 300px;
+                    max-width: 350px;
+                }
+                
+                .calendario-dia {
+                    min-height: 35px;
+                    font-size: 0.8rem;
+                }
+                
+                .calendario-dia-respuesta {
+                    font-size: 0.6rem;
+                }
+                
+                .calendario-estadisticas {
+                    gap: 1rem;
+                }
+            }
             </style>
-            <script>
-                const habitosSemanal = {{ habitos_semanal|tojson }};
-                const habitosMensual = {{ habitos_mensual|tojson }};
-                function renderHabitosTarjetas(periodo) {
-                    const data = periodo === 'mensual' ? habitosMensual : habitosSemanal;
-                    const cont = document.getElementById('habitos-tarjetas');
-                    cont.innerHTML = '';
-                    data.forEach(h => {
-                        cont.innerHTML += `
-                        <div class="col-md-6 col-lg-4">
-                            <div class="card shadow-sm border-0 h-100">
-                                <div class="card-body">
-                                    <div class="d-flex align-items-center justify-content-between mb-2">
-                                        <div class="d-flex align-items-center gap-2">
-                                            <span style="font-size:1.6rem;">${h.icono}</span>
-                                            <span class="fw-semibold" style="font-size:1.08rem;">${h.pregunta}</span>
-                                        </div>
-                                        <span class="badge bg-light text-dark fw-normal" style="font-size:0.95em;">${h.categoria}</span>
-                                    </div>
-                                    <div class="d-flex flex-column align-items-center my-3">
-                                        <div class="progress-circle-${h.color} mb-1" style="position:relative; width:90px; height:90px;">
-                                            <svg width="90" height="90">
-                                                <circle cx="45" cy="45" r="40" stroke="#e5e7eb" stroke-width="8" fill="none" />
-                                                <circle cx="45" cy="45" r="40" stroke="var(--color-${h.color})" stroke-width="8" fill="none" stroke-dasharray="251.2" stroke-dashoffset="${251.2 - (251.2 * h.cumplimiento / 100)}" style="transition:stroke-dashoffset 0.6s;"/>
-                                            </svg>
-                                            <div class="progress-circle-label" style="position:absolute; top:0; left:0; width:90px; height:90px; display:flex; flex-direction:column; align-items:center; justify-content:center;">
-                                                <span class="fw-bold" style="font-size:1.5rem; color:var(--color-${h.color});">${h.cumplimiento}%</span>
-                                            </div>
-                                        </div>
-                                        <span class="text-muted" style="font-size:0.95rem; margin-top:0.1rem;">Cumplimiento</span>
-                                        <!-- Barrita de frecuencia semanal -->
-                                        <div class="d-flex justify-content-center gap-1 mt-2">
-                                            ${(h.frecuencia_semanal || []).map(f => f ? '<span style="font-size:1.3em;color:#22c55e;">✔️</span>' : '<span style="font-size:1.3em;color:#ef4444;">❌</span>').join('')}
-                                        </div>
-                                        <span class="text-muted" style="font-size:0.93rem;">${h.cumplidos}/7 días respondida</span>
-                                    </div>
-                                    <div class="d-flex justify-content-between mt-2">
-                                        <div class="text-success" style="font-size:1.05rem;"><i class="bi bi-check-circle"></i> ${h.cumplidos} Cumplidos</div>
-                                        <div class="text-danger" style="font-size:1.05rem;"><i class="bi bi-x-circle"></i> ${h.omitidos} Omitidos</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        `;
+        </div>
+    </div>
+</div>
+
+<script>
+    // Funcionalidad del calendario de cumplimiento
+                let calendarioData = {};
+                let mesActual = new Date().getMonth();
+                let anioActual = new Date().getFullYear();
+                
+                // Inicializar selectores de mes
+                function inicializarSelectoresMes() {
+                    const mesSelect = document.getElementById('mes-calendario-select');
+                    const meses = [
+                        'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+                        'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+                    ];
+                    
+                    mesSelect.innerHTML = '';
+                    meses.forEach((mes, index) => {
+                        const option = document.createElement('option');
+                        option.value = index;
+                        option.textContent = `${mes} ${anioActual}`;
+                        if (index === mesActual) option.selected = true;
+                        mesSelect.appendChild(option);
                     });
                 }
+                
+                // Cargar datos del calendario para una pregunta específica
+                async function cargarDatosCalendario(preguntaId, mes, anio) {
+                    try {
+                        const url = `/api/stats/calendario/${preguntaId}?mes=${mes}&anio=${anio}`;
+                        console.log('Haciendo petición a:', url);
+                        const response = await fetch(url);
+                        console.log('Respuesta del servidor:', response.status, response.statusText);
+                        
+                        if (!response.ok) {
+                            const errorText = await response.text();
+                            console.error('Error del servidor:', errorText);
+                            throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
+                        }
+                        
+                        const data = await response.json();
+                        console.log('Datos del calendario recibidos:', data);
+                        
+                        // Verificar si hay datos válidos
+                        if (!data.dias) {
+                            console.warn('No se recibieron datos de días');
+                            data.dias = {};
+                        }
+                        if (!data.estadisticas) {
+                            console.warn('No se recibieron estadísticas');
+                            data.estadisticas = { respondidas: 0, no_respondidas: 0, total: 0 };
+                        }
+                        
+                        return data;
+                    } catch (error) {
+                        console.error('Error cargando datos del calendario:', error);
+                        // Mostrar error en la interfaz
+                        document.getElementById('calendario-cumplimiento').innerHTML = `
+                            <div class="text-center py-5 text-danger">
+                                <i class="bi bi-exclamation-triangle" style="font-size: 3rem; opacity: 0.3;"></i>
+                                <div class="mt-2">Error al cargar los datos del calendario</div>
+                                <small class="text-muted">${error.message}</small>
+                            </div>
+                        `;
+                        return { dias: {}, estadisticas: { respondidas: 0, no_respondidas: 0, total: 0 } };
+                    }
+                }
+                
+                // Renderizar calendario
+                function renderizarCalendario(preguntaId, mes, anio, datos) {
+                    console.log('Renderizando calendario con datos:', datos);
+                    const container = document.getElementById('calendario-cumplimiento');
+                    const primerDia = new Date(anio, mes, 1);
+                    const ultimoDia = new Date(anio, mes + 1, 0);
+                    const diasEnMes = ultimoDia.getDate();
+                    const primerDiaSemana = primerDia.getDay();
+                    const hoy = new Date();
+                    
+                    console.log(`Renderizando mes ${mes + 1}/${anio}, días: ${diasEnMes}`);
+                    
+                    // Crear estructura del calendario
+                    let html = `
+                        <div class="calendario-navegacion">
+                            <button class="calendario-nav-btn" onclick="cambiarMes(-1)">
+                                <i class="bi bi-chevron-left"></i> Anterior
+                            </button>
+                            <div class="calendario-titulo">
+                                ${primerDia.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}
+                            </div>
+                            <button class="calendario-nav-btn" onclick="cambiarMes(1)">
+                                Siguiente <i class="bi bi-chevron-right"></i>
+                            </button>
+                        </div>
+                        
+                        <div class="calendario-container">
+                            <div class="calendario-header">
+                                <div class="calendario-dia-semana">Dom</div>
+                                <div class="calendario-dia-semana">Lun</div>
+                                <div class="calendario-dia-semana">Mar</div>
+                                <div class="calendario-dia-semana">Mié</div>
+                                <div class="calendario-dia-semana">Jue</div>
+                                <div class="calendario-dia-semana">Vie</div>
+                                <div class="calendario-dia-semana">Sáb</div>
+                            </div>
+                            <div class="calendario-grid">
+                    `;
+                    
+                    // Días vacíos al inicio
+                    for (let i = 0; i < primerDiaSemana; i++) {
+                        const diaAnterior = new Date(anio, mes, -primerDiaSemana + i + 1);
+                        html += `<div class="calendario-dia sin-datos otro-mes">${diaAnterior.getDate()}</div>`;
+                    }
+                    
+                    // Días del mes
+                    for (let dia = 1; dia <= diasEnMes; dia++) {
+                        const fechaStr = `${anio}-${String(mes + 1).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
+                        const esHoy = hoy.getFullYear() === anio && hoy.getMonth() === mes && hoy.getDate() === dia;
+                        
+                        let clases = 'calendario-dia';
+                        let titulo = '';
+                        
+                        // Debug para el primer día
+                        if (dia === 1) {
+                            console.log(`Primer día del mes: ${fechaStr}`);
+                            console.log('Datos disponibles para este día:', datos.dias ? datos.dias[fechaStr] : 'No hay datos.dias');
+                        }
+                        
+                        if (datos.dias && datos.dias[fechaStr]) {
+                            console.log(`Día ${fechaStr} tiene datos:`, datos.dias[fechaStr]);
+                            if (datos.dias[fechaStr].respondida === true) {
+                                clases += ' respondida';
+                                const respuestas = datos.dias[fechaStr].respuestas || [];
+                                if (respuestas.length > 0) {
+                                    // Mostrar la primera respuesta o concatenar si hay múltiples
+                                    const textoRespuesta = respuestas.length === 1 
+                                        ? respuestas[0] 
+                                        : respuestas.join(', ');
+                                    titulo = `Respuesta: ${textoRespuesta}`;
+                                } else {
+                                    titulo = 'Pregunta respondida este día';
+                                }
+                            } else if (datos.dias[fechaStr].respondida === false) {
+                                clases += ' no-respondida';
+                                titulo = 'Pregunta no respondida este día';
+                            }
+                        } else {
+                            clases += ' sin-datos';
+                            titulo = 'Sin datos para este día';
+                        }
+                        
+                        if (esHoy) {
+                            clases += ' hoy';
+                        }
+                        
+                        // Contenido del día
+                        let contenidoDia = dia;
+                        if (datos.dias && datos.dias[fechaStr] && datos.dias[fechaStr].respondida === true) {
+                            const respuestas = datos.dias[fechaStr].respuestas || [];
+                            if (respuestas.length > 0) {
+                                // Mostrar respuesta truncada si es muy larga
+                                let respuestaTexto = respuestas[0];
+                                if (respuestaTexto.length > 15) {
+                                    respuestaTexto = respuestaTexto.substring(0, 12) + '...';
+                                }
+                                contenidoDia = `<div class="calendario-dia-numero">${dia}</div><div class="calendario-dia-respuesta">${respuestaTexto}</div>`;
+                            }
+                        }
+                        
+                        html += `<div class="${clases}" title="${titulo}">${contenidoDia}</div>`;
+                    }
+                    
+                    // Días vacíos al final
+                    const diasRestantes = 42 - (primerDiaSemana + diasEnMes);
+                    for (let i = 1; i <= diasRestantes && i <= 7; i++) {
+                        html += `<div class="calendario-dia sin-datos otro-mes">${i}</div>`;
+                    }
+                    
+                    html += `
+                            </div>
+                        </div>
+                        
+                        <div class="calendario-estadisticas">
+                            <div class="calendario-stat">
+                                <div class="calendario-stat-numero" style="color: #22c55e;">${datos.estadisticas ? datos.estadisticas.respondidas || 0 : 0}</div>
+                                <div class="calendario-stat-label">Respondidas</div>
+                            </div>
+                            <div class="calendario-stat">
+                                <div class="calendario-stat-numero" style="color: #ef4444;">${datos.estadisticas ? datos.estadisticas.no_respondidas || 0 : 0}</div>
+                                <div class="calendario-stat-label">No respondidas</div>
+                            </div>
+                            <div class="calendario-stat">
+                                <div class="calendario-stat-numero" style="color: #3b82f6;">${datos.estadisticas ? Math.round(((datos.estadisticas.respondidas || 0) / ((datos.estadisticas.respondidas || 0) + (datos.estadisticas.no_respondidas || 0)) * 100) || 0) : 0}%</div>
+                                <div class="calendario-stat-label">Cumplimiento</div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    container.innerHTML = html;
+                }
+                
+                // Cambiar mes
+                async function cambiarMes(direccion) {
+                    mesActual += direccion;
+                    if (mesActual < 0) {
+                        mesActual = 11;
+                        anioActual--;
+                    } else if (mesActual > 11) {
+                        mesActual = 0;
+                        anioActual++;
+                    }
+                    
+                    inicializarSelectoresMes();
+                    
+                    const preguntaId = document.getElementById('pregunta-calendario-select').value;
+                    if (preguntaId) {
+                        const datos = await cargarDatosCalendario(preguntaId, mesActual, anioActual);
+                        renderizarCalendario(preguntaId, mesActual, anioActual, datos);
+                    }
+                }
+                
+                // Event listeners
                 document.addEventListener('DOMContentLoaded', function() {
-                    renderHabitosTarjetas('semanal');
-                    document.getElementById('periodo-select').addEventListener('change', function(e) {
-                        renderHabitosTarjetas(e.target.value);
-                    });
+                    console.log('Inicializando calendario...');
+                    inicializarSelectoresMes();
+                    
+                    // Selector de pregunta
+                    const preguntaSelect = document.getElementById('pregunta-calendario-select');
+                    if (preguntaSelect) {
+                        preguntaSelect.addEventListener('change', async function() {
+                            console.log('Pregunta seleccionada:', this.value);
+                            const preguntaId = this.value;
+                            if (preguntaId) {
+                                console.log('Cargando datos para pregunta:', preguntaId, 'mes:', mesActual, 'año:', anioActual);
+                                const datos = await cargarDatosCalendario(preguntaId, mesActual, anioActual);
+                                console.log('Datos recibidos:', datos);
+                                renderizarCalendario(preguntaId, mesActual, anioActual, datos);
+                            } else {
+                                document.getElementById('calendario-cumplimiento').innerHTML = `
+                                    <div class="text-center py-5 text-muted">
+                                        <i class="bi bi-calendar3" style="font-size: 3rem; opacity: 0.3;"></i>
+                                        <div class="mt-2">Selecciona una pregunta para ver el calendario de cumplimiento</div>
+                                    </div>
+                                `;
+                            }
+                        });
+                    }
+                    
+                    // Selector de mes
+                    const mesSelect = document.getElementById('mes-calendario-select');
+                    if (mesSelect) {
+                        mesSelect.addEventListener('change', async function() {
+                            mesActual = parseInt(this.value);
+                            console.log('Mes cambiado a:', mesActual);
+                            const preguntaId = document.getElementById('pregunta-calendario-select').value;
+                            if (preguntaId) {
+                                const datos = await cargarDatosCalendario(preguntaId, mesActual, anioActual);
+                                renderizarCalendario(preguntaId, mesActual, anioActual, datos);
+                            }
+                        });
+                    }
                 });
-            </script>
+                
+                // Hacer función global para los botones de navegación
+                window.cambiarMes = cambiarMes;
+</script>
         </div>
     </div>
 </div>
