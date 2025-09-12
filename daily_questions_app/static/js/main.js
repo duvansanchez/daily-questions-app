@@ -625,90 +625,219 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Actualizar todo según selección
     async function actualizarFrecuencia() {
+        const preguntaSelector = document.getElementById('preguntaSelector');
+        if (!preguntaSelector || !preguntaSelector.value) {
+            // Mostrar estado inicial
+            const graficoFrecuencia = document.getElementById('graficoFrecuencia');
+            if (graficoFrecuencia) {
+                graficoFrecuencia.innerHTML = `
+                    <div class="d-flex align-items-center justify-content-center h-100 text-muted" style="min-height: 400px;">
+                        <div class="text-center">
+                            <i class="bi bi-bar-chart" style="font-size: 4rem; opacity: 0.3;"></i>
+                            <div class="mt-3">
+                                <h6>¡Comienza tu análisis!</h6>
+                                <p class="mb-0">Selecciona una pregunta arriba para ver el gráfico de frecuencia de respuestas</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            return;
+        }
+
         const selectedOption = preguntaSelector.options[preguntaSelector.selectedIndex];
         const tipo = selectedOption.getAttribute('data-tipo');
-        const periodo = document.querySelector('.periodo-btn.active').getAttribute('data-periodo');
-        const tipoGrafico = document.querySelector('.tipo-grafico-btn.active').getAttribute('data-tipo');
-        periodoTitulo.textContent = periodo;
+        const periodoRadio = document.querySelector('.periodo-radio:checked');
+        const graficoRadio = document.querySelector('.grafico-radio:checked');
+        const periodo = periodoRadio ? periodoRadio.value : 'semanas';
+        const tipoGrafico = graficoRadio ? graficoRadio.value : 'barras';
+
+        // Actualizar títulos
+        const tituloGrafico = document.getElementById('tituloGrafico');
+        const subtituloGrafico = document.getElementById('subtituloGrafico');
+        if (tituloGrafico) {
+            tituloGrafico.textContent = `Análisis: ${selectedOption.text}`;
+        }
+        if (subtituloGrafico) {
+            let periodoTexto = '';
+            switch(periodo) {
+                case 'semanas': periodoTexto = 'Últimas 8 semanas'; break;
+                case 'meses': periodoTexto = 'Últimos 12 meses'; break;
+                case 'anios': periodoTexto = 'Últimos 5 años'; break;
+            }
+            subtituloGrafico.textContent = `${periodoTexto} • Visualización: ${tipoGrafico}`;
+        }
 
         // Limpiar estado anterior
-        graficoFrecuencia.innerHTML = '';
-        mensajeExclusion.classList.add('d-none');
+        const graficoFrecuencia = document.getElementById('graficoFrecuencia');
+        const mensajeExclusion = document.getElementById('mensajeExclusion');
+        const mensajeSinDatos = document.getElementById('mensajeSinDatos');
+        
+        if (graficoFrecuencia) graficoFrecuencia.innerHTML = '';
+        if (mensajeExclusion) mensajeExclusion.classList.add('d-none');
+        if (mensajeSinDatos) mensajeSinDatos.classList.add('d-none');
 
         if (esTextoAbierto(tipo)) {
-            mensajeExclusion.classList.remove('d-none');
+            if (mensajeExclusion) mensajeExclusion.classList.remove('d-none');
             return;
         }
 
         try {
             // Mostrar indicador de carga
-            graficoFrecuencia.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary" role="status"></div><div class="mt-2">Cargando datos...</div></div>';
+            if (graficoFrecuencia) {
+                graficoFrecuencia.innerHTML = `
+                    <div class="d-flex align-items-center justify-content-center h-100" style="min-height: 400px;">
+                        <div class="text-center">
+                            <div class="spinner-border text-primary mb-3" role="status"></div>
+                            <div class="text-muted">Analizando respuestas...</div>
+                        </div>
+                    </div>
+                `;
+            }
             
             // Obtener datos reales
             const datos = await fetchFrecuenciaDatos(selectedOption.value, periodo);
             
             // Verificar si hay datos
             if (!datos.labels || datos.labels.length === 0) {
-                graficoFrecuencia.innerHTML = '<div class="text-center py-5 text-muted">No hay datos disponibles para esta pregunta en el período seleccionado.</div>';
+                if (mensajeSinDatos) mensajeSinDatos.classList.remove('d-none');
+                if (graficoFrecuencia) {
+                    graficoFrecuencia.innerHTML = `
+                        <div class="d-flex align-items-center justify-content-center h-100 text-muted" style="min-height: 400px;">
+                            <div class="text-center">
+                                <i class="bi bi-inbox" style="font-size: 4rem; opacity: 0.3;"></i>
+                                <div class="mt-3">
+                                    <h6>Sin datos suficientes</h6>
+                                    <p class="mb-0">No hay respuestas para esta pregunta en el período seleccionado</p>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
                 return;
             }
             
             // Renderizar gráfico
             renderGrafico(datos, tipoGrafico);
             
-            // Actualizar título del gráfico con información específica
-            const tituloElement = document.querySelector('#graficoFrecuencia').closest('.card').querySelector('h5');
-            if (tituloElement) {
-                let titulo = `Frecuencia por ${periodo}`;
-                if (datos.question_type) {
-                    if (['radio', 'checkbox'].includes(datos.question_type)) {
-                        titulo = `Distribución de opciones seleccionadas`;
-                        } else if (['yes_no', 'boolean'].includes(datos.question_type) || (datos.labels && datos.labels.length === 2 && datos.labels.includes('Sí') && datos.labels.includes('No'))) {
-                            titulo = `Frecuencia de respuestas Sí/No`;
-                    }
-                }
-                tituloElement.textContent = titulo;
-            }
-            
         } catch (error) {
             console.error('Error en actualizarFrecuencia:', error);
             
             if (error.message === 'excluded') {
-                mensajeExclusion.classList.remove('d-none');
+                if (mensajeExclusion) mensajeExclusion.classList.remove('d-none');
             } else {
-                graficoFrecuencia.innerHTML = `
-                    <div class="text-center py-5">
-                        <div class="text-danger mb-2">
-                            <i class="bi bi-exclamation-triangle"></i>
+                if (graficoFrecuencia) {
+                    graficoFrecuencia.innerHTML = `
+                        <div class="d-flex align-items-center justify-content-center h-100" style="min-height: 400px;">
+                            <div class="text-center text-danger">
+                                <i class="bi bi-exclamation-triangle" style="font-size: 4rem; opacity: 0.5;"></i>
+                                <div class="mt-3">
+                                    <h6>Error al cargar datos</h6>
+                                    <p class="mb-0 text-muted">${error.message}</p>
+                                </div>
+                            </div>
                         </div>
-                        <div class="text-muted">Error al cargar los datos: ${error.message}</div>
-                    </div>
-                `;
+                    `;
+                }
             }
         }
     }
 
-    // Eventos
-    preguntaSelector.addEventListener('change', actualizarFrecuencia);
-    periodoBtns.forEach(btn => {
-        btn.addEventListener('click', function() {
-            periodoBtns.forEach(b => b.classList.remove('active'));
-            this.classList.add('active');
+    // Eventos para la nueva interfaz
+    if (preguntaSelector) {
+        preguntaSelector.addEventListener('change', function() {
+            const selectedOption = this.options[this.selectedIndex];
+            const tipo = selectedOption.getAttribute('data-tipo');
+            
+            // Actualizar información del tipo de pregunta
+            const tipoInfo = document.getElementById('tipoPreguntaInfo');
+            if (tipoInfo) {
+                if (this.value) {
+                    let tipoTexto = '';
+                    let icono = '';
+                    switch(tipo) {
+                        case 'yes_no':
+                        case 'boolean':
+                            tipoTexto = 'Pregunta de Sí/No - Ideal para análisis de frecuencia';
+                            icono = 'bi-check-circle text-success';
+                            break;
+                        case 'radio':
+                        case 'select':
+                            tipoTexto = 'Pregunta de opción múltiple - Perfecta para análisis';
+                            icono = 'bi-list-ul text-primary';
+                            break;
+                        case 'checkbox':
+                            tipoTexto = 'Pregunta de selección múltiple - Análisis disponible';
+                            icono = 'bi-check2-square text-info';
+                            break;
+                        case 'texto':
+                        case 'text':
+                        case 'open':
+                            tipoTexto = 'Pregunta de texto abierto - No disponible para análisis cuantitativo';
+                            icono = 'bi-pencil text-warning';
+                            break;
+                        default:
+                            tipoTexto = 'Tipo de pregunta: ' + tipo;
+                            icono = 'bi-question-circle text-muted';
+                    }
+                    tipoInfo.innerHTML = `<i class="${icono} me-1"></i>${tipoTexto}`;
+                } else {
+                    tipoInfo.innerHTML = '<i class="bi bi-info-circle me-1"></i>Selecciona una pregunta para ver su tipo';
+                }
+            }
+            
+            // Habilitar/deshabilitar botones
+            const btnActualizar = document.getElementById('btnActualizarGrafico');
+            const btnExportar = document.getElementById('btnExportarGrafico');
+            if (btnActualizar) btnActualizar.disabled = !this.value;
+            if (btnExportar) btnExportar.disabled = !this.value;
+            
             actualizarFrecuencia();
         });
-    });
-    tipoGraficoBtns.forEach(btn => {
-        btn.addEventListener('click', function() {
-            tipoGraficoBtns.forEach(b => b.classList.remove('active'));
-            this.classList.add('active');
-            actualizarFrecuencia();
+    }
+
+    // Eventos para radio buttons de período
+    const periodoRadios = document.querySelectorAll('.periodo-radio');
+    periodoRadios.forEach(radio => {
+        radio.addEventListener('change', function() {
+            if (this.checked) {
+                actualizarFrecuencia();
+            }
         });
     });
 
-    // Inicializar al cargar el tab
-    if (preguntaSelector) {
-        actualizarFrecuencia();
-        }
+    // Eventos para radio buttons de tipo de gráfico
+    const graficoRadios = document.querySelectorAll('.grafico-radio');
+    graficoRadios.forEach(radio => {
+        radio.addEventListener('change', function() {
+            if (this.checked) {
+                actualizarFrecuencia();
+            }
+        });
+    });
+
+    // Botón actualizar
+    const btnActualizar = document.getElementById('btnActualizarGrafico');
+    if (btnActualizar) {
+        btnActualizar.addEventListener('click', actualizarFrecuencia);
+    }
+
+    // Botón exportar
+    const btnExportar = document.getElementById('btnExportarGrafico');
+    if (btnExportar) {
+        btnExportar.addEventListener('click', function() {
+            if (window.chartInstance) {
+                const preguntaSelector = document.getElementById('preguntaSelector');
+                const selectedOption = preguntaSelector.options[preguntaSelector.selectedIndex];
+                const filename = `frecuencia_${selectedOption.text.replace(/[^a-zA-Z0-9]/g, '_')}.png`;
+                
+                const link = document.createElement('a');
+                link.download = filename;
+                link.href = window.chartInstance.toBase64Image();
+                link.click();
+            }
+        });
+    }
     }
 
     // === Objetivos Desarrollo Personal ===
