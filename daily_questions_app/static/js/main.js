@@ -89,6 +89,102 @@ window.showError = showError;
 window.showInfo = showInfo;
 window.showConfirm = showConfirm;
 
+// Función para cargar subobjetivos en vista de lista
+async function cargarSubobjetivosLista(objetivoId) {
+    try {
+        console.log('Cargando subobjetivos para objetivo:', objetivoId);
+        const response = await fetch(`/api/objetivos/${objetivoId}/subobjetivos`);
+        console.log('Response status:', response.status);
+        const subobjetivos = await response.json();
+        console.log('Subobjetivos recibidos:', subobjetivos);
+        
+        const container = document.getElementById(`subobjetivos-lista-${objetivoId}`);
+        if (!container) return;
+        
+        container.innerHTML = '';
+        
+        if (subobjetivos.length === 0) {
+            container.innerHTML = `
+                <div class="subobjetivo-lista-item">
+                    <span class="subobjetivo-lista-titulo" style="color: #9ca3af; font-style: italic;">
+                        No hay subobjetivos
+                    </span>
+                </div>
+            `;
+            return;
+        }
+        
+        subobjetivos.forEach(sub => {
+            const subItem = document.createElement('div');
+            subItem.className = 'subobjetivo-lista-item';
+            subItem.innerHTML = `
+                <input type="checkbox" class="subobjetivo-lista-checkbox" ${sub.completado ? 'checked' : ''} 
+                       data-subobjetivo-id="${sub.id}" data-objetivo-id="${objetivoId}">
+                <span class="subobjetivo-lista-titulo ${sub.completado ? 'completado' : ''}">${sub.titulo}</span>
+                <div class="subobjetivo-lista-acciones">
+                    <button class="subobjetivo-lista-btn" title="Eliminar" data-subobjetivo-id="${sub.id}">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+            `;
+            container.appendChild(subItem);
+        });
+        
+        // Agregar event listeners para los checkboxes de subobjetivos
+        container.querySelectorAll('.subobjetivo-lista-checkbox').forEach(checkbox => {
+            checkbox.addEventListener('change', async function() {
+                const subobjetivoId = this.getAttribute('data-subobjetivo-id');
+                const objetivoId = this.getAttribute('data-objetivo-id');
+                const completado = this.checked;
+                
+                try {
+                    const response = await fetch(`/api/subobjetivos/${subobjetivoId}`, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ completado })
+                    });
+                    
+                    if (response.ok) {
+                        const titulo = this.nextElementSibling;
+                        if (completado) {
+                            titulo.classList.add('completado');
+                        } else {
+                            titulo.classList.remove('completado');
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error actualizando subobjetivo:', error);
+                    this.checked = !completado; // Revertir el cambio
+                }
+            });
+        });
+        
+        // Agregar event listeners para eliminar subobjetivos
+        container.querySelectorAll('.subobjetivo-lista-btn').forEach(btn => {
+            btn.addEventListener('click', async function() {
+                const subobjetivoId = this.getAttribute('data-subobjetivo-id');
+                
+                if (confirm('¿Estás seguro de que quieres eliminar este subobjetivo?')) {
+                    try {
+                        const response = await fetch(`/api/subobjetivos/${subobjetivoId}`, {
+                            method: 'DELETE'
+                        });
+                        
+                        if (response.ok) {
+                            this.closest('.subobjetivo-lista-item').remove();
+                        }
+                    } catch (error) {
+                        console.error('Error eliminando subobjetivo:', error);
+                    }
+                }
+            });
+        });
+        
+    } catch (error) {
+        console.error('Error cargando subobjetivos:', error);
+    }
+}
+
 // Funciones para manejar el contador de tiempo
 function startQuestionTimer(questionId) {
     // Detener timer anterior si existe
@@ -990,6 +1086,7 @@ document.addEventListener('DOMContentLoaded', function() {
 // === Objetivos Desarrollo Personal (Integración API) ===
 let objetivos = [];
 let ordenActual = 'completado'; // Variable global para el ordenamiento
+let vistaActual = 'lista'; // Variable global para el tipo de vista
 
 async function cargarObjetivos() {
     try {
@@ -1062,6 +1159,13 @@ function ordenarObjetivos(objetivos, criterio) {
 function renderObjetivos() {
     const lista = document.getElementById('lista-objetivos');
     lista.innerHTML = '';
+    
+    // Cambiar clase del contenedor según la vista
+    if (vistaActual === 'lista') {
+        lista.className = 'objetivos-lista';
+    } else {
+        lista.className = 'objetivos-grid';
+    }
     let filtrados;
     if (categoriaActual === 'todos') {
         filtrados = objetivos;
@@ -1090,8 +1194,13 @@ function renderObjetivos() {
         // Separador visual para completados
         if (ordenActual === 'completado' && obj.completado && !primerCompletadoEncontrado) {
             const separador = document.createElement('div');
-            separador.className = 'separador-objetivos';
-            separador.innerHTML = '<hr class="my-3"><div class="text-center text-muted fw-semibold mb-2">Objetivos Completados</div>';
+            if (vistaActual === 'lista') {
+                separador.className = 'objetivo-lista-separador';
+                separador.innerHTML = '<div class="objetivo-lista-separador-texto">Objetivos Completados</div>';
+            } else {
+                separador.className = 'separador-objetivos';
+                separador.innerHTML = '<hr class="my-3"><div class="text-center text-muted fw-semibold mb-2">Objetivos Completados</div>';
+            }
             lista.appendChild(separador);
             primerCompletadoEncontrado = true;
         }
@@ -1119,12 +1228,67 @@ function renderObjetivos() {
         const fechaCreacion = obj.fecha_creacion ? new Date(obj.fecha_creacion + 'T12:00:00').toLocaleDateString('es-ES', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' }) : '';
         const fechaInicio = obj.fecha_inicio ? new Date(obj.fecha_inicio + 'T12:00:00').toLocaleDateString('es-ES', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' }) : '';
         const fechaFin = obj.fecha_fin ? new Date(obj.fecha_fin + 'T12:00:00').toLocaleDateString('es-ES', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' }) : '';
-        const card = document.createElement('div');
-        card.className = 'objetivo-card mb-3';
-        if (obj.completado) card.classList.add('objetivo-completado');
-        if (obj.saltado_hoy) card.classList.add('objetivo-inactivo-hoy');
-        if (!obj.completado && !obj.saltado_hoy && obj.estado !== 'histórico') card.classList.add('resaltado-activo');
-        card.innerHTML = `
+        // Crear elemento según la vista
+        const elemento = document.createElement('div');
+        
+        if (vistaActual === 'lista') {
+            // Vista de lista
+            elemento.className = 'objetivo-lista-item';
+            if (obj.completado) elemento.classList.add('objetivo-completado');
+            if (obj.saltado_hoy) elemento.classList.add('objetivo-inactivo-hoy');
+            if (!obj.completado && !obj.saltado_hoy && obj.estado !== 'histórico') elemento.classList.add('resaltado-activo');
+            
+            // Crear etiquetas para la vista de lista
+            let etiquetas = [];
+            if (obj.prioridad) {
+                etiquetas.push(`<span class="objetivo-lista-etiqueta prioridad-${obj.prioridad}">${obj.prioridad.charAt(0).toUpperCase() + obj.prioridad.slice(1)}</span>`);
+            }
+            if (obj.categoria) {
+                etiquetas.push(`<span class="objetivo-lista-etiqueta categoria">${obj.categoria.charAt(0).toUpperCase() + obj.categoria.slice(1)}</span>`);
+            }
+            if (fechaFin) {
+                etiquetas.push(`<span class="objetivo-lista-etiqueta fecha"><i class='bi bi-calendar-check me-1'></i>${new Date(obj.fecha_fin + 'T12:00:00').toLocaleDateString('es-ES', { day: '2-digit', month: 'short' })}</span>`);
+            }
+            if (obj.horas_estimadas) {
+                etiquetas.push(`<span class="objetivo-lista-etiqueta horas"><i class='bi bi-clock me-1'></i>${formatearHorasMinutos(obj.horas_estimadas)}</span>`);
+            }
+            if (obj.recompensa) {
+                etiquetas.push(`<span class="objetivo-lista-etiqueta recompensa"><i class='bi bi-gift me-1'></i>${obj.recompensa}</span>`);
+            }
+            
+            elemento.innerHTML = `
+                <div class="objetivo-lista-principal">
+                    <input type="checkbox" class="objetivo-lista-checkbox check-objetivo" ${obj.completado ? 'checked' : ''} data-id="${obj.id}">
+                    <div class="objetivo-lista-contenido">
+                        <h6 class="objetivo-lista-titulo ${obj.completado ? 'completado' : ''}">${obj.titulo}</h6>
+                        ${obj.descripcion ? `<p class="objetivo-lista-descripcion">${obj.descripcion}</p>` : ''}
+                        ${etiquetas.length > 0 ? `<div class="objetivo-lista-meta">${etiquetas.join('')}</div>` : ''}
+                    </div>
+                    <div class="objetivo-lista-acciones">
+                        <button class="objetivo-lista-btn toggle-subobjetivos" title="Mostrar/ocultar subobjetivos" data-objetivo-id="${obj.id}">
+                            <i class="bi bi-chevron-down"></i>
+                        </button>
+                        <button class="objetivo-lista-btn editar" title="Editar" data-id="${obj.id}">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <button class="objetivo-lista-btn eliminar" title="Eliminar" data-id="${obj.id}">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                        ${obj.recurrente && !obj.saltado_hoy && !obj.completado ? `<button class="objetivo-lista-btn saltar" title="Saltar hoy" data-id="${obj.id}">Saltar hoy</button>` : ''}
+                        ${obj.recurrente && obj.saltado_hoy && !obj.completado ? `<button class="objetivo-lista-btn reactivar" title="Reactivar hoy" data-id="${obj.id}">Reactivar hoy</button>` : ''}
+                    </div>
+                </div>
+                <div class="objetivo-lista-subobjetivos" id="subobjetivos-lista-${obj.id}" style="display: none;">
+                    <!-- Los subobjetivos se cargarán aquí -->
+                </div>
+            `;
+        } else {
+            // Vista de tarjetas (código existente)
+            elemento.className = 'objetivo-card mb-3';
+            if (obj.completado) elemento.classList.add('objetivo-completado');
+            if (obj.saltado_hoy) elemento.classList.add('objetivo-inactivo-hoy');
+            if (!obj.completado && !obj.saltado_hoy && obj.estado !== 'histórico') elemento.classList.add('resaltado-activo');
+            elemento.innerHTML = `
             <div style=\"flex:1;min-width:0;position:relative;\">
                 <input type=\"checkbox\" class=\"form-check-input me-2 check-objetivo\" ${obj.completado ? 'checked' : ''} data-id=\"${obj.id}\">
                 <span class=\"objetivo-titulo\">${obj.titulo}</span>
@@ -1165,12 +1329,17 @@ function renderObjetivos() {
                 ${(ordenActual === 'orden') ? ordenFlechasHtml + ordenNumHtml : ''}
             </div>
         `;
-        lista.appendChild(card);
+        }
+        
+        lista.appendChild(elemento);
+        
         // Cargar y renderizar subobjetivos para este objetivo
-        cargarYRenderizarSubobjetivos(obj.id);
+        if (vistaActual === 'tarjetas') {
+            cargarYRenderizarSubobjetivos(obj.id);
+        }
     });
     // Evento para el botón Saltar hoy
-    document.querySelectorAll('.btn-saltar-hoy').forEach(btn => {
+    document.querySelectorAll('.btn-saltar-hoy, .objetivo-lista-btn.saltar').forEach(btn => {
         btn.addEventListener('click', async function() {
             const objetivoId = this.getAttribute('data-id');
             try {
@@ -1188,7 +1357,7 @@ function renderObjetivos() {
         });
     });
     // Evento para el botón Reactivar hoy
-    document.querySelectorAll('.btn-reactivar-hoy').forEach(btn => {
+    document.querySelectorAll('.btn-reactivar-hoy, .objetivo-lista-btn.reactivar').forEach(btn => {
         btn.addEventListener('click', async function() {
             const objetivoId = this.getAttribute('data-id');
             try {
@@ -1204,6 +1373,37 @@ function renderObjetivos() {
                 showError('Error al reactivar objetivo');
             }
         });
+    });
+
+    // Event delegation para toggle de subobjetivos en vista de lista
+    document.addEventListener('click', async function(e) {
+        const toggleBtn = e.target.closest('.objetivo-lista-btn.toggle-subobjetivos');
+        if (!toggleBtn) return;
+        
+        console.log('Toggle subobjetivos clicked');
+        const objetivoId = toggleBtn.getAttribute('data-objetivo-id');
+        const subobjetivosContainer = document.getElementById(`subobjetivos-lista-${objetivoId}`);
+        const icon = toggleBtn.querySelector('i');
+        
+        console.log('Objetivo ID:', objetivoId);
+        console.log('Container:', subobjetivosContainer);
+        
+        if (subobjetivosContainer && subobjetivosContainer.style.display === 'none') {
+            // Mostrar subobjetivos
+            subobjetivosContainer.style.display = 'block';
+            icon.className = 'bi bi-chevron-up';
+            toggleBtn.classList.add('expanded');
+            
+            // Cargar subobjetivos si no están cargados
+            if (subobjetivosContainer.children.length === 0) {
+                await cargarSubobjetivosLista(objetivoId);
+            }
+        } else if (subobjetivosContainer) {
+            // Ocultar subobjetivos
+            subobjetivosContainer.style.display = 'none';
+            icon.className = 'bi bi-chevron-down';
+            toggleBtn.classList.remove('expanded');
+        }
     });
     // Eventos para flechas de reordenar objetivos principales
     if (ordenActual === 'orden') {
@@ -1653,6 +1853,17 @@ function inicializarSelectorOrdenamiento() {
             renderObjetivos();
         });
     }
+
+    // Event listeners para cambio de vista
+    const vistaRadios = document.querySelectorAll('input[name="vista-objetivos"]');
+    vistaRadios.forEach(radio => {
+        radio.addEventListener('change', function() {
+            if (this.checked) {
+                vistaActual = this.value;
+                renderObjetivos();
+            }
+        });
+    });
 }
 
 // Inicializar después de que se carguen los objetivos
@@ -1704,7 +1915,7 @@ if (formEditar) {
 
 // === EVENTO PARA ABRIR EL MODAL DE EDITAR OBJETIVO ===
 document.addEventListener('click', async function(e) {
-    const btn = e.target.closest('.btn-editar');
+    const btn = e.target.closest('.btn-editar, .objetivo-lista-btn.editar');
     if (!btn) return;
     const objetivoId = btn.getAttribute('data-id');
     if (!objetivoId) return;
@@ -1770,7 +1981,7 @@ function limpiarCamposNuevoObjetivo() {
 }
 
 document.addEventListener('click', async function(e) {
-    const btnEliminar = e.target.closest('.btn-eliminar');
+    const btnEliminar = e.target.closest('.btn-eliminar, .objetivo-lista-btn.eliminar');
     if (btnEliminar) {
         const objetivoId = btnEliminar.getAttribute('data-id');
         if (!objetivoId) return;
