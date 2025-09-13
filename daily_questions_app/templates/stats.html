@@ -402,7 +402,7 @@
                                                     <small class="text-muted">Elige qué pregunta quieres analizar</small>
                                                 </div>
                                             </div>
-                                            <select id="preguntaSelector" class="form-select form-select-lg">
+                                            <select id="preguntaSelector" class="form-select">
                                                 <option value="">-- Selecciona una pregunta --</option>
                                                 {% for pregunta in preguntas %}
                                                     <option value="{{ pregunta.id }}" data-tipo="{{ pregunta.tipo }}">{{ pregunta.texto }}</option>
