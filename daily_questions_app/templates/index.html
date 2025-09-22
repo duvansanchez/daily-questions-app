@@ -86,6 +86,27 @@
                 </span>
                 <span class="question-number">{{ loop.index }} de {{ questions|length }}</span>
             </div>
+            
+            <!-- Información adicional de la pregunta -->
+            <div class="question-info mb-3">
+                {% if question.categoria and question.categoria != 'General' %}
+                <div class="question-category mb-2">
+                    <span class="badge bg-primary bg-opacity-10 text-primary px-3 py-2">
+                        <i class="bi bi-tag me-1"></i>{{ question.categoria }}
+                    </span>
+                </div>
+                {% endif %}
+                
+                {% if question.descripcion %}
+                <div class="question-description">
+                    <div class="alert alert-info mb-0 py-2 px-3" style="background-color: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px;">
+                        <i class="bi bi-info-circle me-2"></i>
+                        <span style="color: #495057;">{{ question.descripcion }}</span>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            
             <div class="question-body">
                 <div class="options-container">
                             {% if question.type == 'checkbox' and question.options %}
