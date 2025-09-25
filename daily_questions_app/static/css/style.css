@@ -1610,6 +1610,177 @@ h1 {
     letter-spacing: 0.5px;
 }
 
+/* === FRASES INSPIRACIONALES === */
+.frase-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 16px;
+  transition: all 0.2s ease;
+  position: relative;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.frase-card:hover {
+  border-color: #d1d5db;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  transform: translateY(-1px);
+}
+
+.frase-card.repasada-hoy {
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  border-color: #0ea5e9;
+}
+
+.frase-texto {
+  font-size: 1.1rem;
+  line-height: 1.6;
+  color: #1f2937;
+  font-style: italic;
+  margin-bottom: 12px;
+  position: relative;
+}
+
+.frase-texto::before {
+  content: '"';
+  font-size: 2rem;
+  color: #3b82f6;
+  position: absolute;
+  left: -15px;
+  top: -5px;
+  font-family: serif;
+}
+
+.frase-texto::after {
+  content: '"';
+  font-size: 2rem;
+  color: #3b82f6;
+  position: absolute;
+  right: -10px;
+  bottom: -15px;
+  font-family: serif;
+}
+
+.frase-autor {
+  font-size: 0.9rem;
+  color: #6b7280;
+  font-weight: 500;
+  margin-bottom: 12px;
+  text-align: right;
+}
+
+.frase-autor::before {
+  content: '— ';
+}
+
+.frase-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.frase-categoria {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.frase-categoria.motivacion { background: #fef3c7; color: #d97706; }
+.frase-categoria.exito { background: #d1fae5; color: #059669; }
+.frase-categoria.perseverancia { background: #fee2e2; color: #dc2626; }
+.frase-categoria.sabiduria { background: #ede9fe; color: #7c3aed; }
+.frase-categoria.crecimiento { background: #e0f2fe; color: #0369a1; }
+.frase-categoria.liderazgo { background: #f3e8ff; color: #9333ea; }
+.frase-categoria.felicidad { background: #fef9c3; color: #ca8a04; }
+.frase-categoria.personal { background: #f1f5f9; color: #475569; }
+
+.frase-estadisticas {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.85rem;
+  color: #6b7280;
+}
+
+.frase-contador {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.frase-acciones {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.frase-btn {
+  background: none;
+  border: none;
+  padding: 6px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.85rem;
+}
+
+.frase-btn:hover {
+  background: #f3f4f6;
+}
+
+.frase-btn.repasar {
+  color: #059669;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+}
+
+.frase-btn.repasar:hover {
+  background: #dcfce7;
+  border-color: #86efac;
+}
+
+.frase-btn.editar {
+  color: #2563eb;
+}
+
+.frase-btn.editar:hover {
+  background: #eff6ff;
+}
+
+.frase-btn.eliminar {
+  color: #dc2626;
+}
+
+.frase-btn.eliminar:hover {
+  background: #fef2f2;
+}
+
+.frase-notas {
+  font-size: 0.85rem;
+  color: #6b7280;
+  font-style: normal;
+  background: #f8fafc;
+  padding: 8px 12px;
+  border-radius: 6px;
+  margin-top: 8px;
+  border-left: 3px solid #e2e8f0;
+}
+
+.frase-ultima-vez {
+  font-size: 0.8rem;
+  color: #9ca3af;
+}
+
 /* Responsive para vista de lista */
 @media (max-width: 768px) {
     .objetivo-lista-item {
@@ -1732,4 +1903,97 @@ h1 {
     text-align: center;
     box-shadow: 0 1px 2px rgba(60, 80, 120, 0.04);
     z-index: 3;
+}/* === 
+ESTILOS PARA SESIÓN DE REPASO DE FRASES === */
+.frase-repaso-card {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.frase-texto-repaso {
+    font-weight: 500;
+    text-align: center;
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    background: linear-gradient(135deg, #f8f9ff 0%, #f0f4ff 100%);
+    border-radius: 1rem;
+    border-left: 4px solid #6366f1;
+}
+
+.frase-autor-repaso {
+    text-align: center;
+    font-style: italic;
+    margin-bottom: 1rem;
+}
+
+.frase-notas-repaso {
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+.progress-container {
+    background: #f8f9fa;
+    padding: 1rem;
+    border-radius: 0.75rem;
+    border: 1px solid #e9ecef;
+}
+
+.progress-container .progress {
+    height: 8px;
+    border-radius: 4px;
+    background-color: #e9ecef;
+}
+
+.progress-container .progress-bar {
+    background: linear-gradient(90deg, #6366f1, #8b5cf6);
+    border-radius: 4px;
+    transition: width 0.3s ease;
+}
+
+#interfaz-repaso .btn {
+    min-width: 120px;
+    font-weight: 500;
+}
+
+#interfaz-repaso .btn:disabled {
+    opacity: 0.5;
+}
+
+/* Animaciones para transiciones */
+.frase-repaso-card {
+    animation: fadeInUp 0.5s ease-out;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Responsive para sesión de repaso */
+@media (max-width: 768px) {
+    .frase-repaso-card {
+        padding: 1rem;
+    }
+    
+    .frase-texto-repaso {
+        font-size: 1.2rem !important;
+        padding: 0.75rem;
+    }
+    
+    #interfaz-repaso .d-flex.gap-3 {
+        flex-direction: column;
+        gap: 0.5rem !important;
+    }
+    
+    #interfaz-repaso .btn {
+        min-width: auto;
+        width: 100%;
+    }
 }

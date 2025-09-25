@@ -8,6 +8,7 @@
         <div class="card-body">
             <ul class="nav nav-tabs mb-3">
                 <li class="nav-item"><a class="nav-link active" id="tab-objetivos" href="#">Objetivos</a></li>
+                <li class="nav-item"><a class="nav-link" id="tab-frases" href="#">Frases</a></li>
                 <li class="nav-item"><a class="nav-link disabled" href="#">Audios</a></li>
                 <li class="nav-item"><a class="nav-link disabled" href="#">Progreso</a></li>
             </ul>
@@ -139,6 +140,189 @@
                     </div>
                 </div>
             </div>
+            
+            <!-- Contenedor para las frases -->
+            <div class="card mt-3" id="card-frases" style="display:none;">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div>
+                            <h5 class="mb-1"><i class="bi bi-chat-quote"></i> Frases Inspiracionales</h5>
+                            <p class="text-muted mb-0">Repasa frases motivacionales para tu crecimiento personal</p>
+                        </div>
+                        <button class="btn btn-primary" id="btn-nueva-frase">
+                            <i class="bi bi-plus-circle me-1"></i>Nueva Frase
+                        </button>
+                    </div>
+                    
+                    <!-- Estadísticas de frases -->
+                    <div class="row text-center mb-4">
+                        <div class="col-md-3">
+                            <div class="bg-light rounded py-3">
+                                <div class="h4 mb-0 text-primary" id="total-frases">0</div>
+                                <small class="text-muted">Total Frases</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="bg-light rounded py-3">
+                                <div class="h4 mb-0 text-success" id="frases-hoy">0</div>
+                                <small class="text-muted">Repasadas Hoy</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="bg-light rounded py-3">
+                                <div class="h4 mb-0 text-warning" id="frases-semana">0</div>
+                                <small class="text-muted">Esta Semana</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="bg-light rounded py-3">
+                                <div class="h4 mb-0 text-info" id="total-repasos">0</div>
+                                <small class="text-muted">Total Repasos</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Filtros y controles -->
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div class="d-flex align-items-center gap-3">
+                            <label class="form-label mb-0 fw-semibold">Filtrar por:</label>
+                            <select class="form-select form-select-sm" id="filtro-categoria-frases" style="width: auto;">
+                                <option value="">Todas las categorías</option>
+                                <option value="motivacion">Motivación</option>
+                                <option value="exito">Éxito</option>
+                                <option value="perseverancia">Perseverancia</option>
+                                <option value="sabiduria">Sabiduría</option>
+                                <option value="crecimiento">Crecimiento</option>
+                                <option value="liderazgo">Liderazgo</option>
+                                <option value="felicidad">Felicidad</option>
+                                <option value="personal">Personal</option>
+                            </select>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <button class="btn btn-outline-success btn-sm" id="btn-repasar-todas">
+                                <i class="bi bi-arrow-repeat me-1"></i>Repasar Todas
+                            </button>
+                            <button class="btn btn-outline-info btn-sm" id="btn-frase-aleatoria">
+                                <i class="bi bi-shuffle me-1"></i>Frase Aleatoria
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Lista de frases -->
+                    <div id="lista-frases">
+                        <!-- Las frases se cargarán aquí dinámicamente -->
+                    </div>
+                    
+                    <!-- Mensaje cuando no hay frases -->
+                    <div id="mensaje-sin-frases" class="text-center py-5" style="display: none;">
+                        <i class="bi bi-chat-quote text-muted" style="font-size: 4rem; opacity: 0.3;"></i>
+                        <h6 class="text-muted mt-3">No tienes frases agregadas</h6>
+                        <p class="text-muted">Agrega tu primera frase inspiracional para comenzar</p>
+                        <button class="btn btn-primary" onclick="document.getElementById('btn-nueva-frase').click()">
+                            <i class="bi bi-plus-circle me-1"></i>Agregar Primera Frase
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Nueva Frase -->
+<div class="modal fade" id="modalNuevaFrase" tabindex="-1" aria-labelledby="modalNuevaFraseLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="form-nueva-frase">
+                <div class="modal-header">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="modal-icon"><i class="bi bi-chat-quote"></i></span>
+                        <h5 class="modal-title mb-0" id="modalNuevaFraseLabel">Agregar Nueva Frase</h5>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="frase-texto" class="form-label fw-semibold">Frase</label>
+                        <textarea class="form-control" id="frase-texto" rows="3" placeholder="Escribe la frase inspiracional..." required></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="frase-autor" class="form-label fw-semibold">Autor (opcional)</label>
+                        <input type="text" class="form-control" id="frase-autor" placeholder="Nombre del autor">
+                    </div>
+                    <div class="mb-3">
+                        <label for="frase-categoria" class="form-label fw-semibold">Categoría</label>
+                        <select class="form-select" id="frase-categoria" required>
+                            <option value="">Selecciona una categoría</option>
+                            <option value="motivacion">Motivación</option>
+                            <option value="exito">Éxito</option>
+                            <option value="perseverancia">Perseverancia</option>
+                            <option value="sabiduria">Sabiduría</option>
+                            <option value="crecimiento">Crecimiento</option>
+                            <option value="liderazgo">Liderazgo</option>
+                            <option value="felicidad">Felicidad</option>
+                            <option value="personal">Personal</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="frase-notas" class="form-label fw-semibold">Notas personales (opcional)</label>
+                        <textarea class="form-control" id="frase-notas" rows="2" placeholder="¿Por qué es importante esta frase para ti?"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar Frase</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Editar Frase -->
+<div class="modal fade" id="modalEditarFrase" tabindex="-1" aria-labelledby="modalEditarFraseLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="form-editar-frase">
+                <div class="modal-header">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="modal-icon"><i class="bi bi-pencil-square"></i></span>
+                        <h5 class="modal-title mb-0" id="modalEditarFraseLabel">Editar Frase</h5>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="editar-frase-id">
+                    <div class="mb-3">
+                        <label for="editar-frase-texto" class="form-label fw-semibold">Frase</label>
+                        <textarea class="form-control" id="editar-frase-texto" rows="3" required></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editar-frase-autor" class="form-label fw-semibold">Autor (opcional)</label>
+                        <input type="text" class="form-control" id="editar-frase-autor">
+                    </div>
+                    <div class="mb-3">
+                        <label for="editar-frase-categoria" class="form-label fw-semibold">Categoría</label>
+                        <select class="form-select" id="editar-frase-categoria" required>
+                            <option value="">Selecciona una categoría</option>
+                            <option value="motivacion">Motivación</option>
+                            <option value="exito">Éxito</option>
+                            <option value="perseverancia">Perseverancia</option>
+                            <option value="sabiduria">Sabiduría</option>
+                            <option value="crecimiento">Crecimiento</option>
+                            <option value="liderazgo">Liderazgo</option>
+                            <option value="felicidad">Felicidad</option>
+                            <option value="personal">Personal</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editar-frase-notas" class="form-label fw-semibold">Notas personales (opcional)</label>
+                        <textarea class="form-control" id="editar-frase-notas" rows="2"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
@@ -433,4 +617,92 @@
 
 <!-- Masonry.js CDN -->
 <script src="https://unpkg.com/masonry-layout@4/dist/masonry.pkgd.min.js"></script>
+
+<!-- Main JS para funcionalidad de frases -->
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+
+<script>
+// JavaScript para manejar las pestañas
+document.addEventListener('DOMContentLoaded', function() {
+    // Manejar cambio de pestañas principales
+    const tabObjetivos = document.getElementById('tab-objetivos');
+    const tabFrases = document.getElementById('tab-frases');
+    
+    if (tabObjetivos) {
+        tabObjetivos.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // Cambiar tabs activos
+            document.querySelectorAll('.nav-tabs .nav-link').forEach(tab => tab.classList.remove('active'));
+            this.classList.add('active');
+            
+            // Mostrar/ocultar contenido
+            document.getElementById('card-objetivos').style.display = 'block';
+            document.getElementById('card-historico').style.display = 'none';
+            document.getElementById('card-frases').style.display = 'none';
+            
+            // Mostrar estadísticas de objetivos
+            const statsRow = document.querySelector('.row.text-center.mb-4');
+            if (statsRow && !statsRow.closest('#card-frases')) {
+                statsRow.style.display = 'flex';
+            }
+            
+            // Mostrar filtros de objetivos
+            const navPills = document.querySelector('.nav.nav-pills');
+            if (navPills) {
+                navPills.style.display = 'flex';
+            }
+            
+            // Mostrar controles de vista
+            const vistaControls = document.querySelector('.d-flex.justify-content-between.align-items-center.mb-2');
+            if (vistaControls && !vistaControls.closest('#card-frases')) {
+                vistaControls.style.display = 'flex';
+            }
+        });
+    }
+    
+    if (tabFrases) {
+        tabFrases.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // Cambiar tabs activos
+            document.querySelectorAll('.nav-tabs .nav-link').forEach(tab => tab.classList.remove('active'));
+            this.classList.add('active');
+            
+            // Mostrar/ocultar contenido
+            document.getElementById('card-objetivos').style.display = 'none';
+            document.getElementById('card-historico').style.display = 'none';
+            document.getElementById('card-frases').style.display = 'block';
+            
+            // Ocultar estadísticas de objetivos
+            const statsRow = document.querySelector('.row.text-center.mb-4');
+            if (statsRow && !statsRow.closest('#card-frases')) {
+                statsRow.style.display = 'none';
+            }
+            
+            // Ocultar filtros de objetivos
+            const navPills = document.querySelector('.nav.nav-pills');
+            if (navPills) {
+                navPills.style.display = 'none';
+            }
+            
+            // Ocultar controles de vista
+            const vistaControls = document.querySelector('.d-flex.justify-content-between.align-items-center.mb-2');
+            if (vistaControls && !vistaControls.closest('#card-frases')) {
+                vistaControls.style.display = 'none';
+            }
+            
+            // Cargar frases
+            if (typeof cargarFrases === 'function') {
+                cargarFrases();
+            }
+            
+            // Configurar event listeners de frases cuando la pestaña está activa
+            setTimeout(() => {
+                configurarEventListenersFrases();
+            }, 100);
+        });
+    }
+});
+</script>
 {% endblock %} 

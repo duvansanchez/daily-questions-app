@@ -2590,6 +2590,179 @@ def api_delete_subobjetivo(subobjetivo_id):
         return jsonify({'status': 'success'})
 
 # Configuración de la aplicación
+# === RUTAS PARA FRASES INSPIRACIONALES ===
+
+@app.route('/api/frases', methods=['GET'])
+@login_required
+def api_list_frases():
+    """Obtener todas las frases del usuario"""
+    try:
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('''
+                SELECT id, texto, autor, categoria, notas, total_repasos, ultima_vez, fecha_creacion
+                FROM frases
+                WHERE user_id = ?
+                ORDER BY fecha_creacion DESC
+            ''', (current_user.id,))
+            
+            frases = []
+            for row in cursor.fetchall():
+                frases.append({
+                    'id': row[0],
+                    'texto': row[1],
+                    'autor': row[2],
+                    'categoria': row[3],
+                    'notas': row[4],
+                    'total_repasos': row[5] or 0,
+                    'ultima_vez': row[6].isoformat() if row[6] else None,
+                    'fecha_creacion': row[7].isoformat() if row[7] else None
+                })
+            
+            return jsonify(frases)
+    except Exception as e:
+        logger.error(f"Error al obtener frases: {str(e)}")
+        return jsonify({'error': 'Error al obtener frases'}), 500
+
+@app.route('/api/frases', methods=['POST'])
+@login_required
+def api_create_frase():
+    """Crear una nueva frase"""
+    try:
+        data = request.get_json()
+        
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('''
+                INSERT INTO frases (user_id, texto, autor, categoria, notas, fecha_creacion)
+                VALUES (?, ?, ?, ?, ?, ?)
+            ''', (
+                current_user.id,
+                data['texto'],
+                data.get('autor'),
+                data['categoria'],
+                data.get('notas'),
+                datetime.now()
+            ))
+            conn.commit()
+            
+        return jsonify({'status': 'success'})
+    except Exception as e:
+        logger.error(f"Error al crear frase: {str(e)}")
+        return jsonify({'error': 'Error al crear frase'}), 500
+
+@app.route('/api/frases/<int:frase_id>', methods=['PUT'])
+@login_required
+def api_update_frase(frase_id):
+    """Actualizar una frase"""
+    try:
+        data = request.get_json()
+        
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            
+            # Verificar que la frase pertenece al usuario
+            cursor.execute('SELECT user_id FROM frases WHERE id = ?', (frase_id,))
+            frase = cursor.fetchone()
+            if not frase or frase[0] != current_user.id:
+                return jsonify({'error': 'Frase no encontrada'}), 404
+            
+            cursor.execute('''
+                UPDATE frases 
+                SET texto = ?, autor = ?, categoria = ?, notas = ?
+                WHERE id = ? AND user_id = ?
+            ''', (
+                data['texto'],
+                data.get('autor'),
+                data['categoria'],
+                data.get('notas'),
+                frase_id,
+                current_user.id
+            ))
+            conn.commit()
+            
+        return jsonify({'status': 'success'})
+    except Exception as e:
+        logger.error(f"Error al actualizar frase: {str(e)}")
+        return jsonify({'error': 'Error al actualizar frase'}), 500
+
+@app.route('/api/frases/<int:frase_id>', methods=['DELETE'])
+@login_required
+def api_delete_frase(frase_id):
+    """Eliminar una frase"""
+    try:
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            
+            # Verificar que la frase pertenece al usuario
+            cursor.execute('SELECT user_id FROM frases WHERE id = ?', (frase_id,))
+            frase = cursor.fetchone()
+            if not frase or frase[0] != current_user.id:
+                return jsonify({'error': 'Frase no encontrada'}), 404
+            
+            cursor.execute('DELETE FROM frases WHERE id = ? AND user_id = ?', (frase_id, current_user.id))
+            conn.commit()
+            
+        return jsonify({'status': 'success'})
+    except Exception as e:
+        logger.error(f"Error al eliminar frase: {str(e)}")
+        return jsonify({'error': 'Error al eliminar frase'}), 500
+
+@app.route('/api/frases/<int:frase_id>/repasar', methods=['POST'])
+@login_required
+def api_repasar_frase(frase_id):
+    """Marcar una frase como repasada"""
+    try:
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            
+            # Verificar que la frase pertenece al usuario
+            cursor.execute('SELECT user_id FROM frases WHERE id = ?', (frase_id,))
+            frase = cursor.fetchone()
+            if not frase or frase[0] != current_user.id:
+                return jsonify({'error': 'Frase no encontrada'}), 404
+            
+            # Actualizar contador y fecha de último repaso
+            cursor.execute('''
+                UPDATE frases 
+                SET total_repasos = COALESCE(total_repasos, 0) + 1,
+                    ultima_vez = ?
+                WHERE id = ? AND user_id = ?
+            ''', (datetime.now(), frase_id, current_user.id))
+            conn.commit()
+            
+        return jsonify({'status': 'success'})
+    except Exception as e:
+        logger.error(f"Error al repasar frase: {str(e)}")
+        return jsonify({'error': 'Error al repasar frase'}), 500
+
+@app.route('/api/frases/repasar-todas', methods=['POST'])
+@login_required
+def api_repasar_todas_frases():
+    """Marcar todas las frases como repasadas"""
+    try:
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            
+            # Actualizar todas las frases del usuario
+            cursor.execute('''
+                UPDATE frases 
+                SET total_repasos = COALESCE(total_repasos, 0) + 1,
+                    ultima_vez = ?
+                WHERE user_id = ?
+            ''', (datetime.now(), current_user.id))
+            
+            # Obtener el número de frases actualizadas
+            cursor.execute('SELECT COUNT(*) FROM frases WHERE user_id = ?', (current_user.id,))
+            count = cursor.fetchone()[0]
+            
+            conn.commit()
+            
+        return jsonify({'status': 'success', 'count': count})
+    except Exception as e:
+        logger.error(f"Error al repasar todas las frases: {str(e)}")
+        return jsonify({'error': 'Error al repasar frases'}), 500
+
 if __name__ == '__main__':
     start_scheduler()
     app.run(host='0.0.0.0', port=5000, debug=True)

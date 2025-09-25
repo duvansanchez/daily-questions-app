@@ -8,6 +8,21 @@ let questionTimers = {}; // Para almacenar los timers de cada pregunta
 let questionStartTimes = {}; // Para almacenar los tiempos de inicio
 let mapaObjetivosPadre = {};
 let categoriaActual = 'diario';
+let frases = []; // Variable global para frases inspiracionales
+
+// Variables para la sesión de repaso
+let sesionRepaso = {
+    frases: [],
+    indiceActual: 0,
+    frasesRepasadas: 0,
+    activa: false
+};
+
+// Cronómetro de sesión
+let cronometroSesion = {
+    inicio: null,
+    intervalo: null
+};
 
 // === HISTÓRICO DE OBJETIVOS ===
 let historico = [];
@@ -2852,3 +2867,672 @@ async function agregarSubobjetivo(objetivoId, texto) {
         console.error('[AgregarSubobjetivo] Error:', err);
     }
 }
+// === SISTEMA DE FRASES INSPIRACIONALES ===
+
+// Cargar frases desde el backend
+async function cargarFrases() {
+    try {
+        const response = await fetch('/api/frases');
+        frases = await response.json();
+        renderizarFrases();
+        actualizarEstadisticasFrases();
+    } catch (error) {
+        console.error('Error cargando frases:', error);
+        showError('Error al cargar las frases');
+    }
+}
+
+// Renderizar lista de frases
+function renderizarFrases() {
+    const lista = document.getElementById('lista-frases');
+    const mensajeSin = document.getElementById('mensaje-sin-frases');
+    const filtroCategoria = document.getElementById('filtro-categoria-frases')?.value || '';
+    
+    if (!lista) return;
+    
+    // Filtrar frases por categoría
+    const frasesFiltradas = filtroCategoria ? 
+        frases.filter(f => f.categoria === filtroCategoria) : frases;
+    
+    if (frasesFiltradas.length === 0) {
+        lista.innerHTML = '';
+        if (mensajeSin) mensajeSin.style.display = 'block';
+        return;
+    }
+    
+    if (mensajeSin) mensajeSin.style.display = 'none';
+    
+    lista.innerHTML = frasesFiltradas.map(frase => {
+        const esRepasadaHoy = esRepasadaHoyFrase(frase.ultima_vez);
+        const totalRepasos = frase.total_repasos || 0;
+        
+        return `
+            <div class="frase-card ${esRepasadaHoy ? 'repasada-hoy' : ''}">
+                <div class="frase-texto">${frase.texto}</div>
+                ${frase.autor ? `<div class="frase-autor">${frase.autor}</div>` : ''}
+                
+                <div class="frase-meta">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="frase-categoria ${frase.categoria}">
+                            <i class="bi bi-tag"></i>
+                            ${capitalizarPrimeraLetra(frase.categoria)}
+                        </span>
+                        <div class="frase-estadisticas">
+                            <div class="frase-contador">
+                                <i class="bi bi-arrow-repeat"></i>
+                                <span>${totalRepasos} repasos</span>
+                            </div>
+                            ${frase.ultima_vez ? `<div class="frase-ultima-vez">Último: ${formatearFechaRelativa(frase.ultima_vez)}</div>` : ''}
+                        </div>
+                    </div>
+                    
+                    <div class="frase-acciones">
+                        <button class="frase-btn repasar" onclick="repasarFrase(${frase.id})" title="Repasar frase">
+                            <i class="bi bi-eye"></i>
+                            ${esRepasadaHoy ? 'Repasada' : 'Repasar'}
+                        </button>
+                        <button class="frase-btn editar" onclick="editarFrase(${frase.id})" title="Editar">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <button class="frase-btn eliminar" onclick="eliminarFrase(${frase.id})" title="Eliminar">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                ${frase.notas ? `<div class="frase-notas">${frase.notas}</div>` : ''}
+            </div>
+        `;
+    }).join('');
+}
+
+// Actualizar estadísticas de frases
+function actualizarEstadisticasFrases() {
+    const totalFrases = document.getElementById('total-frases');
+    const frasesHoy = document.getElementById('frases-hoy');
+    const frasesSemana = document.getElementById('frases-semana');
+    const totalRepasos = document.getElementById('total-repasos');
+    
+    if (!totalFrases) return;
+    
+    const hoy = new Date();
+    const inicioSemana = new Date(hoy);
+    inicioSemana.setDate(hoy.getDate() - hoy.getDay());
+    
+    const repasadasHoy = frases.filter(f => esRepasadaHoyFrase(f.ultima_vez)).length;
+    const repasadasSemana = frases.filter(f => {
+        if (!f.ultima_vez) return false;
+        const fecha = new Date(f.ultima_vez);
+        return fecha >= inicioSemana;
+    }).length;
+    const sumaRepasos = frases.reduce((sum, f) => sum + (f.total_repasos || 0), 0);
+    
+    totalFrases.textContent = frases.length;
+    frasesHoy.textContent = repasadasHoy;
+    frasesSemana.textContent = repasadasSemana;
+    totalRepasos.textContent = sumaRepasos;
+}
+
+// Verificar si una frase fue repasada hoy
+function esRepasadaHoyFrase(ultimaVez) {
+    if (!ultimaVez) return false;
+    const hoy = new Date().toDateString();
+    const fechaUltima = new Date(ultimaVez).toDateString();
+    return hoy === fechaUltima;
+}
+
+// Repasar una frase (incrementar contador)
+async function repasarFrase(fraseId) {
+    try {
+        const response = await fetch(`/api/frases/${fraseId}/repasar`, {
+            method: 'POST'
+        });
+        
+        if (response.ok) {
+            showSuccess('¡Frase repasada!');
+            await cargarFrases();
+        } else {
+            showError('Error al repasar la frase');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showError('Error al repasar la frase');
+    }
+}
+
+// Repasar todas las frases - Iniciar sesión de repaso
+async function repasarTodasLasFrases() {
+    if (frases.length === 0) {
+        showInfo('No tienes frases para repasar');
+        return;
+    }
+    
+    // Iniciar sesión de repaso
+    iniciarSesionRepaso();
+}
+
+// Iniciar sesión de repaso
+function iniciarSesionRepaso() {
+    // Preparar frases para repaso (mezclar aleatoriamente)
+    sesionRepaso.frases = [...frases].sort(() => Math.random() - 0.5);
+    sesionRepaso.indiceActual = 0;
+    sesionRepaso.frasesRepasadas = 0;
+    sesionRepaso.activa = true;
+    
+    // Ocultar la interfaz principal de frases
+    document.getElementById('card-frases').style.display = 'none';
+    
+    // Mostrar la interfaz de repaso
+    mostrarInterfazRepaso();
+    
+    // Mostrar la primera frase
+    mostrarFraseRepaso();
+}
+
+// Mostrar interfaz de repaso
+function mostrarInterfazRepaso() {
+    const cardFrases = document.getElementById('card-frases');
+    const interfazRepaso = document.createElement('div');
+    interfazRepaso.id = 'interfaz-repaso';
+    interfazRepaso.className = 'card mt-3';
+    interfazRepaso.innerHTML = `
+        <div class="card-body">
+            <!-- Header de repaso -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h5 class="mb-1"><i class="bi bi-arrow-repeat"></i> Sesión de Repaso</h5>
+                    <p class="text-muted mb-0">Repasa tus frases inspiracionales</p>
+                </div>
+                <button class="btn btn-outline-secondary" onclick="terminarSesionRepaso()">
+                    <i class="bi bi-x"></i> Terminar
+                </button>
+            </div>
+            
+            <!-- Barra de progreso -->
+            <div class="progress-container mb-4">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="fw-semibold">Progreso</span>
+                    <span id="progreso-repaso">1 de ${sesionRepaso.frases.length}</span>
+                </div>
+                <div class="progress">
+                    <div class="progress-bar" id="barra-progreso-repaso" role="progressbar" 
+                         style="width: ${(1 / sesionRepaso.frases.length * 100)}%;" 
+                         aria-valuenow="1" aria-valuemin="0" aria-valuemax="${sesionRepaso.frases.length}">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Contenedor de frase -->
+            <div id="contenedor-frase-repaso" class="text-center py-5">
+                <!-- La frase se cargará aquí -->
+            </div>
+            
+            <!-- Controles de repaso -->
+            <div class="d-flex justify-content-center gap-3 mt-4">
+                <button class="btn btn-outline-secondary" id="btn-anterior-repaso" onclick="fraseAnterior()" disabled>
+                    <i class="bi bi-chevron-left"></i> Anterior
+                </button>
+                <button class="btn btn-success" id="btn-repasada" onclick="marcarRepasadaYSiguiente()">
+                    <i class="bi bi-check-circle"></i> Repasada
+                </button>
+                <button class="btn btn-primary" id="btn-siguiente-repaso" onclick="siguienteFrase()">
+                    Siguiente <i class="bi bi-chevron-right"></i>
+                </button>
+            </div>
+            
+            <!-- Estadísticas de sesión -->
+            <div class="row text-center mt-4 pt-3 border-top">
+                <div class="col-4">
+                    <div class="h5 mb-0 text-success" id="frases-repasadas-sesion">0</div>
+                    <small class="text-muted">Repasadas</small>
+                </div>
+                <div class="col-4">
+                    <div class="h5 mb-0 text-primary" id="frases-restantes-sesion">${sesionRepaso.frases.length}</div>
+                    <small class="text-muted">Restantes</small>
+                </div>
+                <div class="col-4">
+                    <div class="h5 mb-0 text-info" id="tiempo-sesion">00:00</div>
+                    <small class="text-muted">Tiempo</small>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Insertar después del card de frases
+    cardFrases.parentNode.insertBefore(interfazRepaso, cardFrases.nextSibling);
+    
+    // Iniciar cronómetro de sesión
+    iniciarCronometroSesion();
+}
+
+// Mostrar frase actual en la sesión de repaso
+function mostrarFraseRepaso() {
+    const frase = sesionRepaso.frases[sesionRepaso.indiceActual];
+    const contenedor = document.getElementById('contenedor-frase-repaso');
+    
+    if (!frase) {
+        finalizarSesionRepaso();
+        return;
+    }
+    
+    contenedor.innerHTML = `
+        <div class="frase-repaso-card">
+            <div class="frase-texto-repaso mb-4" style="font-size: 1.5rem; color: #1f2937; line-height: 1.6;">
+                "${frase.texto}"
+            </div>
+            ${frase.autor ? `<div class="frase-autor-repaso mb-3" style="font-size: 1.1rem; color: #6b7280;">— ${frase.autor}</div>` : ''}
+            <div class="d-flex justify-content-center gap-2 mb-3">
+                <span class="frase-categoria ${frase.categoria}" style="font-size: 0.9rem;">
+                    <i class="bi bi-tag"></i>
+                    ${capitalizarPrimeraLetra(frase.categoria)}
+                </span>
+            </div>
+            ${frase.notas ? `<div class="frase-notas-repaso mt-3 p-3 bg-light rounded" style="font-style: italic; color: #6b7280;">${frase.notas}</div>` : ''}
+        </div>
+    `;
+    
+    // Actualizar controles
+    actualizarControlesRepaso();
+}
+
+// Actualizar controles de repaso
+function actualizarControlesRepaso() {
+    const btnAnterior = document.getElementById('btn-anterior-repaso');
+    const btnSiguiente = document.getElementById('btn-siguiente-repaso');
+    const progreso = document.getElementById('progreso-repaso');
+    const barraProgreso = document.getElementById('barra-progreso-repaso');
+    
+    // Actualizar botones
+    btnAnterior.disabled = sesionRepaso.indiceActual === 0;
+    
+    if (sesionRepaso.indiceActual === sesionRepaso.frases.length - 1) {
+        btnSiguiente.innerHTML = '<i class="bi bi-check-circle"></i> Finalizar';
+        btnSiguiente.className = 'btn btn-success';
+    } else {
+        btnSiguiente.innerHTML = 'Siguiente <i class="bi bi-chevron-right"></i>';
+        btnSiguiente.className = 'btn btn-primary';
+    }
+    
+    // Actualizar progreso
+    const actual = sesionRepaso.indiceActual + 1;
+    const total = sesionRepaso.frases.length;
+    progreso.textContent = `${actual} de ${total}`;
+    barraProgreso.style.width = `${(actual / total * 100)}%`;
+    barraProgreso.setAttribute('aria-valuenow', actual);
+}
+
+// Marcar frase como repasada y continuar
+async function marcarRepasadaYSiguiente() {
+    const frase = sesionRepaso.frases[sesionRepaso.indiceActual];
+    
+    try {
+        const response = await fetch(`/api/frases/${frase.id}/repasar`, {
+            method: 'POST'
+        });
+        
+        if (response.ok) {
+            sesionRepaso.frasesRepasadas++;
+            actualizarEstadisticasSesion();
+            
+            // Mostrar feedback visual
+            const btnRepasada = document.getElementById('btn-repasada');
+            const textoOriginal = btnRepasada.innerHTML;
+            btnRepasada.innerHTML = '<i class="bi bi-check-circle-fill"></i> ¡Repasada!';
+            btnRepasada.className = 'btn btn-success';
+            btnRepasada.disabled = true;
+            
+            setTimeout(() => {
+                btnRepasada.innerHTML = textoOriginal;
+                btnRepasada.className = 'btn btn-success';
+                btnRepasada.disabled = false;
+                siguienteFrase();
+            }, 800);
+        } else {
+            showError('Error al marcar la frase como repasada');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showError('Error al marcar la frase como repasada');
+    }
+}
+
+// Ir a la siguiente frase
+function siguienteFrase() {
+    if (sesionRepaso.indiceActual < sesionRepaso.frases.length - 1) {
+        sesionRepaso.indiceActual++;
+        mostrarFraseRepaso();
+    } else {
+        finalizarSesionRepaso();
+    }
+}
+
+// Ir a la frase anterior
+function fraseAnterior() {
+    if (sesionRepaso.indiceActual > 0) {
+        sesionRepaso.indiceActual--;
+        mostrarFraseRepaso();
+    }
+}
+
+// Actualizar estadísticas de la sesión
+function actualizarEstadisticasSesion() {
+    const repasadas = document.getElementById('frases-repasadas-sesion');
+    const restantes = document.getElementById('frases-restantes-sesion');
+    
+    if (repasadas) repasadas.textContent = sesionRepaso.frasesRepasadas;
+    if (restantes) restantes.textContent = sesionRepaso.frases.length - sesionRepaso.frasesRepasadas;
+}
+
+function iniciarCronometroSesion() {
+    cronometroSesion.inicio = new Date();
+    cronometroSesion.intervalo = setInterval(() => {
+        const ahora = new Date();
+        const transcurrido = Math.floor((ahora - cronometroSesion.inicio) / 1000);
+        const minutos = Math.floor(transcurrido / 60);
+        const segundos = transcurrido % 60;
+        
+        const tiempoElement = document.getElementById('tiempo-sesion');
+        if (tiempoElement) {
+            tiempoElement.textContent = `${minutos.toString().padStart(2, '0')}:${segundos.toString().padStart(2, '0')}`;
+        }
+    }, 1000);
+}
+
+// Finalizar sesión de repaso
+function finalizarSesionRepaso() {
+    // Detener cronómetro
+    if (cronometroSesion.intervalo) {
+        clearInterval(cronometroSesion.intervalo);
+    }
+    
+    const tiempoTotal = cronometroSesion.inicio ? 
+        Math.floor((new Date() - cronometroSesion.inicio) / 1000) : 0;
+    const minutos = Math.floor(tiempoTotal / 60);
+    const segundos = tiempoTotal % 60;
+    
+    // Mostrar resumen
+    Swal.fire({
+        title: '¡Sesión Completada!',
+        html: `
+            <div class="text-center">
+                <div class="mb-3">
+                    <i class="bi bi-check-circle-fill text-success" style="font-size: 4rem;"></i>
+                </div>
+                <div class="row">
+                    <div class="col-4">
+                        <div class="h4 text-success">${sesionRepaso.frasesRepasadas}</div>
+                        <small class="text-muted">Frases repasadas</small>
+                    </div>
+                    <div class="col-4">
+                        <div class="h4 text-primary">${sesionRepaso.frases.length}</div>
+                        <small class="text-muted">Total de frases</small>
+                    </div>
+                    <div class="col-4">
+                        <div class="h4 text-info">${minutos}:${segundos.toString().padStart(2, '0')}</div>
+                        <small class="text-muted">Tiempo total</small>
+                    </div>
+                </div>
+            </div>
+        `,
+        icon: null,
+        confirmButtonText: 'Continuar',
+        allowOutsideClick: false
+    }).then(() => {
+        terminarSesionRepaso();
+    });
+}
+
+// Terminar sesión de repaso
+function terminarSesionRepaso() {
+    // Limpiar cronómetro
+    if (cronometroSesion.intervalo) {
+        clearInterval(cronometroSesion.intervalo);
+    }
+    
+    // Remover interfaz de repaso
+    const interfazRepaso = document.getElementById('interfaz-repaso');
+    if (interfazRepaso) {
+        interfazRepaso.remove();
+    }
+    
+    // Mostrar interfaz principal de frases
+    document.getElementById('card-frases').style.display = 'block';
+    
+    // Resetear sesión
+    sesionRepaso.activa = false;
+    
+    // Recargar frases para actualizar estadísticas
+    cargarFrases();
+}
+
+// Hacer funciones globales para los controles
+window.marcarRepasadaYSiguiente = marcarRepasadaYSiguiente;
+window.siguienteFrase = siguienteFrase;
+window.fraseAnterior = fraseAnterior;
+window.terminarSesionRepaso = terminarSesionRepaso;
+
+// Mostrar frase aleatoria
+async function mostrarFraseAleatoria() {
+    if (frases.length === 0) {
+        showInfo('No tienes frases agregadas');
+        return;
+    }
+    
+    const fraseAleatoria = frases[Math.floor(Math.random() * frases.length)];
+    
+    const html = `
+        <div class="text-center">
+            <div class="frase-texto mb-3" style="font-size: 1.3rem; color: #1f2937;">
+                "${fraseAleatoria.texto}"
+            </div>
+            ${fraseAleatoria.autor ? `<div class="frase-autor mb-3">— ${fraseAleatoria.autor}</div>` : ''}
+            <div class="d-flex justify-content-center gap-2">
+                <span class="frase-categoria ${fraseAleatoria.categoria}">
+                    ${capitalizarPrimeraLetra(fraseAleatoria.categoria)}
+                </span>
+            </div>
+        </div>
+    `;
+    
+    Swal.fire({
+        title: 'Frase del Momento',
+        html: html,
+        icon: null,
+        showCancelButton: true,
+        confirmButtonText: 'Repasar',
+        cancelButtonText: 'Cerrar',
+        customClass: {
+            popup: 'swal-wide'
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            repasarFrase(fraseAleatoria.id);
+        }
+    });
+}
+
+// Editar frase
+function editarFrase(fraseId) {
+    const frase = frases.find(f => f.id === fraseId);
+    if (!frase) return;
+    
+    document.getElementById('editar-frase-id').value = frase.id;
+    document.getElementById('editar-frase-texto').value = frase.texto;
+    document.getElementById('editar-frase-autor').value = frase.autor || '';
+    document.getElementById('editar-frase-categoria').value = frase.categoria;
+    document.getElementById('editar-frase-notas').value = frase.notas || '';
+    
+    const modal = new bootstrap.Modal(document.getElementById('modalEditarFrase'));
+    modal.show();
+}
+
+// Eliminar frase
+async function eliminarFrase(fraseId) {
+    const result = await Swal.fire({
+        title: '¿Eliminar frase?',
+        text: 'Esta acción no se puede deshacer',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc2626',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar'
+    });
+    
+    if (result.isConfirmed) {
+        try {
+            const response = await fetch(`/api/frases/${fraseId}`, {
+                method: 'DELETE'
+            });
+            
+            if (response.ok) {
+                showSuccess('Frase eliminada');
+                await cargarFrases();
+            } else {
+                showError('Error al eliminar la frase');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            showError('Error al eliminar la frase');
+        }
+    }
+}
+
+// Funciones auxiliares
+function capitalizarPrimeraLetra(str) {
+    return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+function formatearFechaRelativa(fecha) {
+    const ahora = new Date();
+    const fechaObj = new Date(fecha);
+    const diffMs = ahora - fechaObj;
+    const diffDias = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    
+    if (diffDias === 0) return 'Hoy';
+    if (diffDias === 1) return 'Ayer';
+    if (diffDias < 7) return `Hace ${diffDias} días`;
+    if (diffDias < 30) return `Hace ${Math.floor(diffDias / 7)} semanas`;
+    return fechaObj.toLocaleDateString();
+}
+
+// Función para configurar event listeners de frases
+function configurarEventListenersFrases() {
+    console.log('Configurando event listeners de frases...');
+    
+    // Botón nueva frase
+    const btnNuevaFrase = document.getElementById('btn-nueva-frase');
+    console.log('btnNuevaFrase encontrado:', btnNuevaFrase);
+    if (btnNuevaFrase && !btnNuevaFrase.hasAttribute('data-listener-added')) {
+        btnNuevaFrase.addEventListener('click', function() {
+            const modal = new bootstrap.Modal(document.getElementById('modalNuevaFrase'));
+            modal.show();
+        });
+        btnNuevaFrase.setAttribute('data-listener-added', 'true');
+    }
+    
+    // Botón repasar todas
+    const btnRepasarTodas = document.getElementById('btn-repasar-todas');
+    if (btnRepasarTodas) {
+        btnRepasarTodas.addEventListener('click', repasarTodasLasFrases);
+    }
+    
+    // Botón frase aleatoria
+    const btnFraseAleatoria = document.getElementById('btn-frase-aleatoria');
+    console.log('btnFraseAleatoria encontrado:', btnFraseAleatoria);
+    if (btnFraseAleatoria && !btnFraseAleatoria.hasAttribute('data-listener-added')) {
+        btnFraseAleatoria.addEventListener('click', mostrarFraseAleatoria);
+        btnFraseAleatoria.setAttribute('data-listener-added', 'true');
+    }
+    
+    // Filtro de categoría
+    const filtroCategoria = document.getElementById('filtro-categoria-frases');
+    console.log('filtroCategoria encontrado:', filtroCategoria);
+    if (filtroCategoria && !filtroCategoria.hasAttribute('data-listener-added')) {
+        filtroCategoria.addEventListener('change', renderizarFrases);
+        filtroCategoria.setAttribute('data-listener-added', 'true');
+    }
+}
+
+// Event listeners para frases
+document.addEventListener('DOMContentLoaded', function() {
+    // Configurar event listeners iniciales
+    configurarEventListenersFrases();
+    
+    // Form nueva frase
+    const formNuevaFrase = document.getElementById('form-nueva-frase');
+    if (formNuevaFrase) {
+        formNuevaFrase.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const datos = {
+                texto: document.getElementById('frase-texto').value,
+                autor: document.getElementById('frase-autor').value,
+                categoria: document.getElementById('frase-categoria').value,
+                notas: document.getElementById('frase-notas').value
+            };
+            
+            try {
+                const response = await fetch('/api/frases', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(datos)
+                });
+                
+                if (response.ok) {
+                    showSuccess('Frase agregada exitosamente');
+                    bootstrap.Modal.getInstance(document.getElementById('modalNuevaFrase')).hide();
+                    formNuevaFrase.reset();
+                    await cargarFrases();
+                } else {
+                    showError('Error al agregar la frase');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showError('Error al agregar la frase');
+            }
+        });
+    }
+    
+    // Form editar frase
+    const formEditarFrase = document.getElementById('form-editar-frase');
+    if (formEditarFrase) {
+        formEditarFrase.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const fraseId = document.getElementById('editar-frase-id').value;
+            const datos = {
+                texto: document.getElementById('editar-frase-texto').value,
+                autor: document.getElementById('editar-frase-autor').value,
+                categoria: document.getElementById('editar-frase-categoria').value,
+                notas: document.getElementById('editar-frase-notas').value
+            };
+            
+            try {
+                const response = await fetch(`/api/frases/${fraseId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(datos)
+                });
+                
+                if (response.ok) {
+                    showSuccess('Frase actualizada exitosamente');
+                    bootstrap.Modal.getInstance(document.getElementById('modalEditarFrase')).hide();
+                    await cargarFrases();
+                } else {
+                    showError('Error al actualizar la frase');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showError('Error al actualizar la frase');
+            }
+        });
+    }
+});
+
+// Hacer funciones globales
+window.repasarFrase = repasarFrase;
+window.editarFrase = editarFrase;
+window.eliminarFrase = eliminarFrase;
+window.cargarFrases = cargarFrases;
+window.configurarEventListenersFrases = configurarEventListenersFrases;
