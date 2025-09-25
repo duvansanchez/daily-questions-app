@@ -2890,6 +2890,16 @@ function renderizarFrases() {
     
     if (!lista) return;
     
+    // Actualizar texto del botón "Repasar Todas" según el filtro
+    const btnRepasarTodas = document.getElementById('btn-repasar-todas');
+    if (btnRepasarTodas) {
+        if (filtroCategoria) {
+            btnRepasarTodas.innerHTML = `<i class="bi bi-arrow-repeat me-1"></i>Repasar ${capitalizarPrimeraLetra(filtroCategoria)}`;
+        } else {
+            btnRepasarTodas.innerHTML = `<i class="bi bi-arrow-repeat me-1"></i>Repasar Todas`;
+        }
+    }
+    
     // Filtrar frases por categoría
     const frasesFiltradas = filtroCategoria ? 
         frases.filter(f => f.categoria === filtroCategoria) : frases;
@@ -3007,17 +3017,33 @@ async function repasarTodasLasFrases() {
         return;
     }
     
-    // Iniciar sesión de repaso
-    iniciarSesionRepaso();
+    // Obtener filtro de categoría actual
+    const filtroCategoria = document.getElementById('filtro-categoria-frases')?.value || '';
+    
+    // Filtrar frases según la categoría seleccionada
+    let frasesParaRepasar;
+    if (filtroCategoria) {
+        frasesParaRepasar = frases.filter(f => f.categoria === filtroCategoria);
+        if (frasesParaRepasar.length === 0) {
+            showInfo(`No tienes frases de la categoría "${capitalizarPrimeraLetra(filtroCategoria)}" para repasar`);
+            return;
+        }
+    } else {
+        frasesParaRepasar = frases;
+    }
+    
+    // Iniciar sesión de repaso con las frases filtradas
+    iniciarSesionRepaso(frasesParaRepasar, filtroCategoria);
 }
 
 // Iniciar sesión de repaso
-function iniciarSesionRepaso() {
+function iniciarSesionRepaso(frasesParaRepasar = frases, categoriaFiltro = '') {
     // Preparar frases para repaso (mezclar aleatoriamente)
-    sesionRepaso.frases = [...frases].sort(() => Math.random() - 0.5);
+    sesionRepaso.frases = [...frasesParaRepasar].sort(() => Math.random() - 0.5);
     sesionRepaso.indiceActual = 0;
     sesionRepaso.frasesRepasadas = 0;
     sesionRepaso.activa = true;
+    sesionRepaso.categoriaFiltro = categoriaFiltro; // Guardar la categoría filtrada
     
     // Ocultar la interfaz principal de frases
     document.getElementById('card-frases').style.display = 'none';
@@ -3041,7 +3067,12 @@ function mostrarInterfazRepaso() {
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <div>
                     <h5 class="mb-1"><i class="bi bi-arrow-repeat"></i> Sesión de Repaso</h5>
-                    <p class="text-muted mb-0">Repasa tus frases inspiracionales</p>
+                    <p class="text-muted mb-0">
+                        ${sesionRepaso.categoriaFiltro ? 
+                            `Repasando frases de: <span class="frase-categoria ${sesionRepaso.categoriaFiltro}">${capitalizarPrimeraLetra(sesionRepaso.categoriaFiltro)}</span>` : 
+                            'Repasando todas tus frases inspiracionales'
+                        }
+                    </p>
                 </div>
                 <button class="btn btn-outline-secondary" onclick="terminarSesionRepaso()">
                     <i class="bi bi-x"></i> Terminar
@@ -3251,13 +3282,22 @@ function finalizarSesionRepaso() {
     const segundos = tiempoTotal % 60;
     
     // Mostrar resumen
+    const tituloCategoria = sesionRepaso.categoriaFiltro ? 
+        `¡Sesión de ${capitalizarPrimeraLetra(sesionRepaso.categoriaFiltro)} Completada!` : 
+        '¡Sesión Completada!';
+    
+    const descripcionCategoria = sesionRepaso.categoriaFiltro ? 
+        `<div class="mb-3"><span class="frase-categoria ${sesionRepaso.categoriaFiltro}"><i class="bi bi-tag"></i> ${capitalizarPrimeraLetra(sesionRepaso.categoriaFiltro)}</span></div>` : 
+        '';
+    
     Swal.fire({
-        title: '¡Sesión Completada!',
+        title: tituloCategoria,
         html: `
             <div class="text-center">
                 <div class="mb-3">
                     <i class="bi bi-check-circle-fill text-success" style="font-size: 4rem;"></i>
                 </div>
+                ${descripcionCategoria}
                 <div class="row">
                     <div class="col-4">
                         <div class="h4 text-success">${sesionRepaso.frasesRepasadas}</div>
@@ -3300,6 +3340,7 @@ function terminarSesionRepaso() {
     
     // Resetear sesión
     sesionRepaso.activa = false;
+    sesionRepaso.categoriaFiltro = '';
     
     // Recargar frases para actualizar estadísticas
     cargarFrases();
@@ -3418,11 +3459,8 @@ function formatearFechaRelativa(fecha) {
 
 // Función para configurar event listeners de frases
 function configurarEventListenersFrases() {
-    console.log('Configurando event listeners de frases...');
-    
     // Botón nueva frase
     const btnNuevaFrase = document.getElementById('btn-nueva-frase');
-    console.log('btnNuevaFrase encontrado:', btnNuevaFrase);
     if (btnNuevaFrase && !btnNuevaFrase.hasAttribute('data-listener-added')) {
         btnNuevaFrase.addEventListener('click', function() {
             const modal = new bootstrap.Modal(document.getElementById('modalNuevaFrase'));
@@ -3439,7 +3477,6 @@ function configurarEventListenersFrases() {
     
     // Botón frase aleatoria
     const btnFraseAleatoria = document.getElementById('btn-frase-aleatoria');
-    console.log('btnFraseAleatoria encontrado:', btnFraseAleatoria);
     if (btnFraseAleatoria && !btnFraseAleatoria.hasAttribute('data-listener-added')) {
         btnFraseAleatoria.addEventListener('click', mostrarFraseAleatoria);
         btnFraseAleatoria.setAttribute('data-listener-added', 'true');
@@ -3447,21 +3484,14 @@ function configurarEventListenersFrases() {
     
     // Filtro de categoría
     const filtroCategoria = document.getElementById('filtro-categoria-frases');
-    console.log('filtroCategoria encontrado:', filtroCategoria);
     if (filtroCategoria && !filtroCategoria.hasAttribute('data-listener-added')) {
         filtroCategoria.addEventListener('change', renderizarFrases);
         filtroCategoria.setAttribute('data-listener-added', 'true');
     }
-}
-
-// Event listeners para frases
-document.addEventListener('DOMContentLoaded', function() {
-    // Configurar event listeners iniciales
-    configurarEventListenersFrases();
     
     // Form nueva frase
     const formNuevaFrase = document.getElementById('form-nueva-frase');
-    if (formNuevaFrase) {
+    if (formNuevaFrase && !formNuevaFrase.hasAttribute('data-listener-added')) {
         formNuevaFrase.addEventListener('submit', async function(e) {
             e.preventDefault();
             
@@ -3492,11 +3522,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 showError('Error al agregar la frase');
             }
         });
+        formNuevaFrase.setAttribute('data-listener-added', 'true');
     }
     
     // Form editar frase
     const formEditarFrase = document.getElementById('form-editar-frase');
-    if (formEditarFrase) {
+    if (formEditarFrase && !formEditarFrase.hasAttribute('data-listener-added')) {
         formEditarFrase.addEventListener('submit', async function(e) {
             e.preventDefault();
             
@@ -3527,7 +3558,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 showError('Error al actualizar la frase');
             }
         });
+        formEditarFrase.setAttribute('data-listener-added', 'true');
     }
+}
+
+// Event listeners para frases
+document.addEventListener('DOMContentLoaded', function() {
+    // Configurar event listeners iniciales
+    configurarEventListenersFrases();
 });
 
 // Hacer funciones globales
