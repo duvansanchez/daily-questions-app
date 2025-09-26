@@ -1996,4 +1996,37 @@ ESTILOS PARA SESIÓN DE REPASO DE FRASES === */
         min-width: auto;
         width: 100%;
     }
+}/* === E
+STILOS PARA CATEGORÍAS PERSONALIZADAS DE FRASES === */
+#nueva-categoria-container,
+#editar-nueva-categoria-container {
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Estilos para categorías personalizadas */
+.frase-categoria:not(.motivacion):not(.exito):not(.perseverancia):not(.sabiduria):not(.crecimiento):not(.liderazgo):not(.felicidad):not(.personal) {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+/* Validación visual para input de nueva categoría */
+#nueva-categoria-input:invalid,
+#editar-nueva-categoria-input:invalid {
+    border-color: #dc3545;
+}
+
+#nueva-categoria-input:valid,
+#editar-nueva-categoria-input:valid {
+    border-color: #198754;
 }

@@ -2875,12 +2875,99 @@ async function cargarFrases() {
     try {
         const response = await fetch('/api/frases');
         frases = await response.json();
+        actualizarCategoriasDisponibles();
         renderizarFrases();
         actualizarEstadisticasFrases();
     } catch (error) {
         console.error('Error cargando frases:', error);
         showError('Error al cargar las frases');
     }
+}
+
+// Actualizar categorías disponibles en los selectores
+function actualizarCategoriasDisponibles() {
+    // Obtener categorías únicas de las frases existentes
+    const categoriasExistentes = [...new Set(frases.map(f => f.categoria))];
+    
+    // Categorías predeterminadas
+    const categoriasPredeterminadas = [
+        { value: 'motivacion', label: 'Motivación' },
+        { value: 'exito', label: 'Éxito' },
+        { value: 'perseverancia', label: 'Perseverancia' },
+        { value: 'sabiduria', label: 'Sabiduría' },
+        { value: 'crecimiento', label: 'Crecimiento' },
+        { value: 'liderazgo', label: 'Liderazgo' },
+        { value: 'felicidad', label: 'Felicidad' },
+        { value: 'personal', label: 'Personal' }
+    ];
+    
+    // Combinar categorías predeterminadas con las personalizadas
+    const todasLasCategorias = [...categoriasPredeterminadas];
+    
+    categoriasExistentes.forEach(cat => {
+        if (!categoriasPredeterminadas.find(p => p.value === cat)) {
+            todasLasCategorias.push({
+                value: cat,
+                label: capitalizarPrimeraLetra(cat.replace(/_/g, ' '))
+            });
+        }
+    });
+    
+    // Actualizar filtro de categorías
+    const filtroCategoria = document.getElementById('filtro-categoria-frases');
+    if (filtroCategoria) {
+        const valorActual = filtroCategoria.value;
+        filtroCategoria.innerHTML = '<option value="">Todas las categorías</option>';
+        
+        todasLasCategorias.forEach(cat => {
+            const option = document.createElement('option');
+            option.value = cat.value;
+            option.textContent = cat.label;
+            filtroCategoria.appendChild(option);
+        });
+        
+        // Restaurar valor seleccionado si existe
+        if (valorActual && todasLasCategorias.find(c => c.value === valorActual)) {
+            filtroCategoria.value = valorActual;
+        }
+    }
+    
+    // Actualizar selectores de modales
+    actualizarSelectoresCategorias(todasLasCategorias);
+}
+
+// Actualizar selectores de categorías en los modales
+function actualizarSelectoresCategorias(categorias) {
+    const selectores = ['frase-categoria', 'editar-frase-categoria'];
+    
+    selectores.forEach(selectorId => {
+        const selector = document.getElementById(selectorId);
+        if (selector) {
+            const valorActual = selector.value;
+            
+            // Limpiar opciones excepto la primera y la última (nueva categoría)
+            const primeraOpcion = selector.firstElementChild;
+            const ultimaOpcion = selector.lastElementChild;
+            selector.innerHTML = '';
+            selector.appendChild(primeraOpcion);
+            
+            // Agregar categorías
+            categorias.forEach(cat => {
+                const option = document.createElement('option');
+                option.value = cat.value;
+                option.textContent = cat.label;
+                selector.appendChild(option);
+            });
+            
+            // Agregar opción de nueva categoría
+            selector.appendChild(ultimaOpcion);
+            
+            // Restaurar valor si existe
+            if (valorActual && categorias.find(c => c.value === valorActual)) {
+                selector.value = valorActual;
+            }
+        }
+    });
 }
 
 // Renderizar lista de frases
@@ -3406,6 +3493,11 @@ function editarFrase(fraseId) {
     
     const modal = new bootstrap.Modal(document.getElementById('modalEditarFrase'));
     modal.show();
+    
+    // Configurar event listeners cuando se abre el modal
+    setTimeout(() => {
+        configurarEventListenersCategorias();
+    }, 100);
 }
 
 // Eliminar frase
@@ -3466,6 +3558,11 @@ function configurarEventListenersFrases() {
         btnNuevaFrase.addEventListener('click', function() {
             const modal = new bootstrap.Modal(document.getElementById('modalNuevaFrase'));
             modal.show();
+            
+            // Configurar event listeners cuando se abre el modal
+            setTimeout(() => {
+                configurarEventListenersCategorias();
+            }, 100);
         });
         btnNuevaFrase.setAttribute('data-listener-added', 'true');
     }
@@ -3490,16 +3587,63 @@ function configurarEventListenersFrases() {
         filtroCategoria.setAttribute('data-listener-added', 'true');
     }
     
+    // Manejar nueva categoría en modal de nueva frase
+    const categoriaSelect = document.getElementById('frase-categoria');
+    const nuevaCategoriaContainer = document.getElementById('nueva-categoria-container');
+    if (categoriaSelect && !categoriaSelect.hasAttribute('data-listener-added')) {
+        categoriaSelect.addEventListener('change', function() {
+            if (this.value === 'nueva') {
+                nuevaCategoriaContainer.style.display = 'block';
+                document.getElementById('nueva-categoria-input').required = true;
+            } else {
+                nuevaCategoriaContainer.style.display = 'none';
+                document.getElementById('nueva-categoria-input').required = false;
+            }
+        });
+        categoriaSelect.setAttribute('data-listener-added', 'true');
+    }
+    
+    // Manejar nueva categoría en modal de editar frase
+    const editarCategoriaSelect = document.getElementById('editar-frase-categoria');
+    const editarNuevaCategoriaContainer = document.getElementById('editar-nueva-categoria-container');
+    if (editarCategoriaSelect && !editarCategoriaSelect.hasAttribute('data-listener-added')) {
+        editarCategoriaSelect.addEventListener('change', function() {
+            if (this.value === 'nueva') {
+                editarNuevaCategoriaContainer.style.display = 'block';
+                document.getElementById('editar-nueva-categoria-input').required = true;
+            } else {
+                editarNuevaCategoriaContainer.style.display = 'none';
+                document.getElementById('editar-nueva-categoria-input').required = false;
+            }
+        });
+        editarCategoriaSelect.setAttribute('data-listener-added', 'true');
+    }
+    
     // Form nueva frase
     const formNuevaFrase = document.getElementById('form-nueva-frase');
     if (formNuevaFrase && !formNuevaFrase.hasAttribute('data-listener-added')) {
         formNuevaFrase.addEventListener('submit', async function(e) {
             e.preventDefault();
             
+            // Obtener categoría (nueva o existente)
+            let categoria = document.getElementById('frase-categoria').value;
+            if (categoria === 'nueva') {
+                const nuevaCategoria = document.getElementById('nueva-categoria-input').value.trim();
+                if (!nuevaCategoria) {
+                    showError('Por favor ingresa el nombre de la nueva categoría');
+                    return;
+                }
+                if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ0-9\s]+$/.test(nuevaCategoria)) {
+                    showError('La categoría solo puede contener letras, números y espacios');
+                    return;
+                }
+                categoria = nuevaCategoria.toLowerCase().replace(/\s+/g, '_');
+            }
+            
             const datos = {
                 texto: document.getElementById('frase-texto').value,
                 autor: document.getElementById('frase-autor').value,
-                categoria: document.getElementById('frase-categoria').value,
+                categoria: categoria,
                 notas: document.getElementById('frase-notas').value
             };
             
@@ -3532,11 +3676,26 @@ function configurarEventListenersFrases() {
         formEditarFrase.addEventListener('submit', async function(e) {
             e.preventDefault();
             
+            // Obtener categoría (nueva o existente)
+            let categoria = document.getElementById('editar-frase-categoria').value;
+            if (categoria === 'nueva') {
+                const nuevaCategoria = document.getElementById('editar-nueva-categoria-input').value.trim();
+                if (!nuevaCategoria) {
+                    showError('Por favor ingresa el nombre de la nueva categoría');
+                    return;
+                }
+                if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ0-9\s]+$/.test(nuevaCategoria)) {
+                    showError('La categoría solo puede contener letras, números y espacios');
+                    return;
+                }
+                categoria = nuevaCategoria.toLowerCase().replace(/\s+/g, '_');
+            }
+            
             const fraseId = document.getElementById('editar-frase-id').value;
             const datos = {
                 texto: document.getElementById('editar-frase-texto').value,
                 autor: document.getElementById('editar-frase-autor').value,
-                categoria: document.getElementById('editar-frase-categoria').value,
+                categoria: categoria,
                 notas: document.getElementById('editar-frase-notas').value
             };
             
@@ -3561,6 +3720,9 @@ function configurarEventListenersFrases() {
         });
         formEditarFrase.setAttribute('data-listener-added', 'true');
     }
+    
+    // Configurar event listeners para categorías personalizadas
+    configurarEventListenersCategorias();
 }
 
 // Event listeners para frases
@@ -3569,9 +3731,63 @@ document.addEventListener('DOMContentLoaded', function() {
     configurarEventListenersFrases();
 });
 
+// Configurar event listeners para categorías personalizadas
+function configurarEventListenersCategorias() {
+    // Event listener para nueva categoría en modal de nueva frase
+    const selectCategoria = document.getElementById('frase-categoria');
+    if (selectCategoria) {
+        selectCategoria.removeEventListener('change', manejarCambioCategoria);
+        selectCategoria.addEventListener('change', manejarCambioCategoria);
+    }
+    
+    // Event listener para nueva categoría en modal de editar frase
+    const selectEditarCategoria = document.getElementById('editar-frase-categoria');
+    if (selectEditarCategoria) {
+        selectEditarCategoria.removeEventListener('change', manejarCambioEditarCategoria);
+        selectEditarCategoria.addEventListener('change', manejarCambioEditarCategoria);
+    }
+}
+
+// Manejar cambio de categoría en modal de nueva frase
+function manejarCambioCategoria() {
+    const nuevaCategoriaContainer = document.getElementById('nueva-categoria-container');
+    const nuevaCategoriaInput = document.getElementById('nueva-categoria-input');
+    
+    if (this.value === 'nueva') {
+        nuevaCategoriaContainer.style.display = 'block';
+        if (nuevaCategoriaInput) {
+            nuevaCategoriaInput.focus();
+        }
+    } else {
+        nuevaCategoriaContainer.style.display = 'none';
+        if (nuevaCategoriaInput) {
+            nuevaCategoriaInput.value = '';
+        }
+    }
+}
+
+// Manejar cambio de categoría en modal de editar frase
+function manejarCambioEditarCategoria() {
+    const nuevaCategoriaContainer = document.getElementById('editar-nueva-categoria-container');
+    const nuevaCategoriaInput = document.getElementById('editar-nueva-categoria-input');
+    
+    if (this.value === 'nueva') {
+        nuevaCategoriaContainer.style.display = 'block';
+        if (nuevaCategoriaInput) {
+            nuevaCategoriaInput.focus();
+        }
+    } else {
+        nuevaCategoriaContainer.style.display = 'none';
+        if (nuevaCategoriaInput) {
+            nuevaCategoriaInput.value = '';
+        }
+    }
+}
+
 // Hacer funciones globales
 window.repasarFrase = repasarFrase;
 window.editarFrase = editarFrase;
 window.eliminarFrase = eliminarFrase;
 window.cargarFrases = cargarFrases;
 window.configurarEventListenersFrases = configurarEventListenersFrases;
+window.configurarEventListenersCategorias = configurarEventListenersCategorias;

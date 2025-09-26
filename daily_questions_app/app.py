@@ -2826,6 +2826,37 @@ def api_repasar_todas_frases():
         logger.error(f"Error al repasar todas las frases: {str(e)}")
         return jsonify({'error': 'Error al repasar frases'}), 500
 
+@app.route('/api/frases/categorias', methods=['GET'])
+@login_required
+def api_list_categorias_frases():
+    """Obtener todas las categorías de frases del usuario"""
+    try:
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('''
+                SELECT DISTINCT categoria
+                FROM frases
+                WHERE user_id = ?
+                ORDER BY categoria
+            ''', (current_user.id,))
+            
+            categorias = [row[0] for row in cursor.fetchall()]
+            
+            # Agregar categorías predeterminadas si no existen
+            categorias_predeterminadas = [
+                'motivacion', 'exito', 'perseverancia', 'sabiduria', 
+                'crecimiento', 'liderazgo', 'felicidad', 'personal'
+            ]
+            
+            # Combinar y eliminar duplicados
+            todas_categorias = list(set(categorias + categorias_predeterminadas))
+            todas_categorias.sort()
+            
+            return jsonify(todas_categorias)
+    except Exception as e:
+        logger.error(f"Error al obtener categorías: {str(e)}")
+        return jsonify({'error': 'Error al obtener categorías'}), 500
+
 if __name__ == '__main__':
     start_scheduler()
     app.run(host='0.0.0.0', port=5000, debug=True)

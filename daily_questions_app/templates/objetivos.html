@@ -251,17 +251,24 @@
                     </div>
                     <div class="mb-3">
                         <label for="frase-categoria" class="form-label fw-semibold">Categoría</label>
-                        <select class="form-select" id="frase-categoria" required>
-                            <option value="">Selecciona una categoría</option>
-                            <option value="motivacion">Motivación</option>
-                            <option value="exito">Éxito</option>
-                            <option value="perseverancia">Perseverancia</option>
-                            <option value="sabiduria">Sabiduría</option>
-                            <option value="crecimiento">Crecimiento</option>
-                            <option value="liderazgo">Liderazgo</option>
-                            <option value="felicidad">Felicidad</option>
-                            <option value="personal">Personal</option>
-                        </select>
+                        <div class="d-flex gap-2">
+                            <select class="form-select" id="frase-categoria" required>
+                                <option value="">Selecciona una categoría</option>
+                                <option value="motivacion">Motivación</option>
+                                <option value="exito">Éxito</option>
+                                <option value="perseverancia">Perseverancia</option>
+                                <option value="sabiduria">Sabiduría</option>
+                                <option value="crecimiento">Crecimiento</option>
+                                <option value="liderazgo">Liderazgo</option>
+                                <option value="felicidad">Felicidad</option>
+                                <option value="personal">Personal</option>
+                                <option value="nueva">+ Nueva categoría</option>
+                            </select>
+                        </div>
+                        <div id="nueva-categoria-container" class="mt-2" style="display: none;">
+                            <input type="text" class="form-control" id="nueva-categoria-input" placeholder="Nombre de la nueva categoría" maxlength="50">
+                            <small class="text-muted">Solo letras, números y espacios. Máximo 50 caracteres.</small>
+                        </div>
                     </div>
                     <div class="mb-3">
                         <label for="frase-notas" class="form-label fw-semibold">Notas personales (opcional)</label>
@@ -301,17 +308,24 @@
                     </div>
                     <div class="mb-3">
                         <label for="editar-frase-categoria" class="form-label fw-semibold">Categoría</label>
-                        <select class="form-select" id="editar-frase-categoria" required>
-                            <option value="">Selecciona una categoría</option>
-                            <option value="motivacion">Motivación</option>
-                            <option value="exito">Éxito</option>
-                            <option value="perseverancia">Perseverancia</option>
-                            <option value="sabiduria">Sabiduría</option>
-                            <option value="crecimiento">Crecimiento</option>
-                            <option value="liderazgo">Liderazgo</option>
-                            <option value="felicidad">Felicidad</option>
-                            <option value="personal">Personal</option>
-                        </select>
+                        <div class="d-flex gap-2">
+                            <select class="form-select" id="editar-frase-categoria" required>
+                                <option value="">Selecciona una categoría</option>
+                                <option value="motivacion">Motivación</option>
+                                <option value="exito">Éxito</option>
+                                <option value="perseverancia">Perseverancia</option>
+                                <option value="sabiduria">Sabiduría</option>
+                                <option value="crecimiento">Crecimiento</option>
+                                <option value="liderazgo">Liderazgo</option>
+                                <option value="felicidad">Felicidad</option>
+                                <option value="personal">Personal</option>
+                                <option value="nueva">+ Nueva categoría</option>
+                            </select>
+                        </div>
+                        <div id="editar-nueva-categoria-container" class="mt-2" style="display: none;">
+                            <input type="text" class="form-control" id="editar-nueva-categoria-input" placeholder="Nombre de la nueva categoría" maxlength="50">
+                            <small class="text-muted">Solo letras, números y espacios. Máximo 50 caracteres.</small>
+                        </div>
                     </div>
                     <div class="mb-3">
                         <label for="editar-frase-notas" class="form-label fw-semibold">Notas personales (opcional)</label>
