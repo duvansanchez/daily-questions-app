@@ -2288,6 +2288,11 @@ def api_create_objetivo():
 @login_required
 def api_update_objetivo(objetivo_id):
     data = request.get_json()
+    
+    # Si se está marcando como recurrente (restaurando del histórico)
+    if 'recurrente' in data and data['recurrente'] == True:
+        return restaurar_objetivo_completo(objetivo_id)
+    
     campos = {}
     for campo in ['titulo', 'descripcion', 'prioridad', 'categoria', 'objetivo_padre_id', 'es_padre', 'estado', 'fecha_inicio', 'fecha_fin', 'fecha_proyeccion_comienzo', 'horas_estimadas', 'dificultad', 'etiquetas', 'recompensa', 'notas_adicionales', 'recurrente', 'frecuencia']:
         if campo in data:
@@ -2323,6 +2328,49 @@ def api_update_objetivo(objetivo_id):
         """, tuple(values))
         conn.commit()
         return jsonify({'status': 'success'})
+
+def restaurar_objetivo_completo(objetivo_id):
+    """Restaura un objetivo del histórico incluyendo sus subobjetivos"""
+    try:
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            
+            # 1. Marcar el objetivo como recurrente y no completado
+            cursor.execute("""
+                UPDATE objetivos 
+                SET recurrente = 1, completado = 0, fecha_completado = NULL
+                WHERE id = ? AND user_id = ?
+            """, (objetivo_id, current_user.id))
+            
+            # 2. Restaurar todos los subobjetivos asociados
+            # Primero verificamos si existen subobjetivos para este objetivo
+            cursor.execute("""
+                SELECT COUNT(*) FROM subobjetivos 
+                WHERE objetivo_id = ?
+            """, (objetivo_id,))
+            
+            count_subobjetivos = cursor.fetchone()[0]
+            
+            if count_subobjetivos > 0:
+                # Si existen subobjetivos, los restauramos (marcar como no completados)
+                cursor.execute("""
+                    UPDATE subobjetivos 
+                    SET completado = 0
+                    WHERE objetivo_id = ?
+                """, (objetivo_id,))
+                
+                logger.info(f"Restaurados {count_subobjetivos} subobjetivos para el objetivo {objetivo_id}")
+            
+            conn.commit()
+            
+            return jsonify({
+                'status': 'success',
+                'message': f'Objetivo restaurado con {count_subobjetivos} subobjetivos'
+            })
+            
+    except Exception as e:
+        logger.error(f"Error restaurando objetivo completo {objetivo_id}: {str(e)}")
+        return jsonify({'error': 'Error al restaurar el objetivo'}), 500
 
 @app.route('/api/objetivos/<int:objetivo_id>', methods=['DELETE'])
 @login_required
@@ -2374,71 +2422,83 @@ def api_list_objetivos_padre():
 @app.route('/api/objetivos_historico', methods=['GET'])
 @login_required
 def api_objetivos_historico():
-    from datetime import datetime, timedelta
-    tipo = request.args.get('tipo')
-    estado = request.args.get('estado')
-    fecha_inicio = request.args.get('fecha_inicio')
-    fecha_fin = request.args.get('fecha_fin')
-    q = request.args.get('q', '').strip()
-    limit = int(request.args.get('limit', 20))
-    offset = int(request.args.get('offset', 0))
+    try:
+        from datetime import datetime, timedelta
+        tipo = request.args.get('tipo')
+        estado = request.args.get('estado')
+        fecha_inicio = request.args.get('fecha_inicio')
+        fecha_fin = request.args.get('fecha_fin')
+        q = request.args.get('q', '').strip()
+        limit = int(request.args.get('limit', 20))
+        offset = int(request.args.get('offset', 0))
 
-    filtros = ["user_id = ?"]
-    valores = [current_user.id]
+        filtros = ["user_id = ?"]
+        valores = [current_user.id]
 
-    hoy = datetime.now().date()
-    filtros_hist = []
-    valores_hist = []
-
-    # Completados
-    filtros_hist.append("completado = 1")
-    # Vencidos (fecha_fin pasada y no completados)
-    filtros_hist.append("(completado = 0 AND fecha_fin IS NOT NULL AND fecha_fin < ?)")
-    valores_hist.append(hoy)
-    # No recurrentes cuyo periodo natural ya pasó
-    filtros_hist.append("(completado = 0 AND recurrente = 0 AND ((categoria = 'diario' AND fecha_creacion < ?) OR (categoria = 'semanal' AND fecha_creacion < ?) OR (categoria = 'mensual' AND fecha_creacion < ?) OR (categoria = 'anual' AND fecha_creacion < ?)))")
-    valores_hist.extend([
-        hoy - timedelta(days=1),      # diario
-        hoy - timedelta(days=7),      # semanal
-        hoy - timedelta(days=30),     # mensual
-        hoy - timedelta(days=365)     # anual
-    ])
-    filtros.append(f"({' OR '.join(filtros_hist)})")
-    valores += valores_hist
-
-    if tipo:
-        filtros.append("categoria = ?")
-        valores.append(tipo)
-    if estado == 'completado':
-        filtros.append("completado = 1")
-    elif estado == 'vencido':
-        filtros.append("completado = 0 AND fecha_fin IS NOT NULL AND fecha_fin < ?")
+        hoy = datetime.now().date()
+        
+        # Lógica completa del histórico
+        filtros_hist = []
+        
+        # 1. Objetivos completados
+        filtros_hist.append("completado = 1")
+        
+        # 2. Objetivos vencidos (con fecha_fin pasada y no completados)
+        filtros_hist.append("(completado = 0 AND fecha_fin IS NOT NULL AND fecha_fin < ?)")
         valores.append(hoy)
-    if fecha_inicio:
-        filtros.append("fecha_creacion >= ?")
-        valores.append(fecha_inicio)
-    if fecha_fin:
-        filtros.append("fecha_creacion <= ?")
-        valores.append(fecha_fin)
-    if q:
-        filtros.append("(titulo LIKE ? OR descripcion LIKE ? OR etiquetas LIKE ?)")
-        valores.extend([f'%{q}%', f'%{q}%', f'%{q}%'])
+        
+        # 3. Objetivos diarios de ayer y anteriores (no completados)
+        filtros_hist.append("(completado = 0 AND categoria = 'diario' AND CAST(fecha_creacion AS DATE) < ?)")
+        valores.append(hoy)
+        
+        # 4. Objetivos semanales vencidos (más de 7 días)
+        filtros_hist.append("(completado = 0 AND categoria = 'semanal' AND fecha_creacion <= ?)")
+        valores.append(hoy - timedelta(days=7))
+        
+        # 5. Objetivos mensuales vencidos (más de 30 días)
+        filtros_hist.append("(completado = 0 AND categoria = 'mensual' AND fecha_creacion <= ?)")
+        valores.append(hoy - timedelta(days=30))
+        
+        # 6. Objetivos anuales vencidos (más de 365 días)
+        filtros_hist.append("(completado = 0 AND categoria = 'anual' AND fecha_creacion <= ?)")
+        valores.append(hoy - timedelta(days=365))
+        
+        # Combinar todos los filtros del histórico
+        filtros.append(f"({' OR '.join(filtros_hist)})")
 
-    where_clause = ' AND '.join(filtros)
-    sql = f'''
-        SELECT id, titulo, descripcion, prioridad, categoria, completado, fecha_creacion, fecha_completado, objetivo_padre_id, es_padre, estado, fecha_inicio, fecha_fin, fecha_proyeccion_comienzo, horas_estimadas, dificultad, etiquetas, recompensa, notas_adicionales, recurrente
-        FROM objetivos
-        WHERE {where_clause}
-        ORDER BY fecha_creacion DESC
-    '''
-    # Log de depuración para ver la consulta y los valores
-    print('SQL HISTORICOS:', sql)
-    print('VALORES HISTORICOS:', valores)
-    with get_db_connection() as conn:
-        cursor = conn.cursor()
-        cursor.execute(sql, tuple(valores))
-        rows = cursor.fetchall()
-        objetivos = [
+        if tipo:
+            filtros.append("categoria = ?")
+            valores.append(tipo)
+        if estado == 'completado':
+            filtros.append("completado = 1")
+        elif estado == 'vencido':
+            filtros.append("completado = 0 AND fecha_fin IS NOT NULL AND fecha_fin < ?")
+            valores.append(hoy)
+        if fecha_inicio:
+            filtros.append("fecha_creacion >= ?")
+            valores.append(fecha_inicio)
+        if fecha_fin:
+            filtros.append("fecha_creacion <= ?")
+            valores.append(fecha_fin)
+        if q:
+            filtros.append("(titulo LIKE ? OR descripcion LIKE ? OR etiquetas LIKE ?)")
+            valores.extend([f'%{q}%', f'%{q}%', f'%{q}%'])
+
+        where_clause = ' AND '.join(filtros)
+        sql = f'''
+            SELECT id, titulo, descripcion, prioridad, categoria, completado, fecha_creacion, fecha_completado, objetivo_padre_id, es_padre, estado, fecha_inicio, fecha_fin, fecha_proyeccion_comienzo, horas_estimadas, dificultad, etiquetas, recompensa, notas_adicionales, recurrente
+            FROM objetivos
+            WHERE {where_clause}
+            ORDER BY fecha_creacion DESC
+        '''
+        # Log de depuración para ver la consulta y los valores
+        print('SQL HISTORICOS:', sql)
+        print('VALORES HISTORICOS:', valores)
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(sql, tuple(valores))
+            rows = cursor.fetchall()
+            objetivos = [
             {
                 'id': row[0],
                 'titulo': row[1],
@@ -2465,6 +2525,9 @@ def api_objetivos_historico():
         ]
         paginados = objetivos[offset:offset+limit]
         return jsonify(paginados)
+    except Exception as e:
+        logger.error(f"Error en objetivos_historico: {str(e)}")
+        return jsonify({'error': 'Error al obtener histórico de objetivos'}), 500
 
 # --- Scheduler para notificaciones automáticas ---
 def start_scheduler():

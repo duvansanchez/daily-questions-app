@@ -1122,6 +1122,7 @@ async function cargarObjetivos() {
     }
 }
 window.cargarObjetivos = cargarObjetivos;
+window.cargarYRenderizarSubobjetivos = cargarYRenderizarSubobjetivos;
 
 // Función para ordenar objetivos
 function ordenarObjetivos(objetivos, criterio) {
@@ -2716,7 +2717,7 @@ async function agregarSubobjetivo(objetivoId, texto) {
     }
 }
 
-window.cargarYRenderizarSubobjetivos = cargarYRenderizarSubobjetivos;
+
 
 // Función para renderizar la lista de subobjetivos
 function renderSubobjetivosList(objetivoId, subobjetivos) {
