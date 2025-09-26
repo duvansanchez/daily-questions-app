@@ -1981,7 +1981,15 @@ function limpiarCamposNuevoObjetivo() {
     document.getElementById('modal-titulo-objetivo').value = '';
     document.getElementById('modal-desc-objetivo').value = '';
     document.getElementById('modal-prioridad-objetivo').value = 'media';
-    document.getElementById('modal-categoria-objetivo').value = '';
+    
+    // Establecer categoría basada en la pestaña activa
+    const categoriaObjetivo = document.getElementById('modal-categoria-objetivo');
+    if (categoriaActual && categoriaActual !== 'todos' && categoriaActual !== 'historico') {
+        categoriaObjetivo.value = categoriaActual;
+    } else {
+        categoriaObjetivo.value = ''; // Sin categoría por defecto si está en "todos"
+    }
+    
     document.getElementById('modal-es-padre-objetivo').checked = false;
     document.getElementById('modal-padre-objetivo').value = '';
     document.getElementById('modal-estado-objetivo').value = 'pendiente';
