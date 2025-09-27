@@ -2894,32 +2894,14 @@ async function cargarFrases() {
 
 // Actualizar categorías disponibles en los selectores
 function actualizarCategoriasDisponibles() {
-    // Obtener categorías únicas de las frases existentes
+    // Obtener categorías únicas de las frases existentes (solo las creadas por el usuario)
     const categoriasExistentes = [...new Set(frases.map(f => f.categoria))];
     
-    // Categorías predeterminadas
-    const categoriasPredeterminadas = [
-        { value: 'motivacion', label: 'Motivación' },
-        { value: 'exito', label: 'Éxito' },
-        { value: 'perseverancia', label: 'Perseverancia' },
-        { value: 'sabiduria', label: 'Sabiduría' },
-        { value: 'crecimiento', label: 'Crecimiento' },
-        { value: 'liderazgo', label: 'Liderazgo' },
-        { value: 'felicidad', label: 'Felicidad' },
-        { value: 'personal', label: 'Personal' }
-    ];
-    
-    // Combinar categorías predeterminadas con las personalizadas
-    const todasLasCategorias = [...categoriasPredeterminadas];
-    
-    categoriasExistentes.forEach(cat => {
-        if (!categoriasPredeterminadas.find(p => p.value === cat)) {
-            todasLasCategorias.push({
-                value: cat,
-                label: capitalizarPrimeraLetra(cat.replace(/_/g, ' '))
-            });
-        }
-    });
+    // Solo usar las categorías que el usuario ha creado
+    const todasLasCategorias = categoriasExistentes.map(cat => ({
+        value: cat,
+        label: capitalizarPrimeraLetra(cat.replace(/_/g, ' '))
+    }));
     
     // Actualizar filtro de categorías
     const filtroCategoria = document.getElementById('filtro-categoria-frases');
@@ -2953,13 +2935,16 @@ function actualizarSelectoresCategorias(categorias) {
         if (selector) {
             const valorActual = selector.value;
             
-            // Limpiar opciones excepto la primera y la última (nueva categoría)
-            const primeraOpcion = selector.firstElementChild;
-            const ultimaOpcion = selector.lastElementChild;
+            // Limpiar todas las opciones
             selector.innerHTML = '';
-            selector.appendChild(primeraOpcion);
             
-            // Agregar categorías
+            // Agregar opción por defecto
+            const defaultOption = document.createElement('option');
+            defaultOption.value = '';
+            defaultOption.textContent = 'Selecciona una categoría';
+            selector.appendChild(defaultOption);
+            
+            // Agregar categorías del usuario
             categorias.forEach(cat => {
                 const option = document.createElement('option');
                 option.value = cat.value;
@@ -2968,10 +2953,13 @@ function actualizarSelectoresCategorias(categorias) {
             });
             
             // Agregar opción de nueva categoría
-            selector.appendChild(ultimaOpcion);
+            const nuevaOption = document.createElement('option');
+            nuevaOption.value = 'nueva';
+            nuevaOption.textContent = '+ Nueva categoría';
+            selector.appendChild(nuevaOption);
             
             // Restaurar valor si existe
-            if (valorActual && categorias.find(c => c.value === valorActual)) {
+            if (valorActual && (valorActual === 'nueva' || categorias.find(c => c.value === valorActual))) {
                 selector.value = valorActual;
             }
         }

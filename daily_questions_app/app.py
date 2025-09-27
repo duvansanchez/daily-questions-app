@@ -2841,18 +2841,9 @@ def api_list_categorias_frases():
             ''', (current_user.id,))
             
             categorias = [row[0] for row in cursor.fetchall()]
+            categorias.sort()
             
-            # Agregar categorías predeterminadas si no existen
-            categorias_predeterminadas = [
-                'motivacion', 'exito', 'perseverancia', 'sabiduria', 
-                'crecimiento', 'liderazgo', 'felicidad', 'personal'
-            ]
-            
-            # Combinar y eliminar duplicados
-            todas_categorias = list(set(categorias + categorias_predeterminadas))
-            todas_categorias.sort()
-            
-            return jsonify(todas_categorias)
+            return jsonify(categorias)
     except Exception as e:
         logger.error(f"Error al obtener categorías: {str(e)}")
         return jsonify({'error': 'Error al obtener categorías'}), 500
