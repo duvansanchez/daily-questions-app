@@ -2978,9 +2978,19 @@ function renderizarFrases() {
     const btnRepasarTodas = document.getElementById('btn-repasar-todas');
     if (btnRepasarTodas) {
         if (filtroCategoria) {
-            btnRepasarTodas.innerHTML = `<i class="bi bi-arrow-repeat me-1"></i>Repasar ${capitalizarPrimeraLetra(filtroCategoria)}`;
+            btnRepasarTodas.innerHTML = `<i class="bi bi-arrow-repeat me-1"></i>Repasar ${capitalizarPrimeraLetra(filtroCategoria.replace(/_/g, ' '))}`;
         } else {
             btnRepasarTodas.innerHTML = `<i class="bi bi-arrow-repeat me-1"></i>Repasar Todas`;
+        }
+    }
+    
+    // Actualizar texto del botón "Frase Aleatoria" según el filtro
+    const btnFraseAleatoria = document.getElementById('btn-frase-aleatoria');
+    if (btnFraseAleatoria) {
+        if (filtroCategoria) {
+            btnFraseAleatoria.innerHTML = `<i class="bi bi-shuffle me-1"></i>Frase de ${capitalizarPrimeraLetra(filtroCategoria.replace(/_/g, ' '))}`;
+        } else {
+            btnFraseAleatoria.innerHTML = `<i class="bi bi-shuffle me-1"></i>Frase Aleatoria`;
         }
     }
     
@@ -3049,22 +3059,36 @@ function actualizarEstadisticasFrases() {
     
     if (!totalFrases) return;
     
+    // Obtener filtro de categoría actual
+    const filtroCategoria = document.getElementById('filtro-categoria-frases')?.value || '';
+    
+    // Filtrar frases según la categoría seleccionada
+    let frasesFiltradas;
+    if (filtroCategoria) {
+        frasesFiltradas = frases.filter(f => f.categoria === filtroCategoria);
+    } else {
+        frasesFiltradas = frases; // Todas las frases si no hay filtro
+    }
+    
     const hoy = new Date();
     const inicioSemana = new Date(hoy);
     inicioSemana.setDate(hoy.getDate() - hoy.getDay());
     
-    const repasadasHoy = frases.filter(f => esRepasadaHoyFrase(f.ultima_vez)).length;
-    const repasadasSemana = frases.filter(f => {
+    const repasadasHoy = frasesFiltradas.filter(f => esRepasadaHoyFrase(f.ultima_vez)).length;
+    const repasadasSemana = frasesFiltradas.filter(f => {
         if (!f.ultima_vez) return false;
         const fecha = new Date(f.ultima_vez);
         return fecha >= inicioSemana;
     }).length;
-    const sumaRepasos = frases.reduce((sum, f) => sum + (f.total_repasos || 0), 0);
+    const sumaRepasos = frasesFiltradas.reduce((sum, f) => sum + (f.total_repasos || 0), 0);
     
-    totalFrases.textContent = frases.length;
+    totalFrases.textContent = frasesFiltradas.length;
     frasesHoy.textContent = repasadasHoy;
     frasesSemana.textContent = repasadasSemana;
     totalRepasos.textContent = sumaRepasos;
+    
+    // Actualizar indicador de filtro
+    actualizarIndicadorFiltroEstadisticas(filtroCategoria);
 }
 
 // Verificar si una frase fue repasada hoy
@@ -3367,11 +3391,11 @@ function finalizarSesionRepaso() {
     
     // Mostrar resumen
     const tituloCategoria = sesionRepaso.categoriaFiltro ? 
-        `¡Sesión de ${capitalizarPrimeraLetra(sesionRepaso.categoriaFiltro)} Completada!` : 
+        `¡Sesión de ${capitalizarPrimeraLetra(sesionRepaso.categoriaFiltro.replace(/_/g, ' '))} Completada!` : 
         '¡Sesión Completada!';
     
     const descripcionCategoria = sesionRepaso.categoriaFiltro ? 
-        `<div class="mb-3"><span class="frase-categoria ${sesionRepaso.categoriaFiltro}"><i class="bi bi-tag"></i> ${capitalizarPrimeraLetra(sesionRepaso.categoriaFiltro)}</span></div>` : 
+        `<div class="mb-3"><span class="frase-categoria ${sesionRepaso.categoriaFiltro}"><i class="bi bi-tag"></i> ${capitalizarPrimeraLetra(sesionRepaso.categoriaFiltro.replace(/_/g, ' '))}</span></div>` : 
         '';
     
     Swal.fire({
@@ -3443,7 +3467,23 @@ async function mostrarFraseAleatoria() {
         return;
     }
     
-    const fraseAleatoria = frases[Math.floor(Math.random() * frases.length)];
+    // Obtener filtro de categoría actual
+    const filtroCategoria = document.getElementById('filtro-categoria-frases')?.value || '';
+    
+    // Filtrar frases según la categoría seleccionada
+    let frasesDisponibles;
+    if (filtroCategoria) {
+        frasesDisponibles = frases.filter(f => f.categoria === filtroCategoria);
+        if (frasesDisponibles.length === 0) {
+            const nombreCategoria = capitalizarPrimeraLetra(filtroCategoria.replace(/_/g, ' '));
+            showInfo(`No tienes frases en la categoría "${nombreCategoria}"`);
+            return;
+        }
+    } else {
+        frasesDisponibles = frases;
+    }
+    
+    const fraseAleatoria = frasesDisponibles[Math.floor(Math.random() * frasesDisponibles.length)];
     
     const html = `
         <div class="text-center">
@@ -3459,8 +3499,15 @@ async function mostrarFraseAleatoria() {
         </div>
     `;
     
+    // Título dinámico según el filtro
+    let titulo = 'Frase del Momento';
+    if (filtroCategoria) {
+        const nombreCategoria = capitalizarPrimeraLetra(filtroCategoria.replace(/_/g, ' '));
+        titulo = `Frase de ${nombreCategoria}`;
+    }
+    
     Swal.fire({
-        title: 'Frase del Momento',
+        title: titulo,
         html: html,
         icon: null,
         showCancelButton: true,
@@ -3579,7 +3626,10 @@ function configurarEventListenersFrases() {
     // Filtro de categoría
     const filtroCategoria = document.getElementById('filtro-categoria-frases');
     if (filtroCategoria && !filtroCategoria.hasAttribute('data-listener-added')) {
-        filtroCategoria.addEventListener('change', renderizarFrases);
+        filtroCategoria.addEventListener('change', function() {
+            renderizarFrases();
+            actualizarEstadisticasFrases(); // Actualizar estadísticas cuando cambie el filtro
+        });
         filtroCategoria.setAttribute('data-listener-added', 'true');
     }
     
@@ -3777,6 +3827,21 @@ function manejarCambioEditarCategoria() {
         if (nuevaCategoriaInput) {
             nuevaCategoriaInput.value = '';
         }
+    }
+}
+
+// Actualizar indicador de filtro en estadísticas
+function actualizarIndicadorFiltroEstadisticas(categoriaFiltro) {
+    const indicador = document.getElementById('indicador-filtro-estadisticas');
+    if (!indicador) return;
+    
+    if (categoriaFiltro) {
+        const nombreCategoria = capitalizarPrimeraLetra(categoriaFiltro.replace(/_/g, ' '));
+        indicador.innerHTML = `<i class="bi bi-funnel-fill me-1"></i>Estadísticas de: <strong>${nombreCategoria}</strong>`;
+        indicador.className = 'text-primary';
+    } else {
+        indicador.innerHTML = '<i class="bi bi-globe me-1"></i>Estadísticas generales';
+        indicador.className = 'text-muted';
     }
 }
 
