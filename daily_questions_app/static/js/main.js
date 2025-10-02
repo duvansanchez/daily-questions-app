@@ -3161,6 +3161,9 @@ function iniciarSesionRepaso(frasesParaRepasar = frases, categoriaFiltro = '') {
     
     // Mostrar la primera frase
     mostrarFraseRepaso();
+    
+    // Activar atajos de teclado para la sesión de repaso
+    activarAtajosRepaso();
 }
 
 // Mostrar interfaz de repaso
@@ -3177,7 +3180,7 @@ function mostrarInterfazRepaso() {
                     <h5 class="mb-1"><i class="bi bi-arrow-repeat"></i> Sesión de Repaso</h5>
                     <p class="text-muted mb-0">
                         ${sesionRepaso.categoriaFiltro ? 
-                            `Repasando frases de: <span class="frase-categoria ${sesionRepaso.categoriaFiltro}">${capitalizarPrimeraLetra(sesionRepaso.categoriaFiltro)}</span>` : 
+                            `Repasando frases de: <span class="frase-categoria ${sesionRepaso.categoriaFiltro}">${capitalizarPrimeraLetra(sesionRepaso.categoriaFiltro.replace(/_/g, ' '))}</span>` : 
                             'Repasando todas tus frases inspiracionales'
                         }
                     </p>
@@ -3443,6 +3446,9 @@ function terminarSesionRepaso() {
         interfazRepaso.remove();
     }
     
+    // Desactivar atajos de teclado de repaso
+    desactivarAtajosRepaso();
+    
     // Mostrar interfaz principal de frases
     document.getElementById('card-frases').style.display = 'block';
     
@@ -3459,6 +3465,43 @@ window.marcarRepasadaYSiguiente = marcarRepasadaYSiguiente;
 window.siguienteFrase = siguienteFrase;
 window.fraseAnterior = fraseAnterior;
 window.terminarSesionRepaso = terminarSesionRepaso;
+
+// =====================
+// Atajos de teclado repaso
+// =====================
+let listenerRepaso = null;
+
+function activarAtajosRepaso() {
+    if (listenerRepaso) return; // Evita registrar múltiples veces
+    listenerRepaso = function(e) {
+        // No interferir cuando se escribe en inputs, textareas o selects
+        const tag = (e.target && e.target.tagName) ? e.target.tagName : '';
+        if (['INPUT', 'TEXTAREA', 'SELECT'].includes(tag)) return;
+        if (!sesionRepaso.activa) return;
+
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            marcarRepasadaYSiguiente();
+        } else if (e.key === 'ArrowRight') {
+            e.preventDefault();
+            siguienteFrase();
+        } else if (e.key === 'ArrowLeft') {
+            e.preventDefault();
+            fraseAnterior();
+        } else if (e.key === 'Escape') {
+            e.preventDefault();
+            terminarSesionRepaso();
+        }
+    };
+    document.addEventListener('keydown', listenerRepaso);
+}
+
+function desactivarAtajosRepaso() {
+    if (listenerRepaso) {
+        document.removeEventListener('keydown', listenerRepaso);
+        listenerRepaso = null;
+    }
+}
 
 // Mostrar frase aleatoria
 async function mostrarFraseAleatoria() {

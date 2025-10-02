@@ -44,6 +44,8 @@ ENV/
 # Local development
 instance/
 .webassets-cache
+flask_session/
+daily_questions_app/flask_session/
 
 # OS generated files
 .DS_Store
