@@ -159,6 +159,230 @@ def unauthorized():
     # Redirigir a la página de login
     return redirect(url_for('login'))
 
+# =============================
+# Estadísticas de Objetivos
+# =============================
+@app.route('/api/objetivos/stats_summary', methods=['GET'])
+@login_required
+def objetivos_stats_summary():
+    """
+    Devuelve resumen por período (hoy, semana, mes, año):
+      - esperados: objetivos de la categoría correspondiente al período.
+          * recurrentes: siempre cuentan como 1 por objetivo en el período
+          * no recurrentes: cuentan si fueron creados dentro del período
+          * excluye estado 'histórico'
+      - cumplidos: completado = 1 y fecha_completado dentro del período
+      - saltados: registros en objetivos_saltados dentro del período (cuenta objetivos únicos)
+      - no_cumplidos = max(esperados - cumplidos - saltados, 0)
+    """
+    try:
+        ahora = datetime.now()
+        # Rango de HOY (cerrado-abierto)
+        hoy_inicio = datetime(ahora.year, ahora.month, ahora.day)
+        hoy_fin = hoy_inicio + timedelta(days=1)
+
+        # Semana completa (lunes 00:00 a lunes siguiente 00:00)
+        delta_lunes = timedelta(days=hoy_inicio.weekday())
+        semana_inicio = hoy_inicio - delta_lunes
+        semana_fin = semana_inicio + timedelta(days=7)
+
+        # Mes completo
+        mes_inicio = datetime(ahora.year, ahora.month, 1)
+        if ahora.month == 12:
+            mes_fin = datetime(ahora.year + 1, 1, 1)
+        else:
+            mes_fin = datetime(ahora.year, ahora.month + 1, 1)
+
+        # Año completo
+        anio_inicio = datetime(ahora.year, 1, 1)
+        anio_fin = datetime(ahora.year + 1, 1, 1)
+
+        periodos = {
+            'hoy':        {'cat': 'diario',   'ini': hoy_inicio,    'fin': hoy_fin},
+            'semana':     {'cat': 'semanal',  'ini': semana_inicio, 'fin': semana_fin},
+            'mes':        {'cat': 'mensual',  'ini': mes_inicio,    'fin': mes_fin},
+            'anio':       {'cat': 'anual',    'ini': anio_inicio,   'fin': anio_fin},
+        }
+
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+
+            def contar_esperados(cat, ini, fin):
+                # Recurrentes de esa categoría (no históricos)
+                cursor.execute(
+                    """
+                    SELECT COUNT(*)
+                    FROM objetivos
+                    WHERE user_id = ?
+                      AND LOWER(COALESCE(categoria,'')) = ?
+                      AND COALESCE(recurrente, 0) = 1
+                      AND COALESCE(estado,'') <> 'histórico'
+                    """,
+                    (current_user.id, cat)
+                )
+                rec = int(cursor.fetchone()[0])
+
+                # No recurrentes creados en el período (no históricos)
+                cursor.execute(
+                    """
+                    SELECT COUNT(*)
+                    FROM objetivos
+                    WHERE user_id = ?
+                      AND LOWER(COALESCE(categoria,'')) = ?
+                      AND COALESCE(recurrente, 0) = 0
+                      AND fecha_creacion >= ? AND fecha_creacion < ?
+                      AND COALESCE(estado,'') <> 'histórico'
+                    """,
+                    (current_user.id, cat, ini, fin)
+                )
+                no_rec = int(cursor.fetchone()[0])
+                return rec + no_rec
+
+            def contar_cumplidos(cat, ini, fin):
+                cursor.execute(
+                    """
+                    SELECT COUNT(*)
+                    FROM objetivos
+                    WHERE user_id = ?
+                      AND LOWER(COALESCE(categoria,'')) = ?
+                      AND completado = 1
+                      AND fecha_completado >= ? AND fecha_completado < ?
+                    """,
+                    (current_user.id, cat, ini, fin)
+                )
+                return int(cursor.fetchone()[0])
+
+            def contar_saltados(cat, ini, fin):
+                # Cuenta objetivos únicos saltados en el período
+                cursor.execute(
+                    """
+                    SELECT COUNT(DISTINCT os.objetivo_id)
+                    FROM objetivos_saltados os
+                    JOIN objetivos o ON o.id = os.objetivo_id AND o.user_id = os.user_id
+                    WHERE os.user_id = ?
+                      AND LOWER(COALESCE(o.categoria,'')) = ?
+                      AND os.fecha_saltada >= ? AND os.fecha_saltada < ?
+                    """,
+                    (current_user.id, cat, ini, fin)
+                )
+                row = cursor.fetchone()
+                return int(row[0]) if row else 0
+
+            resultado = {}
+            for clave, cfg in periodos.items():
+                cat = cfg['cat']
+                ini = cfg['ini']
+                fin = cfg['fin']
+                esperados = contar_esperados(cat, ini, fin)
+                cumplidos = contar_cumplidos(cat, ini, fin)
+                saltados = contar_saltados(cat, ini, fin)
+                no_cumplidos = max(esperados - cumplidos - saltados, 0)
+                resultado[clave] = {
+                    'esperados': esperados,
+                    'cumplidos': cumplidos,
+                    'no_cumplidos': no_cumplidos,
+                    'saltados': saltados,
+                }
+
+        return jsonify({'status': 'success', 'data': resultado})
+    except Exception as e:
+        logger.error(f"Error en objetivos_stats_summary: {str(e)}")
+        return jsonify({'status': 'error', 'message': 'No se pudieron calcular las estadísticas de objetivos'}), 500
+
+@app.route('/api/objetivos/calendario', methods=['GET'])
+@login_required
+def objetivos_calendario():
+    """
+    Calendario mensual de objetivos creados y completados.
+    Parámetros:
+      - mes: 0-11 (0=Enero)
+      - anio: año numérico (ej. 2025)
+    Respuesta:
+      {
+        status: 'success',
+        data: {
+          anio: 2025,
+          mes: 0,
+          dias_en_mes: 31,
+          creados_por_dia: { '1': 2, '5': 1, ... },
+          completados_por_dia: { '2': 1, '10': 3, ... },
+          total_creados: 10,
+          total_completados: 8
+        }
+      }
+    """
+    try:
+        ahora = datetime.now()
+        mes = request.args.get('mes', default=ahora.month - 1, type=int)
+        anio = request.args.get('anio', default=ahora.year, type=int)
+
+        # Normalizar rango del mes (0-11)
+        if mes < 0 or mes > 11:
+            return jsonify({'status': 'error', 'message': 'Parámetro mes inválido'}), 400
+
+        inicio = datetime(anio, mes + 1, 1)
+        # Fin = primer día del siguiente mes
+        if mes == 11:
+            fin = datetime(anio + 1, 1, 1)
+        else:
+            fin = datetime(anio, mes + 2, 1)
+
+        # Cantidad de días del mes
+        dias_en_mes = (fin - inicio).days
+
+        creados = {}
+        completados = {}
+
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+
+            # Creados por día
+            cursor.execute(
+                """
+                SELECT DAY(fecha_creacion) AS dia, COUNT(*)
+                FROM objetivos
+                WHERE user_id = ?
+                  AND fecha_creacion >= ? AND fecha_creacion < ?
+                GROUP BY DAY(fecha_creacion)
+                """,
+                (current_user.id, inicio, fin)
+            )
+            for row in cursor.fetchall():
+                creados[str(int(row[0]))] = int(row[1])
+
+            # Completados por día
+            cursor.execute(
+                """
+                SELECT DAY(fecha_completado) AS dia, COUNT(*)
+                FROM objetivos
+                WHERE user_id = ?
+                  AND completado = 1
+                  AND fecha_completado >= ? AND fecha_completado < ?
+                GROUP BY DAY(fecha_completado)
+                """,
+                (current_user.id, inicio, fin)
+            )
+            for row in cursor.fetchall():
+                completados[str(int(row[0]))] = int(row[1])
+
+        total_creados = sum(creados.values())
+        total_completados = sum(completados.values())
+
+        return jsonify({
+            'status': 'success',
+            'data': {
+                'anio': anio,
+                'mes': mes,
+                'dias_en_mes': dias_en_mes,
+                'creados_por_dia': creados,
+                'completados_por_dia': completados,
+                'total_creados': total_creados,
+                'total_completados': total_completados
+            }
+        })
+    except Exception as e:
+        logger.error(f"Error en objetivos_calendario: {str(e)}")
+        return jsonify({'status': 'error', 'message': 'No se pudo generar el calendario de objetivos'}), 500
 # Modelos
 class User(UserMixin):
     def __init__(self, id, username, password):

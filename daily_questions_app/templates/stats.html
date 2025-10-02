@@ -23,6 +23,62 @@
     <div class="tab-content" id="statsTabsContent">
         <!-- Tab Básicas -->
         <div class="tab-pane fade show active" id="basicas" role="tabpanel">
+            <!-- Objetivos: Completados por período -->
+            <h5 class="fw-bold mb-3">Objetivos por período</h5>
+            <div class="row g-3 mb-4">
+                <div class="col-md-3">
+                    <div class="card shadow-sm border-0 h-100">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center mb-2">
+                                <span class="badge bg-success me-2"><i class="bi bi-check2-circle"></i></span>
+                                <span class="fw-bold">Hoy</span>
+                            </div>
+                            <h2 class="fw-bold text-success mb-1" id="obj-hoy-c">0</h2>
+                            <small class="text-muted d-block">Cumplidos</small>
+                            <small class="text-muted">No cumplidos: <span id="obj-hoy-nc">0</span></small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card shadow-sm border-0 h-100">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center mb-2">
+                                <span class="badge bg-primary me-2"><i class="bi bi-calendar-week"></i></span>
+                                <span class="fw-bold">Esta semana</span>
+                            </div>
+                            <h2 class="fw-bold text-primary mb-1" id="obj-semana-c">0</h2>
+                            <small class="text-muted d-block">Cumplidos</small>
+                            <small class="text-muted">No cumplidos: <span id="obj-semana-nc">0</span></small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card shadow-sm border-0 h-100">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center mb-2">
+                                <span class="badge bg-warning text-dark me-2"><i class="bi bi-calendar-month"></i></span>
+                                <span class="fw-bold">Este mes</span>
+                            </div>
+                            <h2 class="fw-bold text-warning mb-1" id="obj-mes-c">0</h2>
+                            <small class="text-muted d-block">Cumplidos</small>
+                            <small class="text-muted">No cumplidos: <span id="obj-mes-nc">0</span></small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card shadow-sm border-0 h-100">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center mb-2">
+                                <span class="badge bg-info text-dark me-2"><i class="bi bi-calendar3"></i></span>
+                                <span class="fw-bold">Este año</span>
+                            </div>
+                            <h2 class="fw-bold text-info mb-1" id="obj-anio-c">0</h2>
+                            <small class="text-muted d-block">Cumplidos</small>
+                            <small class="text-muted">No cumplidos: <span id="obj-anio-nc">0</span></small>
+                        </div>
+                    </div>
+                </div>
+            </div>
             <!-- Resumen Diario -->
             <h5 class="fw-bold mb-3">Resumen Diario</h5>
             <div class="row g-3 mb-4">
@@ -135,10 +191,339 @@
                 </div>
             </div>
         </div>
+        <!-- Tab Avanzadas (RECOLOCADA) -->
+        <div class="tab-pane fade" id="avanzadas" role="tabpanel">
+            <div class="container-fluid px-0">
+                <h5 class="fw-bold mb-3">Cumplimiento de Hábitos</h5>
+                <div class="text-muted mb-3" style="font-size:1rem;">Visualiza tu progreso, tendencias y el rendimiento de tus respuestas diarias.</div>
+
+                <!-- Calendario de Objetivos: Creados vs Completados (Avanzadas) -->
+                <div class="card shadow-sm border-0 w-100 mb-4">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+                            <div>
+                                <h6 class="fw-bold mb-1">Calendario de Objetivos (Creados vs Completados)</h6>
+                                <small class="text-muted">Explora mes a mes cuántos objetivos creaste y cuántos completaste.</small>
+                            </div>
+                            <div class="d-flex flex-wrap align-items-center gap-2">
+                                <select class="form-select form-select-sm" id="obj-cal-mes" style="width:auto; min-width:140px;"></select>
+                                <select class="form-select form-select-sm" id="obj-cal-anio" style="width:auto; min-width:100px;"></select>
+                                <button class="btn btn-sm btn-outline-primary" id="obj-cal-actualizar"><i class="bi bi-arrow-clockwise me-1"></i>Actualizar</button>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-center gap-4 mb-3 flex-wrap">
+                            <div class="text-center">
+                                <div class="h4 fw-bold text-primary mb-0" id="obj-total-creados">0</div>
+                                <small class="text-muted">Creados en el mes</small>
+                            </div>
+                            <div class="text-center">
+                                <div class="h4 fw-bold text-success mb-0" id="obj-total-completados">0</div>
+                                <small class="text-muted">Completados en el mes</small>
+                            </div>
+                        </div>
+
+                        <div id="objetivos-calendario" class="calendario-container">
+                            <div class="text-center py-5 text-muted">
+                                <i class="bi bi-calendar3" style="font-size: 3rem; opacity: 0.3;"></i>
+                                <div class="mt-2">Selecciona un mes y año para ver el calendario</div>
+                            </div>
+                        </div>
+
+                        <div class="calendario-leyenda d-flex justify-content-center gap-4 mt-3 flex-wrap">
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="calendario-leyenda-item" style="background-color:#3b82f6;"></span>
+                                <small class="text-muted">Creados</small>
+                            </div>
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="calendario-leyenda-item" style="background-color:#22c55e;"></span>
+                                <small class="text-muted">Completados</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tabs internos: Cumplimientos / Frecuencia de Respuesta -->
+                <ul class="nav nav-tabs mb-4" id="cumplimientosTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="cumplimientos-tab" data-bs-toggle="tab" data-bs-target="#cumplimientos" type="button" role="tab">Cumplimientos</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="frecuencia-tab" data-bs-toggle="tab" data-bs-target="#frecuencia" type="button" role="tab">Frecuencia de Respuesta</button>
+                    </li>
+                </ul>
+                <div class="tab-content" id="cumplimientosTabsContent">
+                    <!-- Tab Cumplimientos -->
+                    <div class="tab-pane fade show active" id="cumplimientos" role="tabpanel">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div>
+                                <h6 class="fw-bold mb-1">Cumplimiento de Hábitos - Vista Calendario</h6>
+                                <div class="text-muted" style="font-size:1rem;">Visualiza tu progreso diario en formato calendario para cada pregunta</div>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <select class="form-select form-select-sm" id="pregunta-calendario-select" style="min-width:200px;">
+                                    <option value="">Selecciona una pregunta</option>
+                                    {% for pregunta in preguntas %}
+                                        <option value="{{ pregunta.id }}">{{ pregunta.texto }}</option>
+                                    {% endfor %}
+                                </select>
+                                <select class="form-select form-select-sm" id="mes-calendario-select" style="min-width:120px;">
+                                    <!-- Se llena dinámicamente con JavaScript -->
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Calendario de cumplimiento -->
+                        <div class="card shadow-sm border-0">
+                            <div class="card-body">
+                                <div id="calendario-cumplimiento">
+                                    <div class="text-center py-5 text-muted">
+                                        <i class="bi bi-calendar3" style="font-size: 3rem; opacity: 0.3;"></i>
+                                        <div class="mt-2">Selecciona una pregunta para ver el calendario de cumplimiento</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Leyenda del calendario -->
+                        <div class="card mt-3 shadow-sm border-0">
+                            <div class="card-body py-3">
+                                <div class="d-flex justify-content-center align-items-center gap-4 flex-wrap">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="calendario-leyenda-item" style="background-color: #22c55e;"></div>
+                                        <span class="small">Respondida</span>
+                                    </div>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="calendario-leyenda-item" style="background-color: #ef4444;"></div>
+                                        <span class="small">No respondida</span>
+                                    </div>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="calendario-leyenda-item" style="background-color: #e5e7eb;"></div>
+                                        <span class="small">Sin datos</span>
+                                    </div>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="calendario-leyenda-item calendario-hoy"></div>
+                                        <span class="small">Hoy</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Tab Frecuencia de Respuesta -->
+                    <div class="tab-pane fade" id="frecuencia" role="tabpanel">
+                        <div class="container-fluid px-0">
+                            <div class="d-flex justify-content-between align-items-center mb-4">
+                                <div>
+                                    <h6 class="fw-bold mb-1">Análisis de Frecuencia de Respuestas</h6>
+                                    <div class="text-muted" style="font-size:1rem;">Analiza qué respuestas das más frecuentemente para cada pregunta</div>
+                                </div>
+                            </div>
+                            
+                            <!-- Panel de selección mejorado -->
+                            <div class="row g-4 mb-4">
+                                <!-- Selección de pregunta -->
+                                <div class="col-lg-6">
+                                    <div class="card h-100 border-0 shadow-sm">
+                                        <div class="card-body">
+                                            <div class="d-flex align-items-center mb-3">
+                                                <div class="bg-primary bg-opacity-10 rounded-circle p-2 me-3">
+                                                    <i class="bi bi-question-circle text-primary" style="font-size: 1.2rem;"></i>
+                                                </div>
+                                                <div>
+                                                    <h6 class="mb-0 fw-semibold">Selecciona una Pregunta</h6>
+                                                    <small class="text-muted">Elige qué pregunta quieres analizar</small>
+                                                </div>
+                                            </div>
+                                            <select id="preguntaSelector" class="form-select">
+                                                <option value="">-- Selecciona una pregunta --</option>
+                                                {% for pregunta in preguntas %}
+                                                    <option value="{{ pregunta.id }}" data-tipo="{{ pregunta.tipo }}">{{ pregunta.texto }}</option>
+                                                {% endfor %}
+                                            </select>
+                                            <div class="mt-2">
+                                                <small class="text-muted" id="tipoPreguntaInfo">
+                                                    <i class="bi bi-info-circle me-1"></i>
+                                                    Selecciona una pregunta para ver su tipo
+                                                </small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Configuración del análisis -->
+                                <div class="col-lg-6">
+                                    <div class="card h-100 border-0 shadow-sm">
+                                        <div class="card-body">
+                                            <div class="d-flex align-items-center mb-3">
+                                                <div class="bg-success bg-opacity-10 rounded-circle p-2 me-3">
+                                                    <i class="bi bi-gear text-success" style="font-size: 1.2rem;"></i>
+                                                </div>
+                                                <div>
+                                                    <h6 class="mb-0 fw-semibold">Configuración del Análisis</h6>
+                                                    <small class="text-muted">Personaliza cómo ver los datos</small>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- Período de análisis -->
+                                            <div class="mb-3">
+                                                <label class="form-label fw-semibold mb-2">Período de análisis:</label>
+                                                <div class="btn-group w-100 mb-2" role="group">
+                                                    <input type="radio" class="btn-check periodo-radio" name="periodo" id="periodo-7dias" value="7dias" checked>
+                                                    <label class="btn btn-outline-primary" for="periodo-7dias">
+                                                        <i class="bi bi-calendar-week me-1"></i>Últimos 7 días
+                                                    </label>
+                                                    
+                                                    <input type="radio" class="btn-check periodo-radio" name="periodo" id="periodo-mes" value="mes">
+                                                    <label class="btn btn-outline-primary" for="periodo-mes">
+                                                        <i class="bi bi-calendar-month me-1"></i>Por mes específico
+                                                    </label>
+                                                </div>
+                                                
+                                                <!-- Selector de mes (solo visible cuando se selecciona "Por mes específico") -->
+                                                <div id="selector-mes-container" class="mt-2" style="display: none;">
+                                                    <div class="row g-2">
+                                                        <div class="col-7">
+                                                            <select class="form-select" id="selector-mes">
+                                                                <option value="0">Enero</option>
+                                                                <option value="1">Febrero</option>
+                                                                <option value="2">Marzo</option>
+                                                                <option value="3">Abril</option>
+                                                                <option value="4">Mayo</option>
+                                                                <option value="5">Junio</option>
+                                                                <option value="6">Julio</option>
+                                                                <option value="7">Agosto</option>
+                                                                <option value="8">Septiembre</option>
+                                                                <option value="9">Octubre</option>
+                                                                <option value="10">Noviembre</option>
+                                                                <option value="11">Diciembre</option>
+                                                            </select>
+                                                        </div>
+                                                        <div class="col-5">
+                                                            <select class="form-select" id="selector-anio">
+                                                                <!-- Se llena dinámicamente con JavaScript -->
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                    <small class="text-muted mt-1 d-block">
+                                                        <i class="bi bi-info-circle me-1"></i>
+                                                        Selecciona el mes y año específico a analizar
+                                                    </small>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- Tipo de gráfico -->
+                                            <div>
+                                                <label class="form-label fw-semibold mb-2">Tipo de visualización:</label>
+                                                <div class="btn-group w-100" role="group">
+                                                    <input type="radio" class="btn-check grafico-radio" name="grafico" id="grafico-barras" value="barras" checked>
+                                                    <label class="btn btn-outline-secondary" for="grafico-barras">
+                                                        <i class="bi bi-bar-chart me-1"></i>Barras
+                                                    </label>
+                                                    
+                                                    <input type="radio" class="btn-check grafico-radio" name="grafico" id="grafico-lineas" value="lineas">
+                                                    <label class="btn btn-outline-secondary" for="grafico-lineas">
+                                                        <i class="bi bi-graph-up me-1"></i>Líneas
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Área del gráfico -->
+                            <div class="card border-0 shadow-sm">
+                                <div class="card-body p-4">
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <div>
+                                            <h5 class="mb-1" id="tituloGrafico">Análisis de Frecuencia</h5>
+                                            <small class="text-muted" id="subtituloGrafico">Selecciona una pregunta para comenzar el análisis</small>
+                                        </div>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <button class="btn btn-sm btn-outline-primary" id="btnActualizarGrafico" disabled>
+                                                <i class="bi bi-arrow-clockwise me-1"></i>Actualizar
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-secondary" id="btnExportarGrafico" disabled>
+                                                <i class="bi bi-download me-1"></i>Exportar
+                                            </button>
+                                        </div>
+                                    </div>
+                                    
+                                    <div id="graficoFrecuencia" style="min-height: 400px; width: 100%;">
+                                        <div class="d-flex align-items-center justify-content-center h-100 text-muted" style="min-height: 400px;">
+                                            <div class="text-center">
+                                                <i class="bi bi-bar-chart" style="font-size: 4rem; opacity: 0.3;"></i>
+                                                <div class="mt-3">
+                                                    <h6>¡Comienza tu análisis!</h6>
+                                                    <p class="mb-0">Selecciona una pregunta arriba para ver el gráfico de frecuencia de respuestas</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Mensajes informativos -->
+                                    <div id="mensajeExclusion" class="alert alert-warning mt-3 d-none">
+                                        <div class="d-flex align-items-center">
+                                            <i class="bi bi-exclamation-triangle me-2"></i>
+                                            <div>
+                                                <strong>Pregunta de texto abierto</strong><br>
+                                                Las preguntas de texto libre no pueden analizarse cuantitativamente. Prueba con preguntas de opción múltiple o sí/no.
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div id="mensajeSinDatos" class="alert alert-info mt-3 d-none">
+                                        <div class="d-flex align-items-center">
+                                            <i class="bi bi-info-circle me-2"></i>
+                                            <div>
+                                                <strong>Sin datos suficientes</strong><br>
+                                                No hay suficientes respuestas para esta pregunta en el período seleccionado.
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Información adicional -->
+                            <div class="row g-3 mt-2">
+                                <div class="col-md-4">
+                                    <div class="card border-0 bg-light">
+                                        <div class="card-body text-center py-3">
+                                            <i class="bi bi-check-circle text-success mb-2" style="font-size: 1.5rem;"></i>
+                                            <h6 class="mb-1">Preguntas Sí/No</h6>
+                                            <small class="text-muted">Muestra distribución de respuestas afirmativas vs negativas</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="card border-0 bg-light">
+                                        <div class="card-body text-center py-3">
+                                            <i class="bi bi-list-ul text-primary mb-2" style="font-size: 1.5rem;"></i>
+                                            <h6 class="mb-1">Opción Múltiple</h6>
+                                            <small class="text-muted">Frecuencia de cada opción seleccionada</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="card border-0 bg-light">
+                                        <div class="card-body text-center py-3">
+                                            <i class="bi bi-pencil text-warning mb-2" style="font-size: 1.5rem;"></i>
+                                            <h6 class="mb-1">Texto Abierto</h6>
+                                            <small class="text-muted">No disponible para análisis cuantitativo</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
         <!-- Tab Intermedias -->
         <div class="tab-pane fade" id="intermedias" role="tabpanel">
             <div class="container-fluid px-0">
                 <h5 class="fw-bold mb-3">Tendencias Temporales</h5>
+                
                 <!-- Fila superior: Productividad por Día alineada a la izquierda -->
                 <div class="row g-3 mb-2">
                     <div class="col-lg-8">
@@ -302,16 +687,65 @@
                                 </div>
                             </div>
                         </div>
-                    </div>
                 </div>
             </div>
         </div>
-        <!-- Tab Avanzadas -->
-        <div class="tab-pane fade" id="avanzadas" role="tabpanel">
+        <!-- Tab Avanzadas (ANTIGUA) eliminada: contenido migrado al pane principal -->
+        <div class="tab-pane fade" id="avanzadas_old" role="tabpanel" style="display:none;">
+            <div class="container-fluid px-0">
+                <div class="alert alert-warning">Contenido migrado al pane Avanzadas principal.</div>
+            </div>
+        </div>
+        <!-- Tab Avanzadas (DUPLICADA) desactivada para evitar IDs repetidos -->
+        <div class="tab-pane fade" id="avanzadas_unused" role="tabpanel" style="display:none;">
             <div class="container-fluid px-0">
                 <h5 class="fw-bold mb-3">Cumplimiento de Hábitos</h5>
                 <div class="text-muted mb-3" style="font-size:1rem;">Visualiza tu progreso, tendencias y el rendimiento de tus respuestas diarias.</div>
-                <!-- Tabs internos -->
+                <!-- Calendario de Objetivos: Creados vs Completados (Avanzadas) -->
+                <div class="card shadow-sm border-0 w-100 mb-4">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+                            <div>
+                                <h6 class="fw-bold mb-1">Calendario de Objetivos (Creados vs Completados)</h6>
+                                <small class="text-muted">Explora mes a mes cuántos objetivos creaste y cuántos completaste.</small>
+                            </div>
+                            <div class="d-flex flex-wrap align-items-center gap-2">
+                                <select class="form-select form-select-sm" id="obj-cal-mes" style="width:auto; min-width:140px;"></select>
+                                <select class="form-select form-select-sm" id="obj-cal-anio" style="width:auto; min-width:100px;"></select>
+                                <button class="btn btn-sm btn-outline-primary" id="obj-cal-actualizar"><i class="bi bi-arrow-clockwise me-1"></i>Actualizar</button>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-center gap-4 mb-3 flex-wrap">
+                            <div class="text-center">
+                                <div class="h4 fw-bold text-primary mb-0" id="obj-total-creados">0</div>
+                                <small class="text-muted">Creados en el mes</small>
+                            </div>
+                            <div class="text-center">
+                                <div class="h4 fw-bold text-success mb-0" id="obj-total-completados">0</div>
+                                <small class="text-muted">Completados en el mes</small>
+                            </div>
+                        </div>
+
+                        <div id="objetivos-calendario" class="calendario-container">
+                            <div class="text-center py-5 text-muted">
+                                <i class="bi bi-calendar3" style="font-size: 3rem; opacity: 0.3;"></i>
+                                <div class="mt-2">Selecciona un mes y año para ver el calendario</div>
+                            </div>
+                        </div>
+
+                        <div class="calendario-leyenda d-flex justify-content-center gap-4 mt-3 flex-wrap">
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="calendario-leyenda-item" style="background-color:#3b82f6;"></span>
+                                <small class="text-muted">Creados</small>
+                            </div>
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="calendario-leyenda-item" style="background-color:#22c55e;"></span>
+                                <small class="text-muted">Completados</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 <ul class="nav nav-tabs mb-4" id="cumplimientosTabs" role="tablist">
                     <li class="nav-item" role="presentation">
                         <button class="nav-link active" id="cumplimientos-tab" data-bs-toggle="tab" data-bs-target="#cumplimientos" type="button" role="tab">Cumplimientos</button>
@@ -794,6 +1228,149 @@
     </div>
 </div>
 
+<script>
+// Cargar resumen de objetivos completados
+document.addEventListener('DOMContentLoaded', async () => {
+    try {
+        const resp = await fetch('/api/objetivos/stats_summary');
+        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+        const data = await resp.json();
+        if (data.status !== 'success') throw new Error('API error');
+        const s = data.data || {};
+        const setText = (id, val) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = (val ?? 0);
+        };
+        // Cumplidos
+        setText('obj-hoy-c', s.hoy?.cumplidos);
+        setText('obj-semana-c', s.semana?.cumplidos);
+        setText('obj-mes-c', s.mes?.cumplidos);
+        setText('obj-anio-c', s.anio?.cumplidos);
+        // No cumplidos
+        setText('obj-hoy-nc', s.hoy?.no_cumplidos);
+        setText('obj-semana-nc', s.semana?.no_cumplidos);
+        setText('obj-mes-nc', s.mes?.no_cumplidos);
+        setText('obj-anio-nc', s.anio?.no_cumplidos);
+    } catch (e) {
+        console.error('Error cargando stats de objetivos:', e);
+    }
+});
+</script>
+<script>
+// ==============================
+// Calendario de Objetivos (Avanzadas)
+// ==============================
+const MESES_NOMBRES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+function poblarSelectsObjetivosCalendario() {
+    const selMes = document.getElementById('obj-cal-mes');
+    const selAnio = document.getElementById('obj-cal-anio');
+    if (!selMes || !selAnio) return;
+    selMes.innerHTML = '';
+    MESES_NOMBRES.forEach((n, i) => {
+        const opt = document.createElement('option');
+        opt.value = i;
+        opt.textContent = n;
+        selMes.appendChild(opt);
+    });
+    const ahora = new Date();
+    const anioActual = ahora.getFullYear();
+    selAnio.innerHTML = '';
+    for (let a = anioActual - 3; a <= anioActual + 1; a++) {
+        const opt = document.createElement('option');
+        opt.value = a;
+        opt.textContent = a;
+        selAnio.appendChild(opt);
+    }
+    selMes.value = String(ahora.getMonth());
+    selAnio.value = String(anioActual);
+}
+
+async function cargarCalendarioObjetivos() {
+    const selMes = document.getElementById('obj-cal-mes');
+    const selAnio = document.getElementById('obj-cal-anio');
+    if (!selMes || !selAnio) return;
+    const mes = parseInt(selMes.value, 10);
+    const anio = parseInt(selAnio.value, 10);
+    try {
+        const resp = await fetch(`/api/objetivos/calendario?mes=${mes}&anio=${anio}`);
+        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+        const json = await resp.json();
+        if (json.status !== 'success') throw new Error('API');
+        renderObjetivosCalendario(json.data);
+    } catch (e) {
+        console.error('Error calendario objetivos:', e);
+    }
+}
+
+function renderObjetivosCalendario(data) {
+    const cont = document.getElementById('objetivos-calendario');
+    if (!cont || !data) return;
+    const { anio, mes, dias_en_mes, creados_por_dia = {}, completados_por_dia = {} } = data;
+    // Encabezado de días de la semana
+    const diasSemana = ['L','M','X','J','V','S','D'];
+    const primerDia = new Date(anio, mes, 1);
+    const offset = (primerDia.getDay() + 6) % 7; // convertir a semana empezando lunes
+
+    let header = '<div class="calendario-header">' + diasSemana.map(d => `<div class="calendario-dia-semana">${d}</div>`).join('') + '</div>';
+    let grid = '<div class="calendario-grid">';
+    for (let i = 0; i < offset; i++) {
+        grid += '<div class="calendario-dia sin-datos otro-mes"></div>';
+    }
+    for (let dia = 1; dia <= dias_en_mes; dia++) {
+        const c = creados_por_dia[String(dia)] || 0;
+        const comp = completados_por_dia[String(dia)] || 0;
+        grid += `
+        <div class="calendario-dia" title="${dia} ${MESES_NOMBRES[mes]} ${anio}\nCreados: ${c}\nCompletados: ${comp}">
+            <div class="calendario-dia-numero">${dia}</div>
+            <div class="calendario-dia-respuesta" style="color:#3b82f6;">C: ${c}</div>
+            <div class="calendario-dia-respuesta" style="color:#22c55e;">F: ${comp}</div>
+        </div>`;
+    }
+    grid += '</div>';
+    cont.innerHTML = header + grid;
+
+    // Totales
+    const totalCreados = Object.values(creados_por_dia).reduce((a,b)=>a+Number(b),0);
+    const totalCompletados = Object.values(completados_por_dia).reduce((a,b)=>a+Number(b),0);
+    const elCreados = document.getElementById('obj-total-creados');
+    const elCompletados = document.getElementById('obj-total-completados');
+    if (elCreados) elCreados.textContent = totalCreados;
+    if (elCompletados) elCompletados.textContent = totalCompletados;
+}
+
+// Inicialización del calendario de objetivos
+document.addEventListener('DOMContentLoaded', () => {
+    const initObjCal = () => {
+        const selMes = document.getElementById('obj-cal-mes');
+        const selAnio = document.getElementById('obj-cal-anio');
+        if (!selMes || !selAnio) return false;
+        // Poblar selects una sola vez
+        if (!selMes.options.length || !selAnio.options.length) {
+            poblarSelectsObjetivosCalendario();
+        }
+        // Eventos (idempotentes)
+        const btnAct = document.getElementById('obj-cal-actualizar');
+        if (btnAct && !btnAct.__bound) { btnAct.addEventListener('click', cargarCalendarioObjetivos); btnAct.__bound = true; }
+        if (!selMes.__bound) { selMes.addEventListener('change', cargarCalendarioObjetivos); selMes.__bound = true; }
+        if (!selAnio.__bound) { selAnio.addEventListener('change', cargarCalendarioObjetivos); selAnio.__bound = true; }
+        // Carga inicial segura
+        cargarCalendarioObjetivos();
+        return true;
+    };
+
+    // Intentar inicializar si los elementos ya están en el DOM
+    initObjCal();
+
+    // Inicializar al activar la pestaña Avanzadas (por si el DOM se carga perezoso)
+    const tabAvanzadas = document.getElementById('avanzadas-tab');
+    if (tabAvanzadas) {
+        tabAvanzadas.addEventListener('shown.bs.tab', () => {
+            setTimeout(initObjCal, 0);
+        });
+    }
+});
+</script>
 <script>
     // Funcionalidad del calendario de cumplimiento
                 let calendarioData = {};
