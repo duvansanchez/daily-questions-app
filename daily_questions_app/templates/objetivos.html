@@ -2,8 +2,10 @@
 {% block title %}Objetivos | Desarrollo Personal{% endblock %}
 {% block content %}
 <div class="container py-4">
-    <h2 class="mb-1">Desarrollo Personal</h2>
-    <p class="text-muted mb-4">Tu espacio integral para el crecimiento personal, objetivos, reflexión y bienestar mental.</p>
+    <div class="mb-4">
+        <h2 class="mb-1">Desarrollo Personal</h2>
+        <p class="text-muted">Tu espacio integral para el crecimiento personal, objetivos, reflexión y bienestar mental.</p>
+    </div>
     <div class="card mb-4">
         <div class="card-body">
             <ul class="nav nav-tabs mb-3">
@@ -149,9 +151,14 @@
                             <h5 class="mb-1"><i class="bi bi-chat-quote"></i> Frases Inspiracionales</h5>
                             <p class="text-muted mb-0">Repasa frases motivacionales para tu crecimiento personal</p>
                         </div>
-                        <button class="btn btn-primary" id="btn-nueva-frase">
-                            <i class="bi bi-plus-circle me-1"></i>Nueva Frase
-                        </button>
+                        <div class="d-flex gap-2">
+                            <a href="{{ url_for('gestion_categorias') }}" class="btn btn-outline-secondary">
+                                <i class="bi bi-tags"></i> Gestionar Categorías
+                            </a>
+                            <button class="btn btn-primary" id="btn-nueva-frase">
+                                <i class="bi bi-plus-circle me-1"></i>Nueva Frase
+                            </button>
+                        </div>
                     </div>
                     
                     <!-- Estadísticas de frases -->
@@ -189,23 +196,27 @@
                     
                     <!-- Filtros y controles -->
                     <div class="d-flex justify-content-between align-items-center mb-3">
-                        <div class="d-flex align-items-center gap-3">
-                            <label class="form-label mb-0 fw-semibold">Filtrar por:</label>
-                            <select class="form-select form-select-sm" id="filtro-categoria-frases" style="width: auto;">
-                                <option value="">Todas las categorías</option>
-                                <option value="motivacion">Motivación</option>
-                                <option value="exito">Éxito</option>
-                                <option value="perseverancia">Perseverancia</option>
-                                <option value="sabiduria">Sabiduría</option>
-                                <option value="crecimiento">Crecimiento</option>
-                                <option value="liderazgo">Liderazgo</option>
-                                <option value="felicidad">Felicidad</option>
-                                <option value="personal">Personal</option>
-                            </select>
+                        <div class="row g-2 flex-grow-1 align-items-end">
+                            <div class="col-sm-4">
+                                <label class="form-label mb-0 fw-semibold">Categoría</label>
+                                <select class="form-select form-select-sm" id="filtro-categoria-frases">
+                                    <option value="">Todas las categorías</option>
+                                </select>
+                            </div>
+                            <div class="col-sm-4">
+                                <label class="form-label mb-0 fw-semibold">Subcategoría</label>
+                                <select class="form-select form-select-sm" id="filtro-subcategoria-frases">
+                                    <option value="">Todas las subcategorías</option>
+                                </select>
+                            </div>
+                            <div class="col-sm-4 text-end">
+                                <button class="btn btn-primary btn-sm" id="btn-aplicar-filtro"><i class="bi bi-funnel me-1"></i>Aplicar</button>
+                                <button class="btn btn-outline-secondary btn-sm" id="btn-limpiar-filtro">Limpiar</button>
+                            </div>
                         </div>
-                        <div class="d-flex align-items-center gap-2">
+                        <div class="d-flex align-items-center gap-2 ms-3">
                             <button class="btn btn-outline-success btn-sm" id="btn-repasar-todas">
-                                <i class="bi bi-arrow-repeat me-1"></i>Repasar Todas
+                                <i class="bi bi-arrow-repeat me-1"></i>Repasar por filtros
                             </button>
                             <button class="btn btn-outline-info btn-sm" id="btn-frase-aleatoria">
                                 <i class="bi bi-shuffle me-1"></i>Frase Aleatoria
@@ -625,6 +636,604 @@
 <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 
 <script>
+// === SISTEMA DE CATEGORÍAS Y SUBCATEGORÍAS ===
+
+// Objeto para almacenar las relaciones entre categorías y subcategorías
+const categoriasSubcategorias = {};
+
+// Función para normalizar nombres de categorías y subcategorías
+function normalizarNombre(nombre) {
+    if (!nombre) return '';
+    
+    return nombre
+        .split('_')
+        .map(palabra => palabra.charAt(0).toUpperCase() + palabra.slice(1).toLowerCase())
+        .join(' ');
+}
+
+// Cargar categorías y configurar eventos al cargar la página
+document.addEventListener('DOMContentLoaded', async function() {
+    // Cargar categorías en los selects
+    await cargarCategoriasParaFormularios();
+    
+    // Configurar eventos para el modal de nueva frase
+    configurarEventosNuevaFrase();
+    
+    // Configurar eventos para el modal de editar frase
+    configurarEventosEditarFrase();
+});
+
+// Función para cargar categorías en los formularios
+async function cargarCategoriasParaFormularios() {
+    try {
+        // Cargar solo categorías (sin prefetch de subcategorías)
+        await cargarCategorias();
+        
+        // Si hay una categoría seleccionada, cargar sus subcategorías
+        const categoriaSeleccionada = document.getElementById('frase-categoria').value;
+        if (categoriaSeleccionada && categoriaSeleccionada !== 'nueva') {
+            await cargarSubcategoriasParaCategoria(categoriaSeleccionada, 'frase-subcategoria');
+        }
+    } catch (error) {
+        console.error('Error al cargar categorías para formularios:', error);
+    }
+}
+
+// Cargar solo categorías (evita N+1)
+async function cargarCategorias() {
+    try {
+        console.log('Cargando categorías...');
+        const response = await fetch('/api/frases/categorias');
+        console.log('Respuesta del servidor:', response.status);
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('Error del servidor:', errorText);
+            throw new Error('Error al cargar categorías');
+        }
+        
+        const data = await response.json();
+        console.log('Datos recibidos:', data);
+        
+        if (!data.categorias || !Array.isArray(data.categorias)) {
+            console.error('Formato de datos incorrecto:', data);
+            return [];
+        }
+        
+        // Actualizar los selects de categorías
+        actualizarSelectConOpciones('frase-categoria', data.categorias);
+        actualizarSelectConOpciones('editar-frase-categoria', data.categorias);
+        
+        console.log('Categorías cargadas:', data.categorias);
+        return data.categorias;
+    } catch (error) {
+        console.error('Error al cargar categorías:', error);
+        return [];
+    }
+}
+
+// Función para cargar subcategorías de una categoría específica
+async function cargarSubcategoriasParaCategoria(categoria, selectId) {
+    // Si ya tenemos las subcategorías en caché (incluido vacío), usarlas
+    if (Object.prototype.hasOwnProperty.call(categoriasSubcategorias, categoria)) {
+        actualizarSelectSubcategorias(selectId, categoriasSubcategorias[categoria] || []);
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/frases/categorias?categoria=${encodeURIComponent(categoria)}`);
+        if (!response.ok) throw new Error('Error al cargar subcategorías');
+        const data = await response.json();
+        
+        // Guardar en caché las subcategorías para esta categoría
+        categoriasSubcategorias[categoria] = data.subcategorias || [];
+        
+        // Actualizar el select de subcategorías
+        actualizarSelectSubcategorias(selectId, categoriasSubcategorias[categoria]);
+    } catch (error) {
+        console.error('Error al cargar subcategorías:', error);
+        actualizarSelectSubcategorias(selectId, []);
+    }
+}
+
+// Función auxiliar para actualizar el select de subcategorías
+function actualizarSelectSubcategorias(selectId, subcategorias) {
+    const select = document.getElementById(selectId);
+    if (!select) return;
+    
+    // Guardar la subcategoría seleccionada actualmente
+    const selectedSubcategoria = select.value;
+    
+    // Limpiar opciones existentes
+    select.innerHTML = '<option value="">Selecciona una subcategoría</option><option value="nueva">+ Nueva subcategoría</option>';
+    
+    // Agregar las subcategorías al select con nombres normalizados
+    subcategorias.forEach(subcat => {
+        const option = document.createElement('option');
+        option.value = subcat; // Valor original para el backend
+        option.textContent = normalizarNombre(subcat); // Nombre normalizado para mostrar
+        select.appendChild(option);
+    });
+    
+    // Restaurar la selección anterior si existe
+    if (selectedSubcategoria && subcategorias.includes(selectedSubcategoria)) {
+        select.value = selectedSubcategoria;
+    }
+}
+
+// Función auxiliar para actualizar un select con opciones
+function actualizarSelectConOpciones(selectId, opciones) {
+    const select = document.getElementById(selectId);
+    if (!select) return;
+    
+    // Guardar la opción seleccionada actual
+    const selectedValue = select.value;
+    
+    // Limpiar todas las opciones
+    select.innerHTML = '';
+    
+    // Agregar opción por defecto
+    const defaultOption = document.createElement('option');
+    defaultOption.value = '';
+    defaultOption.textContent = 'Selecciona una categoría';
+    select.appendChild(defaultOption);
+    
+    // Añadir las nuevas opciones con nombres normalizados
+    opciones.forEach(opcion => {
+        const option = document.createElement('option');
+        option.value = opcion; // Valor original para el backend
+        option.textContent = normalizarNombre(opcion); // Nombre normalizado para mostrar
+        select.appendChild(option);
+    });
+    
+    // Agregar opción de nueva categoría
+    const nuevaOption = document.createElement('option');
+    nuevaOption.value = 'nueva';
+    nuevaOption.textContent = '+ Nueva categoría';
+    select.appendChild(nuevaOption);
+    
+    // Restaurar la selección anterior si existe en las nuevas opciones
+    if (selectedValue && (selectedValue === 'nueva' || opciones.includes(selectedValue))) {
+        select.value = selectedValue;
+    }
+}
+
+// Configurar eventos para el modal de nueva frase
+function configurarEventosNuevaFrase() {
+    // Manejar cambio de categoría
+    document.getElementById('frase-categoria').addEventListener('change', async function() {
+        const mostrarNuevaCategoria = this.value === 'nueva';
+        document.getElementById('nueva-categoria-container').style.display = mostrarNuevaCategoria ? 'block' : 'none';
+        
+        // Si no es nueva categoría, cargar subcategorías
+        if (!mostrarNuevaCategoria && this.value) {
+            await cargarSubcategoriasParaCategoria(this.value, 'frase-subcategoria');
+        } else {
+            const subSelect = document.getElementById('frase-subcategoria');
+            subSelect.innerHTML = '<option value="">Selecciona una subcategoría</option><option value="nueva">+ Nueva subcategoría</option>';
+            document.getElementById('nueva-subcategoria-container').style.display = 'none';
+        }
+    });
+    
+    // Manejar cambio de subcategoría
+    document.getElementById('frase-subcategoria').addEventListener('change', function() {
+        document.getElementById('nueva-subcategoria-container').style.display = this.value === 'nueva' ? 'block' : 'none';
+    });
+    
+    // Configurar envío del formulario
+    document.getElementById('form-nueva-frase').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        await enviarNuevaFrase();
+    });
+}
+
+// Configurar eventos para el modal de editar frase
+function configurarEventosEditarFrase() {
+    // Manejar cambio de categoría en edición
+    document.getElementById('editar-frase-categoria').addEventListener('change', async function() {
+        const mostrarNuevaCategoria = this.value === 'nueva';
+        document.getElementById('editar-nueva-categoria-container').style.display = mostrarNuevaCategoria ? 'block' : 'none';
+        
+        // Si no es nueva categoría, cargar subcategorías
+        if (!mostrarNuevaCategoria && this.value) {
+            await cargarSubcategoriasParaCategoria(this.value, 'editar-frase-subcategoria');
+        } else {
+            const subSelect = document.getElementById('editar-frase-subcategoria');
+            subSelect.innerHTML = '<option value="">Selecciona una subcategoría</option><option value="nueva">+ Nueva subcategoría</option>';
+            document.getElementById('editar-nueva-subcategoria-container').style.display = 'none';
+        }
+    });
+    
+    // Manejar cambio de subcategoría en edición
+    document.getElementById('editar-frase-subcategoria').addEventListener('change', function() {
+        document.getElementById('editar-nueva-subcategoria-container').style.display = this.value === 'nueva' ? 'block' : 'none';
+    });
+    
+    // Configurar envío del formulario de edición
+    document.getElementById('form-editar-frase').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        await enviarEditarFrase();
+    });
+}
+
+// Función para enviar nueva frase
+async function enviarNuevaFrase() {
+    const texto = document.getElementById('frase-texto').value.trim();
+    const autor = document.getElementById('frase-autor').value.trim();
+    const notas = document.getElementById('frase-notas').value.trim();
+    let categoria = document.getElementById('frase-categoria').value;
+    let subcategoria = document.getElementById('frase-subcategoria').value;
+    
+    // Manejar nueva categoría
+    if (categoria === 'nueva') {
+        const nuevaCategoria = document.getElementById('nueva-categoria-input').value.trim();
+        if (!nuevaCategoria) {
+            alert('Por favor ingresa un nombre para la nueva categoría');
+            return;
+        }
+        categoria = nuevaCategoria;
+    }
+    
+    // Manejar nueva subcategoría
+    if (subcategoria === 'nueva') {
+        const nuevaSubcategoria = document.getElementById('nueva-subcategoria-input').value.trim();
+        if (!nuevaSubcategoria) {
+            alert('Por favor ingresa un nombre para la nueva subcategoría');
+            return;
+        }
+        subcategoria = nuevaSubcategoria;
+    }
+    
+    if (!texto || !categoria || !subcategoria) {
+        alert('Por favor completa todos los campos requeridos');
+        return;
+    }
+    
+    try {
+        const response = await fetch('/api/frases', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                texto,
+                autor: autor || null,
+                categoria,
+                subcategoria,
+                notas: notas || null
+            })
+        });
+        
+        if (!response.ok) throw new Error('Error al guardar la frase');
+        
+        // Cerrar el modal y recargar la lista
+        const modal = bootstrap.Modal.getInstance(document.getElementById('modalNuevaFrase'));
+        modal.hide();
+        
+        // Limpiar el formulario
+        document.getElementById('form-nueva-frase').reset();
+        document.getElementById('nueva-categoria-container').style.display = 'none';
+        document.getElementById('nueva-subcategoria-container').style.display = 'none';
+        
+        // Recargar la lista de frases
+        if (typeof cargarFrases === 'function') {
+            await cargarFrases();
+        }
+        
+    } catch (error) {
+        console.error('Error al guardar la frase:', error);
+        alert('Error al guardar la frase. Por favor, inténtalo de nuevo.');
+    }
+}
+
+// Función para enviar edición de frase
+async function enviarEditarFrase() {
+    const id = document.getElementById('editar-frase-id').value;
+    const texto = document.getElementById('editar-frase-texto').value.trim();
+    const autor = document.getElementById('editar-frase-autor').value.trim();
+    const notas = document.getElementById('editar-frase-notas').value.trim();
+    let categoria = document.getElementById('editar-frase-categoria').value;
+    let subcategoria = document.getElementById('editar-frase-subcategoria').value;
+    
+    // Manejar nueva categoría
+    if (categoria === 'nueva') {
+        const nuevaCategoria = document.getElementById('editar-nueva-categoria-input').value.trim();
+        if (!nuevaCategoria) {
+            alert('Por favor ingresa un nombre para la nueva categoría');
+            return;
+        }
+        categoria = nuevaCategoria;
+    }
+    
+    // Manejar nueva subcategoría
+    if (subcategoria === 'nueva') {
+        const nuevaSubcategoria = document.getElementById('editar-nueva-subcategoria-input').value.trim();
+        if (!nuevaSubcategoria) {
+            alert('Por favor ingresa un nombre para la nueva subcategoría');
+            return;
+        }
+        subcategoria = nuevaSubcategoria;
+    }
+    
+    if (!id || !texto || !categoria || !subcategoria) {
+        alert('Por favor completa todos los campos requeridos');
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/frases/${id}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                texto,
+                autor: autor || null,
+                categoria,
+                subcategoria,
+                notas: notas || null
+            })
+        });
+        
+        if (!response.ok) throw new Error('Error al actualizar la frase');
+        
+        // Cerrar el modal
+        const modal = bootstrap.Modal.getInstance(document.getElementById('modalEditarFrase'));
+        modal.hide();
+        
+        // Recargar la lista de frases
+        if (typeof cargarFrases === 'function') {
+            await cargarFrases();
+        }
+        
+    } catch (error) {
+        console.error('Error al actualizar la frase:', error);
+        alert('Error al actualizar la frase. Por favor, inténtalo de nuevo.');
+    }
+}
+
+// Función para abrir el modal de edición con los datos de la frase
+function abrirModalEditarFrase(frase) {
+    document.getElementById('editar-frase-id').value = frase.id;
+    document.getElementById('editar-frase-texto').value = frase.texto || '';
+    document.getElementById('editar-frase-autor').value = frase.autor || '';
+    document.getElementById('editar-frase-notas').value = frase.notas || '';
+    
+    // Establecer la categoría
+    const selectCategoria = document.getElementById('editar-frase-categoria');
+    if (frase.categoria && !Array.from(selectCategoria.options).some(opt => opt.value === frase.categoria)) {
+        const option = document.createElement('option');
+        option.value = frase.categoria;
+        option.textContent = frase.categoria;
+        selectCategoria.insertBefore(option, selectCategoria.lastElementChild);
+    }
+    selectCategoria.value = frase.categoria || '';
+    
+    // Cargar subcategorías para la categoría seleccionada
+    if (frase.categoria) {
+        cargarSubcategoriasParaCategoria(frase.categoria, 'editar-frase-subcategoria').then(() => {
+            const selectSubcategoria = document.getElementById('editar-frase-subcategoria');
+            if (frase.subcategoria) {
+                // Si la subcategoría no está en las opciones, la añadimos
+                if (!Array.from(selectSubcategoria.options).some(opt => opt.value === frase.subcategoria)) {
+                    const option = document.createElement('option');
+                    option.value = frase.subcategoria;
+                    option.textContent = frase.subcategoria;
+                    selectSubcategoria.add(option);
+                }
+                selectSubcategoria.value = frase.subcategoria;
+            }
+        });
+    }
+    
+    // Mostrar el modal
+    const modal = new bootstrap.Modal(document.getElementById('modalEditarFrase'));
+    modal.show();
+}
+
+// === SISTEMA DE FILTROS ===
+
+// Variables para almacenar los filtros actuales
+let filtrosActivos = {
+    categoria: '',
+    subcategoria: ''
+};
+
+// Configurar eventos de filtros
+function configurarEventosFiltros() {
+    // Cargar categorías en el filtro
+    cargarCategoriasParaFiltros();
+    
+    // Evento para cambio de categoría en filtros
+    document.getElementById('filtro-categoria-frases').addEventListener('change', async function() {
+        const categoria = this.value;
+        filtrosActivos.categoria = categoria;
+        
+        // Cargar subcategorías para la categoría seleccionada
+        if (categoria) {
+            await cargarSubcategoriasParaFiltros(categoria);
+        } else {
+            // Limpiar subcategorías si no hay categoría seleccionada
+            const subSelect = document.getElementById('filtro-subcategoria-frases');
+            subSelect.innerHTML = '<option value="">Todas las subcategorías</option>';
+            filtrosActivos.subcategoria = '';
+        }
+        
+        // Aplicar filtros automáticamente
+        aplicarFiltros();
+    });
+    
+    // Evento para cambio de subcategoría en filtros
+    document.getElementById('filtro-subcategoria-frases').addEventListener('change', function() {
+        filtrosActivos.subcategoria = this.value;
+        aplicarFiltros();
+    });
+    
+    // Evento para botón aplicar filtro
+    document.getElementById('btn-aplicar-filtro').addEventListener('click', function() {
+        aplicarFiltros();
+    });
+    
+    // Evento para botón limpiar filtro
+    document.getElementById('btn-limpiar-filtro').addEventListener('click', function() {
+        limpiarFiltros();
+    });
+    
+    // Evento para repasar por filtros
+    document.getElementById('btn-repasar-todas').addEventListener('click', function() {
+        repasarPorFiltros();
+    });
+}
+
+// Cargar categorías para los filtros
+async function cargarCategoriasParaFiltros() {
+    try {
+        console.log('Cargando categorías para filtros...');
+        const response = await fetch('/api/frases/categorias');
+        console.log('Respuesta del servidor (filtros):', response.status);
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('Error del servidor (filtros):', errorText);
+            throw new Error('Error al cargar categorías');
+        }
+        
+        const data = await response.json();
+        console.log('Datos recibidos (filtros):', data);
+        
+        const select = document.getElementById('filtro-categoria-frases');
+        if (!select) {
+            console.error('No se encontró el elemento filtro-categoria-frases');
+            return;
+        }
+        
+        select.innerHTML = '<option value="">Todas las categorías</option>';
+        
+        if (data.categorias && Array.isArray(data.categorias)) {
+            data.categorias.forEach(categoria => {
+                const option = document.createElement('option');
+                option.value = categoria; // Valor original para el backend
+                option.textContent = normalizarNombre(categoria); // Nombre normalizado para mostrar
+                select.appendChild(option);
+            });
+            console.log('Categorías cargadas en filtros:', data.categorias);
+        } else {
+            console.error('No hay categorías disponibles o formato incorrecto');
+        }
+    } catch (error) {
+        console.error('Error al cargar categorías para filtros:', error);
+    }
+}
+
+// Cargar subcategorías para filtros
+async function cargarSubcategoriasParaFiltros(categoria) {
+    try {
+        const response = await fetch(`/api/frases/categorias?categoria=${encodeURIComponent(categoria)}`);
+        if (!response.ok) throw new Error('Error al cargar subcategorías');
+        const data = await response.json();
+        
+        const select = document.getElementById('filtro-subcategoria-frases');
+        select.innerHTML = '<option value="">Todas las subcategorías</option>';
+        
+        data.subcategorias.forEach(subcategoria => {
+            const option = document.createElement('option');
+            option.value = subcategoria; // Valor original para el backend
+            option.textContent = normalizarNombre(subcategoria); // Nombre normalizado para mostrar
+            select.appendChild(option);
+        });
+    } catch (error) {
+        console.error('Error al cargar subcategorías para filtros:', error);
+    }
+}
+
+// Aplicar filtros a las frases
+function aplicarFiltros() {
+    // Actualizar indicador de filtro activo
+    actualizarIndicadorFiltro();
+    
+    // Recargar frases con filtros aplicados
+    if (typeof cargarFrases === 'function') {
+        cargarFrases();
+    }
+}
+
+// Limpiar todos los filtros
+function limpiarFiltros() {
+    document.getElementById('filtro-categoria-frases').value = '';
+    document.getElementById('filtro-subcategoria-frases').value = '';
+    document.getElementById('filtro-subcategoria-frases').innerHTML = '<option value="">Todas las subcategorías</option>';
+    
+    filtrosActivos.categoria = '';
+    filtrosActivos.subcategoria = '';
+    
+    aplicarFiltros();
+}
+
+// Actualizar indicador de filtro activo
+function actualizarIndicadorFiltro() {
+    const indicador = document.getElementById('indicador-filtro-estadisticas');
+    if (!indicador) return;
+    
+    let texto = 'Estadísticas generales';
+    if (filtrosActivos.categoria || filtrosActivos.subcategoria) {
+        const filtros = [];
+        if (filtrosActivos.categoria) filtros.push(`Categoría: ${normalizarNombre(filtrosActivos.categoria)}`);
+        if (filtrosActivos.subcategoria) filtros.push(`Subcategoría: ${normalizarNombre(filtrosActivos.subcategoria)}`);
+        texto = `Filtros activos: ${filtros.join(', ')}`;
+    }
+    
+    indicador.textContent = texto;
+}
+
+// Repasar frases por filtros
+async function repasarPorFiltros() {
+    const btnRepasar = document.getElementById('btn-repasar-todas');
+    const textoOriginal = btnRepasar.innerHTML;
+    
+    try {
+        // Mostrar indicador de carga
+        btnRepasar.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Procesando...';
+        btnRepasar.disabled = true;
+        
+        const payload = {
+            categoria: filtrosActivos.categoria || null,
+            subcategoria: filtrosActivos.subcategoria || null
+        };
+        
+        const response = await fetch('/api/frases/repasar_filtradas', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(payload)
+        });
+        
+        if (!response.ok) throw new Error('Error al repasar frases');
+        
+        const data = await response.json();
+        
+        // Recargar la lista primero y esperar a que termine
+        if (typeof cargarFrases === 'function') {
+            await cargarFrases();
+        }
+        
+        // Sin notificaciones - solo recargar la lista
+        
+    } catch (error) {
+        console.error('Error al repasar frases:', error);
+        // Sin notificaciones de error - solo log en consola
+    } finally {
+        // Restaurar botón
+        btnRepasar.innerHTML = textoOriginal;
+        btnRepasar.disabled = false;
+    }
+}
+
+// Obtener filtros actuales (para usar en otras funciones)
+function obtenerFiltrosActivos() {
+    return { ...filtrosActivos };
+}
+
 // JavaScript para manejar las pestañas
 document.addEventListener('DOMContentLoaded', function() {
     // Manejar cambio de pestañas principales
@@ -703,6 +1312,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // Configurar event listeners de frases cuando la pestaña está activa
             setTimeout(() => {
                 configurarEventListenersFrases();
+                configurarEventosFiltros();
             }, 100);
         });
     }

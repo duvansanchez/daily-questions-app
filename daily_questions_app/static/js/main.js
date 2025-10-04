@@ -1,5 +1,12 @@
 console.log('JS CARGADO');
 
+// Evitar carga múltiple del script
+if (typeof window.jsCargado !== 'undefined') {
+    console.log('JS ya cargado, omitiendo...');
+    // No ejecutar el resto si ya está cargado
+} else {
+    window.jsCargado = true;
+
 // Variables globales
 let currentQuestionIndex = 0;
 let questions = [];
@@ -1174,6 +1181,10 @@ function ordenarObjetivos(objetivos, criterio) {
 
 function renderObjetivos() {
     const lista = document.getElementById('lista-objetivos');
+    if (!lista) {
+        console.warn('No se encontró el elemento con ID "lista-objetivos"');
+        return;
+    }
     lista.innerHTML = '';
     
     // Cambiar clase del contenedor según la vista
@@ -1847,17 +1858,19 @@ if (formEditar) {
   });
 }
 
-// Render inicial desde API
-if (sessionStorage.getItem('loginReciente') === '1') {
-  cargarObjetivos();
-  sessionStorage.removeItem('loginReciente');
-} else {
-  // Intentar cargar solo si hay sesión activa
-  fetch('/api/objetivos', { method: 'HEAD' })
-    .then(res => {
-      if (res.ok) cargarObjetivos();
-    });
-}
+// Render inicial desde API (solo si estamos en la página de objetivos)
+    if (document.getElementById('lista-objetivos')) {
+      if (sessionStorage.getItem('loginReciente') === '1') {
+        cargarObjetivos();
+        sessionStorage.removeItem('loginReciente');
+      } else {
+        // Intentar cargar solo si hay sesión activa
+        fetch('/api/objetivos', { method: 'HEAD' })
+          .then(res => {
+            if (res.ok) cargarObjetivos();
+          });
+      }
+    }
 // cargarObjetivos();
 
 // Event listener para el selector de ordenamiento
@@ -2583,147 +2596,6 @@ if (formEditar) {
     });
 }
 
-// --- FUNCIÓN PARA AGREGAR SUBOBJETIVO EN VISTA PRINCIPAL ---
-async function agregarSubobjetivo(objetivoId, texto) {
-    try {
-        console.log('[AgregarSubobjetivo] Enviando POST:', texto);
-        const res = await fetch(`/api/objetivos/${objetivoId}/subobjetivos`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ titulo: texto })
-        });
-        const postResult = await res.json();
-        console.log('[AgregarSubobjetivo] Respuesta POST:', postResult);
-        if (!res.ok) {
-            showNotification(postResult.error || 'Error al agregar subobjetivo', 'danger');
-            return;
-        }
-        // Polling inteligente: intenta hasta 3 veces obtener la lista con el nuevo subobjetivo
-        let subobjetivos = [];
-        let encontrado = false;
-        for (let intento = 1; intento <= 3; intento++) {
-            const res2 = await fetch(`/api/objetivos/${objetivoId}/subobjetivos`);
-            subobjetivos = await res2.json();
-            console.log(`[AgregarSubobjetivo] Lista tras agregar (intento ${intento}):`, subobjetivos);
-            if (Array.isArray(subobjetivos) && subobjetivos.some(s => s.titulo === texto)) {
-                encontrado = true;
-                break;
-            }
-            await new Promise(r => setTimeout(r, 200));
-        }
-        if (!encontrado) {
-            showNotification('Advertencia: El subobjetivo puede tardar en aparecer. Intenta recargar si no lo ves.', 'warning');
-        }
-        // Renderizado inline de la lista de subobjetivos
-        const contenedor = document.getElementById(`subobjetivos-list-${objetivoId}`);
-        if (contenedor) {
-            contenedor.innerHTML = '';
-            if (subobjetivos.length === 0) {
-                contenedor.innerHTML = '<div class="text-muted small">No hay subobjetivos.</div>';
-            } else {
-                subobjetivos.forEach((sub, idx) => {
-                    const subDiv = document.createElement('div');
-                    subDiv.className = 'subobjetivo-item';
-                    subDiv.innerHTML = `
-                        <input type="checkbox" class="subobjetivo-check" data-id="${sub.id}" ${sub.completado ? 'checked' : ''}>
-                        <span class="subobjetivo-titulo-span${sub.completado ? ' completado' : ''}">${sub.titulo}</span>
-                        <span class="subobjetivo-flex" style="flex:1"></span>
-                        <button class="subobjetivo-up-btn" title="Subir" ${idx === 0 ? 'disabled' : ''}>&#8593;</button>
-                        <button class="subobjetivo-down-btn" title="Bajar" ${idx === subobjetivos.length - 1 ? 'disabled' : ''}>&#8595;</button>
-                        <button class="delete-subobjetivo-btn" data-id="${sub.id}" title="Eliminar">&#10005;</button>
-                    `;
-                    contenedor.appendChild(subDiv);
-                    // Check
-                    const chk = subDiv.querySelector('.subobjetivo-check');
-                    chk.onchange = async function() {
-                        sub.completado = this.checked;
-                        await fetch(`/api/subobjetivos/${sub.id}`, {
-                            method: 'PATCH',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ completado: sub.completado })
-                        });
-                        // Renderiza de nuevo tras actualizar
-                        agregarSubobjetivo(objetivoId, ''); // Solo para refrescar la lista
-                    };
-                    // Editar (doble click)
-                    const tituloSpan = subDiv.querySelector('.subobjetivo-titulo-span');
-                    if (tituloSpan) {
-                        tituloSpan.ondblclick = function() {
-                            const oldText = sub.titulo;
-                            const input = document.createElement('input');
-                            input.type = 'text';
-                            input.value = oldText;
-                            input.className = 'subobjetivo-edit-input';
-                            input.style.flex = '1 1 0%';
-                            this.replaceWith(input);
-                            input.focus();
-                            input.onblur = async function() {
-                                const nuevoTexto = input.value.trim();
-                                if (nuevoTexto && nuevoTexto !== oldText) {
-                                    sub.titulo = nuevoTexto;
-                                    await fetch(`/api/subobjetivos/${sub.id}`, {
-                                        method: 'PATCH',
-                                        headers: { 'Content-Type': 'application/json' },
-                                        body: JSON.stringify({ titulo: sub.titulo })
-                                    });
-                                }
-                                // Renderiza de nuevo tras editar
-                                agregarSubobjetivo(objetivoId, '');
-                            };
-                            input.onkeydown = function(e) { if (e.key === 'Enter') input.blur(); };
-                        };
-                    }
-                    // Subir
-                    const upBtn = subDiv.querySelector('.subobjetivo-up-btn');
-                    upBtn.onclick = async function() {
-                        if (idx > 0) {
-                            // Intercambia en el array local y reordena en backend
-                            [subobjetivos[idx - 1], subobjetivos[idx]] = [subobjetivos[idx], subobjetivos[idx - 1]];
-                            const ids = subobjetivos.map(s => s.id);
-                            await fetch(`/api/objetivos/${objetivoId}/subobjetivos/reordenar`, {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ ids })
-                            });
-                            agregarSubobjetivo(objetivoId, '');
-                        }
-                    };
-                    // Bajar
-                    const downBtn = subDiv.querySelector('.subobjetivo-down-btn');
-                    downBtn.onclick = async function() {
-                        if (idx < subobjetivos.length - 1) {
-                            [subobjetivos[idx], subobjetivos[idx + 1]] = [subobjetivos[idx + 1], subobjetivos[idx]];
-                            const ids = subobjetivos.map(s => s.id);
-                            await fetch(`/api/objetivos/${objetivoId}/subobjetivos/reordenar`, {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ ids })
-                            });
-                            agregarSubobjetivo(objetivoId, '');
-                        }
-                    };
-                    // Eliminar
-                    const delBtn = subDiv.querySelector('.delete-subobjetivo-btn');
-                    delBtn.onclick = async function() {
-                        await fetch(`/api/subobjetivos/${sub.id}`, { method: 'DELETE' });
-                        agregarSubobjetivo(objetivoId, '');
-                    };
-                });
-            }
-        }
-        // Limpia el input solo tras éxito
-        const addDiv = document.getElementById(`subobjetivos-add-${objetivoId}`);
-        if (addDiv) {
-            const input = addDiv.querySelector('.subobjetivo-input');
-            const addBtn = addDiv.querySelector('.subobjetivo-add-btn');
-            if (input) input.value = '';
-            if (addBtn) addBtn.disabled = false;
-        }
-    } catch (err) {
-        showNotification('Error al agregar subobjetivo: ' + (err.message || err), 'danger');
-        console.error('[AgregarSubobjetivo] Error:', err);
-    }
-}
 
 
 
@@ -2881,7 +2753,17 @@ async function agregarSubobjetivo(objetivoId, texto) {
 // Cargar frases desde el backend
 async function cargarFrases() {
     try {
-        const response = await fetch('/api/frases');
+        // Obtener filtros activos desde los elementos del DOM
+        const filtroCategoria = document.getElementById('filtro-categoria-frases')?.value || '';
+        const filtroSubcategoria = document.getElementById('filtro-subcategoria-frases')?.value || '';
+
+        // Construir URL con parámetros de filtro
+        const params = new URLSearchParams();
+        if (filtroCategoria) params.set('categoria', filtroCategoria);
+        if (filtroSubcategoria) params.set('subcategoria', filtroSubcategoria);
+
+        const url = '/api/frases' + (params.toString() ? '?' + params.toString() : '');
+        const response = await fetch(url);
         frases = await response.json();
         actualizarCategoriasDisponibles();
         renderizarFrases();
@@ -2892,38 +2774,69 @@ async function cargarFrases() {
     }
 }
 
+// Cargar subcategorías para una categoría específica
+async function cargarSubcategoriasFrases(categoria) {
+    const filtroSubcategoria = document.getElementById('filtro-subcategoria-frases');
+    if (!filtroSubcategoria) return;
+
+    filtroSubcategoria.innerHTML = '<option value="">Todas las subcategorías</option>';
+
+    if (!categoria) return;
+
+    try {
+        const response = await fetch(`/api/frases/categorias?categoria=${encodeURIComponent(categoria)}`);
+        const data = await response.json();
+
+        if (data.subcategorias && data.subcategorias.length > 0) {
+            data.subcategorias.forEach(sub => {
+                const option = document.createElement('option');
+                option.value = sub;
+                option.textContent = capitalizarPrimeraLetra(sub.replace(/_/g, ' '));
+                filtroSubcategoria.appendChild(option);
+            });
+        }
+    } catch (error) {
+        console.error('Error cargando subcategorías:', error);
+    }
+}
+
 // Actualizar categorías disponibles en los selectores
 function actualizarCategoriasDisponibles() {
-    // Obtener categorías únicas de las frases existentes (solo las creadas por el usuario)
-    const categoriasExistentes = [...new Set(frases.map(f => f.categoria))];
-    
-    // Solo usar las categorías que el usuario ha creado
-    const todasLasCategorias = categoriasExistentes.map(cat => ({
-        value: cat,
-        label: capitalizarPrimeraLetra(cat.replace(/_/g, ' '))
-    }));
-    
-    // Actualizar filtro de categorías
-    const filtroCategoria = document.getElementById('filtro-categoria-frases');
-    if (filtroCategoria) {
-        const valorActual = filtroCategoria.value;
-        filtroCategoria.innerHTML = '<option value="">Todas las categorías</option>';
-        
-        todasLasCategorias.forEach(cat => {
-            const option = document.createElement('option');
-            option.value = cat.value;
-            option.textContent = cat.label;
-            filtroCategoria.appendChild(option);
+    // Obtener categorías desde la API
+    fetch('/api/frases/categorias')
+        .then(response => response.json())
+        .then(data => {
+            // Actualizar filtro de categorías
+            const filtroCategoria = document.getElementById('filtro-categoria-frases');
+            if (filtroCategoria) {
+                const valorActual = filtroCategoria.value;
+                filtroCategoria.innerHTML = '<option value="">Todas las categorías</option>';
+
+                if (data.categorias && data.categorias.length > 0) {
+                    data.categorias.forEach(cat => {
+                        const option = document.createElement('option');
+                        option.value = cat;
+                        option.textContent = capitalizarPrimeraLetra(cat.replace(/_/g, ' '));
+                        filtroCategoria.appendChild(option);
+                    });
+                }
+
+                // Restaurar valor seleccionado si existe
+                if (valorActual && data.categorias && data.categorias.includes(valorActual)) {
+                    filtroCategoria.value = valorActual;
+                }
+            }
+
+            // Actualizar selectores de modales
+            const todasLasCategorias = (data.categorias || []).map(cat => ({
+                value: cat,
+                label: capitalizarPrimeraLetra(cat.replace(/_/g, ' '))
+            }));
+            actualizarSelectoresCategorias(todasLasCategorias);
+        })
+        .catch(error => {
+            console.error('Error cargando categorías:', error);
         });
-        
-        // Restaurar valor seleccionado si existe
-        if (valorActual && todasLasCategorias.find(c => c.value === valorActual)) {
-            filtroCategoria.value = valorActual;
-        }
-    }
-    
-    // Actualizar selectores de modales
-    actualizarSelectoresCategorias(todasLasCategorias);
 }
 
 // Actualizar selectores de categorías en los modales
@@ -3670,10 +3583,24 @@ function configurarEventListenersFrases() {
     const filtroCategoria = document.getElementById('filtro-categoria-frases');
     if (filtroCategoria && !filtroCategoria.hasAttribute('data-listener-added')) {
         filtroCategoria.addEventListener('change', function() {
-            renderizarFrases();
-            actualizarEstadisticasFrases(); // Actualizar estadísticas cuando cambie el filtro
+            // Limpiar filtro de subcategoría cuando cambia la categoría
+            const filtroSubcategoria = document.getElementById('filtro-subcategoria-frases');
+            if (filtroSubcategoria) {
+                filtroSubcategoria.value = '';
+                cargarSubcategoriasFrases(this.value);
+            }
+            cargarFrases(); // Recargar frases desde el servidor con el filtro
         });
         filtroCategoria.setAttribute('data-listener-added', 'true');
+    }
+
+    // Filtro de subcategoría
+    const filtroSubcategoria = document.getElementById('filtro-subcategoria-frases');
+    if (filtroSubcategoria && !filtroSubcategoria.hasAttribute('data-listener-added')) {
+        filtroSubcategoria.addEventListener('change', function() {
+            cargarFrases(); // Recargar frases desde el servidor con el filtro
+        });
+        filtroSubcategoria.setAttribute('data-listener-added', 'true');
     }
     
     // Manejar nueva categoría en modal de nueva frase
@@ -3818,6 +3745,11 @@ function configurarEventListenersFrases() {
 document.addEventListener('DOMContentLoaded', function() {
     // Configurar event listeners iniciales
     configurarEventListenersFrases();
+
+    // Cargar frases si estamos en la página de frases
+    if (document.getElementById('card-frases')) {
+        cargarFrases();
+    }
 });
 
 // Configurar event listeners para categorías personalizadas
@@ -3895,3 +3827,5 @@ window.eliminarFrase = eliminarFrase;
 window.cargarFrases = cargarFrases;
 window.configurarEventListenersFrases = configurarEventListenersFrases;
 window.configurarEventListenersCategorias = configurarEventListenersCategorias;
+
+} // Fin del check de carga múltiple

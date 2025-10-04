@@ -3,7 +3,7 @@ import pyodbc
 # Primero conectarse a la base de datos master para crear DailyQuestions si no existe
 master_conn_str = (
     "DRIVER={SQL Server};"
-    "SERVER=DESKTOP-PIDFCJG;"
+    "SERVER=DESKTOP-2MR0PJ6;"
     "DATABASE=master;"
     "Trusted_Connection=yes;"
 )
@@ -30,7 +30,7 @@ except Exception as e:
 # Ahora conectarse a DailyQuestions para crear las tablas
 conn_str = (
     "DRIVER={SQL Server};"
-    "SERVER=DESKTOP-PIDFCJG;"
+    "SERVER=DESKTOP-2MR0PJ6;"
     "DATABASE=DailyQuestions;"
     "Trusted_Connection=yes;"
 )
@@ -135,16 +135,69 @@ try:
     
     # Tabla para registrar los saltos de objetivos recurrentes
     cursor.execute('''
-        CREATE TABLE IF NOT EXISTS objetivos_saltados (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            objetivo_id INTEGER NOT NULL,
-            user_id INTEGER NOT NULL,
-            fecha_saltada DATE NOT NULL,
-            FOREIGN KEY (objetivo_id) REFERENCES objetivos(id),
-            FOREIGN KEY (user_id) REFERENCES [user](id)
-        )
+        IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'objetivos_saltados')
+        BEGIN
+            CREATE TABLE objetivos_saltados (
+                id INT IDENTITY(1,1) PRIMARY KEY,
+                objetivo_id INT NOT NULL,
+                user_id INT NOT NULL,
+                fecha_saltada DATE NOT NULL,
+                FOREIGN KEY (objetivo_id) REFERENCES objetivos(id),
+                FOREIGN KEY (user_id) REFERENCES [user](id)
+            )
+        END
     ''')
-    
+
+    # Crear tabla de categorías
+    cursor.execute('''
+        IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'categorias')
+        BEGIN
+            CREATE TABLE categorias (
+                id INT IDENTITY(1,1) PRIMARY KEY,
+                user_id INT NOT NULL,
+                nombre NVARCHAR(255) NOT NULL,
+                fecha_creacion DATETIME DEFAULT GETDATE(),
+                FOREIGN KEY (user_id) REFERENCES [user](id)
+            )
+        END
+    ''')
+
+    # Crear tabla de subcategorías
+    cursor.execute('''
+        IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'subcategorias')
+        BEGIN
+            CREATE TABLE subcategorias (
+                id INT IDENTITY(1,1) PRIMARY KEY,
+                user_id INT NOT NULL,
+                categoria_id INT NOT NULL,
+                nombre NVARCHAR(255) NOT NULL,
+                fecha_creacion DATETIME DEFAULT GETDATE(),
+                FOREIGN KEY (user_id) REFERENCES [user](id),
+                FOREIGN KEY (categoria_id) REFERENCES categorias(id) ON DELETE CASCADE
+            )
+        END
+    ''')
+
+    # Crear tabla de frases inspiracionales
+    cursor.execute('''
+        IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'frases')
+        BEGIN
+            CREATE TABLE frases (
+                id INT IDENTITY(1,1) PRIMARY KEY,
+                user_id INT NOT NULL,
+                texto NVARCHAR(1000) NOT NULL,
+                autor NVARCHAR(255),
+                categoria NVARCHAR(255),
+                subcategoria NVARCHAR(255),
+                notas NVARCHAR(500),
+                total_repasos INT DEFAULT 0,
+                ultima_vez DATETIME,
+                fecha_creacion DATETIME DEFAULT GETDATE(),
+                FOREIGN KEY (user_id) REFERENCES [user](id)
+            )
+        END
+    ''')
+
     conn.commit()
     print("Base de datos inicializada exitosamente!")
     

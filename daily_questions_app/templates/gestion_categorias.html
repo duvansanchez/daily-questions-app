@@ -1,0 +1,817 @@
+{% extends 'base.html' %}
+{% block title %}Gestión de Categorías - Desarrollo Personal{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Gestión de Categorías y Subcategorías</h2>
+        <a href="{{ url_for('objetivos') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Volver a Objetivos
+        </a>
+    </div>
+
+    <div class="row">
+        <!-- Lista de Categorías -->
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Categorías</h5>
+                    <button class="btn btn-sm btn-primary" onclick="mostrarModalNuevaCategoria()">
+                        <i class="bi bi-plus-lg"></i> Nueva Categoría
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div id="lista-categorias" class="list-group">
+                        <!-- Las categorías se cargarán aquí dinámicamente -->
+                        <div class="text-center py-4 text-muted">
+                            <i class="bi bi-inbox" style="font-size: 2rem;"></i>
+                            <p class="mt-2 mb-0">No hay categorías creadas</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Lista de Subcategorías -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Subcategorías</h5>
+                    <button class="btn btn-sm btn-primary" id="btn-nueva-subcategoria" disabled>
+                        <i class="bi bi-plus-lg"></i> Nueva Subcategoría
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div id="lista-subcategorias">
+                        <div class="text-center py-4 text-muted">
+                            <i class="bi bi-folder2-open" style="font-size: 2rem;"></i>
+                            <p class="mt-2 mb-0">Selecciona una categoría para ver sus subcategorías</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Nueva Categoría -->
+<div class="modal fade" id="modalNuevaCategoria" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Nueva Categoría</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="form-nueva-categoria">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="nombre-categoria" class="form-label">Nombre de la categoría</label>
+                        <input type="text" class="form-control" id="nombre-categoria" required 
+                               placeholder="Ej: Motivación, Productividad, Salud...">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Editar Categoría -->
+<div class="modal fade" id="modalEditarCategoria" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Editar Categoría</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="form-editar-categoria">
+                <input type="hidden" id="editar-categoria-id">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="editar-nombre-categoria" class="form-label">Nombre de la categoría</label>
+                        <input type="text" class="form-control" id="editar-nombre-categoria" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-danger me-auto" onclick="confirmarEliminarCategoria()">
+                        <i class="bi bi-trash"></i> Eliminar
+                    </button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Nueva Subcategoría -->
+<div class="modal fade" id="modalNuevaSubcategoria" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Nueva Subcategoría</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="form-nueva-subcategoria">
+                <input type="hidden" id="categoria-padre-id">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="nombre-subcategoria" class="form-label">Nombre de la subcategoría</label>
+                        <input type="text" class="form-control" id="nombre-subcategoria" required 
+                               placeholder="Ej: Mañana, Tarde, Noche...">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Editar Subcategoría -->
+<div class="modal fade" id="modalEditarSubcategoria" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Editar Subcategoría</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="form-editar-subcategoria">
+                <input type="hidden" id="editar-subcategoria-id">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="editar-nombre-subcategoria" class="form-label">Nombre de la subcategoría</label>
+                        <input type="text" class="form-control" id="editar-nombre-subcategoria" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editar-categoria-subcategoria" class="form-label">Categoría</label>
+                        <select class="form-select" id="editar-categoria-subcategoria" required>
+                            <!-- Las categorías se cargarán aquí dinámicamente -->
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-danger me-auto" onclick="confirmarEliminarSubcategoria()">
+                        <i class="bi bi-trash"></i> Eliminar
+                    </button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Confirmación -->
+<div class="modal fade" id="modalConfirmacion" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalConfirmacionTitulo">Confirmar acción</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="modalConfirmacionCuerpo">
+                ¿Estás seguro de que deseas realizar esta acción?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger" id="btn-confirmar-accion">Confirmar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Variables globales
+let categorias = [];
+let subcategorias = [];
+let categoriaSeleccionada = null;
+let subcategoriaSeleccionada = null;
+
+// Inicialización
+document.addEventListener('DOMContentLoaded', function() {
+    cargarCategorias();
+    configurarEventos();
+});
+
+// Configurar eventos
+function configurarEventos() {
+    // Formulario nueva categoría
+    document.getElementById('form-nueva-categoria').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const nombre = document.getElementById('nombre-categoria').value.trim();
+        if (nombre) {
+            crearCategoria(nombre);
+        }
+    });
+
+    // Formulario editar categoría
+    document.getElementById('form-editar-categoria').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const id = document.getElementById('editar-categoria-id').value;
+        const nombre = document.getElementById('editar-nombre-categoria').value.trim();
+        if (id && nombre) {
+            actualizarCategoria(id, nombre);
+        }
+    });
+
+    // Formulario nueva subcategoría
+    document.getElementById('form-nueva-subcategoria').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const categoriaId = document.getElementById('categoria-padre-id').value;
+        const nombre = document.getElementById('nombre-subcategoria').value.trim();
+        if (categoriaId && nombre) {
+            crearSubcategoria(categoriaId, nombre);
+        }
+    });
+
+    // Formulario editar subcategoría
+    document.getElementById('form-editar-subcategoria').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const id = document.getElementById('editar-subcategoria-id').value;
+        const categoriaId = document.getElementById('editar-categoria-subcategoria').value;
+        const nombre = document.getElementById('editar-nombre-subcategoria').value.trim();
+        if (id && categoriaId && nombre) {
+            actualizarSubcategoria(id, categoriaId, nombre);
+        }
+    });
+
+    // Botón confirmar acción en modal de confirmación
+    document.getElementById('btn-confirmar-accion').addEventListener('click', function() {
+        const accion = this.getAttribute('data-accion');
+        const id = this.getAttribute('data-id');
+        
+        if (accion === 'eliminar-categoria') {
+            eliminarCategoria(id);
+        } else if (accion === 'eliminar-subcategoria') {
+            eliminarSubcategoria(id);
+        }
+        
+        // Cerrar el modal
+        const modal = bootstrap.Modal.getInstance(document.getElementById('modalConfirmacion'));
+        modal.hide();
+    });
+}
+
+// Mostrar modal de nueva categoría
+function mostrarModalNuevaCategoria() {
+    document.getElementById('nombre-categoria').value = '';
+    const modal = new bootstrap.Modal(document.getElementById('modalNuevaCategoria'));
+    modal.show();
+}
+
+// Mostrar modal de editar categoría
+function mostrarModalEditarCategoria(categoriaId) {
+    const categoria = categorias.find(c => c.id == categoriaId);
+    if (!categoria) return;
+    document.getElementById('editar-categoria-id').value = categoria.id;
+    document.getElementById('editar-nombre-categoria').value = categoria.nombre;
+    const modal = new bootstrap.Modal(document.getElementById('modalEditarCategoria'));
+    modal.show();
+}
+
+// Mostrar modal de nueva subcategoría
+function mostrarModalNuevaSubcategoria(categoriaId) {
+    document.getElementById('categoria-padre-id').value = categoriaId;
+    document.getElementById('nombre-subcategoria').value = '';
+    const modal = new bootstrap.Modal(document.getElementById('modalNuevaSubcategoria'));
+    modal.show();
+}
+
+// Mostrar modal de editar subcategoría
+function mostrarModalEditarSubcategoria(subcategoriaId) {
+    try {
+        console.log('Mostrar modal para subcategoría ID:', subcategoriaId);
+
+        const subcategoria = subcategorias.find(s => s.id == subcategoriaId);
+        if (!subcategoria) {
+            mostrarAlerta('Error', 'Subcategoría no encontrada', 'danger');
+            return;
+        }
+
+        // Actualizar los campos del formulario
+        document.getElementById('editar-subcategoria-id').value = subcategoria.id;
+        document.getElementById('editar-nombre-subcategoria').value = subcategoria.nombre || '';
+
+        // Cargar categorías en el select
+        const select = document.getElementById('editar-categoria-subcategoria');
+        select.innerHTML = '';
+
+        categorias.forEach(categoria => {
+            const option = document.createElement('option');
+            option.value = categoria.id;
+            option.textContent = categoria.nombre;
+            if (categoria.id == subcategoria.categoria_id) {
+                option.selected = true;
+            }
+            select.appendChild(option);
+        });
+
+        // Mostrar el modal
+        const modalElement = document.getElementById('modalEditarSubcategoria');
+        const modal = new bootstrap.Modal(modalElement);
+        modal.show();
+
+    } catch (error) {
+        console.error('Error al mostrar el modal de edición de subcategoría:', error);
+        mostrarAlerta('Error', 'No se pudo cargar la subcategoría para editar', 'danger');
+    }
+}
+
+// Mostrar modal de confirmación
+function mostrarConfirmacion(titulo, mensaje, accion, id) {
+    document.getElementById('modalConfirmacionTitulo').textContent = titulo;
+    document.getElementById('modalConfirmacionCuerpo').textContent = mensaje;
+    const btnConfirmar = document.getElementById('btn-confirmar-accion');
+    btnConfirmar.setAttribute('data-accion', accion);
+    btnConfirmar.setAttribute('data-id', id);
+    
+    const modal = new bootstrap.Modal(document.getElementById('modalConfirmacion'));
+    modal.show();
+}
+
+// Confirmar eliminar categoría
+function confirmarEliminarCategoria() {
+    const id = document.getElementById('editar-categoria-id').value;
+    const nombre = document.getElementById('editar-nombre-categoria').value;
+    
+    // Verificar si la categoría tiene subcategorías
+    const tieneSubcategorias = subcategorias.some(sc => sc.categoria_id == id);
+    
+    if (tieneSubcategorias) {
+        mostrarAlerta('No se puede eliminar', 'La categoría tiene subcategorías asociadas. Por favor, elimina o mueve las subcategorías primero.', 'warning');
+        return;
+    }
+    
+    mostrarConfirmacion(
+        'Eliminar Categoría',
+        `¿Estás seguro de que deseas eliminar la categoría "${nombre}"?`,
+        'eliminar-categoria',
+        id
+    );
+}
+
+// Confirmar eliminar subcategoría
+function confirmarEliminarSubcategoria() {
+    const id = document.getElementById('editar-subcategoria-id').value;
+    const nombre = document.getElementById('editar-nombre-subcategoria').value;
+    
+    // Aquí podrías verificar si la subcategoría tiene frases asociadas
+    // y mostrar un mensaje de advertencia si es necesario
+    
+    mostrarConfirmacion(
+        'Eliminar Subcategoría',
+        `¿Estás seguro de que deseas eliminar la subcategoría "${nombre}"?`,
+        'eliminar-subcategoria',
+        id
+    );
+}
+
+// Cargar categorías
+function cargarCategorias() {
+    console.log('Iniciando carga de categorías...');
+    fetch('/api/categorias?t=' + Date.now())
+        .then(response => response.json())
+        .then(data => {
+            console.log('Datos recibidos de la API:', data);
+            if (data.status === 'success') {
+                // Limpiar los arrays antes de cargar nuevos datos
+                categorias.length = 0;
+                subcategorias.length = 0;
+                
+                // Agregar los nuevos datos
+                categorias.push(...data.data.categorias);
+                console.log('Categorías cargadas:', categorias);
+                
+                if (data.data.subcategorias) {
+                    subcategorias.push(...data.data.subcategorias);
+                    console.log('Subcategorías cargadas:', subcategorias);
+                }
+                
+                // Renderizar las categorías
+                renderizarCategorias();
+                // Si hay una categoría seleccionada, renderizar también las subcategorías
+                if (categoriaSeleccionada) {
+                    renderizarSubcategorias();
+                }
+            } else {
+                mostrarAlerta('Error', 'No se pudieron cargar las categorías', 'danger');
+            }
+        })
+        .catch(error => {
+            console.error('Error al cargar categorías:', error);
+            mostrarAlerta('Error', 'No se pudieron cargar las categorías', 'danger');
+        });
+}
+
+// Renderizar lista de categorías
+function renderizarCategorias() {
+    console.log('Iniciando renderizado de categorías...');
+    const container = document.getElementById('lista-categorias');
+    
+    console.log('Total de categorías a renderizar:', categorias.length);
+    console.log('Total de subcategorías disponibles:', subcategorias.length);
+    
+    if (categorias.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-4 text-muted">
+                <i class="bi bi-inbox" style="font-size: 2rem;"></i>
+                <p class="mt-2 mb-0">No hay categorías creadas</p>
+            </div>
+        `;
+        // Asegurarse de limpiar las subcategorías si no hay categorías
+        document.getElementById('lista-subcategorias').innerHTML = `
+            <div class="text-center py-4 text-muted">
+                <i class="bi bi-folder2-open" style="font-size: 2rem;"></i>
+                <p class="mt-2 mb-0">Selecciona una categoría para ver sus subcategorías</p>
+            </div>
+        `;
+        return;
+    }
+    
+    // Limpiar el contenedor de categorías
+    container.innerHTML = '';
+    
+    // Crear un contenedor para la lista de categorías
+    const listGroup = document.createElement('div');
+    listGroup.className = 'list-group';
+    
+    // Procesar cada categoría
+    categorias.forEach(categoria => {
+        // Filtrar subcategorías para esta categoría
+        const subcategoriasCategoria = subcategorias.filter(sc => {
+            // Asegurarse de que sc no sea undefined y que tenga las propiedades necesarias
+            if (!sc) return false;
+            return sc.categoria_id == categoria.id;
+        });
+        
+        const activo = categoriaSeleccionada === categoria.id ? 'active' : '';
+        
+        console.log(`Categoría: ${categoria.nombre} (ID: ${categoria.id})`);
+        console.log(`- Subcategorías encontradas:`, subcategoriasCategoria);
+        console.log(`- Total de subcategorías: ${subcategoriasCategoria.length}`);
+        
+        // Verificar si hay subcategorías duplicadas
+        const nombresSubcategorias = subcategoriasCategoria.map(sc => sc.nombre);
+        const subcategoriasUnicas = [...new Set(nombresSubcategorias)];
+        console.log(`- Subcategorías únicas: ${subcategoriasUnicas.length}`);
+        
+        // Crear elemento de categoría
+        const categoriaElement = document.createElement('div');
+        categoriaElement.className = `list-group-item list-group-item-action d-flex justify-content-between align-items-center ${activo}`;
+        categoriaElement.setAttribute('data-id', categoria.id);
+        categoriaElement.innerHTML = `
+            <div class="d-flex align-items-center flex-grow-1">
+                <i class="bi bi-folder me-2"></i>
+                <span>${categoria.nombre}</span>
+                <span class="badge bg-secondary rounded-pill ms-2" id="contador-${categoria.id}">${subcategoriasUnicas.length}</span>
+            </div>
+            <div class="btn-group btn-group-sm">
+                <button class="btn btn-outline-primary btn-sm" onclick="event.stopPropagation(); mostrarModalEditarCategoria(${categoria.id});">
+                    <i class="bi bi-pencil"></i>
+                </button>
+            </div>
+        `;
+        
+        // Manejar clic en la categoría
+        categoriaElement.addEventListener('click', () => {
+            // Solo actualizar si es una categoría diferente
+            if (categoriaSeleccionada !== categoria.id) {
+                categoriaSeleccionada = categoria.id;
+                subcategoriaSeleccionada = null;
+                document.getElementById('btn-nueva-subcategoria').disabled = false;
+                // Actualizar solo la categoría seleccionada
+                document.querySelectorAll('#lista-categorias .list-group-item').forEach(el => {
+                    el.classList.remove('active');
+                });
+                categoriaElement.classList.add('active');
+                // Renderizar subcategorías
+                renderizarSubcategorias();
+            }
+        });
+        
+        listGroup.appendChild(categoriaElement);
+    });
+    
+    container.appendChild(listGroup);
+}
+
+// Función para normalizar nombres de subcategorías
+function normalizarNombreSubcategoria(nombre) {
+    if (!nombre) return '';
+    // Reemplazar guiones bajos por espacios y capitalizar cada palabra
+    return nombre
+        .split('_')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+        .join(' ');
+}
+
+// Renderizar lista de subcategorías
+function renderizarSubcategorias() {
+    const container = document.getElementById('lista-subcategorias');
+    
+    if (!categoriaSeleccionada) {
+        container.innerHTML = `
+            <div class="text-center py-4 text-muted">
+                <i class="bi bi-folder2-open" style="font-size: 2rem;"></i>
+                <p class="mt-2 mb-0">Selecciona una categoría para ver sus subcategorías</p>
+            </div>
+        `;
+        return;
+    }
+    
+    // Filtrar subcategorías para la categoría seleccionada y eliminar duplicados
+    const subcategoriasUnicas = [];
+    const nombresVistos = new Set();
+    
+    subcategorias.forEach(sc => {
+        if (sc.categoria_id == categoriaSeleccionada && !nombresVistos.has(sc.nombre)) {
+            nombresVistos.add(sc.nombre);
+            subcategoriasUnicas.push({
+                ...sc,
+                nombreNormalizado: normalizarNombreSubcategoria(sc.nombre)
+            });
+        }
+    });
+    
+    // Limpiar el contenedor
+    container.innerHTML = '';
+    
+    if (subcategoriasUnicas.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-4 text-muted">
+                <i class="bi bi-folder-x" style="font-size: 2rem;"></i>
+                <p class="mt-2 mb-0">No hay subcategorías en esta categoría</p>
+            </div>
+        `;
+        return;
+    }
+    
+    // Crear contenedor para la lista de subcategorías
+    const listGroup = document.createElement('div');
+    listGroup.className = 'list-group';
+    
+    // Ordenar subcategorías por nombre
+    subcategoriasUnicas.sort((a, b) => a.nombre.localeCompare(b.nombre));
+    
+    // Procesar cada subcategoría única
+    subcategoriasUnicas.forEach(subcategoria => {
+        const activo = subcategoriaSeleccionada === subcategoria.id ? 'active' : '';
+        
+        // Crear elemento de subcategoría
+        const subcategoriaElement = document.createElement('div');
+        subcategoriaElement.className = `list-group-item list-group-item-action d-flex justify-content-between align-items-center ${activo}`;
+        subcategoriaElement.setAttribute('data-id', subcategoria.id);
+        subcategoriaElement.innerHTML = `
+            <div class="d-flex align-items-center flex-grow-1">
+                <i class="bi bi-tag me-2"></i>
+                <span>${subcategoria.nombreNormalizado || subcategoria.nombre}</span>
+            </div>
+            <div class="btn-group btn-group-sm">
+                <button class="btn btn-outline-primary btn-sm" onclick="event.stopPropagation(); mostrarModalEditarSubcategoria(${subcategoria.id});">
+                    <i class="bi bi-pencil"></i>
+                </button>
+            </div>
+        `;
+        
+        // Manejar clic en la subcategoría
+        subcategoriaElement.addEventListener('click', () => {
+            // Solo actualizar si es una subcategoría diferente
+            if (subcategoriaSeleccionada !== subcategoria.id) {
+                subcategoriaSeleccionada = subcategoria.id;
+                // Actualizar solo la subcategoría seleccionada
+                listGroup.querySelectorAll('.list-group-item').forEach(el => {
+                    el.classList.remove('active');
+                });
+                subcategoriaElement.classList.add('active');
+            }
+        });
+        
+        listGroup.appendChild(subcategoriaElement);
+    });
+    
+    container.appendChild(listGroup);
+}
+
+// Crear nueva categoría
+function crearCategoria(nombre) {
+    fetch('/api/categorias', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ nombre })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            // Cerrar el modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('modalNuevaCategoria'));
+            modal.hide();
+            
+            // Recargar categorías
+            cargarCategorias();
+            
+            // Mostrar mensaje de éxito
+            mostrarAlerta('¡Éxito!', 'Categoría creada correctamente', 'success');
+        } else {
+            mostrarAlerta('Error', data.message || 'No se pudo crear la categoría', 'danger');
+        }
+    })
+    .catch(error => {
+        console.error('Error al crear categoría:', error);
+        mostrarAlerta('Error', 'No se pudo crear la categoría', 'danger');
+    });
+}
+
+// Actualizar categoría
+function actualizarCategoria(id, nombre) {
+    fetch(`/api/categorias/${id}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ nombre })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            // Cerrar el modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('modalEditarCategoria'));
+            modal.hide();
+            
+            // Recargar categorías
+            cargarCategorias();
+            
+            // Mostrar mensaje de éxito
+            mostrarAlerta('¡Éxito!', 'Categoría actualizada correctamente', 'success');
+        } else {
+            mostrarAlerta('Error', data.message || 'No se pudo actualizar la categoría', 'danger');
+        }
+    })
+    .catch(error => {
+        console.error('Error al actualizar categoría:', error);
+        mostrarAlerta('Error', 'No se pudo actualizar la categoría', 'danger');
+    });
+}
+
+// Eliminar categoría
+function eliminarCategoria(id) {
+    fetch(`/api/categorias/${id}`, {
+        method: 'DELETE'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            // Recargar categorías
+            cargarCategorias();
+            
+            // Mostrar mensaje de éxito
+            mostrarAlerta('¡Éxito!', 'Categoría eliminada correctamente', 'success');
+            
+            // Limpiar selección
+            categoriaSeleccionada = null;
+            subcategoriaSeleccionada = null;
+            document.getElementById('btn-nueva-subcategoria').disabled = true;
+        } else {
+            mostrarAlerta('Error', data.message || 'No se pudo eliminar la categoría', 'danger');
+        }
+    })
+    .catch(error => {
+        console.error('Error al eliminar categoría:', error);
+        mostrarAlerta('Error', 'No se pudo eliminar la categoría', 'danger');
+    });
+}
+
+// Crear nueva subcategoría
+function crearSubcategoria(categoriaId, nombre) {
+    fetch('/api/subcategorias', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ categoria_id: categoriaId, nombre })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            // Cerrar el modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('modalNuevaSubcategoria'));
+            modal.hide();
+            
+            // Recargar categorías (que incluye subcategorías)
+            cargarCategorias();
+            
+            // Mostrar mensaje de éxito
+            mostrarAlerta('¡Éxito!', 'Subcategoría creada correctamente', 'success');
+        } else {
+            mostrarAlerta('Error', data.message || 'No se pudo crear la subcategoría', 'danger');
+        }
+    })
+    .catch(error => {
+        console.error('Error al crear subcategoría:', error);
+        mostrarAlerta('Error', 'No se pudo crear la subcategoría', 'danger');
+    });
+}
+
+// Actualizar subcategoría
+function actualizarSubcategoria(id, categoriaId, nombre) {
+    console.log('Actualizando subcategoria', id, 'a categoria', categoriaId, 'con nombre', nombre);
+    fetch(`/api/subcategorias/${id}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ categoria_id: categoriaId, nombre })
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('Respuesta de actualizar subcategoria:', data);
+        if (data.status === 'success') {
+            // Cerrar el modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('modalEditarSubcategoria'));
+            modal.hide();
+
+            // Recargar categorías (que incluye subcategorías)
+            cargarCategorias();
+
+            // Mostrar mensaje de éxito
+            mostrarAlerta('¡Éxito!', 'Subcategoría actualizada correctamente', 'success');
+        } else {
+            mostrarAlerta('Error', data.message || 'No se pudo actualizar la subcategoría', 'danger');
+        }
+    })
+    .catch(error => {
+        console.error('Error al actualizar subcategoría:', error);
+        mostrarAlerta('Error', 'No se pudo actualizar la subcategoría', 'danger');
+    });
+}
+
+// Eliminar subcategoría
+function eliminarSubcategoria(id) {
+    // Cerrar el modal de edición inmediatamente
+    const modalEditar = bootstrap.Modal.getInstance(document.getElementById('modalEditarSubcategoria'));
+    if (modalEditar) {
+        modalEditar.hide();
+    }
+
+    fetch(`/api/subcategorias/${id}`, {
+        method: 'DELETE'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            // Recargar categorías (que incluye subcategorías)
+            cargarCategorias();
+
+            // Mostrar mensaje de éxito
+            mostrarAlerta('¡Éxito!', 'Subcategoría eliminada correctamente', 'success');
+
+            // Limpiar selección
+            subcategoriaSeleccionada = null;
+        } else {
+            mostrarAlerta('Error', data.message || 'No se pudo eliminar la subcategoría', 'danger');
+        }
+    })
+    .catch(error => {
+        console.error('Error al eliminar subcategoría:', error);
+        mostrarAlerta('Error', 'No se pudo eliminar la subcategoría', 'danger');
+    });
+}
+
+// Mostrar alerta
+function mostrarAlerta(titulo, mensaje, tipo) {
+    const iconMap = {
+        'success': 'success',
+        'error': 'error',
+        'warning': 'warning',
+        'info': 'info',
+        'danger': 'error'
+    };
+
+    Swal.fire({
+        title: titulo,
+        text: mensaje,
+        icon: iconMap[tipo] || 'info',
+        confirmButtonText: 'Aceptar'
+    });
+}
+
+// Configurar el botón de nueva subcategoría
+document.getElementById('btn-nueva-subcategoria').addEventListener('click', function() {
+    if (categoriaSeleccionada) {
+        mostrarModalNuevaSubcategoria(categoriaSeleccionada);
+    } else {
+        mostrarAlerta('Error', 'Debes seleccionar una categoría primero', 'warning');
+    }
+});
+</script>
+{% endblock %}

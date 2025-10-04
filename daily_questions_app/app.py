@@ -87,11 +87,12 @@ def get_db_connection():
             
             for driver in drivers:
                 try:
+                    # Configuración de conexión actualizada
                     conn_str = (
                         f"DRIVER={{{driver}}};"
-                        "SERVER=localhost;"
+                        "SERVER=DESKTOP-2MR0PJ6;"  # Solo el nombre del servidor
                         "DATABASE=DailyQuestions;"
-                        "Trusted_Connection=yes;"
+                        "Trusted_Connection=yes;"  # Usando autenticación de Windows
                         "TrustServerCertificate=yes;"
                         "Connection Timeout=30;"
                         "charset=UTF-8;"
@@ -2877,21 +2878,424 @@ def api_delete_subobjetivo(subobjetivo_id):
         return jsonify({'status': 'success'})
 
 # Configuración de la aplicación
+# === RUTA PARA GESTIÓN DE CATEGORÍAS ===
+
+@app.route('/gestion-categorias')
+@login_required
+def gestion_categorias():
+    """Página de gestión de categorías y subcategorías"""
+    return render_template('gestion_categorias.html')
+
+# ===========================================
+# API PARA GESTIÓN DE CATEGORÍAS
+# ===========================================
+
+@app.route('/api/categorias', methods=['GET'])
+@login_required
+def api_list_categorias():
+    """Obtener todas las categorías del usuario"""
+    try:
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            
+            # Verificar si la tabla de categorías existe
+            cursor.execute("""
+                SELECT COUNT(*) as count
+                FROM INFORMATION_SCHEMA.TABLES 
+                WHERE TABLE_NAME = 'categorias'
+            """)
+            
+            if cursor.fetchone().count == 0:
+                # Si la tabla no existe, devolver lista vacía
+                return jsonify({
+                    'status': 'success',
+                    'data': {
+                        'categorias': [],
+                        'subcategorias': []
+                    }
+                })
+            
+            # Obtener categorías del usuario
+            cursor.execute('''
+                SELECT id, nombre, fecha_creacion 
+                FROM categorias 
+                WHERE user_id = ?
+                ORDER BY nombre
+            ''', (current_user.id,))
+            
+            categorias = [{
+                'id': row[0],
+                'nombre': row[1],
+                'fecha_creacion': row[2].strftime('%Y-%m-%d %H:%M:%S') if row[2] else None
+            } for row in cursor.fetchall()]
+            
+            # Obtener todas las subcategorías del usuario
+            cursor.execute('''
+                SELECT s.id, s.nombre, s.categoria_id, s.fecha_creacion 
+                FROM subcategorias s
+                INNER JOIN categorias c ON s.categoria_id = c.id
+                WHERE c.user_id = ?
+                ORDER BY s.nombre
+            ''', (current_user.id,))
+            
+            subcategorias = [{
+                'id': row[0],
+                'nombre': row[1],
+                'categoria_id': row[2],
+                'fecha_creacion': row[3].strftime('%Y-%m-%d %H:%M:%S') if row[3] else None
+            } for row in cursor.fetchall()]
+            
+            return jsonify({
+                'status': 'success',
+                'data': {
+                    'categorias': categorias,
+                    'subcategorias': subcategorias
+                }
+            })
+            
+    except Exception as e:
+        logger.error(f"Error al obtener categorías: {str(e)}")
+        return jsonify({
+            'status': 'error',
+            'message': 'Error al obtener las categorías',
+            'error': str(e)
+        }), 500
+
+@app.route('/api/categorias', methods=['POST'])
+@login_required
+def api_create_categoria():
+    """Crear una nueva categoría"""
+    try:
+        data = request.get_json()
+        nombre = data.get('nombre', '').strip()
+        
+        if not nombre:
+            return jsonify({'error': 'El nombre de la categoría es obligatorio'}), 400
+            
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            
+            # Verificar si ya existe una categoría con el mismo nombre para este usuario
+            cursor.execute('''
+                SELECT id FROM categorias 
+                WHERE user_id = ? AND LOWER(nombre) = LOWER(?)
+            ''', (current_user.id, nombre))
+            
+            if cursor.fetchone() is not None:
+                return jsonify({'error': 'Ya existe una categoría con este nombre'}), 400
+            
+            # Crear la nueva categoría
+            cursor.execute('''
+                INSERT INTO categorias (user_id, nombre, fecha_creacion)
+                OUTPUT INSERTED.id, INSERTED.nombre, INSERTED.fecha_creacion
+                VALUES (?, ?, GETDATE())
+            ''', (current_user.id, nombre))
+            
+            row = cursor.fetchone()
+            conn.commit()
+            
+            categoria = {
+                'id': row[0],
+                'nombre': row[1],
+                'fecha_creacion': row[2].strftime('%Y-%m-%d %H:%M:%S') if row[2] else None,
+                'subcategorias': []
+            }
+
+            return jsonify({'status': 'success', 'data': categoria}), 201
+            
+    except Exception as e:
+        logger.error(f"Error al crear categoría: {str(e)}")
+        return jsonify({'error': 'Error al crear categoría'}), 500
+
+@app.route('/api/categorias/<int:categoria_id>', methods=['PUT'])
+@login_required
+def api_update_categoria(categoria_id):
+    """Actualizar una categoría existente"""
+    try:
+        data = request.get_json()
+        nombre = data.get('nombre', '').strip()
+        
+        if not nombre:
+            return jsonify({'error': 'El nombre de la categoría es obligatorio'}), 400
+            
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            
+            # Verificar que la categoría existe y pertenece al usuario
+            cursor.execute('''
+                SELECT id FROM categorias 
+                WHERE id = ? AND user_id = ?
+            ''', (categoria_id, current_user.id))
+            
+            if cursor.fetchone() is None:
+                return jsonify({'error': 'Categoría no encontrada'}), 404
+            
+            # Verificar si ya existe otra categoría con el mismo nombre
+            cursor.execute('''
+                SELECT id FROM categorias 
+                WHERE user_id = ? AND LOWER(nombre) = LOWER(?) AND id != ?
+            ''', (current_user.id, nombre, categoria_id))
+            
+            if cursor.fetchone() is not None:
+                return jsonify({'error': 'Ya existe otra categoría con este nombre'}), 400
+            
+            # Actualizar la categoría
+            cursor.execute('''
+                UPDATE categorias 
+                SET nombre = ?
+                WHERE id = ? AND user_id = ?
+            ''', (nombre, categoria_id, current_user.id))
+            
+            conn.commit()
+            
+            return jsonify({'status': 'success'})
+            
+    except Exception as e:
+        logger.error(f"Error al actualizar categoría: {str(e)}")
+        return jsonify({'error': 'Error al actualizar categoría'}), 500
+
+@app.route('/api/categorias/<int:categoria_id>', methods=['DELETE'])
+@login_required
+def api_delete_categoria(categoria_id):
+    """Eliminar una categoría y sus subcategorías asociadas"""
+    try:
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            
+            # Verificar que la categoría existe y pertenece al usuario
+            cursor.execute('''
+                SELECT id FROM categorias 
+                WHERE id = ? AND user_id = ?
+            ''', (categoria_id, current_user.id))
+            
+            if cursor.fetchone() is None:
+                return jsonify({'error': 'Categoría no encontrada'}), 404
+            
+            # Verificar si la categoría tiene subcategorías
+            cursor.execute('''
+                SELECT COUNT(*)
+                FROM subcategorias
+                WHERE categoria_id = ? AND user_id = ?
+            ''', (categoria_id, current_user.id))
+
+            if cursor.fetchone()[0] > 0:
+                return jsonify({
+                    'error': 'No se puede eliminar la categoría porque tiene subcategorías asociadas',
+                    'code': 'CATEGORY_HAS_SUBCATEGORIES'
+                }), 400
+            
+            # Eliminar subcategorías primero
+            cursor.execute('''
+                DELETE FROM subcategorias 
+                WHERE categoria_id = ? AND user_id = ?
+            ''', (categoria_id, current_user.id))
+            
+            # Eliminar la categoría
+            cursor.execute('''
+                DELETE FROM categorias 
+                WHERE id = ? AND user_id = ?
+            ''', (categoria_id, current_user.id))
+            
+            conn.commit()
+            
+            return jsonify({'status': 'success'})
+            
+    except Exception as e:
+        logger.error(f"Error al eliminar categoría: {str(e)}")
+        return jsonify({'error': 'Error al eliminar categoría'}), 500
+
+# ===========================================
+# API PARA GESTIÓN DE SUBCATEGORÍAS
+# ===========================================
+
+@app.route('/api/subcategorias', methods=['POST'])
+@login_required
+def api_create_subcategoria():
+    """Crear una nueva subcategoría"""
+    try:
+        data = request.get_json()
+        nombre = data.get('nombre', '').strip()
+        categoria_id = data.get('categoria_id')
+        
+        if not nombre:
+            return jsonify({'error': 'El nombre de la subcategoría es obligatorio'}), 400
+            
+        if not categoria_id:
+            return jsonify({'error': 'El ID de la categoría es obligatorio'}), 400
+            
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            
+            # Verificar que la categoría existe y pertenece al usuario
+            cursor.execute('''
+                SELECT id FROM categorias 
+                WHERE id = ? AND user_id = ?
+            ''', (categoria_id, current_user.id))
+            
+            if cursor.fetchone() is None:
+                return jsonify({'error': 'Categoría no encontrada'}), 404
+            
+            # Verificar si ya existe una subcategoría con el mismo nombre en esta categoría
+            cursor.execute('''
+                SELECT id FROM subcategorias 
+                WHERE user_id = ? AND categoria_id = ? AND LOWER(nombre) = LOWER(?)
+            ''', (current_user.id, categoria_id, nombre))
+            
+            if cursor.fetchone() is not None:
+                return jsonify({'error': 'Ya existe una subcategoría con este nombre en la categoría seleccionada'}), 400
+            
+            # Crear la nueva subcategoría
+            cursor.execute('''
+                INSERT INTO subcategorias (user_id, categoria_id, nombre, fecha_creacion)
+                OUTPUT INSERTED.id, INSERTED.nombre, INSERTED.fecha_creacion
+                VALUES (?, ?, ?, GETDATE())
+            ''', (current_user.id, categoria_id, nombre))
+            
+            row = cursor.fetchone()
+            conn.commit()
+            
+            subcategoria = {
+                'id': row[0],
+                'nombre': row[1],
+                'fecha_creacion': row[2].strftime('%Y-%m-%d %H:%M:%S') if row[2] else None,
+                'categoria_id': categoria_id
+            }
+
+            return jsonify({'status': 'success', 'data': subcategoria}), 201
+            
+    except Exception as e:
+        logger.error(f"Error al crear subcategoría: {str(e)}")
+        return jsonify({'error': 'Error al crear subcategoría'}), 500
+
+@app.route('/api/subcategorias/<int:subcategoria_id>', methods=['PUT'])
+@login_required
+def api_update_subcategoria(subcategoria_id):
+    """Actualizar una subcategoría existente"""
+    try:
+        data = request.get_json()
+        nombre = data.get('nombre', '').strip()
+        categoria_id = data.get('categoria_id')
+        
+        if not nombre:
+            return jsonify({'error': 'El nombre de la subcategoría es obligatorio'}), 400
+            
+        if not categoria_id:
+            return jsonify({'error': 'El ID de la categoría es obligatorio'}), 400
+            
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            
+            # Verificar que la subcategoría existe y pertenece al usuario
+            cursor.execute('''
+                SELECT id, categoria_id 
+                FROM subcategorias 
+                WHERE id = ? AND user_id = ?
+            ''', (subcategoria_id, current_user.id))
+            
+            subcategoria = cursor.fetchone()
+            if subcategoria is None:
+                return jsonify({'error': 'Subcategoría no encontrada'}), 404
+            
+            # Verificar que la categoría existe y pertenece al usuario
+            cursor.execute('''
+                SELECT id FROM categorias 
+                WHERE id = ? AND user_id = ?
+            ''', (categoria_id, current_user.id))
+            
+            if cursor.fetchone() is None:
+                return jsonify({'error': 'Categoría no encontrada'}), 404
+            
+            # Verificar si ya existe otra subcategoría con el mismo nombre en la misma categoría
+            cursor.execute('''
+                SELECT id FROM subcategorias 
+                WHERE user_id = ? AND categoria_id = ? AND LOWER(nombre) = LOWER(?) AND id != ?
+            ''', (current_user.id, categoria_id, nombre, subcategoria_id))
+            
+            if cursor.fetchone() is not None:
+                return jsonify({'error': 'Ya existe otra subcategoría con este nombre en la categoría seleccionada'}), 400
+            
+            # Actualizar la subcategoría
+            cursor.execute('''
+                UPDATE subcategorias 
+                SET nombre = ?, categoria_id = ?
+                WHERE id = ? AND user_id = ?
+            ''', (nombre, categoria_id, subcategoria_id, current_user.id))
+            
+            conn.commit()
+            
+            return jsonify({'status': 'success'})
+            
+    except Exception as e:
+        logger.error(f"Error al actualizar subcategoría: {str(e)}")
+        return jsonify({'error': 'Error al actualizar subcategoría'}), 500
+
+@app.route('/api/subcategorias/<int:subcategoria_id>', methods=['DELETE'])
+@login_required
+def api_delete_subcategoria(subcategoria_id):
+    """Eliminar una subcategoría"""
+    try:
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            
+            # Verificar que la subcategoría existe y pertenece al usuario
+            cursor.execute('''
+                SELECT id FROM subcategorias 
+                WHERE id = ? AND user_id = ?
+            ''', (subcategoria_id, current_user.id))
+            
+            if cursor.fetchone() is None:
+                return jsonify({'error': 'Subcategoría no encontrada'}), 404
+            
+            # Nota: Se permite eliminar subcategorías incluso si tienen frases asociadas
+            # Las frases seguirán existiendo con la subcategoría como texto
+            
+            # Eliminar la subcategoría
+            cursor.execute('''
+                DELETE FROM subcategorias 
+                WHERE id = ? AND user_id = ?
+            ''', (subcategoria_id, current_user.id))
+            
+            conn.commit()
+            
+            return jsonify({'status': 'success'})
+            
+    except Exception as e:
+        logger.error(f"Error al eliminar subcategoría: {str(e)}")
+        return jsonify({'error': 'Error al eliminar subcategoría'}), 500
+
 # === RUTAS PARA FRASES INSPIRACIONALES ===
 
 @app.route('/api/frases', methods=['GET'])
 @login_required
 def api_list_frases():
-    """Obtener todas las frases del usuario"""
+    """Obtener todas las frases del usuario con filtros opcionales"""
     try:
+        # Obtener parámetros de filtro
+        categoria = request.args.get('categoria')
+        subcategoria = request.args.get('subcategoria')
+        
         with get_db_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute('''
-                SELECT id, texto, autor, categoria, notas, total_repasos, ultima_vez, fecha_creacion
+            
+            # Construir query con filtros opcionales
+            query = '''
+                SELECT id, texto, autor, categoria, subcategoria, notas, total_repasos, ultima_vez, fecha_creacion
                 FROM frases
                 WHERE user_id = ?
-                ORDER BY fecha_creacion DESC
-            ''', (current_user.id,))
+            '''
+            params = [current_user.id]
+            
+            if categoria:
+                query += ' AND LOWER(COALESCE(categoria, \'\')) = LOWER(?)'
+                params.append(categoria)
+
+            if subcategoria:
+                query += ' AND LOWER(COALESCE(subcategoria, \'\')) = LOWER(?)'
+                params.append(subcategoria)
+            
+            query += ' ORDER BY fecha_creacion DESC'
+            
+            cursor.execute(query, params)
             
             frases = []
             for row in cursor.fetchall():
@@ -2900,10 +3304,11 @@ def api_list_frases():
                     'texto': row[1],
                     'autor': row[2],
                     'categoria': row[3],
-                    'notas': row[4],
-                    'total_repasos': row[5] or 0,
-                    'ultima_vez': row[6].isoformat() if row[6] else None,
-                    'fecha_creacion': row[7].isoformat() if row[7] else None
+                    'subcategoria': row[4],
+                    'notas': row[5],
+                    'total_repasos': row[6] or 0,
+                    'ultima_vez': row[7].isoformat() if row[7] else None,
+                    'fecha_creacion': row[8].isoformat() if row[8] else None
                 })
             
             return jsonify(frases)
@@ -3053,24 +3458,137 @@ def api_repasar_todas_frases():
 @app.route('/api/frases/categorias', methods=['GET'])
 @login_required
 def api_list_categorias_frases():
-    """Obtener todas las categorías de frases del usuario"""
+    """Obtener categorías y subcategorías del usuario para filtros de frases.
+    Query params opcionales: categoria (para listar subcategorías específicas)
+    """
     try:
         with get_db_connection() as conn:
             cursor = conn.cursor()
+
+            # Categorías principales (de la tabla frases para asegurar consistencia)
             cursor.execute('''
-                SELECT DISTINCT categoria
+                SELECT DISTINCT COALESCE(categoria,'') AS cat
                 FROM frases
                 WHERE user_id = ?
-                ORDER BY categoria
             ''', (current_user.id,))
-            
-            categorias = [row[0] for row in cursor.fetchall()]
-            categorias.sort()
-            
-            return jsonify(categorias)
+            cats = [row[0] for row in cursor.fetchall() if (row[0] or '').strip() != '']
+            cats.sort()
+
+            # Subcategorías (opcionalmente filtradas por categoria)
+            categoria_filter = request.args.get('categoria')
+            if categoria_filter:
+                cursor.execute('''
+                    SELECT DISTINCT COALESCE(subcategoria,'') AS sub
+                    FROM frases
+                    WHERE user_id = ? AND LOWER(COALESCE(categoria,'')) = LOWER(?)
+                ''', (current_user.id, categoria_filter))
+                subs = [row[0] for row in cursor.fetchall() if (row[0] or '').strip() != '']
+                subs.sort()
+            else:
+                cursor.execute('''
+                    SELECT DISTINCT COALESCE(subcategoria,'') AS sub
+                    FROM frases
+                    WHERE user_id = ?
+                ''', (current_user.id,))
+                subs = [row[0] for row in cursor.fetchall() if (row[0] or '').strip() != '']
+                subs.sort()
+
+            return jsonify({'categorias': cats, 'subcategorias': subs})
     except Exception as e:
         logger.error(f"Error al obtener categorías: {str(e)}")
         return jsonify({'error': 'Error al obtener categorías'}), 500
+
+@app.route('/api/frases/repasar_filtradas', methods=['POST'])
+@login_required
+def api_repasar_frases_filtradas():
+    """Repasar frases filtradas por categoría y/o subcategoría"""
+    try:
+        data = request.get_json()
+        categoria = data.get('categoria')
+        subcategoria = data.get('subcategoria')
+        
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            
+            # Construir query con filtros
+            query = '''
+                SELECT id FROM frases 
+                WHERE user_id = ?
+            '''
+            params = [current_user.id]
+            
+            if categoria:
+                query += ' AND categoria = ?'
+                params.append(categoria)
+            
+            if subcategoria:
+                query += ' AND subcategoria = ?'
+                params.append(subcategoria)
+            
+            cursor.execute(query, params)
+            frases_ids = [row[0] for row in cursor.fetchall()]
+            
+            if not frases_ids:
+                return jsonify({'repasadas': 0, 'mensaje': 'No hay frases que coincidan con los filtros'})
+            
+            # Actualizar última vez y contador de repasos
+            repasadas = 0
+            for frase_id in frases_ids:
+                cursor.execute('''
+                    UPDATE frases 
+                    SET ultima_vez = GETDATE(), 
+                        total_repasos = ISNULL(total_repasos, 0) + 1
+                    WHERE id = ? AND user_id = ?
+                ''', (frase_id, current_user.id))
+                repasadas += 1
+            
+            conn.commit()
+            
+        return jsonify({'repasadas': repasadas})
+        
+    except Exception as e:
+        logger.error(f"Error al repasar frases filtradas: {str(e)}")
+        return jsonify({'error': 'Error al repasar frases'}), 500
+
+def _ensure_subcategoria_schema(cursor):
+    """Asegura que exista la columna subcategoria en la tabla frases y migra datos iniciales.
+    - Añade columna [subcategoria] NVARCHAR(255) NULL si no existe.
+    - Migra: si subcategoria es NULL y categoria tiene valor, copia categoria a subcategoria.
+    - Crea índices simples para mejorar filtros por categoria/subcategoria.
+    """
+    # Crear columna si no existe
+    cursor.execute('''
+        IF NOT EXISTS (
+            SELECT 1 FROM sys.columns 
+            WHERE Name = N'subcategoria' AND Object_ID = Object_ID(N'frases')
+        )
+        BEGIN
+            ALTER TABLE frases ADD subcategoria NVARCHAR(255) NULL;
+        END
+    ''')
+    # Migrar valores existentes (una sola vez)
+    cursor.execute('''
+        UPDATE frases
+        SET subcategoria = categoria
+        WHERE subcategoria IS NULL AND categoria IS NOT NULL
+    ''')
+    # Índices para filtros
+    cursor.execute('''
+        IF NOT EXISTS (
+            SELECT 1 FROM sys.indexes WHERE name = 'IX_frases_user_categoria' AND object_id = OBJECT_ID('frases')
+        )
+        BEGIN
+            CREATE INDEX IX_frases_user_categoria ON frases(user_id, categoria);
+        END
+    ''')
+    cursor.execute('''
+        IF NOT EXISTS (
+            SELECT 1 FROM sys.indexes WHERE name = 'IX_frases_user_subcategoria' AND object_id = OBJECT_ID('frases')
+        )
+        BEGIN
+            CREATE INDEX IX_frases_user_subcategoria ON frases(user_id, subcategoria);
+        END
+    ''')
 
 if __name__ == '__main__':
     start_scheduler()
