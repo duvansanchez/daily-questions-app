@@ -3273,44 +3273,50 @@ def api_list_frases():
         # Obtener parámetros de filtro
         categoria = request.args.get('categoria')
         subcategoria = request.args.get('subcategoria')
-        
+
         with get_db_connection() as conn:
             cursor = conn.cursor()
-            
+
             # Construir query con filtros opcionales
             query = '''
-                SELECT id, texto, autor, categoria, subcategoria, notas, total_repasos, ultima_vez, fecha_creacion
-                FROM frases
-                WHERE user_id = ?
+                SELECT f.id, f.texto, f.autor, c.nombre as categoria, s.nombre as subcategoria,
+                       f.notas, f.total_repasos, f.ultima_vez, f.fecha_creacion
+                FROM frases f
+                LEFT JOIN categorias c ON f.categoria_id = c.id AND f.user_id = c.user_id
+                LEFT JOIN subcategorias s ON f.subcategoria_id = s.id AND f.user_id = s.user_id
+                WHERE f.user_id = ?
             '''
             params = [current_user.id]
-            
+
             if categoria:
-                query += ' AND LOWER(COALESCE(categoria, \'\')) = LOWER(?)'
+                query += ' AND LOWER(c.nombre) = LOWER(?)'
                 params.append(categoria)
 
             if subcategoria:
-                query += ' AND LOWER(COALESCE(subcategoria, \'\')) = LOWER(?)'
+                query += ' AND LOWER(s.nombre) = LOWER(?)'
                 params.append(subcategoria)
-            
-            query += ' ORDER BY fecha_creacion DESC'
-            
+
+            query += ' ORDER BY f.fecha_creacion DESC'
+
             cursor.execute(query, params)
-            
+
             frases = []
             for row in cursor.fetchall():
+                # Usar el nombre de categoría de la tabla categorias si existe, sino usar el campo categoria de frases
+                categoria_nombre = row[3] if row[3] else row[2] if row[2] else 'Sin categoría'
+
                 frases.append({
                     'id': row[0],
                     'texto': row[1],
                     'autor': row[2],
-                    'categoria': row[3],
+                    'categoria': categoria_nombre,
                     'subcategoria': row[4],
                     'notas': row[5],
                     'total_repasos': row[6] or 0,
                     'ultima_vez': row[7].isoformat() if row[7] else None,
                     'fecha_creacion': row[8].isoformat() if row[8] else None
                 })
-            
+
             return jsonify(frases)
     except Exception as e:
         logger.error(f"Error al obtener frases: {str(e)}")
@@ -3322,22 +3328,40 @@ def api_create_frase():
     """Crear una nueva frase"""
     try:
         data = request.get_json()
-        
+
+        # Obtener el ID de la categoría seleccionada
+        categoria_id = None
+        if data.get('categoria') and data['categoria'] != 'nueva':
+            # Buscar el ID de la categoría existente
+            with get_db_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute('''
+                    SELECT id FROM categorias
+                    WHERE user_id = ? AND LOWER(nombre) = LOWER(?)
+                ''', (current_user.id, data['categoria']))
+                categoria_row = cursor.fetchone()
+                if categoria_row:
+                    categoria_id = categoria_row[0]
+
+        # Si no se encontró la categoría, devolver error
+        if not categoria_id and data.get('categoria') and data['categoria'] != 'nueva':
+            return jsonify({'error': 'Categoría no encontrada'}), 404
+
         with get_db_connection() as conn:
             cursor = conn.cursor()
             cursor.execute('''
-                INSERT INTO frases (user_id, texto, autor, categoria, notas, fecha_creacion)
+                INSERT INTO frases (user_id, texto, autor, categoria_id, notas, fecha_creacion)
                 VALUES (?, ?, ?, ?, ?, ?)
             ''', (
                 current_user.id,
                 data['texto'],
                 data.get('autor'),
-                data['categoria'],
+                categoria_id,
                 data.get('notas'),
                 datetime.now()
             ))
             conn.commit()
-            
+
         return jsonify({'status': 'success'})
     except Exception as e:
         logger.error(f"Error al crear frase: {str(e)}")
@@ -3349,30 +3373,48 @@ def api_update_frase(frase_id):
     """Actualizar una frase"""
     try:
         data = request.get_json()
-        
+
+        # Obtener el ID de la categoría seleccionada
+        categoria_id = None
+        if data.get('categoria') and data['categoria'] != 'nueva':
+            # Buscar el ID de la categoría existente
+            with get_db_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute('''
+                    SELECT id FROM categorias
+                    WHERE user_id = ? AND LOWER(nombre) = LOWER(?)
+                ''', (current_user.id, data['categoria']))
+                categoria_row = cursor.fetchone()
+                if categoria_row:
+                    categoria_id = categoria_row[0]
+
+        # Si no se encontró la categoría, devolver error
+        if not categoria_id and data.get('categoria') and data['categoria'] != 'nueva':
+            return jsonify({'error': 'Categoría no encontrada'}), 404
+
         with get_db_connection() as conn:
             cursor = conn.cursor()
-            
+
             # Verificar que la frase pertenece al usuario
             cursor.execute('SELECT user_id FROM frases WHERE id = ?', (frase_id,))
             frase = cursor.fetchone()
             if not frase or frase[0] != current_user.id:
                 return jsonify({'error': 'Frase no encontrada'}), 404
-            
+
             cursor.execute('''
-                UPDATE frases 
-                SET texto = ?, autor = ?, categoria = ?, notas = ?
+                UPDATE frases
+                SET texto = ?, autor = ?, categoria_id = ?, notas = ?
                 WHERE id = ? AND user_id = ?
             ''', (
                 data['texto'],
                 data.get('autor'),
-                data['categoria'],
+                categoria_id,
                 data.get('notas'),
                 frase_id,
                 current_user.id
             ))
             conn.commit()
-            
+
         return jsonify({'status': 'success'})
     except Exception as e:
         logger.error(f"Error al actualizar frase: {str(e)}")
@@ -3465,30 +3507,43 @@ def api_list_categorias_frases():
         with get_db_connection() as conn:
             cursor = conn.cursor()
 
-            # Categorías principales (de la tabla frases para asegurar consistencia)
+            # Categorías principales (de la tabla categorias para obtener las categorías reales)
             cursor.execute('''
-                SELECT DISTINCT COALESCE(categoria,'') AS cat
-                FROM frases
+                SELECT id, nombre
+                FROM categorias
                 WHERE user_id = ?
+                ORDER BY nombre
             ''', (current_user.id,))
-            cats = [row[0] for row in cursor.fetchall() if (row[0] or '').strip() != '']
-            cats.sort()
+            categorias_data = cursor.fetchall()
+            cats = [row[1] for row in categorias_data]  # Obtener nombres de categorías reales
 
             # Subcategorías (opcionalmente filtradas por categoria)
             categoria_filter = request.args.get('categoria')
             if categoria_filter:
+                # Obtener el ID de la categoría seleccionada
                 cursor.execute('''
-                    SELECT DISTINCT COALESCE(subcategoria,'') AS sub
-                    FROM frases
-                    WHERE user_id = ? AND LOWER(COALESCE(categoria,'')) = LOWER(?)
+                    SELECT id FROM categorias
+                    WHERE user_id = ? AND LOWER(nombre) = LOWER(?)
                 ''', (current_user.id, categoria_filter))
-                subs = [row[0] for row in cursor.fetchall() if (row[0] or '').strip() != '']
+                categoria_row = cursor.fetchone()
+
+                if categoria_row:
+                    categoria_id = categoria_row[0]
+                    cursor.execute('''
+                        SELECT DISTINCT COALESCE(s.nombre,'') AS sub
+                        FROM subcategorias s
+                        WHERE s.user_id = ? AND s.categoria_id = ?
+                    ''', (current_user.id, categoria_id))
+                    subs = [row[0] for row in cursor.fetchall() if (row[0] or '').strip() != '']
+                else:
+                    subs = []
                 subs.sort()
             else:
+                # Todas las subcategorías del usuario
                 cursor.execute('''
-                    SELECT DISTINCT COALESCE(subcategoria,'') AS sub
-                    FROM frases
-                    WHERE user_id = ?
+                    SELECT DISTINCT COALESCE(s.nombre,'') AS sub
+                    FROM subcategorias s
+                    WHERE s.user_id = ?
                 ''', (current_user.id,))
                 subs = [row[0] for row in cursor.fetchall() if (row[0] or '').strip() != '']
                 subs.sort()
@@ -3506,46 +3561,48 @@ def api_repasar_frases_filtradas():
         data = request.get_json()
         categoria = data.get('categoria')
         subcategoria = data.get('subcategoria')
-        
+
         with get_db_connection() as conn:
             cursor = conn.cursor()
-            
-            # Construir query con filtros
+
+            # Construir query con filtros usando nombres reales de categorías
             query = '''
-                SELECT id FROM frases 
-                WHERE user_id = ?
+                SELECT f.id FROM frases f
+                LEFT JOIN categorias c ON f.categoria_id = c.id AND f.user_id = c.user_id
+                LEFT JOIN subcategorias s ON f.subcategoria_id = s.id AND f.user_id = s.user_id
+                WHERE f.user_id = ?
             '''
             params = [current_user.id]
-            
+
             if categoria:
-                query += ' AND categoria = ?'
+                query += ' AND LOWER(c.nombre) = LOWER(?)'
                 params.append(categoria)
-            
+
             if subcategoria:
-                query += ' AND subcategoria = ?'
+                query += ' AND LOWER(s.nombre) = LOWER(?)'
                 params.append(subcategoria)
-            
+
             cursor.execute(query, params)
             frases_ids = [row[0] for row in cursor.fetchall()]
-            
+
             if not frases_ids:
                 return jsonify({'repasadas': 0, 'mensaje': 'No hay frases que coincidan con los filtros'})
-            
+
             # Actualizar última vez y contador de repasos
             repasadas = 0
             for frase_id in frases_ids:
                 cursor.execute('''
-                    UPDATE frases 
-                    SET ultima_vez = GETDATE(), 
+                    UPDATE frases
+                    SET ultima_vez = GETDATE(),
                         total_repasos = ISNULL(total_repasos, 0) + 1
                     WHERE id = ? AND user_id = ?
                 ''', (frase_id, current_user.id))
                 repasadas += 1
-            
+
             conn.commit()
-            
+
         return jsonify({'repasadas': repasadas})
-        
+
     except Exception as e:
         logger.error(f"Error al repasar frases filtradas: {str(e)}")
         return jsonify({'error': 'Error al repasar frases'}), 500

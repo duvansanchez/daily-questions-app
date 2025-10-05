@@ -3583,6 +3583,10 @@ function configurarEventListenersFrases() {
     const filtroCategoria = document.getElementById('filtro-categoria-frases');
     if (filtroCategoria && !filtroCategoria.hasAttribute('data-listener-added')) {
         filtroCategoria.addEventListener('change', function() {
+            console.log(' EVENTO: Cambio detectado en filtro de categoría');
+            console.log('Valor seleccionado:', this.value);
+            console.log('Texto de opción seleccionada:', this.options[this.selectedIndex]?.text);
+
             // Limpiar filtro de subcategoría cuando cambia la categoría
             const filtroSubcategoria = document.getElementById('filtro-subcategoria-frases');
             if (filtroSubcategoria) {
@@ -3598,6 +3602,10 @@ function configurarEventListenersFrases() {
     const filtroSubcategoria = document.getElementById('filtro-subcategoria-frases');
     if (filtroSubcategoria && !filtroSubcategoria.hasAttribute('data-listener-added')) {
         filtroSubcategoria.addEventListener('change', function() {
+            console.log('🔄 EVENTO: Cambio detectado en filtro de subcategoría');
+            console.log('📋 Valor seleccionado:', this.value);
+            console.log('🏷️ Texto de opción seleccionada:', this.options[this.selectedIndex]?.text);
+
             cargarFrases(); // Recargar frases desde el servidor con el filtro
         });
         filtroSubcategoria.setAttribute('data-listener-added', 'true');
