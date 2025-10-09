@@ -425,7 +425,9 @@ function cargarCategorias() {
                                 const stat = estadisticasCategoriasMap[id];
                                 const badge = item.querySelector(`#contador-${id}`);
                                 if (stat && badge) {
-                                    badge.innerHTML = `${stat.total_repasos} <small class="text-muted ms-1" style="font-size:0.72rem;">repasos</small>`;
+                                    const frasesCount = stat.total_frases || 0;
+                                    const repasosCount = stat.total_repasos || 0;
+                                    badge.innerHTML = `${frasesCount} frases · ${repasosCount} <small class="text-muted ms-1" style="font-size:0.72rem;">repasos</small>`;
                                     badge.className = 'badge bg-info rounded-pill ms-2';
                                 }
                             });
@@ -623,8 +625,10 @@ function renderizarSubcategorias() {
         subcategoriaElement.className = `list-group-item list-group-item-action d-flex justify-content-between align-items-center ${activo}`;
         subcategoriaElement.setAttribute('data-id', subcategoria.id);
         // Obtener estadísticas para la subcategoría si están disponibles
-        const subStat = estadisticasSubcategoriasMap[subcategoria.id] || null;
-    const badgeHtml = subStat ? `<span class="badge bg-info rounded-pill ms-2" id="subcontador-${subcategoria.id}">${subStat.total_repasos} <small class="text-muted ms-1" style="font-size:0.72rem;">repasos</small></span>` : '';
+            const subStat = estadisticasSubcategoriasMap[subcategoria.id] || null;
+            const subFrases = subStat ? (subStat.total_frases || 0) : 0;
+            const subRepasos = subStat ? (subStat.total_repasos || 0) : 0;
+            const badgeHtml = subStat ? `<span class="badge bg-info rounded-pill ms-2" id="subcontador-${subcategoria.id}">${subFrases} frases · ${subRepasos} <small class="text-muted ms-1" style="font-size:0.72rem;">repasos</small></span>` : '';
 
         subcategoriaElement.innerHTML = `
             <div class="d-flex align-items-center flex-grow-1">
