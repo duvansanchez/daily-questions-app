@@ -3329,34 +3329,69 @@ def api_create_frase():
     try:
         data = request.get_json()
 
-        # Obtener el ID de la categoría seleccionada
+        # Resolver o crear categoría
+        categoria_text = data.get('categoria') or ''
         categoria_id = None
-        if data.get('categoria') and data['categoria'] != 'nueva':
-            # Buscar el ID de la categoría existente
+        if categoria_text:
+            # Buscar categoría existente
             with get_db_connection() as conn:
                 cursor = conn.cursor()
                 cursor.execute('''
                     SELECT id FROM categorias
                     WHERE user_id = ? AND LOWER(nombre) = LOWER(?)
-                ''', (current_user.id, data['categoria']))
-                categoria_row = cursor.fetchone()
-                if categoria_row:
-                    categoria_id = categoria_row[0]
+                ''', (current_user.id, categoria_text))
+                row = cursor.fetchone()
+                if row:
+                    categoria_id = row[0]
+                else:
+                    # Crear categoría nueva
+                    cursor.execute('''
+                        INSERT INTO categorias (user_id, nombre, fecha_creacion)
+                        OUTPUT INSERTED.id
+                        VALUES (?, ?, GETDATE())
+                    ''', (current_user.id, categoria_text))
+                    row = cursor.fetchone()
+                    categoria_id = row[0] if row else None
 
-        # Si no se encontró la categoría, devolver error
-        if not categoria_id and data.get('categoria') and data['categoria'] != 'nueva':
-            return jsonify({'error': 'Categoría no encontrada'}), 404
+        # Resolver o crear subcategoría (requiere categoria_id)
+        subcategoria_id = None
+        sub_text = data.get('subcategoria') or ''
+        if sub_text:
+            with get_db_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute('''
+                    SELECT id FROM subcategorias
+                    WHERE user_id = ? AND LOWER(nombre) = LOWER(?)
+                ''', (current_user.id, sub_text))
+                sub_row = cursor.fetchone()
+                if sub_row:
+                    subcategoria_id = sub_row[0]
+                else:
+                    # Sólo crear subcategoría si tenemos categoria_id
+                    if categoria_id:
+                        cursor.execute('''
+                            INSERT INTO subcategorias (user_id, categoria_id, nombre, fecha_creacion)
+                            OUTPUT INSERTED.id
+                            VALUES (?, ?, ?, GETDATE())
+                        ''', (current_user.id, categoria_id, sub_text))
+                        row = cursor.fetchone()
+                        subcategoria_id = row[0] if row else None
+
+        # Asegurar que el texto de categoría no sea NULL (la columna no admite NULL)
+        categoria_text = categoria_text or ''
 
         with get_db_connection() as conn:
             cursor = conn.cursor()
             cursor.execute('''
-                INSERT INTO frases (user_id, texto, autor, categoria_id, notas, fecha_creacion)
-                VALUES (?, ?, ?, ?, ?, ?)
+                INSERT INTO frases (user_id, texto, autor, categoria, categoria_id, subcategoria_id, notas, fecha_creacion)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             ''', (
                 current_user.id,
                 data['texto'],
                 data.get('autor'),
+                categoria_text,
                 categoria_id,
+                subcategoria_id,
                 data.get('notas'),
                 datetime.now()
             ))
@@ -3374,23 +3409,50 @@ def api_update_frase(frase_id):
     try:
         data = request.get_json()
 
-        # Obtener el ID de la categoría seleccionada
+        # Resolver o crear categoría
+        categoria_text = data.get('categoria') or ''
         categoria_id = None
-        if data.get('categoria') and data['categoria'] != 'nueva':
-            # Buscar el ID de la categoría existente
+        if categoria_text:
             with get_db_connection() as conn:
                 cursor = conn.cursor()
                 cursor.execute('''
                     SELECT id FROM categorias
                     WHERE user_id = ? AND LOWER(nombre) = LOWER(?)
-                ''', (current_user.id, data['categoria']))
-                categoria_row = cursor.fetchone()
-                if categoria_row:
-                    categoria_id = categoria_row[0]
+                ''', (current_user.id, categoria_text))
+                row = cursor.fetchone()
+                if row:
+                    categoria_id = row[0]
+                else:
+                    cursor.execute('''
+                        INSERT INTO categorias (user_id, nombre, fecha_creacion)
+                        OUTPUT INSERTED.id
+                        VALUES (?, ?, GETDATE())
+                    ''', (current_user.id, categoria_text))
+                    row = cursor.fetchone()
+                    categoria_id = row[0] if row else None
 
-        # Si no se encontró la categoría, devolver error
-        if not categoria_id and data.get('categoria') and data['categoria'] != 'nueva':
-            return jsonify({'error': 'Categoría no encontrada'}), 404
+        # Resolver o crear subcategoría
+        subcategoria_id = None
+        sub_text = data.get('subcategoria') or ''
+        if sub_text:
+            with get_db_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute('''
+                    SELECT id FROM subcategorias
+                    WHERE user_id = ? AND LOWER(nombre) = LOWER(?)
+                ''', (current_user.id, sub_text))
+                sub_row = cursor.fetchone()
+                if sub_row:
+                    subcategoria_id = sub_row[0]
+                else:
+                    if categoria_id:
+                        cursor.execute('''
+                            INSERT INTO subcategorias (user_id, categoria_id, nombre, fecha_creacion)
+                            OUTPUT INSERTED.id
+                            VALUES (?, ?, ?, GETDATE())
+                        ''', (current_user.id, categoria_id, sub_text))
+                        row = cursor.fetchone()
+                        subcategoria_id = row[0] if row else None
 
         with get_db_connection() as conn:
             cursor = conn.cursor()
@@ -3401,14 +3463,18 @@ def api_update_frase(frase_id):
             if not frase or frase[0] != current_user.id:
                 return jsonify({'error': 'Frase no encontrada'}), 404
 
+            # Asegurar texto de categoría no nulo
+            categoria_text = categoria_text or ''
             cursor.execute('''
                 UPDATE frases
-                SET texto = ?, autor = ?, categoria_id = ?, notas = ?
+                SET texto = ?, autor = ?, categoria = ?, categoria_id = ?, subcategoria_id = ?, notas = ?
                 WHERE id = ? AND user_id = ?
             ''', (
                 data['texto'],
                 data.get('autor'),
+                categoria_text,
                 categoria_id,
+                subcategoria_id,
                 data.get('notas'),
                 frase_id,
                 current_user.id

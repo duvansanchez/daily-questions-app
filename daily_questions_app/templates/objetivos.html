@@ -275,6 +275,21 @@
                             <small class="text-muted">Solo letras, números y espacios. Máximo 50 caracteres.</small>
                         </div>
                     </div>
+
+                    <div class="mb-3">
+                        <label for="frase-subcategoria" class="form-label fw-semibold">Subcategoría</label>
+                        <div class="d-flex gap-2">
+                            <select class="form-select" id="frase-subcategoria" required>
+                                <option value="">Selecciona una subcategoría</option>
+                                <option value="nueva">+ Nueva subcategoría</option>
+                            </select>
+                        </div>
+                        <!-- Contenedor para crear una nueva subcategoría (utilizado cuando se selecciona 'nueva') -->
+                        <div id="nueva-subcategoria-container" class="mt-2" style="display: none;">
+                            <input type="text" class="form-control" id="nueva-subcategoria-input" placeholder="Nombre de la nueva subcategoría" maxlength="50">
+                            <small class="text-muted">Solo letras, números y espacios. Máximo 50 caracteres.</small>
+                        </div>
+                    </div>
                     <div class="mb-3">
                         <label for="frase-notas" class="form-label fw-semibold">Notas personales (opcional)</label>
                         <textarea class="form-control" id="frase-notas" rows="2" placeholder="¿Por qué es importante esta frase para ti?"></textarea>
@@ -321,6 +336,20 @@
                         </div>
                         <div id="editar-nueva-categoria-container" class="mt-2" style="display: none;">
                             <input type="text" class="form-control" id="editar-nueva-categoria-input" placeholder="Nombre de la nueva categoría" maxlength="50">
+                            <small class="text-muted">Solo letras, números y espacios. Máximo 50 caracteres.</small>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="editar-frase-subcategoria" class="form-label fw-semibold">Subcategoría</label>
+                        <div class="d-flex gap-2">
+                            <select class="form-select" id="editar-frase-subcategoria" required>
+                                <option value="">Selecciona una subcategoría</option>
+                                <option value="nueva">+ Nueva subcategoría</option>
+                            </select>
+                        </div>
+                        <div id="editar-nueva-subcategoria-container" class="mt-2" style="display: none;">
+                            <input type="text" class="form-control" id="editar-nueva-subcategoria-input" placeholder="Nombre de la nueva subcategoría" maxlength="50">
                             <small class="text-muted">Solo letras, números y espacios. Máximo 50 caracteres.</small>
                         </div>
                     </div>
@@ -663,46 +692,40 @@ document.addEventListener('DOMContentLoaded', async function() {
 // Función para cargar categorías en los formularios
 async function cargarCategoriasParaFormularios() {
     try {
-        // Cargar solo categorías (sin prefetch de subcategorías)
-        await cargarCategorias();
-        
-        // Si hay una categoría seleccionada, cargar sus subcategorías
-        const categoriaSeleccionada = document.getElementById('frase-categoria').value;
-        if (categoriaSeleccionada && categoriaSeleccionada !== 'nueva') {
-            await cargarSubcategoriasParaCategoria(categoriaSeleccionada, 'frase-subcategoria');
-        }
+        // Cargar categorías principales para los formularios
+        await cargarCategoriasGlobales();
+
+        // Si hay una categoría seleccionada (por ejemplo edición), la subcategoría se cargará al cambiar la categoría
     } catch (error) {
         console.error('Error al cargar categorías para formularios:', error);
     }
 }
 
 // Cargar solo categorías (evita N+1)
-async function cargarCategorias() {
+// Cargar subcategorías globales (todas las subcategorías del usuario)
+async function cargarCategoriasGlobales() {
     try {
         console.log('Cargando categorías...');
         const response = await fetch('/api/frases/categorias');
         console.log('Respuesta del servidor:', response.status);
-        
+
         if (!response.ok) {
             const errorText = await response.text();
             console.error('Error del servidor:', errorText);
             throw new Error('Error al cargar categorías');
         }
-        
+
         const data = await response.json();
         console.log('Datos recibidos:', data);
-        
-        if (!data.categorias || !Array.isArray(data.categorias)) {
-            console.error('Formato de datos incorrecto:', data);
-            return [];
-        }
-        
-        // Actualizar los selects de categorías
-        actualizarSelectConOpciones('frase-categoria', data.categorias);
-        actualizarSelectConOpciones('editar-frase-categoria', data.categorias);
-        
-        console.log('Categorías cargadas:', data.categorias);
-        return data.categorias;
+
+        const categorias = Array.isArray(data.categorias) ? data.categorias : [];
+
+        // Actualizar los selects de categoría en los modales
+        actualizarSelectConOpciones('frase-categoria', categorias);
+        actualizarSelectConOpciones('editar-frase-categoria', categorias);
+
+        console.log('Categorías cargadas:', categorias);
+        return categorias;
     } catch (error) {
         console.error('Error al cargar categorías:', error);
         return [];
@@ -797,26 +820,26 @@ function actualizarSelectConOpciones(selectId, opciones) {
 
 // Configurar eventos para el modal de nueva frase
 function configurarEventosNuevaFrase() {
-    // Manejar cambio de categoría
+    // Cuando cambia la categoría, cargar las subcategorías correspondientes
     document.getElementById('frase-categoria').addEventListener('change', async function() {
-        const mostrarNuevaCategoria = this.value === 'nueva';
-        document.getElementById('nueva-categoria-container').style.display = mostrarNuevaCategoria ? 'block' : 'none';
-        
-        // Si no es nueva categoría, cargar subcategorías
-        if (!mostrarNuevaCategoria && this.value) {
-            await cargarSubcategoriasParaCategoria(this.value, 'frase-subcategoria');
-        } else {
-            const subSelect = document.getElementById('frase-subcategoria');
-            subSelect.innerHTML = '<option value="">Selecciona una subcategoría</option><option value="nueva">+ Nueva subcategoría</option>';
-            document.getElementById('nueva-subcategoria-container').style.display = 'none';
+        const categoria = this.value;
+        // Mostrar/ocultar nuevo input de categoría
+        document.getElementById('nueva-categoria-container').style.display = categoria === 'nueva' ? 'block' : 'none';
+
+        // Limpiar y preparar select de subcategorías
+        const subSelect = document.getElementById('frase-subcategoria');
+        if (subSelect) subSelect.innerHTML = '<option value="">Selecciona una subcategoría</option><option value="nueva">+ Nueva subcategoría</option>';
+
+        if (categoria && categoria !== 'nueva') {
+            await cargarSubcategoriasParaCategoria(categoria, 'frase-subcategoria');
         }
     });
-    
-    // Manejar cambio de subcategoría
+
+    // Manejar cambio de subcategoría para mostrar input nuevo
     document.getElementById('frase-subcategoria').addEventListener('change', function() {
         document.getElementById('nueva-subcategoria-container').style.display = this.value === 'nueva' ? 'block' : 'none';
     });
-    
+
     // Configurar envío del formulario
     document.getElementById('form-nueva-frase').addEventListener('submit', async function(e) {
         e.preventDefault();
@@ -826,26 +849,24 @@ function configurarEventosNuevaFrase() {
 
 // Configurar eventos para el modal de editar frase
 function configurarEventosEditarFrase() {
-    // Manejar cambio de categoría en edición
+    // Cuando cambia la categoría en edición, cargar subcategorías
     document.getElementById('editar-frase-categoria').addEventListener('change', async function() {
-        const mostrarNuevaCategoria = this.value === 'nueva';
-        document.getElementById('editar-nueva-categoria-container').style.display = mostrarNuevaCategoria ? 'block' : 'none';
-        
-        // Si no es nueva categoría, cargar subcategorías
-        if (!mostrarNuevaCategoria && this.value) {
-            await cargarSubcategoriasParaCategoria(this.value, 'editar-frase-subcategoria');
-        } else {
-            const subSelect = document.getElementById('editar-frase-subcategoria');
-            subSelect.innerHTML = '<option value="">Selecciona una subcategoría</option><option value="nueva">+ Nueva subcategoría</option>';
-            document.getElementById('editar-nueva-subcategoria-container').style.display = 'none';
+        const categoria = this.value;
+        document.getElementById('editar-nueva-categoria-container').style.display = categoria === 'nueva' ? 'block' : 'none';
+
+        const subSelect = document.getElementById('editar-frase-subcategoria');
+        if (subSelect) subSelect.innerHTML = '<option value="">Selecciona una subcategoría</option><option value="nueva">+ Nueva subcategoría</option>';
+
+        if (categoria && categoria !== 'nueva') {
+            await cargarSubcategoriasParaCategoria(categoria, 'editar-frase-subcategoria');
         }
     });
-    
+
     // Manejar cambio de subcategoría en edición
     document.getElementById('editar-frase-subcategoria').addEventListener('change', function() {
         document.getElementById('editar-nueva-subcategoria-container').style.display = this.value === 'nueva' ? 'block' : 'none';
     });
-    
+
     // Configurar envío del formulario de edición
     document.getElementById('form-editar-frase').addEventListener('submit', async function(e) {
         e.preventDefault();
@@ -858,9 +879,9 @@ async function enviarNuevaFrase() {
     const texto = document.getElementById('frase-texto').value.trim();
     const autor = document.getElementById('frase-autor').value.trim();
     const notas = document.getElementById('frase-notas').value.trim();
-    let categoria = document.getElementById('frase-categoria').value;
+    const categoria = document.getElementById('frase-categoria').value;
     let subcategoria = document.getElementById('frase-subcategoria').value;
-    
+
     // Manejar nueva categoría
     if (categoria === 'nueva') {
         const nuevaCategoria = document.getElementById('nueva-categoria-input').value.trim();
@@ -868,10 +889,9 @@ async function enviarNuevaFrase() {
             alert('Por favor ingresa un nombre para la nueva categoría');
             return;
         }
-        categoria = nuevaCategoria;
     }
-    
-    // Manejar nueva subcategoría
+
+    // Manejar nueva subcategoría inline
     if (subcategoria === 'nueva') {
         const nuevaSubcategoria = document.getElementById('nueva-subcategoria-input').value.trim();
         if (!nuevaSubcategoria) {
@@ -880,9 +900,10 @@ async function enviarNuevaFrase() {
         }
         subcategoria = nuevaSubcategoria;
     }
-    
+
+    // Validación: subcategoría obligatoria
     if (!texto || !categoria || !subcategoria) {
-        alert('Por favor completa todos los campos requeridos');
+        alert('Por favor selecciona categoría y subcategoría antes de guardar la frase');
         return;
     }
     
@@ -895,7 +916,7 @@ async function enviarNuevaFrase() {
             body: JSON.stringify({
                 texto,
                 autor: autor || null,
-                categoria,
+                categoria: categoria === 'nueva' ? document.getElementById('nueva-categoria-input').value.trim() : categoria,
                 subcategoria,
                 notas: notas || null
             })
@@ -929,9 +950,9 @@ async function enviarEditarFrase() {
     const texto = document.getElementById('editar-frase-texto').value.trim();
     const autor = document.getElementById('editar-frase-autor').value.trim();
     const notas = document.getElementById('editar-frase-notas').value.trim();
-    let categoria = document.getElementById('editar-frase-categoria').value;
+    const categoria = document.getElementById('editar-frase-categoria').value;
     let subcategoria = document.getElementById('editar-frase-subcategoria').value;
-    
+
     // Manejar nueva categoría
     if (categoria === 'nueva') {
         const nuevaCategoria = document.getElementById('editar-nueva-categoria-input').value.trim();
@@ -939,10 +960,9 @@ async function enviarEditarFrase() {
             alert('Por favor ingresa un nombre para la nueva categoría');
             return;
         }
-        categoria = nuevaCategoria;
     }
-    
-    // Manejar nueva subcategoría
+
+    // Manejar nueva subcategoría inline
     if (subcategoria === 'nueva') {
         const nuevaSubcategoria = document.getElementById('editar-nueva-subcategoria-input').value.trim();
         if (!nuevaSubcategoria) {
@@ -951,9 +971,9 @@ async function enviarEditarFrase() {
         }
         subcategoria = nuevaSubcategoria;
     }
-    
+
     if (!id || !texto || !categoria || !subcategoria) {
-        alert('Por favor completa todos los campos requeridos');
+        alert('Por favor completa todos los campos requeridos (categoria y subcategoria obligatorias)');
         return;
     }
     
@@ -966,7 +986,7 @@ async function enviarEditarFrase() {
             body: JSON.stringify({
                 texto,
                 autor: autor || null,
-                categoria,
+                categoria: categoria === 'nueva' ? document.getElementById('editar-nueva-categoria-input').value.trim() : categoria,
                 subcategoria,
                 notas: notas || null
             })

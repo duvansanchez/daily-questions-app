@@ -3177,9 +3177,9 @@ function mostrarFraseRepaso() {
             </div>
             ${frase.autor ? `<div class="frase-autor-repaso mb-3" style="font-size: 1.1rem; color: #6b7280;">— ${frase.autor}</div>` : ''}
             <div class="d-flex justify-content-center gap-2 mb-3">
-                <span class="frase-categoria ${frase.categoria}" style="font-size: 0.9rem;">
+                <span class="frase-categoria ${frase.subcategoria || frase.categoria}" style="font-size: 0.9rem;">
                     <i class="bi bi-tag"></i>
-                    ${capitalizarPrimeraLetra(frase.categoria)}
+                    ${capitalizarPrimeraLetra((frase.subcategoria && frase.subcategoria.trim()) ? frase.subcategoria : frase.categoria)}
                 </span>
             </div>
             ${frase.notas ? `<div class="frase-notas-repaso mt-3 p-3 bg-light rounded" style="font-style: italic; color: #6b7280;">${frase.notas}</div>` : ''}
