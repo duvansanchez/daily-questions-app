@@ -3007,6 +3007,62 @@ def api_create_categoria():
         logger.error(f"Error al crear categoría: {str(e)}")
         return jsonify({'error': 'Error al crear categoría'}), 500
 
+
+@app.route('/api/categorias/estadisticas', methods=['GET'])
+@login_required
+def api_categorias_estadisticas():
+    """Devuelve estadísticas agregadas por categoría: total_frases y total_repasos ordenadas de mayor a menor"""
+    try:
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+
+            cursor.execute('''
+                SELECT c.id, c.nombre,
+                       COUNT(f.id) AS total_frases,
+                       SUM(COALESCE(f.total_repasos, 0)) AS total_repasos
+                FROM categorias c
+                LEFT JOIN frases f ON f.categoria_id = c.id AND f.user_id = ?
+                WHERE c.user_id = ?
+                GROUP BY c.id, c.nombre
+                ORDER BY SUM(COALESCE(f.total_repasos, 0)) DESC
+            ''', (current_user.id, current_user.id))
+
+            estadisticas = []
+            for row in cursor.fetchall():
+                estadisticas.append({
+                    'id': row[0],
+                    'nombre': row[1],
+                    'total_frases': int(row[2]) if row[2] is not None else 0,
+                    'total_repasos': int(row[3]) if row[3] is not None else 0
+                })
+
+            # Obtener estadísticas por subcategoría también
+            cursor.execute('''
+                SELECT s.id, s.nombre, s.categoria_id,
+                       COUNT(f.id) AS total_frases,
+                       SUM(COALESCE(f.total_repasos, 0)) AS total_repasos
+                FROM subcategorias s
+                LEFT JOIN frases f ON f.subcategoria_id = s.id AND f.user_id = ?
+                WHERE s.user_id = ?
+                GROUP BY s.id, s.nombre, s.categoria_id
+                ORDER BY SUM(COALESCE(f.total_repasos, 0)) DESC
+            ''', (current_user.id, current_user.id))
+
+            sub_estadisticas = []
+            for row in cursor.fetchall():
+                sub_estadisticas.append({
+                    'id': row[0],
+                    'nombre': row[1],
+                    'categoria_id': row[2],
+                    'total_frases': int(row[3]) if row[3] is not None else 0,
+                    'total_repasos': int(row[4]) if row[4] is not None else 0
+                })
+
+            return jsonify({'status': 'success', 'data': {'estadisticas': estadisticas, 'subcategorias': sub_estadisticas}})
+    except Exception as e:
+        logger.error(f"Error al obtener estadísticas de categorías: {str(e)}")
+        return jsonify({'status': 'error', 'message': 'Error al obtener estadísticas'}), 500
+
 @app.route('/api/categorias/<int:categoria_id>', methods=['PUT'])
 @login_required
 def api_update_categoria(categoria_id):
@@ -3270,41 +3326,34 @@ def api_delete_subcategoria(subcategoria_id):
 def api_list_frases():
     """Obtener todas las frases del usuario con filtros opcionales"""
     try:
-        # Obtener parámetros de filtro
         categoria = request.args.get('categoria')
         subcategoria = request.args.get('subcategoria')
+        solo_activas = request.args.get('solo_activas', '1') == '1'
 
         with get_db_connection() as conn:
             cursor = conn.cursor()
-
-            # Construir query con filtros opcionales
             query = '''
                 SELECT f.id, f.texto, f.autor, c.nombre as categoria, s.nombre as subcategoria,
-                       f.notas, f.total_repasos, f.ultima_vez, f.fecha_creacion
+                       f.notas, f.total_repasos, f.ultima_vez, f.fecha_creacion, f.activa
                 FROM frases f
                 LEFT JOIN categorias c ON f.categoria_id = c.id AND f.user_id = c.user_id
                 LEFT JOIN subcategorias s ON f.subcategoria_id = s.id AND f.user_id = s.user_id
                 WHERE f.user_id = ?
             '''
             params = [current_user.id]
-
+            if solo_activas:
+                query += ' AND f.activa = 1'
             if categoria:
                 query += ' AND LOWER(c.nombre) = LOWER(?)'
                 params.append(categoria)
-
             if subcategoria:
                 query += ' AND LOWER(s.nombre) = LOWER(?)'
                 params.append(subcategoria)
-
             query += ' ORDER BY f.fecha_creacion DESC'
-
             cursor.execute(query, params)
-
             frases = []
             for row in cursor.fetchall():
-                # Usar el nombre de categoría de la tabla categorias si existe, sino usar el campo categoria de frases
                 categoria_nombre = row[3] if row[3] else row[2] if row[2] else 'Sin categoría'
-
                 frases.append({
                     'id': row[0],
                     'texto': row[1],
@@ -3314,9 +3363,9 @@ def api_list_frases():
                     'notas': row[5],
                     'total_repasos': row[6] or 0,
                     'ultima_vez': row[7].isoformat() if row[7] else None,
-                    'fecha_creacion': row[8].isoformat() if row[8] else None
+                    'fecha_creacion': row[8].isoformat() if row[8] else None,
+                    'activa': row[9] if len(row) > 9 else 1
                 })
-
             return jsonify(frases)
     except Exception as e:
         logger.error(f"Error al obtener frases: {str(e)}")
@@ -3535,6 +3584,36 @@ def api_repasar_frase(frase_id):
     except Exception as e:
         logger.error(f"Error al repasar frase: {str(e)}")
         return jsonify({'error': 'Error al repasar frase'}), 500
+
+
+@app.route('/api/frases/<int:frase_id>/toggle', methods=['POST'])
+@login_required
+def api_toggle_frase(frase_id):
+    """Activar / Desactivar una frase (campo activa)"""
+    try:
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+
+            # Verificar que la frase pertenece al usuario
+            cursor.execute('SELECT user_id, activa FROM frases WHERE id = ?', (frase_id,))
+            row = cursor.fetchone()
+            if not row or row[0] != current_user.id:
+                return jsonify({'error': 'Frase no encontrada'}), 404
+
+            current_activa = row[1] if len(row) > 1 else 1
+            nueva_activa = 0 if current_activa else 1
+
+            cursor.execute('''
+                UPDATE frases
+                SET activa = ?
+                WHERE id = ? AND user_id = ?
+            ''', (nueva_activa, frase_id, current_user.id))
+            conn.commit()
+
+        return jsonify({'status': 'success', 'activa': bool(nueva_activa)})
+    except Exception as e:
+        logger.error(f"Error al alternar activa de frase: {str(e)}")
+        return jsonify({'error': 'Error al alternar estado de la frase'}), 500
 
 @app.route('/api/frases/repasar-todas', methods=['POST'])
 @login_required

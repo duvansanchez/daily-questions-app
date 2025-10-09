@@ -398,6 +398,29 @@ body {
     max-width: 600px;
 }
 
+/* Estilo para frases desactivadas */
+.frase-inactiva {
+    background-color: #f5f5f7; /* fondo levemente gris */
+    color: #6c757d; /* texto tenue */
+    border-left: 4px solid #ced4da; /* borde discreto */
+}
+
+.frase-inactiva .frase-texto {
+    color: #6c757d;
+}
+
+.frase-inactiva .frase-acciones .frase-btn.toggle-activa i {
+    color: #6c757d !important; /* icono gris cuando inactiva */
+}
+
+.frase-inactiva .frase-desactivada-label {
+    font-size: 0.85rem;
+    color: #6c757d;
+    margin-top: 0.3em;
+    font-style: italic;
+    text-align: left;
+}
+
 body,
 .main-container,
 .card,

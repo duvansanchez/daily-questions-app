@@ -518,6 +518,49 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+
+    // Delegación: manejar toggle activar/desactivar de frases (botón generado en renderizarFrases)
+    document.addEventListener('click', async function(e) {
+        const toggleBtn = e.target.closest('.frase-btn.toggle-activa');
+        if (!toggleBtn) return;
+        const id = toggleBtn.getAttribute('data-id');
+        if (!id) return;
+
+        try {
+            toggleBtn.disabled = true;
+            const res = await fetch(`/api/frases/${id}/toggle`, { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+            const data = await res.json();
+            if (data && data.status === 'success') {
+                const activa = !!data.activa;
+                const icon = toggleBtn.querySelector('i');
+                if (icon) {
+                    // Ajustar clases del icono de forma conservadora
+                    icon.classList.remove('bi-toggle-on', 'bi-toggle-off', 'text-success', 'text-secondary');
+                    icon.classList.add(activa ? 'bi-toggle-on' : 'bi-toggle-off');
+                    icon.classList.add(activa ? 'text-success' : 'text-secondary');
+                }
+
+                // Actualizar la clase del card para reflejar estado (quita clase inactiva si se activó)
+                const card = toggleBtn.closest('.frase-card');
+                if (card) {
+                    if (activa) card.classList.remove('frase-inactiva');
+                    else card.classList.add('frase-inactiva');
+                }
+
+                // Si la frase pasó a inactiva, recargar frases para moverla al final
+                if (!activa) {
+                    if (typeof cargarFrases === 'function') await cargarFrases();
+                }
+            } else {
+                showError((data && data.message) || 'No se pudo cambiar el estado');
+            }
+        } catch (err) {
+            console.error('Error toggle frase:', err);
+            showError('Error de red al cambiar el estado');
+        } finally {
+            toggleBtn.disabled = false;
+        }
+    });
     
     // Manejar botón Siguiente
     const nextBtn = document.getElementById('next-btn');
@@ -2757,14 +2800,59 @@ async function cargarFrases() {
         const filtroCategoria = document.getElementById('filtro-categoria-frases')?.value || '';
         const filtroSubcategoria = document.getElementById('filtro-subcategoria-frases')?.value || '';
 
-        // Construir URL con parámetros de filtro
+        // Construir URL con parámetros de filtro (pedimos todas las frases para ordenar activas/inactivas en el cliente)
         const params = new URLSearchParams();
         if (filtroCategoria) params.set('categoria', filtroCategoria);
         if (filtroSubcategoria) params.set('subcategoria', filtroSubcategoria);
+        params.set('solo_activas', '0');
 
         const url = '/api/frases' + (params.toString() ? '?' + params.toString() : '');
         const response = await fetch(url);
-        frases = await response.json();
+        let fetched = await response.json() || [];
+
+        // 1) Evitar duplicados por id
+        const byId = new Map();
+        fetched.forEach(f => { if (f && typeof f.id !== 'undefined') byId.set(f.id, f); });
+        let list = Array.from(byId.values());
+
+        // 2) Dedupe adicional por texto normalizado (agrupa frases con mismo texto)
+        const normalize = txt => (txt || '').toString().trim().replace(/\s+/g, ' ').toLowerCase();
+        const seleccionaMejor = (a, b) => {
+            const repA = a.total_repasos || 0, repB = b.total_repasos || 0;
+            if (repA !== repB) return repA > repB ? a : b;
+            const timeA = a.ultima_vez ? new Date(a.ultima_vez).getTime() : 0;
+            const timeB = b.ultima_vez ? new Date(b.ultima_vez).getTime() : 0;
+            if (timeA !== timeB) return timeA > timeB ? a : b;
+            if (!!a.autor !== !!b.autor) return a.autor ? a : b;
+            return a.id > b.id ? a : b;
+        };
+
+        const mapNormal = new Map();
+        list.forEach(f => {
+            const key = normalize(f.texto || (f.notas ? f.notas : '')) || (`id_${f.id}`);
+            if (!mapNormal.has(key)) {
+                mapNormal.set(key, f);
+            } else {
+                const existente = mapNormal.get(key);
+                mapNormal.set(key, seleccionaMejor(existente, f));
+            }
+        });
+
+        // Resultado final de frases a renderizar
+        frases = Array.from(mapNormal.values());
+
+        // Orden: activas primero, luego inactivas; dentro de cada grupo por fecha_creacion descendente
+        frases.sort((a, b) => {
+            const aAct = a.activa ? 1 : 0;
+            const bAct = b.activa ? 1 : 0;
+            if (aAct !== bAct) return bAct - aAct; // activas (1) antes que inactivas (0)
+            const ta = a.fecha_creacion ? new Date(a.fecha_creacion).getTime() : 0;
+            const tb = b.fecha_creacion ? new Date(b.fecha_creacion).getTime() : 0;
+            return tb - ta;
+        });
+
+        console.log('cargarFrases: frases cargadas', frases.length, frases.map(f => f.id));
+
         actualizarCategoriasDisponibles();
         renderizarFrases();
         actualizarEstadisticasFrases();
@@ -2908,26 +2996,44 @@ function renderizarFrases() {
     }
     
     // Filtrar frases por categoría
-    const frasesFiltradas = filtroCategoria ? 
+    let frasesFiltradas = filtroCategoria ? 
         frases.filter(f => f.categoria === filtroCategoria) : frases;
-    
+
+    // Separar activas e inactivas para que las inactivas siempre vayan al final
+    let activas = frasesFiltradas.filter(f => f.activa);
+    let inactivas = frasesFiltradas.filter(f => !f.activa);
+
+    // Ordenar activas según filtro de repaso
+    const orden = document.getElementById('orden-frases')?.value || 'menos_repasada';
+    if (orden === 'mas_repasada') {
+        activas = activas.slice().sort((a, b) => (b.total_repasos || 0) - (a.total_repasos || 0));
+    } else if (orden === 'menos_repasada') {
+        activas = activas.slice().sort((a, b) => (a.total_repasos || 0) - (b.total_repasos || 0));
+    }
+
+    // Las inactivas pueden ir en cualquier orden, pero siempre al final
+    frasesFiltradas = [...activas, ...inactivas];
+
     if (frasesFiltradas.length === 0) {
         lista.innerHTML = '';
         if (mensajeSin) mensajeSin.style.display = 'block';
         return;
     }
-    
+
     if (mensajeSin) mensajeSin.style.display = 'none';
-    
+
     lista.innerHTML = frasesFiltradas.map(frase => {
         const esRepasadaHoy = esRepasadaHoyFrase(frase.ultima_vez);
         const totalRepasos = frase.total_repasos || 0;
         
+        // Determinar clase para el toggle (verde si activa, gris si inactiva)
+        const toggleClass = frase.activa ? 'toggle-on text-success' : 'toggle-off text-secondary';
+
         return `
-            <div class="frase-card ${esRepasadaHoy ? 'repasada-hoy' : ''}">
+            <div class="frase-card ${esRepasadaHoy ? 'repasada-hoy' : ''} ${frase.activa ? '' : 'frase-inactiva'}" data-frase-id="${frase.id}">
                 <div class="frase-texto">${frase.texto}</div>
                 ${frase.autor ? `<div class="frase-autor">${frase.autor}</div>` : ''}
-                
+                ${!frase.activa ? `<div class="frase-desactivada-label">Desactivada</div>` : ''}
                 <div class="frase-meta">
                     <div class="d-flex align-items-center gap-2">
                         <span class="frase-categoria ${frase.categoria}">
@@ -2946,7 +3052,9 @@ function renderizarFrases() {
                     <div class="frase-acciones">
                         <button class="frase-btn repasar" onclick="repasarFrase(${frase.id})" title="Repasar frase">
                             <i class="bi bi-eye"></i>
-                            ${esRepasadaHoy ? 'Repasada' : 'Repasar'}
+                        </button>
+                        <button class="frase-btn toggle-activa" data-id="${frase.id}" title="Activar / Desactivar frase">
+                            <i class="bi ${frase.activa ? 'bi-toggle-on text-success' : 'bi-toggle-off text-secondary'}"></i>
                         </button>
                         <button class="frase-btn editar" onclick="editarFrase(${frase.id})" title="Editar">
                             <i class="bi bi-pencil"></i>
@@ -2999,7 +3107,14 @@ function actualizarEstadisticasFrases() {
     frasesHoy.textContent = repasadasHoy;
     frasesSemana.textContent = repasadasSemana;
     totalRepasos.textContent = sumaRepasos;
-    
+
+    // Estadística de frases activas
+    const activasStats = document.getElementById('frases-activas-stats');
+    if (activasStats) {
+        const activas = frasesFiltradas.filter(f => f.activa).length;
+        activasStats.textContent = `Activas: ${activas} / ${frasesFiltradas.length}`;
+    }
+
     // Actualizar indicador de filtro
     actualizarIndicadorFiltroEstadisticas(filtroCategoria);
 }
@@ -3053,6 +3168,14 @@ async function repasarTodasLasFrases() {
         frasesParaRepasar = frases;
     }
     
+    // Excluir frases inactivas del repaso
+    frasesParaRepasar = frasesParaRepasar.filter(f => f.activa !== 0 && f.activa !== false);
+
+    if (frasesParaRepasar.length === 0) {
+        showInfo('No hay frases activas para repasar con los filtros seleccionados');
+        return;
+    }
+
     // Iniciar sesión de repaso con las frases filtradas
     iniciarSesionRepaso(frasesParaRepasar, filtroCategoria);
 }
