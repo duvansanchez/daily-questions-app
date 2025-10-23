@@ -209,7 +209,7 @@ def objetivos_stats_summary():
             cursor = conn.cursor()
 
             def contar_esperados(cat, ini, fin):
-                # Recurrentes de esa categoría (no históricos)
+                # Recurrentes de esa categoría (INCLUYE históricos)
                 cursor.execute(
                     """
                     SELECT COUNT(*)
@@ -217,13 +217,12 @@ def objetivos_stats_summary():
                     WHERE user_id = ?
                       AND LOWER(COALESCE(categoria,'')) = ?
                       AND COALESCE(recurrente, 0) = 1
-                      AND COALESCE(estado,'') <> 'histórico'
                     """,
                     (current_user.id, cat)
                 )
                 rec = int(cursor.fetchone()[0])
 
-                # No recurrentes creados en el período (no históricos)
+                # No recurrentes creados en el período (INCLUYE históricos)
                 cursor.execute(
                     """
                     SELECT COUNT(*)
@@ -232,7 +231,6 @@ def objetivos_stats_summary():
                       AND LOWER(COALESCE(categoria,'')) = ?
                       AND COALESCE(recurrente, 0) = 0
                       AND fecha_creacion >= ? AND fecha_creacion < ?
-                      AND COALESCE(estado,'') <> 'histórico'
                     """,
                     (current_user.id, cat, ini, fin)
                 )
@@ -316,9 +314,12 @@ def objetivos_calendario():
         ahora = datetime.now()
         mes = request.args.get('mes', default=ahora.month - 1, type=int)
         anio = request.args.get('anio', default=ahora.year, type=int)
+        
+        logger.info(f"Solicitando calendario para usuario {current_user.id}, mes {mes}, año {anio}")
 
         # Normalizar rango del mes (0-11)
         if mes < 0 or mes > 11:
+            logger.warning(f"Parámetro mes inválido: {mes}")
             return jsonify({'status': 'error', 'message': 'Parámetro mes inválido'}), 400
 
         inicio = datetime(anio, mes + 1, 1)
@@ -330,6 +331,8 @@ def objetivos_calendario():
 
         # Cantidad de días del mes
         dias_en_mes = (fin - inicio).days
+        
+        logger.info(f"Período de consulta: {inicio} a {fin}, días en mes: {dias_en_mes}")
 
         creados = {}
         completados = {}
@@ -337,7 +340,8 @@ def objetivos_calendario():
         with get_db_connection() as conn:
             cursor = conn.cursor()
 
-            # Creados por día
+            # Creados por día (INCLUYE objetivos históricos)
+            logger.info("Ejecutando consulta de objetivos creados")
             cursor.execute(
                 """
                 SELECT DAY(fecha_creacion) AS dia, COUNT(*)
@@ -348,10 +352,14 @@ def objetivos_calendario():
                 """,
                 (current_user.id, inicio, fin)
             )
-            for row in cursor.fetchall():
+            creados_rows = cursor.fetchall()
+            logger.info(f"Encontrados {len(creados_rows)} días con objetivos creados")
+            
+            for row in creados_rows:
                 creados[str(int(row[0]))] = int(row[1])
 
-            # Completados por día
+            # Completados por día (INCLUYE objetivos históricos)
+            logger.info("Ejecutando consulta de objetivos completados")
             cursor.execute(
                 """
                 SELECT DAY(fecha_completado) AS dia, COUNT(*)
@@ -363,13 +371,18 @@ def objetivos_calendario():
                 """,
                 (current_user.id, inicio, fin)
             )
-            for row in cursor.fetchall():
+            completados_rows = cursor.fetchall()
+            logger.info(f"Encontrados {len(completados_rows)} días con objetivos completados")
+            
+            for row in completados_rows:
                 completados[str(int(row[0]))] = int(row[1])
 
         total_creados = sum(creados.values())
         total_completados = sum(completados.values())
+        
+        logger.info(f"Totales calculados - Creados: {total_creados}, Completados: {total_completados}")
 
-        return jsonify({
+        response_data = {
             'status': 'success',
             'data': {
                 'anio': anio,
@@ -380,10 +393,240 @@ def objetivos_calendario():
                 'total_creados': total_creados,
                 'total_completados': total_completados
             }
-        })
+        }
+        
+        logger.info(f"Enviando respuesta del calendario: {len(creados)} días con creados, {len(completados)} días con completados")
+        return jsonify(response_data)
+        
     except Exception as e:
-        logger.error(f"Error en objetivos_calendario: {str(e)}")
-        return jsonify({'status': 'error', 'message': 'No se pudo generar el calendario de objetivos'}), 500
+        logger.error(f"Error en objetivos_calendario: {str(e)}", exc_info=True)
+        return jsonify({
+            'status': 'error', 
+            'message': 'No se pudo generar el calendario de objetivos',
+            'error': str(e) if app.debug else None
+        }), 500
+
+@app.route('/api/objetivos/dia', methods=['GET'])
+@login_required
+def objetivos_dia():
+    """
+    Obtiene todos los objetivos de un día específico con detalles completos.
+    Parámetros:
+      - dia: día del mes (1-31)
+      - mes: mes (0-11, donde 0=Enero)
+      - anio: año numérico (ej. 2025)
+    Respuesta:
+      {
+        status: 'success',
+        data: {
+          fecha: '2025-01-15',
+          objetivos: [
+            {
+              id: 1,
+              titulo: 'Hacer ejercicio',
+              descripcion: 'Correr 30 minutos',
+              completado: true,
+              fecha_creacion: '2025-01-15 08:00:00',
+              fecha_completado: '2025-01-15 19:30:00',
+              categoria: 'Salud'
+            },
+            ...
+          ]
+        }
+      }
+    """
+    try:
+        dia = request.args.get('dia', type=int)
+        mes = request.args.get('mes', type=int)
+        anio = request.args.get('anio', type=int)
+        
+        if not all([dia, mes is not None, anio]):
+            return jsonify({'status': 'error', 'message': 'Parámetros día, mes y año son requeridos'}), 400
+            
+        if mes < 0 or mes > 11 or dia < 1 or dia > 31:
+            return jsonify({'status': 'error', 'message': 'Parámetros inválidos'}), 400
+        
+        # Crear fecha específica
+        try:
+            fecha_objetivo = datetime(anio, mes + 1, dia)
+            fecha_siguiente = fecha_objetivo + timedelta(days=1)
+        except ValueError:
+            return jsonify({'status': 'error', 'message': 'Fecha inválida'}), 400
+        
+        objetivos = []
+        
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            
+            # Buscar objetivos creados en este día O completados en este día
+            cursor.execute(
+                """
+                SELECT DISTINCT o.id, o.titulo, o.descripcion, o.completado, 
+                       o.fecha_creacion, o.fecha_completado, o.categoria
+                FROM objetivos o
+                WHERE o.user_id = ?
+                  AND (
+                    (o.fecha_creacion >= ? AND o.fecha_creacion < ?) OR
+                    (o.completado = 1 AND o.fecha_completado >= ? AND o.fecha_completado < ?)
+                  )
+                ORDER BY o.fecha_creacion DESC
+                """,
+                (current_user.id, fecha_objetivo, fecha_siguiente, fecha_objetivo, fecha_siguiente)
+            )
+            
+            for row in cursor.fetchall():
+                objetivo = {
+                    'id': row[0],
+                    'titulo': row[1],
+                    'descripcion': row[2] or '',
+                    'completado': bool(row[3]),
+                    'fecha_creacion': row[4].strftime('%Y-%m-%d %H:%M:%S') if row[4] else '',
+                    'fecha_completado': row[5].strftime('%Y-%m-%d %H:%M:%S') if row[5] else '',
+                    'categoria': row[6] or 'Sin categoría'
+                }
+                objetivos.append(objetivo)
+        
+        return jsonify({
+            'status': 'success',
+            'data': {
+                'fecha': fecha_objetivo.strftime('%Y-%m-%d'),
+                'dia': dia,
+                'mes': mes,
+                'anio': anio,
+                'objetivos': objetivos
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"Error en objetivos_dia: {str(e)}")
+        return jsonify({'status': 'error', 'message': 'No se pudieron obtener los objetivos del día'}), 500
+
+@app.route('/api/objetivos/mes-detallado', methods=['GET'])
+@login_required
+def objetivos_mes_detallado():
+    """
+    Obtiene todos los objetivos de un mes específico con detalles completos.
+    Parámetros:
+      - mes: mes (0-11, donde 0=Enero)
+      - anio: año numérico (ej. 2025)
+    Respuesta:
+      {
+        status: 'success',
+        data: {
+          mes: 0,
+          anio: 2025,
+          objetivos: [
+            {
+              id: 1,
+              titulo: 'Hacer ejercicio',
+              descripcion: 'Correr 30 minutos',
+              completado: true,
+              fecha_creacion: '2025-01-15',
+              fecha_completado: '2025-01-15',
+              categoria: 'Salud',
+              prioridad: 'alta'
+            },
+            ...
+          ]
+        }
+      }
+    """
+    try:
+        ahora = datetime.now()
+        mes = request.args.get('mes', default=ahora.month - 1, type=int)
+        anio = request.args.get('anio', default=ahora.year, type=int)
+        
+        logger.info(f"Solicitando objetivos detallados para usuario {current_user.id}, mes {mes}, año {anio}")
+
+        # Normalizar rango del mes (0-11)
+        if mes < 0 or mes > 11:
+            logger.warning(f"Parámetro mes inválido: {mes}")
+            return jsonify({'status': 'error', 'message': 'Parámetro mes inválido'}), 400
+
+        inicio = datetime(anio, mes + 1, 1)
+        # Fin = primer día del siguiente mes
+        if mes == 11:
+            fin = datetime(anio + 1, 1, 1)
+        else:
+            fin = datetime(anio, mes + 2, 1)
+
+        objetivos = []
+        
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            
+            # Buscar objetivos creados en este mes O completados en este mes
+            # INCLUIMOS objetivos históricos para mostrar todo lo que pasó en el mes
+            # También incluimos el conteo de veces saltadas
+            cursor.execute(
+                """
+                SELECT DISTINCT o.id, o.titulo, o.descripcion, o.completado, 
+                       o.fecha_creacion, o.fecha_completado, o.categoria, o.prioridad,
+                       o.recurrente, o.frecuencia, o.estado,
+                       (SELECT COUNT(*) FROM objetivos_saltados os 
+                        WHERE os.objetivo_id = o.id AND os.user_id = o.user_id) as veces_saltado
+                FROM objetivos o
+                WHERE o.user_id = ?
+                  AND (
+                    (o.fecha_creacion >= ? AND o.fecha_creacion < ?) OR
+                    (o.completado = 1 AND o.fecha_completado >= ? AND o.fecha_completado < ?)
+                  )
+                ORDER BY o.fecha_creacion DESC, o.fecha_completado DESC
+                """,
+                (current_user.id, inicio, fin, inicio, fin)
+            )
+            
+            for row in cursor.fetchall():
+                objetivo = {
+                    'id': row[0],
+                    'titulo': row[1],
+                    'descripcion': row[2] or '',
+                    'completado': bool(row[3]),
+                    'fecha_creacion': row[4].strftime('%Y-%m-%d') if row[4] else '',
+                    'fecha_completado': row[5].strftime('%Y-%m-%d') if row[5] else '',
+                    'categoria': row[6] or 'Sin categoría',
+                    'prioridad': row[7] or 'media',
+                    'recurrente': bool(row[8]) if len(row) > 8 else False,
+                    'frecuencia': row[9] if len(row) > 9 else None,
+                    'estado': row[10] if len(row) > 10 else None,
+                    'veces_saltado': int(row[11]) if len(row) > 11 and row[11] is not None else 0
+                }
+                objetivos.append(objetivo)
+        
+        logger.info(f"Encontrados {len(objetivos)} objetivos para el mes {mes+1}/{anio}")
+        
+        # Debug: mostrar algunos objetivos encontrados
+        if objetivos:
+            logger.info(f"Primeros 3 objetivos encontrados:")
+            for i, obj in enumerate(objetivos[:3]):
+                logger.info(f"  {i+1}. {obj['titulo']} - Estado: {obj['estado']} - Completado: {obj['completado']} - Saltado: {obj['veces_saltado']} veces")
+            
+            # Estadísticas de saltos
+            total_saltos = sum(obj['veces_saltado'] for obj in objetivos)
+            objetivos_saltados = len([obj for obj in objetivos if obj['veces_saltado'] > 0])
+            if total_saltos > 0:
+                logger.info(f"Estadísticas de saltos: {objetivos_saltados} objetivos saltados un total de {total_saltos} veces")
+        else:
+            logger.warning(f"No se encontraron objetivos para el período {inicio} - {fin}")
+        
+        return jsonify({
+            'status': 'success',
+            'data': {
+                'mes': mes,
+                'anio': anio,
+                'objetivos': objetivos,
+                'total': len(objetivos)
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"Error en objetivos_mes_detallado: {str(e)}", exc_info=True)
+        return jsonify({
+            'status': 'error', 
+            'message': 'No se pudieron obtener los objetivos del mes',
+            'error': str(e) if app.debug else None
+        }), 500
+
 # Modelos
 class User(UserMixin):
     def __init__(self, id, username, password):
@@ -2300,6 +2543,12 @@ def handle_exception(e):
 @login_required
 def objetivos():
     return render_template('objetivos.html')
+
+@app.route('/test-calendario')
+@login_required
+def test_calendario():
+    """Página de prueba para el calendario de objetivos"""
+    return render_template('test_calendario.html')
 
 @app.route('/api/objetivos', methods=['GET'])
 @login_required

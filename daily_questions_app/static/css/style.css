@@ -2062,3 +2062,455 @@ STILOS PARA CATEGORÍAS PERSONALIZADAS DE FRASES === */
 #editar-nueva-categoria-input:valid {
     border-color: #198754;
 }
+/*
+ === ESTILOS MEJORADOS PARA CALENDARIO DE OBJETIVOS === */
+.calendario-container {
+    max-width: 100%;
+    overflow-x: auto;
+    background: #fff;
+    border-radius: 12px;
+    padding: 1rem;
+}
+
+.calendario-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+    margin-top: 8px;
+    min-width: 300px;
+}
+
+.calendario-header {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+    margin-bottom: 8px;
+    min-width: 300px;
+}
+
+.calendario-dia-semana {
+    text-align: center;
+    font-weight: 600;
+    color: #6b7280;
+    padding: 8px 4px;
+    font-size: 0.85rem;
+}
+
+.calendario-dia {
+    aspect-ratio: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    background: #f8f9fa;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    min-height: 60px;
+    padding: 4px;
+}
+
+.calendario-dia-numero {
+    font-weight: 600;
+    font-size: 0.9rem;
+    margin-bottom: 2px;
+    color: #374151;
+}
+
+.calendario-dia-respuesta {
+    font-size: 0.65rem;
+    line-height: 1;
+    font-weight: 500;
+    text-align: center;
+    margin: 1px 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 100%;
+}
+
+.calendario-dia:hover {
+    transform: scale(1.05);
+    z-index: 2;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    border-color: #3b82f6;
+}
+
+.calendario-dia.con-actividad {
+    border-width: 2px;
+    font-weight: 600;
+}
+
+.calendario-dia.con-actividad:hover {
+    transform: scale(1.08);
+}
+
+.calendario-dia.sin-datos {
+    background-color: #f3f4f6;
+    color: #9ca3af;
+    cursor: default;
+}
+
+.calendario-dia.sin-datos:hover {
+    transform: none;
+    box-shadow: none;
+    border-color: #e5e7eb;
+}
+
+.calendario-dia.otro-mes {
+    opacity: 0.3;
+    cursor: default;
+}
+
+.calendario-dia.otro-mes:hover {
+    transform: none;
+    box-shadow: none;
+}
+
+.calendario-dia.hoy {
+    border: 2px solid #3b82f6;
+    font-weight: 700;
+    background: #eff6ff;
+}
+
+.calendario-leyenda-item {
+    width: 16px;
+    height: 16px;
+    border-radius: 3px;
+    display: inline-block;
+}
+
+/* Mejoras para responsive */
+@media (max-width: 768px) {
+    .calendario-grid,
+    .calendario-header {
+        min-width: 280px;
+        max-width: 350px;
+    }
+    
+    .calendario-dia {
+        min-height: 45px;
+        font-size: 0.8rem;
+    }
+    
+    .calendario-dia-respuesta {
+        font-size: 0.6rem;
+    }
+    
+    .calendario-container {
+        padding: 0.5rem;
+    }
+}
+
+/* Animación de carga para el calendario */
+.calendario-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem;
+    color: #6b7280;
+}
+
+.calendario-loading .spinner-border {
+    width: 2rem;
+    height: 2rem;
+    margin-bottom: 1rem;
+}
+
+/* Estilos para el error del calendario */
+.calendario-error {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem;
+    color: #dc2626;
+    text-align: center;
+}
+
+.calendario-error i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    opacity: 0.7;
+}
+
+.calendario-error .btn {
+    margin-top: 1rem;
+}
+
+/* Tooltips mejorados para días del calendario */
+.calendario-dia[title] {
+    position: relative;
+}
+
+.calendario-dia[title]:hover::after {
+    content: attr(title);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1f2937;
+    color: white;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    white-space: pre-line;
+    z-index: 1000;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    margin-bottom: 5px;
+    min-width: 120px;
+    text-align: center;
+}
+
+.calendario-dia[title]:hover::before {
+    content: '';
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: #1f2937;
+    z-index: 1000;
+}/* === ESTIL
+OS PARA OBJETIVOS DETALLADOS DEL CALENDARIO === */
+.objetivos-detallados-lista {
+    /* El modal ya maneja el scroll con modal-dialog-scrollable */
+}
+
+.objetivos-grupo {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.objetivo-detalle-item {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 16px;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.objetivo-detalle-item:hover {
+    border-color: #d1d5db;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transform: translateY(-1px);
+}
+
+.objetivo-detalle-item.completado {
+    background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+    border-color: #bbf7d0;
+}
+
+.objetivo-detalle-item.pendiente {
+    background: #fff;
+    border-color: #fbbf24;
+    border-left: 4px solid #fbbf24;
+}
+
+.objetivo-icono {
+    font-size: 1.2rem;
+    margin-top: 2px;
+}
+
+.objetivo-titulo {
+    font-weight: 600;
+    color: #1f2937;
+    margin-bottom: 4px;
+    line-height: 1.3;
+}
+
+.objetivo-descripcion {
+    font-size: 0.9rem;
+    line-height: 1.4;
+    margin-bottom: 8px;
+}
+
+.objetivo-badges {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-wrap: wrap;
+}
+
+.objetivo-badges .badge {
+    font-size: 0.7rem;
+    font-weight: 500;
+    padding: 3px 8px;
+    border-radius: 12px;
+}
+
+.objetivo-fechas {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+}
+
+.objetivo-fechas small {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.objetivo-fechas i {
+    font-size: 0.8rem;
+    opacity: 0.7;
+}
+
+/* Responsive para objetivos detallados */
+@media (max-width: 768px) {
+    .objetivo-detalle-item {
+        padding: 12px;
+    }
+    
+    .objetivo-badges {
+        margin-top: 8px;
+        justify-content: flex-start;
+    }
+    
+    .objetivo-fechas {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+    }
+    
+    .objetivos-detallados-lista {
+        max-height: 400px;
+    }
+}
+
+/* Animación para mostrar/ocultar */
+#objetivos-detallados-container {
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Scrollbar personalizada para la lista */
+.objetivos-detallados-lista::-webkit-scrollbar {
+    width: 6px;
+}
+
+.objetivos-detallados-lista::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 3px;
+}
+
+.objetivos-detallados-lista::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 3px;
+}
+
+.objetivos-detallados-lista::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}/* ==
+= ESTILOS ESPECÍFICOS PARA EL MODAL DE OBJETIVOS === */
+#modalObjetivosDetallados .modal-dialog {
+    max-width: 800px;
+}
+
+#modalObjetivosDetallados .modal-header {
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    border-bottom: 1px solid #e2e8f0;
+}
+
+#modalObjetivosDetallados .modal-title {
+    color: #1e293b;
+    font-weight: 600;
+}
+
+#modalObjetivosDetallados .modal-body {
+    padding: 1.5rem;
+    background: #f8fafc;
+}
+
+#modalObjetivosDetallados .modal-footer {
+    background: #f1f5f9;
+    border-top: 1px solid #e2e8f0;
+}
+
+/* Mejorar el aspecto de los objetivos en el modal */
+#modalObjetivosDetallados .objetivo-detalle-item {
+    margin-bottom: 1rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+#modalObjetivosDetallados .objetivo-detalle-item:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Responsive para el modal */
+@media (max-width: 768px) {
+    #modalObjetivosDetallados .modal-dialog {
+        margin: 0.5rem;
+        max-width: none;
+    }
+    
+    #modalObjetivosDetallados .modal-body {
+        padding: 1rem;
+    }
+}/
+* Estilos para objetivos históricos */
+.objetivo-detalle-item.historico {
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    border-color: #cbd5e1;
+    opacity: 0.8;
+}
+
+.objetivo-detalle-item.historico .objetivo-titulo {
+    color: #64748b;
+    font-style: italic;
+}
+
+.objetivo-detalle-item.historico .objetivo-descripcion {
+    color: #94a3b8;
+}/* Estilo
+s para etiquetas de objetivos saltados */
+.objetivo-badges .badge.bg-danger {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
+    color: white;
+    font-weight: 500;
+    border: 1px solid rgba(220, 38, 38, 0.3);
+    box-shadow: 0 1px 3px rgba(239, 68, 68, 0.2);
+}
+
+.objetivo-badges .badge.bg-danger:hover {
+    transform: scale(1.05);
+    box-shadow: 0 2px 6px rgba(239, 68, 68, 0.3);
+}
+
+.objetivo-badges .badge.bg-danger i {
+    font-size: 0.8rem;
+    opacity: 0.9;
+}
+
+/* Tooltip mejorado para badges */
+.objetivo-badges .badge[title] {
+    cursor: help;
+    position: relative;
+}
+
+/* Animación sutil para badges con información importante */
+.objetivo-badges .badge.bg-danger {
+    animation: pulseSubtle 2s infinite;
+}
+
+@keyframes pulseSubtle {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.8; }
+}

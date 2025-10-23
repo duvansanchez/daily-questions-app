@@ -259,7 +259,7 @@
                             <div class="d-flex flex-wrap align-items-center gap-2">
                                 <select class="form-select form-select-sm" id="obj-cal-mes" style="width:auto; min-width:140px;"></select>
                                 <select class="form-select form-select-sm" id="obj-cal-anio" style="width:auto; min-width:100px;"></select>
-                                <button class="btn btn-sm btn-outline-primary" id="obj-cal-actualizar"><i class="bi bi-arrow-clockwise me-1"></i>Actualizar</button>
+                                <button class="btn btn-sm btn-outline-primary" id="obj-cal-desplegar"><i class="bi bi-list-ul me-1"></i>Desplegar Objetivos</button>
                             </div>
                         </div>
 
@@ -289,6 +289,31 @@
                             <div class="d-flex align-items-center gap-2">
                                 <span class="calendario-leyenda-item" style="background-color:#22c55e;"></span>
                                 <small class="text-muted">Completados</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Modal para objetivos detallados -->
+                <div class="modal fade" id="modalObjetivosDetallados" tabindex="-1" aria-labelledby="modalObjetivosDetalladosLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="modalObjetivosDetalladosLabel">
+                                    <i class="bi bi-list-check me-2"></i>
+                                    Objetivos del Mes
+                                </h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div id="objetivos-detallados-lista" class="objetivos-detallados-lista">
+                                    <!-- Aquí se cargarán los objetivos -->
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                    <i class="bi bi-x-circle me-1"></i>Cerrar
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -763,7 +788,7 @@
                             <div class="d-flex flex-wrap align-items-center gap-2">
                                 <select class="form-select form-select-sm" id="obj-cal-mes" style="width:auto; min-width:140px;"></select>
                                 <select class="form-select form-select-sm" id="obj-cal-anio" style="width:auto; min-width:100px;"></select>
-                                <button class="btn btn-sm btn-outline-primary" id="obj-cal-actualizar"><i class="bi bi-arrow-clockwise me-1"></i>Actualizar</button>
+                                <button class="btn btn-sm btn-outline-primary" id="obj-cal-desplegar"><i class="bi bi-list-ul me-1"></i>Desplegar Objetivos</button>
                             </div>
                         </div>
 
@@ -1340,24 +1365,77 @@ function poblarSelectsObjetivosCalendario() {
 async function cargarCalendarioObjetivos() {
     const selMes = document.getElementById('obj-cal-mes');
     const selAnio = document.getElementById('obj-cal-anio');
-    if (!selMes || !selAnio) return;
+    
+    if (!selMes || !selAnio) {
+        console.error('No se encontraron los selectores de mes y año');
+        return;
+    }
+    
     const mes = parseInt(selMes.value, 10);
     const anio = parseInt(selAnio.value, 10);
+    
+    console.log(`Cargando calendario para mes ${mes} (0-11), año ${anio}`);
+    
+    // Mostrar indicador de carga
+    const cont = document.getElementById('objetivos-calendario');
+    if (cont) {
+        cont.innerHTML = `
+            <div class="text-center py-4">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Cargando...</span>
+                </div>
+                <div class="mt-2 text-muted">Cargando calendario...</div>
+            </div>
+        `;
+    }
+    
     try {
         const resp = await fetch(`/api/objetivos/calendario?mes=${mes}&anio=${anio}`);
-        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+        console.log('Respuesta del servidor:', resp.status, resp.statusText);
+        
+        if (!resp.ok) {
+            throw new Error(`Error HTTP ${resp.status}: ${resp.statusText}`);
+        }
+        
         const json = await resp.json();
-        if (json.status !== 'success') throw new Error('API');
+        console.log('Datos recibidos:', json);
+        
+        if (json.status !== 'success') {
+            throw new Error(`Error de API: ${json.message || 'Error desconocido'}`);
+        }
+        
         renderObjetivosCalendario(json.data);
+        
     } catch (e) {
-        console.error('Error calendario objetivos:', e);
+        console.error('Error cargando calendario objetivos:', e);
+        
+        // Mostrar error en el contenedor
+        if (cont) {
+            cont.innerHTML = `
+                <div class="text-center py-4 text-danger">
+                    <i class="bi bi-exclamation-triangle" style="font-size: 2rem;"></i>
+                    <div class="mt-2">Error al cargar el calendario</div>
+                    <div class="small text-muted">${e.message}</div>
+                    <button class="btn btn-sm btn-outline-primary mt-2" onclick="cargarCalendarioObjetivos()">
+                        <i class="bi bi-arrow-clockwise"></i> Reintentar
+                    </button>
+                </div>
+            `;
+        }
     }
 }
 
 function renderObjetivosCalendario(data) {
     const cont = document.getElementById('objetivos-calendario');
-    if (!cont || !data) return;
+    if (!cont || !data) {
+        console.error('No se encontró el contenedor del calendario o no hay datos');
+        return;
+    }
+    
+    console.log('Renderizando calendario con datos:', data);
+    
     const { anio, mes, dias_en_mes, creados_por_dia = {}, completados_por_dia = {} } = data;
+    
     // Encabezado de días de la semana
     const diasSemana = ['L','M','X','J','V','S','D'];
     const primerDia = new Date(anio, mes, 1);
@@ -1365,20 +1443,43 @@ function renderObjetivosCalendario(data) {
 
     let header = '<div class="calendario-header">' + diasSemana.map(d => `<div class="calendario-dia-semana">${d}</div>`).join('') + '</div>';
     let grid = '<div class="calendario-grid">';
+    
+    // Días vacíos al inicio del mes
     for (let i = 0; i < offset; i++) {
         grid += '<div class="calendario-dia sin-datos otro-mes"></div>';
     }
+    
+    // Días del mes
     for (let dia = 1; dia <= dias_en_mes; dia++) {
-        const c = creados_por_dia[String(dia)] || 0;
-        const comp = completados_por_dia[String(dia)] || 0;
+        const creados = creados_por_dia[String(dia)] || 0;
+        const completados = completados_por_dia[String(dia)] || 0;
+        
+        // Determinar el color de fondo basado en la actividad
+        let claseExtra = '';
+        let colorFondo = '#f8f9fa';
+        
+        if (creados > 0 || completados > 0) {
+            claseExtra = 'con-actividad';
+            if (completados > creados) {
+                colorFondo = '#d4edda'; // Verde claro si hay más completados
+            } else if (creados > completados) {
+                colorFondo = '#cce5ff'; // Azul claro si hay más creados
+            } else {
+                colorFondo = '#fff3cd'; // Amarillo claro si están equilibrados
+            }
+        }
+        
         grid += `
-        <div class="calendario-dia" title="${dia} ${MESES_NOMBRES[mes]} ${anio}\nCreados: ${c}\nCompletados: ${comp}">
+        <div class="calendario-dia ${claseExtra}" 
+             style="background-color: ${colorFondo};" 
+             title="${dia} ${MESES_NOMBRES[mes]} ${anio}\nCreados: ${creados}\nCompletados: ${completados}">
             <div class="calendario-dia-numero">${dia}</div>
-            <div class="calendario-dia-respuesta" style="color:#3b82f6;">C: ${c}</div>
-            <div class="calendario-dia-respuesta" style="color:#22c55e;">F: ${comp}</div>
+            <div class="calendario-dia-respuesta" style="color:#3b82f6; font-weight: 500;">📝 ${creados}</div>
+            <div class="calendario-dia-respuesta" style="color:#22c55e; font-weight: 500;">✅ ${completados}</div>
         </div>`;
     }
     grid += '</div>';
+    
     cont.innerHTML = header + grid;
 
     // Totales
@@ -1386,9 +1487,316 @@ function renderObjetivosCalendario(data) {
     const totalCompletados = Object.values(completados_por_dia).reduce((a,b)=>a+Number(b),0);
     const elCreados = document.getElementById('obj-total-creados');
     const elCompletados = document.getElementById('obj-total-completados');
+    
     if (elCreados) elCreados.textContent = totalCreados;
     if (elCompletados) elCompletados.textContent = totalCompletados;
+    
+    console.log(`Calendario renderizado: ${totalCreados} creados, ${totalCompletados} completados`);
 }
+
+async function desplegarObjetivosDetallados() {
+    const selMes = document.getElementById('obj-cal-mes');
+    const selAnio = document.getElementById('obj-cal-anio');
+    
+    if (!selMes || !selAnio) {
+        console.error('No se encontraron los selectores de mes y año');
+        return;
+    }
+    
+    const mes = parseInt(selMes.value, 10);
+    const anio = parseInt(selAnio.value, 10);
+    const mesNombre = MESES_NOMBRES[mes];
+    
+    console.log(`Desplegando objetivos detallados para mes ${mes} (0-11), año ${anio}`);
+    
+    // Actualizar título del modal
+    const modalTitle = document.getElementById('modalObjetivosDetalladosLabel');
+    if (modalTitle) {
+        modalTitle.innerHTML = `
+            <i class="bi bi-list-check me-2"></i>
+            Objetivos de ${mesNombre} ${anio}
+        `;
+    }
+    
+    // Mostrar modal con indicador de carga
+    const modal = new bootstrap.Modal(document.getElementById('modalObjetivosDetallados'));
+    const lista = document.getElementById('objetivos-detallados-lista');
+    
+    if (lista) {
+        lista.innerHTML = `
+            <div class="text-center py-5">
+                <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+                    <span class="visually-hidden">Cargando...</span>
+                </div>
+                <div class="mt-3 text-muted">
+                    <h6>Cargando objetivos de ${mesNombre} ${anio}...</h6>
+                    <p class="mb-0">Por favor espera un momento</p>
+                </div>
+            </div>
+        `;
+    }
+    
+    modal.show();
+    
+    try {
+        const resp = await fetch(`/api/objetivos/mes-detallado?mes=${mes}&anio=${anio}`);
+        console.log('Respuesta del servidor:', resp.status, resp.statusText);
+        
+        if (!resp.ok) {
+            throw new Error(`Error HTTP ${resp.status}: ${resp.statusText}`);
+        }
+        
+        const json = await resp.json();
+        console.log('Datos recibidos:', json);
+        
+        if (json.status !== 'success') {
+            throw new Error(`Error de API: ${json.message || 'Error desconocido'}`);
+        }
+        
+        renderObjetivosDetallados(json.data);
+        
+    } catch (e) {
+        console.error('Error cargando objetivos detallados:', e);
+        
+        // Mostrar error en el modal
+        if (lista) {
+            lista.innerHTML = `
+                <div class="text-center py-5 text-danger">
+                    <i class="bi bi-exclamation-triangle" style="font-size: 3rem; opacity: 0.7;"></i>
+                    <div class="mt-3">
+                        <h6>Error al cargar los objetivos</h6>
+                        <p class="text-muted">${e.message}</p>
+                        <button class="btn btn-outline-primary mt-2" onclick="desplegarObjetivosDetallados()">
+                            <i class="bi bi-arrow-clockwise me-1"></i> Reintentar
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+    }
+}
+
+function renderObjetivosDetallados(data) {
+    const lista = document.getElementById('objetivos-detallados-lista');
+    if (!lista || !data) {
+        console.error('No se encontró el contenedor de la lista o no hay datos');
+        return;
+    }
+    
+    const { objetivos, mes, anio } = data;
+    const mesNombre = MESES_NOMBRES[mes];
+    
+    console.log(`Renderizando ${objetivos.length} objetivos para ${mesNombre} ${anio}`);
+    
+    if (objetivos.length === 0) {
+        lista.innerHTML = `
+            <div class="text-center py-5 text-muted">
+                <i class="bi bi-inbox" style="font-size: 3rem; opacity: 0.5;"></i>
+                <div class="mt-3">
+                    <h6>No hay objetivos para ${mesNombre} ${anio}</h6>
+                    <p class="mb-0">Aún no has creado objetivos para este mes</p>
+                </div>
+            </div>
+        `;
+        return;
+    }
+    
+    // Agrupar objetivos por estado
+    const completados = objetivos.filter(obj => obj.completado);
+    const pendientes = objetivos.filter(obj => !obj.completado && obj.estado !== 'histórico');
+    const historicos = objetivos.filter(obj => !obj.completado && obj.estado === 'histórico');
+    
+    // Calcular estadísticas de objetivos saltados
+    const objetivosSaltados = objetivos.filter(obj => obj.veces_saltado > 0);
+    const totalSaltos = objetivos.reduce((sum, obj) => sum + (obj.veces_saltado || 0), 0);
+    
+    let html = `
+        <div class="mb-4">
+            <div class="d-flex justify-content-between align-items-center p-3 bg-white rounded border">
+                <div>
+                    <h6 class="mb-1 text-primary">${mesNombre} ${anio}</h6>
+                    <small class="text-muted">Total de objetivos: ${objetivos.length}</small>
+                </div>
+                <div class="d-flex gap-2 flex-wrap">
+                    <span class="badge bg-success fs-6 px-3 py-2">
+                        <i class="bi bi-check-circle me-1"></i>
+                        ${completados.length} Completados
+                    </span>
+                    <span class="badge bg-warning fs-6 px-3 py-2">
+                        <i class="bi bi-clock me-1"></i>
+                        ${pendientes.length} Pendientes
+                    </span>
+                    ${historicos.length > 0 ? `
+                    <span class="badge bg-secondary fs-6 px-3 py-2">
+                        <i class="bi bi-archive me-1"></i>
+                        ${historicos.length} Históricos
+                    </span>
+                    ` : ''}
+                    ${totalSaltos > 0 ? `
+                    <span class="badge bg-danger fs-6 px-3 py-2" title="${objetivosSaltados.length} objetivos saltados un total de ${totalSaltos} veces">
+                        <i class="bi bi-skip-forward-fill me-1"></i>
+                        ${totalSaltos} Saltos
+                    </span>
+                    ` : ''}
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Mostrar objetivos completados primero
+    if (completados.length > 0) {
+        html += `
+            <div class="mb-4">
+                <h6 class="text-success mb-3">
+                    <i class="bi bi-check-circle-fill me-2"></i>
+                    Objetivos Completados (${completados.length})
+                </h6>
+                <div class="objetivos-grupo">
+        `;
+        
+        completados.forEach(obj => {
+            html += renderObjetivoItem(obj, true);
+        });
+        
+        html += `</div></div>`;
+    }
+    
+    // Mostrar objetivos pendientes
+    if (pendientes.length > 0) {
+        html += `
+            <div class="mb-4">
+                <h6 class="text-warning mb-3">
+                    <i class="bi bi-clock-fill me-2"></i>
+                    Objetivos Pendientes (${pendientes.length})
+                </h6>
+                <div class="objetivos-grupo">
+        `;
+        
+        pendientes.forEach(obj => {
+            html += renderObjetivoItem(obj, false);
+        });
+        
+        html += `</div></div>`;
+    }
+    
+    // Mostrar objetivos históricos
+    if (historicos.length > 0) {
+        html += `
+            <div class="mb-4">
+                <h6 class="text-secondary mb-3">
+                    <i class="bi bi-archive-fill me-2"></i>
+                    Objetivos Históricos (${historicos.length})
+                </h6>
+                <div class="objetivos-grupo">
+        `;
+        
+        historicos.forEach(obj => {
+            html += renderObjetivoItem(obj, false, true); // true para indicar que es histórico
+        });
+        
+        html += `</div></div>`;
+    }
+    
+    // Mostrar sección de objetivos más saltados si hay datos relevantes
+    const objetivosMasSaltados = objetivos
+        .filter(obj => obj.veces_saltado > 0)
+        .sort((a, b) => b.veces_saltado - a.veces_saltado)
+        .slice(0, 3);
+    
+    if (objetivosMasSaltados.length > 0) {
+        html += `
+            <div class="mb-4">
+                <h6 class="text-danger mb-3">
+                    <i class="bi bi-skip-forward-fill me-2"></i>
+                    Objetivos Más Saltados
+                </h6>
+                <div class="alert alert-warning">
+                    <small class="text-muted mb-2 d-block">
+                        <i class="bi bi-info-circle me-1"></i>
+                        Estos objetivos fueron saltados con más frecuencia. Considera revisar si son realistas o necesitan ajustes.
+                    </small>
+                    <div class="d-flex flex-wrap gap-2">
+        `;
+        
+        objetivosMasSaltados.forEach(obj => {
+            html += `
+                <span class="badge bg-danger fs-6 px-3 py-2">
+                    ${obj.titulo} 
+                    <span class="badge bg-light text-dark ms-1">${obj.veces_saltado}</span>
+                </span>
+            `;
+        });
+        
+        html += `
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    
+    lista.innerHTML = html;
+}
+
+function renderObjetivoItem(objetivo, esCompletado, esHistorico = false) {
+    const fechaCreacion = objetivo.fecha_creacion ? new Date(objetivo.fecha_creacion).toLocaleDateString('es-ES') : 'Sin fecha';
+    const fechaCompletado = objetivo.fecha_completado ? new Date(objetivo.fecha_completado).toLocaleDateString('es-ES') : '';
+    
+    const prioridadClass = {
+        'alta': 'danger',
+        'media': 'warning', 
+        'baja': 'success'
+    }[objetivo.prioridad] || 'secondary';
+    
+    const categoriaColor = {
+        'diario': '#3b82f6',
+        'semanal': '#10b981', 
+        'mensual': '#f59e0b',
+        'anual': '#8b5cf6'
+    }[objetivo.categoria?.toLowerCase()] || '#6b7280';
+    
+    let claseItem = 'pendiente';
+    let icono = 'bi-circle text-muted';
+    
+    if (esCompletado) {
+        claseItem = 'completado';
+        icono = 'bi-check-circle-fill text-success';
+    } else if (esHistorico) {
+        claseItem = 'historico';
+        icono = 'bi-archive-fill text-secondary';
+    }
+    
+    return `
+        <div class="objetivo-detalle-item ${claseItem}">
+            <div class="d-flex align-items-start">
+                <div class="objetivo-icono me-3">
+                    <i class="bi ${icono}"></i>
+                </div>
+                <div class="flex-grow-1">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <h6 class="objetivo-titulo mb-1 ${esCompletado ? 'text-decoration-line-through text-muted' : ''}">${objetivo.titulo}</h6>
+                        <div class="objetivo-badges">
+                            <span class="badge bg-${prioridadClass} me-1">${objetivo.prioridad}</span>
+                            <span class="badge me-1" style="background-color: ${categoriaColor}; color: white;">${objetivo.categoria}</span>
+                            ${objetivo.recurrente ? '<span class="badge bg-info">Recurrente</span>' : ''}
+                            ${esHistorico ? '<span class="badge bg-secondary">Histórico</span>' : ''}
+                            ${objetivo.veces_saltado > 0 ? `<span class="badge bg-danger" title="Veces que se saltó este objetivo"><i class="bi bi-skip-forward-fill me-1"></i>${objetivo.veces_saltado} saltado${objetivo.veces_saltado > 1 ? 's' : ''}</span>` : ''}
+                        </div>
+                    </div>
+                    ${objetivo.descripcion ? `<p class="objetivo-descripcion text-muted mb-2">${objetivo.descripcion}</p>` : ''}
+                    <div class="objetivo-fechas">
+                        <small class="text-muted">
+                            <i class="bi bi-calendar-plus me-1"></i>
+                            Creado: ${fechaCreacion}
+                            ${fechaCompletado ? `<span class="ms-3"><i class="bi bi-calendar-check me-1"></i>Completado: ${fechaCompletado}</span>` : ''}
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+
 
 // Inicialización del calendario de objetivos
 document.addEventListener('DOMContentLoaded', () => {
@@ -1401,11 +1809,11 @@ document.addEventListener('DOMContentLoaded', () => {
             poblarSelectsObjetivosCalendario();
         }
         // Eventos (idempotentes)
-        const btnAct = document.getElementById('obj-cal-actualizar');
-        if (btnAct && !btnAct.__bound) { btnAct.addEventListener('click', cargarCalendarioObjetivos); btnAct.__bound = true; }
+        const btnDesplegar = document.getElementById('obj-cal-desplegar');
+        if (btnDesplegar && !btnDesplegar.__bound) { btnDesplegar.addEventListener('click', desplegarObjetivosDetallados); btnDesplegar.__bound = true; }
         if (!selMes.__bound) { selMes.addEventListener('change', cargarCalendarioObjetivos); selMes.__bound = true; }
         if (!selAnio.__bound) { selAnio.addEventListener('change', cargarCalendarioObjetivos); selAnio.__bound = true; }
-        // Carga inicial segura
+        // Carga inicial segura del calendario
         cargarCalendarioObjetivos();
         return true;
     };
