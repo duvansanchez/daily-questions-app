@@ -73,9 +73,10 @@
                 <div class="d-flex align-items-center gap-2">
                     <label for="orden-objetivos" class="form-label mb-0 fw-semibold">Ordenar por:</label>
                     <select class="form-select form-select-sm" id="orden-objetivos" style="width: auto;">
+                        <option value="backend" selected>Orden inteligente (completados al final)</option>
                         <option value="orden">Orden personalizado</option>
                         <option value="fecha_creacion">Fecha de creación</option>
-                        <option value="completado" selected>Estado (completado/pendiente)</option>
+                        <option value="completado">Estado (completado/pendiente)</option>
                         <option value="prioridad">Prioridad</option>
                         <option value="titulo">Título</option>
                     </select>
@@ -88,9 +89,12 @@
                         <input type="text" class="form-control me-2" id="input-nuevo-objetivo" placeholder="Añadir nuevo objetivo diario...">
                         <button class="btn btn-primary" type="button" id="btn-abrir-modal-objetivo"><i class="bi bi-plus"></i></button>
                     </form>
-                    <div class="d-flex justify-content-end mb-2">
+                    <div class="d-flex justify-content-end mb-2 gap-2">
                         <button class="btn btn-outline-secondary btn-sm" id="btn-deseleccionar-recurrentes" type="button">
                             <i class="bi bi-arrow-counterclockwise"></i> Desmarcar todos los recurrentes
+                        </button>
+                        <button class="btn btn-outline-warning btn-sm" id="btn-reset-diarios" type="button" title="Reset automático de objetivos diarios recurrentes">
+                            <i class="bi bi-sunrise"></i> Reset diarios
                         </button>
                     </div>
                     <div class="objetivos-grid" id="lista-objetivos">

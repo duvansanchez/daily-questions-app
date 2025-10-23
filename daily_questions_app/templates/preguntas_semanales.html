@@ -1,0 +1,244 @@
+{% extends "base.html" %}
+
+{% block title %}Preguntas Semanales{% endblock %}
+
+{% block content %}
+<div class="container d-flex flex-column align-items-center justify-content-center" style="padding-top: 0.5rem;">
+    <div id="bienvenida-header">
+        <h1 style="font-size:3.2rem; font-weight:800; background: linear-gradient(90deg, #28a745, #20c997); -webkit-background-clip: text; color: transparent; margin-bottom: 0.5rem; text-align:center;">
+            Reflexión Semanal
+        </h1>
+        <div style="font-size:1.5rem; color:#555; margin-bottom:0.5rem; text-align:center; font-weight:500;">
+            {{ date|format_datetime|capitalize }}
+        </div>
+        <div style="color:#28a745; font-size:1.3rem; margin-bottom:1.5rem; text-align:center; font-weight:600;">
+            <i class="fa fa-calendar-week"></i> <span id="reloj">00:00:00</span>
+        </div>
+    </div>
+    <div id="bienvenida-card" class="bienvenida-card" {% if not questions %}style="display:none;"{% endif %}>
+        <div class="card p-4 shadow-sm mx-auto" style="max-width:820px; min-width:520px; border-radius: 1.1rem; margin-bottom:1.2rem;">
+            <div class="d-flex flex-column align-items-center">
+                <div style="background: #28a745; border-radius:50%; width:60px; height:60px; display:flex; align-items:center; justify-content:center; margin-bottom:12px;">
+                    <i class="fa fa-calendar-week" style="color:white; font-size:1.7rem;"></i>
+                </div>
+                <h3 class="mb-2" style="font-weight:800; font-size:1.3rem; text-align:center;">¿Listo para tu reflexión semanal?</h3>
+                <p class="text-center" style="color:#555; font-size:1.05rem; margin-bottom:14px;">Tómate unos minutos para reflexionar sobre tu semana.<br>Responde las preguntas semanales que has configurado para tu crecimiento personal.</p>
+                <div class="mb-3 d-flex flex-row justify-content-center gap-2 w-100">
+                    <span class="badge px-4 py-2 d-flex align-items-center" style="background:#d4edda; color:#155724; font-size:1rem; border-radius: 1.5rem;">
+                        <span style="font-size:1.2em; margin-right:0.5em;">📅</span> Semanal
+                    </span>
+                    <span class="badge px-4 py-2 d-flex align-items-center" style="background:#d1f7e8; color:#137333; font-size:1rem; border-radius: 1.5rem;">
+                        <span style="font-size:1.2em; margin-right:0.5em;">🎯</span> Tus preguntas
+                    </span>
+                    <span class="badge px-4 py-2 d-flex align-items-center" style="background:#f3e8ff; color:#7c3aed; font-size:1rem; border-radius: 1.5rem;">
+                        <span style="font-size:1.2em; margin-right:0.5em;">📊</span> Análisis incluido
+                    </span>
+                </div>
+                <button id="iniciar-btn" class="btn btn-success btn-lg w-100" style="background: #28a745; border:none; font-size:1.15rem; padding: 0.8rem 0; border-radius: 0.8rem; color: #fff;">
+                    <i class="fa fa-play"></i> Iniciar Preguntas Semanales
+                </button>
+            </div>
+        </div>
+        <div class="d-flex justify-content-center gap-4 mb-3" style="width:100%; max-width:900px; margin:0 auto;">
+            <div class="card p-4 flex-fill text-center" style="min-width:260px; border-radius:1.2rem; font-size:1.2rem;">
+                <span class="text-success" style="font-size:1.25rem;"><i class="fa fa-calendar-week"></i> <b>Reflexión Semanal</b></span>
+                <div style="font-size:1.1rem; color:#555; margin-top:0.5rem;">Evalúa tu progreso semanal</div>
+            </div>
+            <div class="card p-4 flex-fill text-center" style="min-width:260px; border-radius:1.2rem; font-size:1.2rem;">
+                <span class="text-info" style="font-size:1.25rem;"><i class="fa fa-chart-line"></i> <b>Análisis Profundo</b></span>
+                <div style="font-size:1.1rem; color:#555; margin-top:0.5rem;">Insights de tu semana completa</div>
+            </div>
+        </div>
+    </div>
+
+    {% if not questions %}
+    <div class="card p-4 shadow-sm mx-auto" style="max-width:600px; border-radius: 1.1rem; margin-bottom:1.2rem;">
+        <div class="d-flex flex-column align-items-center">
+            <div style="background: #ffc107; border-radius:50%; width:60px; height:60px; display:flex; align-items:center; justify-content:center; margin-bottom:12px;">
+                <i class="fa fa-exclamation-triangle" style="color:white; font-size:1.7rem;"></i>
+            </div>
+            <h3 class="mb-2" style="font-weight:800; font-size:1.3rem; text-align:center;">No hay preguntas semanales configuradas</h3>
+            <p class="text-center" style="color:#555; font-size:1.05rem; margin-bottom:14px;">Parece que aún no has configurado preguntas semanales.<br>Ve al panel de administración para crear algunas.</p>
+            <a href="{{ url_for('admin') }}" class="btn btn-warning btn-lg" style="font-size:1.15rem; padding: 0.8rem 2rem; border-radius: 0.8rem;">
+                <i class="fa fa-cog"></i> Ir a Administración
+            </a>
+        </div>
+    </div>
+    {% endif %}
+
+    <div id="questions-container" style="display: none; width: 100%; max-width: 800px;">
+        <!-- Las preguntas se cargarán aquí dinámicamente -->
+    </div>
+
+    <div id="completion-message" style="display: none; width: 100%; max-width: 600px;">
+        <div class="card p-4 shadow-sm mx-auto" style="border-radius: 1.1rem;">
+            <div class="d-flex flex-column align-items-center">
+                <div style="background: #28a745; border-radius:50%; width:60px; height:60px; display:flex; align-items:center; justify-content:center; margin-bottom:12px;">
+                    <i class="fa fa-check" style="color:white; font-size:1.7rem;"></i>
+                </div>
+                <h3 class="mb-2" style="font-weight:800; font-size:1.3rem; text-align:center;">¡Reflexión semanal completada!</h3>
+                <p class="text-center" style="color:#555; font-size:1.05rem; margin-bottom:14px;">Gracias por tomarte el tiempo para reflexionar sobre tu semana.</p>
+                <div class="d-flex gap-2">
+                    <a href="{{ url_for('index') }}" class="btn btn-primary">
+                        <i class="fa fa-home"></i> Volver al inicio
+                    </a>
+                    <a href="{{ url_for('admin') }}" class="btn btn-outline-secondary">
+                        <i class="fa fa-cog"></i> Administrar preguntas
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Reutilizar el mismo JavaScript del index.html pero adaptado para preguntas semanales
+let currentQuestionIndex = 0;
+let questions = {{ questions|tojson }};
+let responses = {};
+
+// Reloj
+function updateClock() {
+    const now = new Date();
+    const timeString = now.toLocaleTimeString('es-ES', { 
+        hour12: false,
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+    });
+    document.getElementById('reloj').textContent = timeString;
+}
+
+setInterval(updateClock, 1000);
+updateClock();
+
+// Iniciar preguntas
+document.getElementById('iniciar-btn')?.addEventListener('click', function() {
+    document.getElementById('bienvenida-card').style.display = 'none';
+    document.getElementById('bienvenida-header').style.display = 'none';
+    showQuestion(0);
+});
+
+function showQuestion(index) {
+    if (index >= questions.length) {
+        showCompletionMessage();
+        return;
+    }
+
+    currentQuestionIndex = index;
+    const question = questions[index];
+    const container = document.getElementById('questions-container');
+    
+    let optionsHtml = '';
+    if (question.type === 'radio' && question.options) {
+        question.options.forEach((option, i) => {
+            optionsHtml += `
+                <div class="form-check mb-2">
+                    <input class="form-check-input" type="radio" name="question_${question.id}" id="option_${i}" value="${option}">
+                    <label class="form-check-label" for="option_${i}">${option}</label>
+                </div>
+            `;
+        });
+    } else if (question.type === 'checkbox' && question.options) {
+        question.options.forEach((option, i) => {
+            optionsHtml += `
+                <div class="form-check mb-2">
+                    <input class="form-check-input" type="checkbox" name="question_${question.id}" id="option_${i}" value="${option}">
+                    <label class="form-check-label" for="option_${i}">${option}</label>
+                </div>
+            `;
+        });
+    } else {
+        optionsHtml = `<textarea class="form-control" id="response_${question.id}" rows="4" placeholder="Escribe tu respuesta aquí..."></textarea>`;
+    }
+
+    container.innerHTML = `
+        <div class="card p-4 shadow-sm" style="border-radius: 1.1rem; margin-bottom: 1.2rem;">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <span class="badge bg-success" style="font-size: 0.9rem;">Pregunta ${index + 1} de ${questions.length}</span>
+                <span class="text-muted">Semanal</span>
+            </div>
+            <h4 class="mb-3" style="font-weight: 600;">${question.text}</h4>
+            ${question.descripcion ? `<p class="text-muted mb-3">${question.descripcion}</p>` : ''}
+            <div class="mb-4">
+                ${optionsHtml}
+            </div>
+            <div class="d-flex justify-content-between">
+                <button class="btn btn-outline-secondary" onclick="previousQuestion()" ${index === 0 ? 'disabled' : ''}>
+                    <i class="fa fa-arrow-left"></i> Anterior
+                </button>
+                <button class="btn btn-success" onclick="nextQuestion()">
+                    ${index === questions.length - 1 ? '<i class="fa fa-check"></i> Finalizar' : 'Siguiente <i class="fa fa-arrow-right"></i>'}
+                </button>
+            </div>
+        </div>
+    `;
+    
+    container.style.display = 'block';
+}
+
+function nextQuestion() {
+    const question = questions[currentQuestionIndex];
+    let response = '';
+    
+    if (question.type === 'radio') {
+        const selected = document.querySelector(`input[name="question_${question.id}"]:checked`);
+        response = selected ? selected.value : '';
+    } else if (question.type === 'checkbox') {
+        const selected = document.querySelectorAll(`input[name="question_${question.id}"]:checked`);
+        response = Array.from(selected).map(cb => cb.value).join(', ');
+    } else {
+        response = document.getElementById(`response_${question.id}`).value;
+    }
+    
+    if (question.is_required && !response.trim()) {
+        alert('Esta pregunta es obligatoria. Por favor, proporciona una respuesta.');
+        return;
+    }
+    
+    responses[question.id] = response;
+    
+    if (currentQuestionIndex === questions.length - 1) {
+        submitResponses();
+    } else {
+        showQuestion(currentQuestionIndex + 1);
+    }
+}
+
+function previousQuestion() {
+    if (currentQuestionIndex > 0) {
+        showQuestion(currentQuestionIndex - 1);
+    }
+}
+
+async function submitResponses() {
+    try {
+        const today = new Date().toISOString().split('T')[0];
+        
+        for (const [questionId, response] of Object.entries(responses)) {
+            await fetch('/submit_response', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    question_id: questionId,
+                    response: response,
+                    date: today
+                })
+            });
+        }
+        
+        showCompletionMessage();
+    } catch (error) {
+        console.error('Error al enviar respuestas:', error);
+        alert('Hubo un error al guardar tus respuestas. Por favor, intenta de nuevo.');
+    }
+}
+
+function showCompletionMessage() {
+    document.getElementById('questions-container').style.display = 'none';
+    document.getElementById('completion-message').style.display = 'block';
+}
+</script>
+{% endblock %}

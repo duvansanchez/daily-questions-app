@@ -111,6 +111,56 @@ window.showError = showError;
 window.showInfo = showInfo;
 window.showConfirm = showConfirm;
 
+// --- INFORMES: EXPORTAR CSV ---
+document.addEventListener('DOMContentLoaded', function() {
+    const btnExportar = document.getElementById('btn-exportar-csv');
+    if (btnExportar) {
+        btnExportar.addEventListener('click', async function() {
+            // Exportar todas las frases con sus datos completos
+            try {
+                const params = new URLSearchParams();
+                const desde = document.getElementById('report-desde').value;
+                const hasta = document.getElementById('report-hasta').value;
+                const includeInactivos = document.getElementById('report-include-inactivos').checked ? '1' : '';
+                if (desde) params.set('desde', desde);
+                if (hasta) params.set('hasta', hasta);
+                if (includeInactivos) params.set('include_inactivos', '1');
+                // Usar endpoint de frases para obtener todas
+                const res = await fetch('/api/frases?' + params.toString());
+                if (!res.ok) throw new Error('Error al obtener frases');
+                const frases = await res.json();
+                // Encabezados
+                const rows = [
+                    ['Frase', 'Autor', 'Categoría', 'Subcategoría', 'Repasos totales', 'Última vez', 'Activa', 'Notas']
+                ];
+                frases.forEach(f => {
+                    rows.push([
+                        f.texto,
+                        f.autor || '',
+                        f.categoria || '',
+                        f.subcategoria || '',
+                        f.total_repasos || 0,
+                        f.ultima_vez ? f.ultima_vez.substring(0,10) : '',
+                        f.activa ? 'Sí' : 'No',
+                        f.notas || ''
+                    ]);
+                });
+                // Generar CSV con punto y coma y BOM UTF-8 para Excel
+                const csv = '\uFEFF' + rows.map(r => r.map(v => '"' + String(v).replace(/"/g, '""') + '"').join(';')).join('\r\n');
+                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = 'Frases_completas.csv';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            } catch (err) {
+                showError('No se pudo exportar el informe: ' + err.message);
+            }
+        });
+    }
+});
+
 // Función para cargar subobjetivos en vista de lista
 async function cargarSubobjetivosLista(objetivoId) {
     try {
@@ -1150,7 +1200,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // === Objetivos Desarrollo Personal (Integración API) ===
 let objetivos = [];
-let ordenActual = 'completado'; // Variable global para el ordenamiento
+let ordenActual = 'backend'; // Variable global para el ordenamiento (backend maneja el orden por defecto)
 let vistaActual = 'lista'; // Variable global para el tipo de vista
 
 async function cargarObjetivos() {
@@ -1179,6 +1229,9 @@ function ordenarObjetivos(objetivos, criterio) {
     const objetivosOrdenados = [...objetivos];
     
     switch (criterio) {
+        case 'backend':
+            // Mantener el orden que viene del backend (completados al final)
+            return objetivosOrdenados;
         case 'orden':
             return objetivosOrdenados.sort((a, b) => (a.orden || 0) - (b.orden || 0));
         case 'fecha_creacion':
@@ -2130,6 +2183,31 @@ document.getElementById('btn-deseleccionar-recurrentes')?.addEventListener('clic
     }
     await cargarObjetivos();
     showSuccess('Todos los objetivos recurrentes han sido desmarcados.');
+});
+
+// Botón para reset automático de objetivos diarios
+document.getElementById('btn-reset-diarios')?.addEventListener('click', async function() {
+    if (!confirm('¿Estás seguro de que quieres ejecutar el reset de objetivos diarios recurrentes? Esto desmarcará todos los objetivos diarios recurrentes completados.')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch('/api/reset-objetivos-diarios', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+        
+        const result = await response.json();
+        
+        if (result.status === 'success') {
+            await cargarObjetivos();
+            showSuccess('Reset de objetivos diarios completado exitosamente.');
+        } else {
+            showError('Error al ejecutar el reset: ' + result.message);
+        }
+    } catch (error) {
+        showError('Error al ejecutar el reset: ' + error.message);
+    }
 });
 
 function es_objetivo_vencido_front(obj) {

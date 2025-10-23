@@ -22,14 +22,25 @@
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.endpoint == 'index' %}active{% endif %}" href="{{ url_for('index') }}">
-                            <i class="bi bi-house-door"></i> Inicio
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle {% if request.endpoint in ['index', 'preguntas_semanales', 'preguntas_mensuales'] %}active{% endif %}" href="#" id="preguntasDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-question-circle"></i> Preguntas
                         </a>
+                        <ul class="dropdown-menu" aria-labelledby="preguntasDropdown">
+                            <li><a class="dropdown-item {% if request.endpoint == 'index' %}active{% endif %}" href="{{ url_for('index') }}">
+                                <i class="bi bi-sun"></i> Diarias
+                            </a></li>
+                            <li><a class="dropdown-item {% if request.endpoint == 'preguntas_semanales' %}active{% endif %}" href="{{ url_for('preguntas_semanales') }}">
+                                <i class="bi bi-calendar-week"></i> Semanales
+                            </a></li>
+                            <li><a class="dropdown-item {% if request.endpoint == 'preguntas_mensuales' %}active{% endif %}" href="{{ url_for('preguntas_mensuales') }}">
+                                <i class="bi bi-calendar-month"></i> Mensuales
+                            </a></li>
+                        </ul>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link {% if request.endpoint == 'admin' %}active{% endif %}" href="{{ url_for('admin') }}">
-                            <i class="bi bi-person"></i> Mis Preguntas
+                            <i class="bi bi-gear"></i> Administrar
                         </a>
                     </li>
                     <li class="nav-item">

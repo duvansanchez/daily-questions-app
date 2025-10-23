@@ -11,29 +11,52 @@
             <div class="mb-3">
                 <span class="fw-semibold" style="font-size:1.2rem;">Preguntas</span>
             </div>
-            <!-- Tabs de filtro y botón añadir pregunta alineados -->
-            <div class="mb-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
-                <div class="d-flex flex-wrap gap-2" role="group" aria-label="Filtros de categoría">
-                    <button type="button" class="btn btn-outline-primary active" data-category="Todas">
-                        <i class="bi bi-grid me-1"></i> Todas
+            <!-- Filtros por categoría -->
+            <div class="mb-3">
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                    <div class="d-flex flex-wrap gap-2" role="group" aria-label="Filtros de categoría">
+                        <button type="button" class="btn btn-outline-primary active" data-category="Todas">
+                            <i class="bi bi-grid me-1"></i> Todas
+                        </button>
+                        {% for cat in categories if cat != 'Todas' %}
+                        <button type="button" class="btn btn-outline-primary d-flex align-items-center" data-category="{{ cat }}">
+                            <i class="bi bi-tag me-1"></i> {{ cat }}
+                        </button>
+                        {% endfor %}
+                    </div>
+                    <button class="btn btn-primary px-4" data-bs-toggle="modal" data-bs-target="#nuevaPreguntaModal" style="min-width: 180px; font-weight: 600;">
+                        <i class="bi bi-plus-lg me-2"></i>Añadir pregunta
                     </button>
-                    {% for cat in categories if cat != 'Todas' %}
-                    <button type="button" class="btn btn-outline-primary d-flex align-items-center" data-category="{{ cat }}">
-                        <i class="bi bi-tag me-1"></i> {{ cat }}
-                    </button>
-                    {% endfor %}
                 </div>
-                <button class="btn btn-primary px-4" data-bs-toggle="modal" data-bs-target="#nuevaPreguntaModal" style="min-width: 180px; font-weight: 600;">
-                    <i class="bi bi-plus-lg me-2"></i>Añadir pregunta
-                </button>
+            </div>
+            
+            <!-- Filtros por frecuencia -->
+            <div class="mb-4">
+                <div class="d-flex flex-wrap gap-2" role="group" aria-label="Filtros de frecuencia">
+                    <button type="button" class="btn btn-outline-success active" data-frequency="todas">
+                        <i class="bi bi-clock me-1"></i> Todas las frecuencias
+                    </button>
+                    <button type="button" class="btn btn-outline-primary" data-frequency="diaria">
+                        <i class="bi bi-sun me-1"></i> Diarias
+                    </button>
+                    <button type="button" class="btn btn-outline-success" data-frequency="semanal">
+                        <i class="bi bi-calendar-week me-1"></i> Semanales
+                    </button>
+                    <button type="button" class="btn btn-outline-warning" data-frequency="mensual">
+                        <i class="bi bi-calendar-month me-1"></i> Mensuales
+                    </button>
                 </div>
                 <div class="mt-2">
-                    <small class="text-muted">Mostrando: <span id="categoria-actual">Todas las categorías</span></small>
+                    <small class="text-muted">
+                        Categoría: <span id="categoria-actual">Todas</span> | 
+                        Frecuencia: <span id="frecuencia-actual">Todas</span>
+                    </small>
+                </div>
             </div>
             <!-- Lista de preguntas -->
             <div id="preguntas-lista">
                 {% for question in questions %}
-                <div class="d-flex align-items-center justify-content-between py-3 border-bottom pregunta-item" data-category="{{ question.categoria }}" style="display: flex !important;">
+                <div class="d-flex align-items-center justify-content-between py-3 border-bottom pregunta-item" data-category="{{ question.categoria }}" data-frequency="{{ question.frecuencia or 'diaria' }}" style="display: flex !important;">
                     <div>
                         <div class="fw-semibold" style="font-size:1.1rem;">
                             {{ question.text }}
@@ -41,7 +64,24 @@
                                 <span style="color: red; font-weight: bold;" title="Obligatorio">*</span>
                             {% endif %}
                         </div>
-                        <div class="text-muted small">{{ question.categoria }}</div>
+                        <div class="text-muted small">
+                            <span class="me-2">{{ question.categoria }}</span>
+                            <span class="badge 
+                                {% if (question.frecuencia or 'diaria') == 'diaria' %}bg-primary
+                                {% elif question.frecuencia == 'semanal' %}bg-success
+                                {% elif question.frecuencia == 'mensual' %}bg-warning text-dark
+                                {% else %}bg-secondary{% endif %}" style="font-size: 0.7rem;">
+                                {% if (question.frecuencia or 'diaria') == 'diaria' %}
+                                    <i class="bi bi-sun me-1"></i>Diaria
+                                {% elif question.frecuencia == 'semanal' %}
+                                    <i class="bi bi-calendar-week me-1"></i>Semanal
+                                {% elif question.frecuencia == 'mensual' %}
+                                    <i class="bi bi-calendar-month me-1"></i>Mensual
+                                {% else %}
+                                    <i class="bi bi-clock me-1"></i>{{ question.frecuencia|title }}
+                                {% endif %}
+                            </span>
+                        </div>
                         {% if question.descripcion %}
                         <div class="text-muted small mt-1">{{ question.descripcion }}</div>
                         {% endif %}
@@ -72,6 +112,7 @@
                                             data-descripcion="{{ question.descripcion|e }}"
                                             data-type="{{ question.type }}"
                                             data-categoria="{{ question.categoria }}"
+                                            data-frecuencia="{{ question.frecuencia or 'diaria' }}"
                                             data-is_required="{{ question.is_required }}"
                                             data-active="{{ question.active }}"
                                             data-options='{{ options_value|tojson|safe }}'>
@@ -150,6 +191,15 @@
               <input type="text" class="form-control" id="nueva-categoria-input" name="nueva_categoria" placeholder="Escribe un nombre para una nueva categoría">
             </div>
           </div>
+          <div class="mb-3">
+            <label for="frecuencia" class="form-label fw-semibold">Frecuencia</label>
+            <select class="form-select" id="frecuencia" name="frecuencia" required>
+              <option value="diaria" selected>Diaria</option>
+              <option value="semanal">Semanal</option>
+              <option value="mensual">Mensual</option>
+            </select>
+            <div class="form-text">Selecciona con qué frecuencia se debe responder esta pregunta</div>
+          </div>
           <div class="mb-3" id="options-container" style="display: none;">
             <label for="options" class="form-label fw-semibold">Opciones (una por línea)</label>
             <textarea class="form-control" id="options" name="options" rows="3" placeholder="Opción 1\nOpción 2\nOpción 3"></textarea>
@@ -222,6 +272,15 @@
               <label for="nueva-categoria-edit" class="form-label fw-semibold">Nueva Categoría</label>
               <input type="text" class="form-control" id="nueva-categoria-edit" name="nueva_categoria" placeholder="Escribe un nombre para una nueva categoría">
             </div>
+          </div>
+          <div class="mb-3">
+            <label for="edit-frecuencia" class="form-label fw-semibold">Frecuencia</label>
+            <select class="form-select" id="edit-frecuencia" name="frecuencia" required>
+              <option value="diaria">Diaria</option>
+              <option value="semanal">Semanal</option>
+              <option value="mensual">Mensual</option>
+            </select>
+            <div class="form-text">Selecciona con qué frecuencia se debe responder esta pregunta</div>
           </div>
           <div class="mb-3" id="edit-options-container" style="display: none;">
             <label for="edit-options" class="form-label fw-semibold">Opciones (una por línea)</label>
@@ -306,6 +365,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 categoriaSelect.value = '';
                 nuevaCategoriaInput.value = questionData.categoria;
             }
+        }
+        
+        // Manejar frecuencia
+        const frecuenciaSelect = document.getElementById('edit-frecuencia');
+        if (frecuenciaSelect) {
+            frecuenciaSelect.value = questionData.frecuencia || 'diaria';
         }
         
         // Manejar opciones
@@ -661,23 +726,58 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <script>
-// Filtro de tabs por categoría (frontend)
+// Variables globales para filtros
+let currentCategory = 'Todas';
+let currentFrequency = 'todas';
+
+// Función para aplicar filtros combinados
+function applyFilters() {
+    document.querySelectorAll('.pregunta-item').forEach(item => {
+        const itemCategory = item.getAttribute('data-category');
+        const itemFrequency = item.getAttribute('data-frequency') || 'diaria';
+        
+        const categoryMatch = currentCategory === 'Todas' || itemCategory === currentCategory;
+        const frequencyMatch = currentFrequency === 'todas' || itemFrequency === currentFrequency;
+        
+        if (categoryMatch && frequencyMatch) {
+            item.style.display = '';
+        } else {
+            item.style.display = 'none';
+        }
+    });
+    
+    // Actualizar indicadores
+    document.getElementById('categoria-actual').textContent = currentCategory;
+    document.getElementById('frecuencia-actual').textContent = 
+        currentFrequency === 'todas' ? 'Todas' : 
+        currentFrequency === 'diaria' ? 'Diarias' :
+        currentFrequency === 'semanal' ? 'Semanales' :
+        currentFrequency === 'mensual' ? 'Mensuales' : currentFrequency;
+}
+
+// Filtro de tabs por categoría
 document.querySelectorAll('[data-category]').forEach(btn => {
     btn.addEventListener('click', function(e) {
-        // Solo cambiar la categoría si el clic NO fue en un botón de editar, eliminar ni dentro de .pregunta-item
         if (e.target.closest('.edit-question') || e.target.closest('.delete-question') || e.target.closest('.pregunta-item')) {
             return;
         }
         document.querySelectorAll('[data-category]').forEach(b => b.classList.remove('active'));
         this.classList.add('active');
-        const cat = this.getAttribute('data-category');
-        document.querySelectorAll('.pregunta-item').forEach(item => {
-            if (cat === 'Todas' || item.getAttribute('data-category') === cat) {
-                item.style.display = '';
-            } else {
-                item.style.display = 'none';
-            }
-        });
+        currentCategory = this.getAttribute('data-category');
+        applyFilters();
+    });
+});
+
+// Filtro de tabs por frecuencia
+document.querySelectorAll('[data-frequency]').forEach(btn => {
+    btn.addEventListener('click', function(e) {
+        if (e.target.closest('.edit-question') || e.target.closest('.delete-question') || e.target.closest('.pregunta-item')) {
+            return;
+        }
+        document.querySelectorAll('[data-frequency]').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        currentFrequency = this.getAttribute('data-frequency');
+        applyFilters();
     });
 });
 

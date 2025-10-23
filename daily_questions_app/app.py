@@ -412,7 +412,7 @@ class User(UserMixin):
         return None
 
 class Question:
-    def __init__(self, id, text, type, options, active, created_at, assigned_user_id=None, descripcion=None, is_required=0, categoria='General'):
+    def __init__(self, id, text, type, options, active, created_at, assigned_user_id=None, descripcion=None, is_required=0, categoria='General', frecuencia='diaria'):
         self.id = id
         self.text = text
         self.type = type
@@ -423,12 +423,13 @@ class Question:
         self.descripcion = descripcion
         self.is_required = is_required
         self.categoria = categoria
+        self.frecuencia = frecuencia
 
     @classmethod
     def get_all(cls):
         with get_db_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute('SELECT id, text, type, options, active, created_at, assigned_user_id, descripcion, is_required, categoria FROM question')
+            cursor.execute('SELECT id, text, type, options, active, created_at, assigned_user_id, descripcion, is_required, categoria, frecuencia FROM question')
             questions = [cls(*row) for row in cursor.fetchall()]
             return questions
 
@@ -437,7 +438,7 @@ class Question:
         with get_db_connection() as conn:
             cursor = conn.cursor()
             cursor.execute(
-                'SELECT id, text, type, options, active, created_at, assigned_user_id, descripcion, is_required, categoria '
+                'SELECT id, text, type, options, active, created_at, assigned_user_id, descripcion, is_required, categoria, frecuencia '
                 'FROM question WHERE assigned_user_id = ? AND active = 1',
                 (user_id,)
             )
@@ -446,14 +447,27 @@ class Question:
             return questions
 
     @classmethod
-    def create(cls, text, type, options=None, assigned_user_id=None, descripcion=None, is_required=0, categoria='General', active=1):
+    def get_by_user_and_frequency(cls, user_id, frecuencia):
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                'SELECT id, text, type, options, active, created_at, assigned_user_id, descripcion, is_required, categoria, frecuencia '
+                'FROM question WHERE assigned_user_id = ? AND active = 1 AND frecuencia = ?',
+                (user_id, frecuencia)
+            )
+            rows = cursor.fetchall()
+            questions = [cls(*row) for row in rows]
+            return questions
+
+    @classmethod
+    def create(cls, text, type, options=None, assigned_user_id=None, descripcion=None, is_required=0, categoria='General', frecuencia='diaria', active=1):
         try:
-            logger.info(f"[DEBUG] Ejecutando INSERT: text={text}, type={type}, options={options}, assigned_user_id={assigned_user_id}, descripcion={descripcion}, is_required={is_required}, categoria={categoria}, active={active}")
+            logger.info(f"[DEBUG] Ejecutando INSERT: text={text}, type={type}, options={options}, assigned_user_id={assigned_user_id}, descripcion={descripcion}, is_required={is_required}, categoria={categoria}, frecuencia={frecuencia}, active={active}")
             with get_db_connection() as conn:
                 cursor = conn.cursor()
                 cursor.execute(
-                    'INSERT INTO question (text, type, options, assigned_user_id, descripcion, is_required, categoria, active, created_at) OUTPUT INSERTED.id VALUES (?, ?, ?, ?, ?, ?, ?, ?, GETDATE())',
-                    (text, type, options, assigned_user_id, descripcion, is_required, categoria, active)
+                    'INSERT INTO question (text, type, options, assigned_user_id, descripcion, is_required, categoria, frecuencia, active, created_at) OUTPUT INSERTED.id VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, GETDATE())',
+                    (text, type, options, assigned_user_id, descripcion, is_required, categoria, frecuencia, active)
                 )
                 question_id = cursor.fetchone()[0]
                 conn.commit()
@@ -489,8 +503,30 @@ def load_user(user_id):
 @app.route('/')
 @login_required
 def index():
-    questions = Question.get_by_user(current_user.id)
-    return render_template('index.html', questions=questions, date=datetime.now())
+    # Obtener preguntas diarias (incluyendo las que tienen frecuencia NULL por compatibilidad)
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute(
+            'SELECT id, text, type, options, active, created_at, assigned_user_id, descripcion, is_required, categoria, frecuencia '
+            'FROM question WHERE assigned_user_id = ? AND active = 1 AND (frecuencia = ? OR frecuencia IS NULL)',
+            (current_user.id, 'diaria')
+        )
+        rows = cursor.fetchall()
+        questions = [Question(*row) for row in rows]
+    
+    return render_template('index.html', questions=questions, date=datetime.now(), tipo_pregunta='diaria')
+
+@app.route('/preguntas-semanales')
+@login_required
+def preguntas_semanales():
+    questions = Question.get_by_user_and_frequency(current_user.id, 'semanal')
+    return render_template('preguntas_semanales.html', questions=questions, date=datetime.now(), tipo_pregunta='semanal')
+
+@app.route('/preguntas-mensuales')
+@login_required
+def preguntas_mensuales():
+    questions = Question.get_by_user_and_frequency(current_user.id, 'mensual')
+    return render_template('preguntas_mensuales.html', questions=questions, date=datetime.now(), tipo_pregunta='mensual')
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -642,7 +678,7 @@ def admin():
                 record_count = count_result[0] if count_result else 0
                 
                 if record_count > 0:
-                    # Consulta completa para obtener preguntas
+                    # Consulta completa para obtener preguntas (activas primero, luego por fecha)
                     basic_query = """
                         SELECT 
                             [id], 
@@ -654,10 +690,11 @@ def admin():
                             [assigned_user_id],
                             [descripcion],
                             [is_required],
-                            [categoria]
+                            [categoria],
+                            [frecuencia]
                         FROM [question] q
                         WHERE q.[assigned_user_id] = ? 
-                        ORDER BY q.[created_at] DESC
+                        ORDER BY q.[active] DESC, q.[created_at] DESC
                     """
                         
                     # Ejecutar la consulta básica solo para el usuario actual
@@ -702,7 +739,8 @@ def admin():
                                 assigned_user_id=row[6],
                                 descripcion=row[7],
                                 is_required=row[8] if len(row) > 8 else 0,
-                                categoria=row[9] if len(row) > 9 else 'General'
+                                categoria=row[9] if len(row) > 9 else 'General',
+                                frecuencia=row[10] if len(row) > 10 and row[10] else 'diaria'
                             )
                             questions.append(question)
                         except Exception as e:
@@ -854,6 +892,7 @@ def add_question():
                 descripcion = data.get('descripcion', '').strip()
                 is_required = 1 if data.get('is_required') else 0
                 active = 1 if data.get('active', True) else 0
+                frecuencia = data.get('frecuencia', 'diaria').strip()
                 categoria = data.get('categoria_existente', '').strip()
                 nueva_categoria = data.get('nueva_categoria', '').strip()
                 if nueva_categoria:
@@ -877,6 +916,7 @@ def add_question():
             descripcion = request.form.get('descripcion', '').strip()
             is_required = 1 if request.form.get('is_required') == 'on' else 0
             active = 1 if request.form.get('active') == 'on' else 0
+            frecuencia = request.form.get('frecuencia', 'diaria').strip()
             categoria = request.form.get('categoria_existente', '').strip()
             nueva_categoria = request.form.get('nueva_categoria', '').strip()
             if nueva_categoria:
@@ -939,7 +979,7 @@ def add_question():
             flash(f'Error al procesar las opciones: {str(e)}', 'danger')
             return redirect(url_for('admin'))
         print(f"[DEBUG] Valores a insertar: text={text}, type={type}, options={processed_options}, assigned_user_id={assigned_user_id}, descripcion={descripcion}, is_required={is_required}, categoria={categoria}, active={active}")
-        logger.info(f"[DEBUG] Valores a insertar: text={text}, type={type}, options={processed_options}, assigned_user_id={assigned_user_id}, descripcion={descripcion}, is_required={is_required}, categoria={categoria}, active={active}")
+        logger.info(f"[DEBUG] Valores a insertar: text={text}, type={type}, options={processed_options}, assigned_user_id={assigned_user_id}, descripcion={descripcion}, is_required={is_required}, categoria={categoria}, frecuencia={frecuencia}, active={active}")
         try:
             question_id = Question.create(
                 text=text,
@@ -949,6 +989,7 @@ def add_question():
                 descripcion=descripcion,
                 is_required=is_required,
                 categoria=categoria,
+                frecuencia=frecuencia,
                 active=active
             )
             logger.info(f"[DEBUG] ID de pregunta insertada: {question_id} | Usuario: {assigned_user_id} | Texto: {text} | Activa: {active} | Categoria: {categoria}")
@@ -1112,6 +1153,51 @@ def submit_responses():
             'status': 'error', 
             'message': f'Error en el servidor: {str(e)}'
         }), 500
+
+def get_stats_by_frequency(user_id, frecuencia):
+    """Obtiene estadísticas específicas para una frecuencia de preguntas"""
+    try:
+        hoy = datetime.now()
+        today = hoy.strftime('%Y-%m-%d')
+        
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            
+            # Total preguntas activas de esta frecuencia
+            cursor.execute(
+                'SELECT COUNT(*) FROM question WHERE assigned_user_id = ? AND active = 1 AND frecuencia = ?', 
+                (user_id, frecuencia)
+            )
+            total_preguntas = cursor.fetchone()[0] or 0
+            
+            # Respuestas de hoy para esta frecuencia
+            cursor.execute('''
+                SELECT COUNT(DISTINCT r.question_id) FROM response r
+                JOIN question q ON r.question_id = q.id
+                WHERE q.assigned_user_id = ? AND q.active = 1 AND q.frecuencia = ?
+                AND CONVERT(DATE, r.date) = ?
+                AND (r.response IS NOT NULL AND LTRIM(RTRIM(r.response)) <> '')
+            ''', (user_id, frecuencia, today))
+            respondidas_hoy = cursor.fetchone()[0] or 0
+            
+            # Calcular completitud
+            completitud = int((respondidas_hoy / total_preguntas) * 100) if total_preguntas > 0 else 0
+            pendientes = total_preguntas - respondidas_hoy
+            
+            return {
+                'total_preguntas': total_preguntas,
+                'respondidas_hoy': respondidas_hoy,
+                'pendientes_hoy': pendientes,
+                'completitud': completitud
+            }
+    except Exception as e:
+        logger.error(f"Error obteniendo estadísticas para frecuencia {frecuencia}: {str(e)}")
+        return {
+            'total_preguntas': 0,
+            'respondidas_hoy': 0,
+            'pendientes_hoy': 0,
+            'completitud': 0
+        }
 
 @app.route('/stats')
 @login_required
@@ -1476,6 +1562,11 @@ def stats():
                     for row in cursor.fetchall()
                 ]
 
+                # Obtener estadísticas por frecuencia
+                stats_diarias = get_stats_by_frequency(current_user.id, 'diaria')
+                stats_semanales = get_stats_by_frequency(current_user.id, 'semanal')
+                stats_mensuales = get_stats_by_frequency(current_user.id, 'mensual')
+
                 return render_template(
                     'stats.html',
                     resumen_diario=resumen_diario,
@@ -1500,7 +1591,10 @@ def stats():
                     racha_zip=racha_zip,
                     habitos_semanal=habitos_semanal,
                     habitos_mensual=habitos_mensual,
-                    preguntas=preguntas
+                    preguntas=preguntas,
+                    stats_diarias=stats_diarias,
+                    stats_semanales=stats_semanales,
+                    stats_mensuales=stats_mensuales
                 )
     except Exception as e:
         logger.error(f"Error al cargar las estadísticas: {str(e)}")
@@ -1673,13 +1767,14 @@ def update_question(question_id):
             
             # Actualizar campos (sin modificar 'active')
             cursor.execute(
-                'UPDATE question SET text = ?, descripcion = ?, type = ?, categoria = ?, is_required = ?' + 
+                'UPDATE question SET text = ?, descripcion = ?, type = ?, categoria = ?, frecuencia = ?, is_required = ?' + 
                 (', options = ?' if options is not None else '') + ' WHERE id = ?',
                 (
                     data.get('text', ''),
                     data.get('descripcion', ''),
                     data.get('type', 'text'),
                     categoria,
+                    data.get('frecuencia', 'diaria'),
                     1 if data.get('is_required') in ['on', '1', 1, True, 'true'] else 0,
                     *([options] if options is not None else []),  # Agregar options solo si existe
                     question_id
@@ -2217,7 +2312,25 @@ def api_list_objetivos():
     primer_dia_anio = hoy.replace(month=1, day=1)
     with get_db_connection() as conn:
         cursor = conn.cursor()
-        cursor.execute('''SELECT id, titulo, descripcion, prioridad, categoria, completado, fecha_creacion, fecha_completado, objetivo_padre_id, es_padre, estado, fecha_inicio, fecha_fin, fecha_proyeccion_comienzo, horas_estimadas, dificultad, etiquetas, recompensa, notas_adicionales, recurrente, frecuencia, orden FROM objetivos WHERE user_id = ? ORDER BY orden ASC, fecha_creacion DESC''', (current_user.id,))
+        # Consulta con ordenamiento que pone solo los completados al final
+        hoy = datetime.now().date()
+        cursor.execute('''
+            SELECT o.id, o.titulo, o.descripcion, o.prioridad, o.categoria, o.completado, o.fecha_creacion, o.fecha_completado, 
+                   o.objetivo_padre_id, o.es_padre, o.estado, o.fecha_inicio, o.fecha_fin, o.fecha_proyeccion_comienzo, 
+                   o.horas_estimadas, o.dificultad, o.etiquetas, o.recompensa, o.notas_adicionales, o.recurrente, o.frecuencia, o.orden,
+                   CASE WHEN os.objetivo_id IS NOT NULL THEN 1 ELSE 0 END as saltado_hoy
+            FROM objetivos o
+            LEFT JOIN objetivos_saltados os ON o.id = os.objetivo_id AND os.user_id = o.user_id AND os.fecha_saltada = ?
+            WHERE o.user_id = ? 
+            ORDER BY 
+                CASE 
+                    WHEN o.completado = 1 THEN 2
+                    WHEN os.objetivo_id IS NOT NULL THEN 1
+                    ELSE 0
+                END ASC,
+                o.orden ASC, 
+                o.fecha_creacion DESC
+        ''', (hoy, current_user.id))
         rows = cursor.fetchall()
         objetivos = []
         for row in rows:
@@ -2243,12 +2356,9 @@ def api_list_objetivos():
                 'notas_adicionales': row[18],
                 'recurrente': bool(row[19]) if len(row) > 19 else False,
                 'frecuencia': row[20] if len(row) > 20 else None,
-                'orden': row[21] if len(row) > 21 else 0
+                'orden': row[21] if len(row) > 21 else 0,
+                'saltado_hoy': bool(row[22]) if len(row) > 22 else False
             }
-            # Marcar si el objetivo recurrente fue saltado hoy
-            if obj['recurrente']:
-                cursor.execute('''SELECT 1 FROM objetivos_saltados WHERE objetivo_id = ? AND user_id = ? AND fecha_saltada = ?''', (obj['id'], current_user.id, hoy))
-                obj['saltado_hoy'] = bool(cursor.fetchone())
             # Verificar si el objetivo está vencido
             vencido = es_objetivo_vencido(obj, hoy)
             if vencido:
@@ -2465,6 +2575,65 @@ def api_verificar_proyecciones():
     try:
         verificar_proyecciones_comienzo()
         return jsonify({'status': 'success', 'message': 'Verificación de proyecciones completada'})
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+@app.route('/api/reset-objetivos-diarios', methods=['POST'])
+@login_required
+def api_reset_objetivos_diarios():
+    """
+    Endpoint para ejecutar manualmente el reset de objetivos diarios recurrentes
+    """
+    try:
+        reset_objetivos_diarios_recurrentes()
+        return jsonify({'status': 'success', 'message': 'Reset de objetivos diarios completado'})
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+@app.route('/api/test-orden', methods=['GET'])
+@login_required
+def api_test_orden():
+    """
+    Endpoint de prueba para verificar el orden de objetivos
+    """
+    try:
+        from datetime import datetime
+        hoy = datetime.now().date()
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('''
+                SELECT o.id, o.titulo, o.completado, o.orden,
+                       CASE WHEN os.objetivo_id IS NOT NULL THEN 1 ELSE 0 END as saltado_hoy
+                FROM objetivos o
+                LEFT JOIN objetivos_saltados os ON o.id = os.objetivo_id AND os.user_id = o.user_id AND os.fecha_saltada = ?
+                WHERE o.user_id = ? 
+                ORDER BY 
+                    o.completado ASC,
+                    o.orden ASC, 
+                    o.fecha_creacion DESC
+            ''', (hoy, current_user.id))
+            
+            objetivos = cursor.fetchall()
+            
+            # Convertir a formato JSON
+            result = []
+            for obj in objetivos:
+                result.append({
+                    'id': obj[0],
+                    'titulo': obj[1][:50] + '...' if len(obj[1]) > 50 else obj[1],
+                    'completado': bool(obj[2]),
+                    'orden': obj[3],
+                    'saltado_hoy': bool(obj[4])
+                })
+            
+            return jsonify({
+                'status': 'success',
+                'total': len(result),
+                'primeros_10': result[:10],
+                'ultimos_10': result[-10:],
+                'completados_total': sum(1 for obj in objetivos if obj[2]),
+                'mensaje': 'Si ves completados en primeros_10, hay un problema. Si están en ultimos_10, está funcionando.'
+            })
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
@@ -2754,15 +2923,49 @@ def api_objetivos_historico():
         logger.error(f"Error en objetivos_historico: {str(e)}")
         return jsonify({'error': 'Error al obtener histórico de objetivos'}), 500
 
+def reset_objetivos_diarios_recurrentes():
+    """
+    Desmarca automáticamente todos los objetivos diarios recurrentes al inicio de cada día.
+    Esta función se ejecuta automáticamente a medianoche.
+    """
+    try:
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            
+            # Desmarcar todos los objetivos diarios recurrentes que estén completados
+            cursor.execute("""
+                UPDATE objetivos 
+                SET completado = 0, fecha_completado = NULL
+                WHERE LOWER(COALESCE(categoria,'')) = 'diario'
+                AND COALESCE(recurrente, 0) = 1
+                AND completado = 1
+                AND COALESCE(estado,'') <> 'histórico'
+            """)
+            
+            objetivos_desmarcados = cursor.rowcount
+            conn.commit()
+            
+            logger.info(f"Reset automático completado: {objetivos_desmarcados} objetivos diarios recurrentes desmarcados.")
+            
+    except Exception as e:
+        logger.error(f"Error en reset automático de objetivos diarios: {str(e)}")
+
 # --- Scheduler para notificaciones automáticas ---
 def start_scheduler():
     from datetime import datetime
     scheduler = BackgroundScheduler(timezone="America/Bogota")
-    # Ejecutar a las 00:00 y 12:00 todos los días
-    scheduler.add_job(verificar_proyecciones_comienzo, 'cron', hour=0, minute=0, id='notificacion_medianoche')
+    
+    # Ejecutar reset de objetivos diarios a las 00:00 todos los días
+    scheduler.add_job(reset_objetivos_diarios_recurrentes, 'cron', hour=0, minute=0, id='reset_objetivos_diarios')
+    
+    # Ejecutar verificación de proyecciones a las 00:00 y 12:00 todos los días
+    scheduler.add_job(verificar_proyecciones_comienzo, 'cron', hour=0, minute=1, id='notificacion_medianoche')
     scheduler.add_job(verificar_proyecciones_comienzo, 'cron', hour=12, minute=0, id='notificacion_mediodia')
+    
     scheduler.start()
-    print("[Scheduler] Notificaciones programadas a las 00:00 y 12:00 todos los días.")
+    print("[Scheduler] Tareas programadas:")
+    print("  - Reset objetivos diarios recurrentes: 00:00 todos los días")
+    print("  - Notificaciones de proyecciones: 00:01 y 12:00 todos los días")
 
 @app.route('/api/objetivos/<int:objetivo_id>/saltar', methods=['POST'])
 @login_required
@@ -3101,7 +3304,14 @@ def api_update_categoria(categoria_id):
                 SET nombre = ?
                 WHERE id = ? AND user_id = ?
             ''', (nombre, categoria_id, current_user.id))
-            
+
+            # Sincronizar el campo 'categoria' en frases
+            cursor.execute('''
+                UPDATE frases
+                SET categoria = ?
+                WHERE categoria_id = ? AND user_id = ?
+            ''', (nombre, categoria_id, current_user.id))
+
             conn.commit()
             
             return jsonify({'status': 'success'})
@@ -3276,7 +3486,14 @@ def api_update_subcategoria(subcategoria_id):
                 SET nombre = ?, categoria_id = ?
                 WHERE id = ? AND user_id = ?
             ''', (nombre, categoria_id, subcategoria_id, current_user.id))
-            
+
+            # Sincronizar el campo 'subcategoria' en frases
+            cursor.execute('''
+                UPDATE frases
+                SET subcategoria = ?
+                WHERE subcategoria_id = ? AND user_id = ?
+            ''', (nombre, subcategoria_id, current_user.id))
+
             conn.commit()
             
             return jsonify({'status': 'success'})
@@ -3751,6 +3968,166 @@ def api_repasar_frases_filtradas():
     except Exception as e:
         logger.error(f"Error al repasar frases filtradas: {str(e)}")
         return jsonify({'error': 'Error al repasar frases'}), 500
+
+
+@app.route('/api/reports/frecuencia_uso', methods=['GET'])
+@login_required
+def api_reports_frecuencia_uso():
+    """Report: frases más/menos usadas y tendencia de uso por día.
+    Query params: categoria, subcategoria, days (default 30), top_n (default 10)
+    """
+    try:
+        categoria = request.args.get('categoria')
+        subcategoria = request.args.get('subcategoria')
+        days = int(request.args.get('days') or 30)
+        top_n = int(request.args.get('top_n') or 10)
+        desde = request.args.get('desde')
+        hasta = request.args.get('hasta')
+        include_inactivos = str(request.args.get('include_inactivos') or '').lower() in ('1','true','yes')
+
+        where_clauses = ['f.user_id = ?']
+        params = [current_user.id]
+        if not include_inactivos:
+            where_clauses.append('ISNULL(f.activa,1) = 1')
+        if categoria:
+            where_clauses.append('LOWER(f.categoria) = LOWER(?)')
+            params.append(categoria)
+        if subcategoria:
+            where_clauses.append('LOWER(f.subcategoria) = LOWER(?)')
+            params.append(subcategoria)
+
+        where_sql = ' AND '.join(where_clauses)
+
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+
+            # Top más usadas por total_repasos (aplicar rango de fechas a ultima_vez si se especifica)
+            params_top = params.copy()
+            where_top = where_sql
+            if desde and hasta:
+                where_top = where_top + ' AND CAST(ultima_vez AS DATE) BETWEEN ? AND ?'
+                params_top = params_top + [desde, hasta]
+
+            cursor.execute(f'''
+                SELECT TOP ({top_n}) f.id, f.texto, f.autor, ISNULL(f.total_repasos,0) as total_repasos
+                FROM frases f
+                WHERE {where_top}
+                ORDER BY ISNULL(f.total_repasos,0) DESC, f.fecha_creacion DESC
+            ''', params_top)
+            top_mas = [{'id': r[0], 'texto': r[1], 'autor': r[2], 'total_repasos': int(r[3])} for r in cursor.fetchall()]
+
+            # Top menos usadas
+            params_top2 = params.copy()
+            where_top2 = where_sql
+            if desde and hasta:
+                where_top2 = where_top2 + ' AND CAST(ultima_vez AS DATE) BETWEEN ? AND ?'
+                params_top2 = params_top2 + [desde, hasta]
+            cursor.execute(f'''
+                SELECT TOP ({top_n}) f.id, f.texto, f.autor, ISNULL(f.total_repasos,0) as total_repasos
+                FROM frases f
+                WHERE {where_top2}
+                ORDER BY ISNULL(f.total_repasos,0) ASC, f.fecha_creacion ASC
+            ''', params_top2)
+            top_menos = [{'id': r[0], 'texto': r[1], 'autor': r[2], 'total_repasos': int(r[3])} for r in cursor.fetchall()]
+
+            # Tendencia de uso: contar frases cuya ultima_vez cae dentro del rango si se especifica, o últimos N días
+            if desde and hasta:
+                cursor.execute(f'''
+                    SELECT CAST(ultima_vez AS DATE) AS dia, COUNT(*) as cnt
+                    FROM frases f
+                    WHERE {where_sql} AND ultima_vez IS NOT NULL AND CAST(ultima_vez AS DATE) BETWEEN ? AND ?
+                    GROUP BY CAST(ultima_vez AS DATE)
+                    ORDER BY dia ASC
+                ''', params + [desde, hasta])
+            else:
+                cursor.execute(f'''
+                    SELECT CAST(ultima_vez AS DATE) AS dia, COUNT(*) as cnt
+                    FROM frases f
+                    WHERE {where_sql} AND ultima_vez IS NOT NULL AND ultima_vez >= DATEADD(day, -?, GETDATE())
+                    GROUP BY CAST(ultima_vez AS DATE)
+                    ORDER BY dia ASC
+                ''', params + [days])
+            trend_rows = cursor.fetchall()
+            tendencia = [{'dia': str(r[0]), 'count': int(r[1])} for r in trend_rows]
+
+        return jsonify({'top_mas': top_mas, 'top_menos': top_menos, 'tendencia': tendencia})
+    except Exception as e:
+        logger.error(f"Error en reporte frecuencia_uso: {str(e)}")
+        return jsonify({'error': 'Error al obtener reporte'}), 500
+
+
+@app.route('/api/reports/tendencias', methods=['GET'])
+@login_required
+def api_reports_tendencias():
+    """Report: frases en tendencia (actividad reciente) y en declive.
+    Heurística usada por limitación de esquema: se usa 'ultima_vez' y 'total_repasos'.
+    Query params: days_recent (default 7), days_decline (default 30), top_n
+    """
+    try:
+        days_recent = int(request.args.get('days_recent') or 7)
+        days_decline = int(request.args.get('days_decline') or 30)
+        top_n = int(request.args.get('top_n') or 20)
+        desde = request.args.get('desde')
+        hasta = request.args.get('hasta')
+        include_inactivos = str(request.args.get('include_inactivos') or '').lower() in ('1','true','yes')
+
+        where_base = 'user_id = ?'
+        params_base = [current_user.id]
+        if not include_inactivos:
+            where_base = where_base + ' AND ISNULL(activa,1) = 1'
+
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+
+            # Frases en tendencia: tuvieron su ultima_vez en los últimos days_recent días o dentro de rango
+            if desde and hasta:
+                cursor.execute('''
+                    SELECT TOP (?) id, texto, autor, ISNULL(total_repasos,0) as total_repasos, ultima_vez
+                    FROM frases
+                    WHERE %s AND ultima_vez IS NOT NULL AND CAST(ultima_vez AS DATE) BETWEEN ? AND ?
+                    ORDER BY ISNULL(total_repasos,0) DESC, ultima_vez DESC
+                ''' % where_base, (top_n, current_user.id, desde, hasta))
+            else:
+                cursor.execute('''
+                    SELECT TOP (?) id, texto, autor, ISNULL(total_repasos,0) as total_repasos, ultima_vez
+                    FROM frases
+                    WHERE %s AND ultima_vez IS NOT NULL AND ultima_vez >= DATEADD(day, -?, GETDATE())
+                    ORDER BY ISNULL(total_repasos,0) DESC, ultima_vez DESC
+                ''' % where_base, (top_n, current_user.id, days_recent))
+            en_tendencia = [{'id': r[0], 'texto': r[1], 'autor': r[2], 'total_repasos': int(r[3]), 'ultima_vez': r[4].isoformat() if r[4] else None} for r in cursor.fetchall()]
+
+            # Frases en declive: no han sido repasadas en los últimos days_decline días o fuera del rango
+            if desde and hasta:
+                cursor.execute('''
+                    SELECT TOP (?) id, texto, autor, ISNULL(total_repasos,0) as total_repasos, ultima_vez
+                    FROM frases
+                    WHERE %s AND (ultima_vez IS NULL OR CAST(ultima_vez AS DATE) < ?)
+                    ORDER BY COALESCE(ultima_vez, '1900-01-01') ASC
+                ''' % where_base, (top_n, current_user.id, desde))
+            else:
+                cursor.execute('''
+                    SELECT TOP (?) id, texto, autor, ISNULL(total_repasos,0) as total_repasos, ultima_vez
+                    FROM frases
+                    WHERE %s AND (ultima_vez IS NULL OR ultima_vez < DATEADD(day, -?, GETDATE()))
+                    ORDER BY COALESCE(ultima_vez, '1900-01-01') ASC
+                ''' % where_base, (top_n, current_user.id, days_decline))
+            en_declive = [{'id': r[0], 'texto': r[1], 'autor': r[2], 'total_repasos': int(r[3]), 'ultima_vez': r[4].isoformat() if r[4] else None} for r in cursor.fetchall()]
+
+            # Patrones por día de la semana (basado en ultima_vez)
+            cursor.execute(f'''
+                SELECT DATEPART(weekday, ultima_vez) as weekday, COUNT(*) as cnt
+                FROM frases
+                WHERE {where_base} AND ultima_vez IS NOT NULL
+                GROUP BY DATEPART(weekday, ultima_vez)
+                ORDER BY weekday
+            ''', tuple(params_base))
+            rows = cursor.fetchall()
+            patrones = [{'weekday': int(r[0]), 'count': int(r[1])} for r in rows]
+
+        return jsonify({'en_tendencia': en_tendencia, 'en_declive': en_declive, 'patrones': patrones})
+    except Exception as e:
+        logger.error(f"Error en reporte tendencias: {str(e)}")
+        return jsonify({'error': 'Error al obtener reporte'}), 500
 
 def _ensure_subcategoria_schema(cursor):
     """Asegura que exista la columna subcategoria en la tabla frases y migra datos iniciales.

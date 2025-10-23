@@ -421,6 +421,15 @@ body {
     text-align: left;
 }
 
+/* Estilos para informes */
+#report-top-mas li, #report-top-menos li, #report-en-tendencia li, #report-en-declive li {
+    word-break: break-word;
+}
+#report-top-mas .badge, #report-top-menos .badge {
+    min-width: 2.2rem;
+    text-align: center;
+}
+
 body,
 .main-container,
 .card,

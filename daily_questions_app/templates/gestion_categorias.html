@@ -22,7 +22,6 @@
                 </div>
                 <div class="card-body">
                     <div id="lista-categorias" class="list-group">
-                        <!-- Las categorías se cargarán aquí dinámicamente -->
                         <div class="text-center py-4 text-muted">
                             <i class="bi bi-inbox" style="font-size: 2rem;"></i>
                             <p class="mt-2 mb-0">No hay categorías creadas</p>
@@ -52,140 +51,164 @@
             </div>
         </div>
     </div>
-</div>
 
-<!-- Modal Nueva Categoría -->
-<div class="modal fade" id="modalNuevaCategoria" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Nueva Categoría</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <form id="form-nueva-categoria">
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label for="nombre-categoria" class="form-label">Nombre de la categoría</label>
-                        <input type="text" class="form-control" id="nombre-categoria" required 
-                               placeholder="Ej: Motivación, Productividad, Salud...">
+    <!-- Sección Informes simplificada (selector + export) -->
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Informes</h5>
+            <button class="btn btn-sm btn-outline-primary" id="btn-exportar-csv">Exportar CSV</button>
+        </div>
+        <div class="card-body">
+            <div class="row g-2 align-items-end">
+                <div class="col-auto">
+                    <label class="form-label small mb-1">Tipo de informe</label>
+                    <select id="report-tipo" class="form-select form-select-sm">
+                        <option value="frases">Frases</option>
+                    </select>
+                </div>
+                <div class="col-auto">
+                    <label class="form-label small mb-1">Desde</label>
+                    <input type="date" id="report-desde" class="form-control form-control-sm">
+                </div>
+                <div class="col-auto">
+                    <label class="form-label small mb-1">Hasta</label>
+                    <input type="date" id="report-hasta" class="form-control form-control-sm">
+                </div>
+                <div class="col-auto">
+                    <div class="form-check mb-1">
+                        <input class="form-check-input" type="checkbox" id="report-include-inactivos">
+                        <label class="form-check-label small" for="report-include-inactivos">Incluir inactivos</label>
                     </div>
                 </div>
+            </div>
+            <div class="mt-3 small text-muted">Selecciona el tipo de informe y haz clic en Exportar CSV.</div>
+        </div>
+    </div>
+
+    <!-- Modales necesarios -->
+    <!-- Modal Nueva Categoría -->
+    <div class="modal fade" id="modalNuevaCategoria" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Nueva Categoría</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="form-nueva-categoria">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="nombre-categoria" class="form-label">Nombre de la categoría</label>
+                            <input type="text" class="form-control" id="nombre-categoria" required placeholder="Ej: Motivación">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Guardar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Editar Categoría -->
+    <div class="modal fade" id="modalEditarCategoria" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Editar Categoría</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="form-editar-categoria">
+                    <input type="hidden" id="editar-categoria-id">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="editar-nombre-categoria" class="form-label">Nombre de la categoría</label>
+                            <input type="text" class="form-control" id="editar-nombre-categoria" required>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-danger me-auto" onclick="confirmarEliminarCategoria()"><i class="bi bi-trash"></i> Eliminar</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Nueva Subcategoría -->
+    <div class="modal fade" id="modalNuevaSubcategoria" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Nueva Subcategoría</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="form-nueva-subcategoria">
+                    <input type="hidden" id="categoria-padre-id">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="nombre-subcategoria" class="form-label">Nombre de la subcategoría</label>
+                            <input type="text" class="form-control" id="nombre-subcategoria" required>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Guardar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Editar Subcategoría -->
+    <div class="modal fade" id="modalEditarSubcategoria" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Editar Subcategoría</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="form-editar-subcategoria">
+                    <input type="hidden" id="editar-subcategoria-id">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="editar-nombre-subcategoria" class="form-label">Nombre de la subcategoría</label>
+                            <input type="text" class="form-control" id="editar-nombre-subcategoria" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editar-categoria-subcategoria" class="form-label">Categoría</label>
+                            <select class="form-select" id="editar-categoria-subcategoria" required></select>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-danger me-auto" onclick="confirmarEliminarSubcategoria()"><i class="bi bi-trash"></i> Eliminar</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Confirmación -->
+    <div class="modal fade" id="modalConfirmacion" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalConfirmacionTitulo">Confirmar acción</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="modalConfirmacionCuerpo">¿Estás seguro de que deseas realizar esta acción?</div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-primary">Guardar</button>
+                    <button type="button" class="btn btn-danger" id="btn-confirmar-accion">Confirmar</button>
                 </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-<!-- Modal Editar Categoría -->
-<div class="modal fade" id="modalEditarCategoria" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Editar Categoría</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <form id="form-editar-categoria">
-                <input type="hidden" id="editar-categoria-id">
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label for="editar-nombre-categoria" class="form-label">Nombre de la categoría</label>
-                        <input type="text" class="form-control" id="editar-nombre-categoria" required>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-danger me-auto" onclick="confirmarEliminarCategoria()">
-                        <i class="bi bi-trash"></i> Eliminar
-                    </button>
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-primary">Guardar Cambios</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-<!-- Modal Nueva Subcategoría -->
-<div class="modal fade" id="modalNuevaSubcategoria" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Nueva Subcategoría</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <form id="form-nueva-subcategoria">
-                <input type="hidden" id="categoria-padre-id">
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label for="nombre-subcategoria" class="form-label">Nombre de la subcategoría</label>
-                        <input type="text" class="form-control" id="nombre-subcategoria" required 
-                               placeholder="Ej: Mañana, Tarde, Noche...">
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-primary">Guardar</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-<!-- Modal Editar Subcategoría -->
-<div class="modal fade" id="modalEditarSubcategoria" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Editar Subcategoría</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <form id="form-editar-subcategoria">
-                <input type="hidden" id="editar-subcategoria-id">
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label for="editar-nombre-subcategoria" class="form-label">Nombre de la subcategoría</label>
-                        <input type="text" class="form-control" id="editar-nombre-subcategoria" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="editar-categoria-subcategoria" class="form-label">Categoría</label>
-                        <select class="form-select" id="editar-categoria-subcategoria" required>
-                            <!-- Las categorías se cargarán aquí dinámicamente -->
-                        </select>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-danger me-auto" onclick="confirmarEliminarSubcategoria()">
-                        <i class="bi bi-trash"></i> Eliminar
-                    </button>
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-primary">Guardar Cambios</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-<!-- Modal de Confirmación -->
-<div class="modal fade" id="modalConfirmacion" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="modalConfirmacionTitulo">Confirmar acción</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body" id="modalConfirmacionCuerpo">
-                ¿Estás seguro de que deseas realizar esta acción?
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-danger" id="btn-confirmar-accion">Confirmar</button>
             </div>
         </div>
     </div>
-</div>
 
+</div>
 {% endblock %}
 
 {% block scripts %}
@@ -876,3 +899,165 @@ document.getElementById('btn-nueva-subcategoria').addEventListener('click', func
 });
 </script>
 {% endblock %}
+
+
+<!-- Scripts de informes -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+async function cargarInformes(categoria, subcategoria){
+    try{
+        const params = new URLSearchParams();
+        if(categoria) params.set('categoria', categoria);
+        if(subcategoria) params.set('subcategoria', subcategoria);
+        params.set('top_n', '10');
+
+        // Leer controles de rango e incluir inactivos
+        const desdeVal = document.getElementById('report-desde') ? document.getElementById('report-desde').value : null;
+        const hastaVal = document.getElementById('report-hasta') ? document.getElementById('report-hasta').value : null;
+        const includeInact = document.getElementById('report-include-inactivos') ? document.getElementById('report-include-inactivos').checked : false;
+        if(desdeVal) params.set('desde', desdeVal);
+        if(hastaVal) params.set('hasta', hastaVal);
+        if(includeInact) params.set('include_inactivos', '1');
+
+        // Si no se especifica rango, usar últimos 30 días para tendencia
+        if(!desdeVal && !hastaVal) params.set('days', '30');
+
+        const res = await fetch('/api/reports/frecuencia_uso?' + params.toString());
+        if(!res.ok) throw new Error('No autorizado o error en servidor');
+        const data = await res.json();
+
+    const topMasEl = document.getElementById('report-top-mas');
+    const topMenosEl = document.getElementById('report-top-menos');
+    const reportLoading = document.getElementById('report-loading');
+    const reportError = document.getElementById('report-error');
+    reportError.style.display = 'none';
+    reportError.textContent = '';
+    reportLoading.style.display = 'inline-block';
+    topMasEl.innerHTML = '';
+    topMenosEl.innerHTML = '';
+
+        const renderList = (container, items, badgeClass) => {
+            container.innerHTML = '';
+            const maxPreview = 10;
+            const mostrar = items.slice(0, maxPreview);
+            mostrar.forEach(item => {
+                const li = document.createElement('li');
+                li.className = 'list-group-item d-flex justify-content-between align-items-start';
+                const texto = item.texto.length > 160 ? item.texto.substring(0,160) + '…' : item.texto;
+                li.innerHTML = `<div title="${escapeHtml(item.texto)}">${escapeHtml(texto)}<br><small class="text-muted">${escapeHtml(item.autor || '')}</small></div><span class="badge ${badgeClass} rounded-pill">${item.total_repasos}</span>`;
+                container.appendChild(li);
+            });
+            if(items.length > maxPreview){
+                const li = document.createElement('li');
+                li.className = 'list-group-item text-center';
+                const moreBtn = document.createElement('button');
+                moreBtn.className = 'btn btn-sm btn-link';
+                moreBtn.textContent = `Ver ${items.length - maxPreview} más`;
+                moreBtn.addEventListener('click', () => {
+                    container.innerHTML = '';
+                    items.forEach(item => {
+                        const li2 = document.createElement('li');
+                        li2.className = 'list-group-item d-flex justify-content-between align-items-start';
+                        li2.innerHTML = `<div>${escapeHtml(item.texto)}<br><small class="text-muted">${escapeHtml(item.autor || '')}</small></div><span class="badge ${badgeClass} rounded-pill">${item.total_repasos}</span>`;
+                        container.appendChild(li2);
+                    });
+                });
+                li.appendChild(moreBtn);
+                container.appendChild(li);
+            }
+        };
+
+        renderList(topMasEl, data.top_mas || [], 'bg-primary');
+        renderList(topMenosEl, data.top_menos || [], 'bg-secondary');
+
+        // Dibujar tendencia con Chart.js
+        const ctx = document.getElementById('chart-tendencia').getContext('2d');
+        const labels = (data.tendencia || []).map(d => d.dia);
+        const counts = (data.tendencia || []).map(d => d.count);
+        if(window._chartTendencia) window._chartTendencia.destroy();
+        window._chartTendencia = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Repasos por día',
+                    data: counts,
+                    borderColor: 'rgba(54,162,235,1)',
+                    backgroundColor: 'rgba(54,162,235,0.12)',
+                    pointRadius: 3,
+                    tension: 0.15
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: { grid: { display: false } },
+                    y: { beginAtZero: true }
+                },
+                plugins: { legend: { display: false } }
+            }
+        });
+
+    // Cargar tendencias y declive con mismos parámetros
+    const res2 = await fetch('/api/reports/tendencias?' + params.toString());
+        const dt2 = await res2.json();
+        const enTendEl = document.getElementById('report-en-tendencia');
+        const enDeclEl = document.getElementById('report-en-declive');
+        enTendEl.innerHTML = '';
+        enDeclEl.innerHTML = '';
+
+        const renderSimple = (container, items) => {
+            container.innerHTML = '';
+            if(!items || items.length === 0){
+                const li = document.createElement('li'); li.className = 'list-group-item text-muted'; li.textContent = 'Sin resultados'; container.appendChild(li); return;
+            }
+            items.forEach(item => {
+                const li = document.createElement('li');
+                li.className = 'list-group-item';
+                li.innerHTML = `<div>${escapeHtml(item.texto)}</div><small class="text-muted">${item.total_repasos} repasos • ${item.ultima_vez ? item.ultima_vez.substring(0,10) : 'nunca'}</small>`;
+                container.appendChild(li);
+            });
+        };
+
+        renderSimple(enTendEl, dt2.en_tendencia || []);
+        renderSimple(enDeclEl, dt2.en_declive || []);
+
+        reportLoading.style.display = 'none';
+
+    }catch(err){
+        console.error('Error cargando informes', err);
+    }
+}
+
+function escapeHtml(text){
+    if(!text) return '';
+    return text.replace(/[&<>"]+/g, function(s){
+        return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[s];
+    });
+}
+
+// Hook: cuando se carguen las categorías, recargar informes con la categoría seleccionada
+document.addEventListener('DOMContentLoaded', function(){
+    // Inicialmente cargar con ninguna categoría
+    cargarInformes();
+    // Si existe select o mecanismos para filtrar por categoria en la UI, añadir listeners
+    const listaCategorias = document.getElementById('lista-categorias');
+    if(listaCategorias){
+        listaCategorias.addEventListener('click', function(e){
+            const target = e.target.closest('[data-categoria]');
+            if(target){
+                const catName = target.getAttribute('data-categoria');
+                cargarInformes(catName, null);
+            }
+        });
+    }
+
+    const btnRef = document.getElementById('btn-refrescar-informes-top');
+    if(btnRef){
+        btnRef.addEventListener('click', function(){
+            cargarInformes(categoriaSeleccionada, subcategoriaSeleccionada);
+        });
+    }
+});
+</script>

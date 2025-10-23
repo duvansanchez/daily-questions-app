@@ -79,6 +79,57 @@
                     </div>
                 </div>
             </div>
+            
+            <!-- Estadísticas por Frecuencia -->
+            <h5 class="fw-bold mb-3">Preguntas por Frecuencia</h5>
+            <div class="row g-3 mb-4">
+                <div class="col-md-4">
+                    <div class="card shadow-sm border-0 h-100">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center mb-2">
+                                <span class="badge bg-primary me-2"><i class="bi bi-sun"></i></span>
+                                <span class="fw-bold">Diarias</span>
+                            </div>
+                            <h2 class="fw-bold text-primary mb-1">{{ stats_diarias.respondidas_hoy }}/{{ stats_diarias.total_preguntas }}</h2>
+                            <small class="text-muted d-block">Completitud: {{ stats_diarias.completitud }}%</small>
+                            <div class="progress mt-2" style="height: 6px;">
+                                <div class="progress-bar bg-primary" role="progressbar" style="width: {{ stats_diarias.completitud }}%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card shadow-sm border-0 h-100">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center mb-2">
+                                <span class="badge bg-success me-2"><i class="bi bi-calendar-week"></i></span>
+                                <span class="fw-bold">Semanales</span>
+                            </div>
+                            <h2 class="fw-bold text-success mb-1">{{ stats_semanales.respondidas_hoy }}/{{ stats_semanales.total_preguntas }}</h2>
+                            <small class="text-muted d-block">Completitud: {{ stats_semanales.completitud }}%</small>
+                            <div class="progress mt-2" style="height: 6px;">
+                                <div class="progress-bar bg-success" role="progressbar" style="width: {{ stats_semanales.completitud }}%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card shadow-sm border-0 h-100">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center mb-2">
+                                <span class="badge bg-warning text-dark me-2"><i class="bi bi-calendar-month"></i></span>
+                                <span class="fw-bold">Mensuales</span>
+                            </div>
+                            <h2 class="fw-bold text-warning mb-1">{{ stats_mensuales.respondidas_hoy }}/{{ stats_mensuales.total_preguntas }}</h2>
+                            <small class="text-muted d-block">Completitud: {{ stats_mensuales.completitud }}%</small>
+                            <div class="progress mt-2" style="height: 6px;">
+                                <div class="progress-bar bg-warning" role="progressbar" style="width: {{ stats_mensuales.completitud }}%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
             <!-- Resumen Diario -->
             <h5 class="fw-bold mb-3">Resumen Diario</h5>
             <div class="row g-3 mb-4">
