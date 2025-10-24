@@ -691,16 +691,23 @@ class Question:
 
     @classmethod
     def get_by_user_and_frequency(cls, user_id, frecuencia):
-        with get_db_connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute(
-                'SELECT id, text, type, options, active, created_at, assigned_user_id, descripcion, is_required, categoria, frecuencia '
-                'FROM question WHERE assigned_user_id = ? AND active = 1 AND frecuencia = ?',
-                (user_id, frecuencia)
-            )
-            rows = cursor.fetchall()
-            questions = [cls(*row) for row in rows]
-            return questions
+        try:
+            logger.info(f"[DEBUG] Buscando preguntas para usuario {user_id} con frecuencia '{frecuencia}'")
+            with get_db_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute(
+                    'SELECT id, text, type, options, active, created_at, assigned_user_id, descripcion, is_required, categoria, frecuencia '
+                    'FROM question WHERE assigned_user_id = ? AND active = 1 AND frecuencia = ?',
+                    (user_id, frecuencia)
+                )
+                rows = cursor.fetchall()
+                logger.info(f"[DEBUG] Consulta SQL ejecutada, encontradas {len(rows)} filas")
+                questions = [cls(*row) for row in rows]
+                logger.info(f"[DEBUG] Creados {len(questions)} objetos Question")
+                return questions
+        except Exception as e:
+            logger.error(f"[ERROR] Error en get_by_user_and_frequency: {str(e)}", exc_info=True)
+            raise
 
     @classmethod
     def create(cls, text, type, options=None, assigned_user_id=None, descripcion=None, is_required=0, categoria='General', frecuencia='diaria', active=1):
@@ -746,30 +753,95 @@ def load_user(user_id):
 @app.route('/')
 @login_required
 def index():
-    # Obtener preguntas diarias (incluyendo las que tienen frecuencia NULL por compatibilidad)
-    with get_db_connection() as conn:
-        cursor = conn.cursor()
-        cursor.execute(
-            'SELECT id, text, type, options, active, created_at, assigned_user_id, descripcion, is_required, categoria, frecuencia '
-            'FROM question WHERE assigned_user_id = ? AND active = 1 AND (frecuencia = ? OR frecuencia IS NULL)',
-            (current_user.id, 'diaria')
-        )
-        rows = cursor.fetchall()
-        questions = [Question(*row) for row in rows]
-    
-    return render_template('index.html', questions=questions, date=datetime.now(), tipo_pregunta='diaria')
+    try:
+        logger.info(f"[DEBUG] Accediendo a preguntas diarias para usuario {current_user.id}")
+        questions_objects = Question.get_by_user_and_frequency(current_user.id, 'diaria')
+        logger.info(f"[DEBUG] Encontradas {len(questions_objects)} preguntas diarias")
+        
+        # Convertir objetos Question a diccionarios para que sean JSON serializables
+        questions = []
+        for q in questions_objects:
+            questions.append({
+                'id': q.id,
+                'text': q.text,
+                'type': q.type,
+                'options': q.options,
+                'active': q.active,
+                'created_at': q.created_at,
+                'assigned_user_id': q.assigned_user_id,
+                'descripcion': q.descripcion,
+                'is_required': q.is_required,
+                'categoria': q.categoria,
+                'frecuencia': q.frecuencia
+            })
+        
+        return render_template('index.html', questions=questions, date=datetime.now(), tipo_pregunta='diaria')
+    except Exception as e:
+        logger.error(f"[ERROR] Error en index: {str(e)}", exc_info=True)
+        flash(f'Error al cargar preguntas diarias: {str(e)}', 'error')
+        return redirect(url_for('login'))
 
 @app.route('/preguntas-semanales')
 @login_required
 def preguntas_semanales():
-    questions = Question.get_by_user_and_frequency(current_user.id, 'semanal')
-    return render_template('preguntas_semanales.html', questions=questions, date=datetime.now(), tipo_pregunta='semanal')
+    try:
+        logger.info(f"[DEBUG] Accediendo a preguntas semanales para usuario {current_user.id}")
+        questions_objects = Question.get_by_user_and_frequency(current_user.id, 'semanal')
+        logger.info(f"[DEBUG] Encontradas {len(questions_objects)} preguntas semanales")
+        
+        # Convertir objetos Question a diccionarios para que sean JSON serializables
+        questions = []
+        for q in questions_objects:
+            questions.append({
+                'id': q.id,
+                'text': q.text,
+                'type': q.type,
+                'options': q.options,
+                'active': q.active,
+                'created_at': q.created_at,
+                'assigned_user_id': q.assigned_user_id,
+                'descripcion': q.descripcion,
+                'is_required': q.is_required,
+                'categoria': q.categoria,
+                'frecuencia': q.frecuencia
+            })
+        
+        return render_template('preguntas_semanales.html', questions=questions, date=datetime.now(), tipo_pregunta='semanal')
+    except Exception as e:
+        logger.error(f"[ERROR] Error en preguntas_semanales: {str(e)}", exc_info=True)
+        flash(f'Error al cargar preguntas semanales: {str(e)}', 'error')
+        return redirect(url_for('index'))
 
 @app.route('/preguntas-mensuales')
 @login_required
 def preguntas_mensuales():
-    questions = Question.get_by_user_and_frequency(current_user.id, 'mensual')
-    return render_template('preguntas_mensuales.html', questions=questions, date=datetime.now(), tipo_pregunta='mensual')
+    try:
+        logger.info(f"[DEBUG] Accediendo a preguntas mensuales para usuario {current_user.id}")
+        questions_objects = Question.get_by_user_and_frequency(current_user.id, 'mensual')
+        logger.info(f"[DEBUG] Encontradas {len(questions_objects)} preguntas mensuales")
+        
+        # Convertir objetos Question a diccionarios para que sean JSON serializables
+        questions = []
+        for q in questions_objects:
+            questions.append({
+                'id': q.id,
+                'text': q.text,
+                'type': q.type,
+                'options': q.options,
+                'active': q.active,
+                'created_at': q.created_at,
+                'assigned_user_id': q.assigned_user_id,
+                'descripcion': q.descripcion,
+                'is_required': q.is_required,
+                'categoria': q.categoria,
+                'frecuencia': q.frecuencia
+            })
+        
+        return render_template('preguntas_mensuales.html', questions=questions, date=datetime.now(), tipo_pregunta='mensual')
+    except Exception as e:
+        logger.error(f"[ERROR] Error en preguntas_mensuales: {str(e)}", exc_info=True)
+        flash(f'Error al cargar preguntas mensuales: {str(e)}', 'error')
+        return redirect(url_for('index'))
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -1153,6 +1225,9 @@ def add_question():
                 flash(f'Error en el formato de los datos: {str(e)}', 'danger')
                 return redirect(url_for('admin'))
         else:
+            # Debug: mostrar todos los datos del formulario
+            logger.info(f"[DEBUG] Datos del formulario recibidos: {dict(request.form)}")
+            
             text = request.form.get('text', '').strip()
             type = request.form.get('type', 'text')
             options = request.form.get('options', '').strip()
@@ -1162,6 +1237,8 @@ def add_question():
             frecuencia = request.form.get('frecuencia', 'diaria').strip()
             categoria = request.form.get('categoria_existente', '').strip()
             nueva_categoria = request.form.get('nueva_categoria', '').strip()
+            
+            logger.info(f"[DEBUG] Frecuencia extraída del formulario: '{frecuencia}'")
             if nueva_categoria:
                 categoria = nueva_categoria
                 logger.info(f"[Form] Usando nueva categoría: {categoria}")
@@ -2549,6 +2626,50 @@ def objetivos():
 def test_calendario():
     """Página de prueba para el calendario de objetivos"""
     return render_template('test_calendario.html')
+
+@app.route('/debug-preguntas-mensuales')
+@login_required
+def debug_preguntas_mensuales():
+    """Debug endpoint para preguntas mensuales"""
+    try:
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            
+            # Verificar todas las preguntas del usuario
+            cursor.execute(
+                'SELECT id, text, frecuencia, active FROM question WHERE assigned_user_id = ?',
+                (current_user.id,)
+            )
+            todas_preguntas = cursor.fetchall()
+            
+            # Verificar preguntas mensuales específicamente
+            cursor.execute(
+                'SELECT id, text, type, options, active, created_at, assigned_user_id, descripcion, is_required, categoria, frecuencia '
+                'FROM question WHERE assigned_user_id = ? AND active = 1 AND frecuencia = ?',
+                (current_user.id, 'mensual')
+            )
+            preguntas_mensuales = cursor.fetchall()
+            
+            return jsonify({
+                'status': 'success',
+                'user_id': current_user.id,
+                'todas_preguntas': [
+                    {'id': p[0], 'text': p[1], 'frecuencia': p[2], 'active': p[3]} 
+                    for p in todas_preguntas
+                ],
+                'preguntas_mensuales': [
+                    {'id': p[0], 'text': p[1], 'frecuencia': p[10]} 
+                    for p in preguntas_mensuales
+                ],
+                'total_preguntas': len(todas_preguntas),
+                'total_mensuales': len(preguntas_mensuales)
+            })
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'error': str(e),
+            'traceback': traceback.format_exc()
+        }), 500
 
 @app.route('/api/objetivos', methods=['GET'])
 @login_required

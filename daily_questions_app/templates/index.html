@@ -188,32 +188,6 @@
 {% endblock %}
 
 {% block scripts %}
-<script>
-// Reloj en vivo
-function actualizarReloj() {
-    const ahora = new Date();
-    const h = String(ahora.getHours()).padStart(2, '0');
-    const m = String(ahora.getMinutes()).padStart(2, '0');
-    const s = String(ahora.getSeconds()).padStart(2, '0');
-    document.getElementById('reloj').textContent = `${h}:${m}:${s}`;
-}
-setInterval(actualizarReloj, 1000);
-actualizarReloj();
-
-// Mostrar preguntas al pulsar el botón
-const iniciarBtn = document.getElementById('iniciar-btn');
-if (iniciarBtn) {
-    iniciarBtn.addEventListener('click', function() {
-        document.getElementById('bienvenida-card').style.display = 'none';
-        document.getElementById('preguntas-container').style.display = 'block';
-        const header = document.getElementById('bienvenida-header');
-        if (header) header.style.display = 'none';
-        // Mostrar la primera pregunta
-        const cards = document.querySelectorAll('.question-card');
-        if (cards.length > 0) {
-            cards[0].style.display = 'block';
-        }
-    });
-}
-</script>
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+<script src="{{ url_for('static', filename='js/questions-common.js') }}"></script>
 {% endblock %}

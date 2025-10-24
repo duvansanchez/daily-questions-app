@@ -719,7 +719,48 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         return false;
       }
-      form.submit();
+      // Enviar por AJAX en lugar de form.submit()
+      const data = {
+        text: formData.get('text'),
+        type: formData.get('type'),
+        options: formData.get('options'),
+        descripcion: formData.get('descripcion'),
+        is_required: formData.get('is_required') === 'on',
+        frecuencia: formData.get('frecuencia'),
+        categoria_existente: categoriaExistente,
+        nueva_categoria: nuevaCategoria
+      };
+      
+      console.log('[DEBUG] Datos enviados:', data);
+      
+      fetch('/add_question', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify(data)
+      })
+      .then(response => response.json())
+      .then(result => {
+        if (result.status === 'success') {
+          window.location.reload();
+        } else {
+          throw new Error(result.message || 'Error desconocido');
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        const errorDiv = document.getElementById('form-error');
+        if (errorDiv) {
+          errorDiv.textContent = error.message;
+          errorDiv.style.display = 'block';
+        }
+      })
+      .finally(() => {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalBtnText;
+      });
     });
   }
 });

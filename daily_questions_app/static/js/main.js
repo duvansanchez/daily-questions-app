@@ -1204,6 +1204,9 @@ let ordenActual = 'backend'; // Variable global para el ordenamiento (backend ma
 let vistaActual = 'lista'; // Variable global para el tipo de vista
 
 async function cargarObjetivos() {
+    // Mostrar spinner de carga
+    mostrarSpinnerObjetivos();
+    
     try {
         const res = await fetch('/api/objetivos');
         objetivos = await res.json();
@@ -1214,13 +1217,99 @@ async function cargarObjetivos() {
             mapaObjetivosPadre = {};
             padres.forEach(p => { mapaObjetivosPadre[p.id] = p.titulo; });
         } catch {}
+        
+        // Pequeña pausa para mostrar la animación (opcional)
+        await new Promise(resolve => setTimeout(resolve, 300));
+        
         renderObjetivos();
+        ocultarSpinnerObjetivos();
     } catch (err) {
         objetivos = [];
         renderObjetivos();
+        ocultarSpinnerObjetivos();
         showError('Error al cargar objetivos');
     }
 }
+
+// Función wrapper para renderObjetivos con spinner
+function renderObjetivosConSpinner() {
+    mostrarSpinnerObjetivos();
+    
+    // Pequeña pausa para mostrar la animación
+    setTimeout(() => {
+        renderObjetivos();
+        ocultarSpinnerObjetivos();
+    }, 200);
+}
+
+// Función para mostrar spinner inicial al cargar la página
+function mostrarSpinnerInicialObjetivos() {
+    const spinner = document.getElementById('objetivos-loading');
+    const lista = document.getElementById('lista-objetivos');
+    
+    if (spinner && lista) {
+        // Mostrar inmediatamente el spinner
+        lista.style.display = 'none';
+        spinner.style.display = 'block';
+        spinner.classList.add('fade-in');
+        
+        // Agregar mensaje especial para carga inicial
+        const loadingText = spinner.querySelector('.loading-text');
+        if (loadingText) {
+            loadingText.textContent = 'Inicializando tu espacio de desarrollo personal...';
+        }
+    }
+}
+
+// Funciones para manejar el spinner de carga de objetivos
+function mostrarSpinnerObjetivos() {
+    const spinner = document.getElementById('objetivos-loading');
+    const lista = document.getElementById('lista-objetivos');
+    
+    if (spinner && lista) {
+        // Ocultar la lista de objetivos
+        lista.style.display = 'none';
+        lista.classList.add('fade-transition', 'hidden');
+        
+        // Mostrar el spinner con animación
+        spinner.style.display = 'block';
+        spinner.classList.remove('fade-out');
+        spinner.classList.add('fade-in');
+        
+        // Agregar clase de gradiente al spinner para hacerlo más atractivo
+        const spinnerElement = spinner.querySelector('.spinner-border');
+        if (spinnerElement) {
+            spinnerElement.parentElement.classList.add('spinner-gradient');
+        }
+    }
+}
+
+function ocultarSpinnerObjetivos() {
+    const spinner = document.getElementById('objetivos-loading');
+    const lista = document.getElementById('lista-objetivos');
+    
+    if (spinner && lista) {
+        // Ocultar el spinner con animación
+        spinner.classList.remove('fade-in');
+        spinner.classList.add('fade-out');
+        
+        // Después de la animación, ocultar completamente y mostrar la lista
+        setTimeout(() => {
+            spinner.style.display = 'none';
+            lista.style.display = 'block';
+            lista.classList.remove('hidden');
+            lista.classList.add('visible');
+            
+            // Agregar animación escalonada a los objetivos
+            const objetivosItems = lista.querySelectorAll('.objetivo-lista-item, .objetivo-tarjeta');
+            objetivosItems.forEach((item, index) => {
+                item.style.animationDelay = `${index * 0.1}s`;
+                item.classList.add('fade-transition');
+            });
+        }, 300);
+    }
+}
+
 window.cargarObjetivos = cargarObjetivos;
 window.cargarYRenderizarSubobjetivos = cargarYRenderizarSubobjetivos;
 
@@ -1737,7 +1826,7 @@ document.querySelectorAll('.nav-pills .nav-link[data-periodo]').forEach(tab => {
         } else {
             document.getElementById('card-objetivos').style.display = '';
             document.getElementById('card-historico').style.display = 'none';
-            renderObjetivos();
+            renderObjetivosConSpinner();
         }
     });
 });
@@ -1956,6 +2045,9 @@ if (formEditar) {
 
 // Render inicial desde API (solo si estamos en la página de objetivos)
     if (document.getElementById('lista-objetivos')) {
+      // Mostrar spinner inicial inmediatamente
+      mostrarSpinnerInicialObjetivos();
+      
       if (sessionStorage.getItem('loginReciente') === '1') {
         cargarObjetivos();
         sessionStorage.removeItem('loginReciente');
@@ -1963,7 +2055,16 @@ if (formEditar) {
         // Intentar cargar solo si hay sesión activa
         fetch('/api/objetivos', { method: 'HEAD' })
           .then(res => {
-            if (res.ok) cargarObjetivos();
+            if (res.ok) {
+              cargarObjetivos();
+            } else {
+              // Si no hay sesión, ocultar el spinner
+              ocultarSpinnerObjetivos();
+            }
+          })
+          .catch(() => {
+            // En caso de error, ocultar el spinner
+            ocultarSpinnerObjetivos();
           });
       }
     }
@@ -1975,7 +2076,7 @@ function inicializarSelectorOrdenamiento() {
     if (selectorOrden) {
         selectorOrden.addEventListener('change', function() {
             ordenActual = this.value;
-            renderObjetivos();
+            renderObjetivosConSpinner();
         });
     }
 
@@ -1985,7 +2086,7 @@ function inicializarSelectorOrdenamiento() {
         radio.addEventListener('change', function() {
             if (this.checked) {
                 vistaActual = this.value;
-                renderObjetivos();
+                renderObjetivosConSpinner();
             }
         });
     });

@@ -1,430 +1,789 @@
-{% extends 'base.html' %}
-{% block title %}Objetivos | Desarrollo Personal{% endblock %}
-{% block content %}
+{% extends 'base.html' %} {% block title %}Objetivos | Desarrollo Personal{%
+endblock %} {% block content %}
 <div class="container py-4">
-    <div class="mb-4">
-        <h2 class="mb-1">Desarrollo Personal</h2>
-        <p class="text-muted">Tu espacio integral para el crecimiento personal, objetivos, reflexión y bienestar mental.</p>
-    </div>
-    <div class="card mb-4">
-        <div class="card-body">
-            <ul class="nav nav-tabs mb-3">
-                <li class="nav-item"><a class="nav-link active" id="tab-objetivos" href="#">Objetivos</a></li>
-                <li class="nav-item"><a class="nav-link" id="tab-frases" href="#">Frases</a></li>
-                <li class="nav-item"><a class="nav-link disabled" href="#">Audios</a></li>
-                <li class="nav-item"><a class="nav-link disabled" href="#">Progreso</a></li>
-            </ul>
-            <div class="d-flex justify-content-between align-items-center mb-4" id="titulo-objetivos">
-                <div>
-                    <h5 class="mb-1"><i class="bi bi-bullseye"></i> Objetivos de Desarrollo</h5>
-                    <p class="text-muted mb-0">Gestiona tus metas y objetivos para alcanzar tu crecimiento personal</p>
-                </div>
-            </div>
-            <div class="row text-center mb-4">
-                <div class="col-md-3 mb-2">
-                    <div class="bg-light rounded py-3">
-                        <div class="h4 mb-0" id="objetivos-diarios">0/0</div>
-                        <small class="text-muted">Objetivos Diarios</small>
-                    </div>
-                </div>
-                <div class="col-md-3 mb-2">
-                    <div class="bg-light rounded py-3">
-                        <div class="h4 mb-0 text-success" id="objetivos-semanales">0/0</div>
-                        <small class="text-muted">Progreso Semanal</small>
-                    </div>
-                </div>
-                <div class="col-md-3 mb-2">
-                    <div class="bg-light rounded py-3">
-                        <div class="h4 mb-0 text-primary" id="objetivos-mensuales">0/0</div>
-                        <small class="text-muted">Progreso Mensual</small>
-                    </div>
-                </div>
-                <div class="col-md-3 mb-2">
-                    <div class="bg-light rounded py-3">
-                        <div class="h4 mb-0 text-warning" id="objetivos-anuales">0/0</div>
-                        <small class="text-muted">Progreso Anual</small>
-                    </div>
-                </div>
-                <div class="col-md-3 mb-2">
-                    <div class="bg-light rounded py-3">
-                        <div class="h4 mb-0 text-info" id="objetivos-generales">0/0</div>
-                        <small class="text-muted">Objetivos Generales</small>
-                    </div>
-                </div>
-            </div>
-            <ul class="nav nav-pills justify-content-center mb-3">
-                <li class="nav-item"><a class="nav-link" href="#" data-periodo="todos">Todos</a></li>
-                <li class="nav-item"><a class="nav-link active" href="#" data-periodo="diario">Diarios</a></li>
-                <li class="nav-item"><a class="nav-link" href="#" data-periodo="semanal">Semanales</a></li>
-                <li class="nav-item"><a class="nav-link" href="#" data-periodo="mensual">Mensuales</a></li>
-                <li class="nav-item"><a class="nav-link" href="#" data-periodo="anual">Anuales</a></li>
-                <li class="nav-item"><a class="nav-link" href="#" data-periodo="general">Generales</a></li>
-                <li class="nav-item"><a class="nav-link" id="tab-historico" href="#" data-periodo="historico">Histórico</a></li>
-            </ul>
-            <div class="d-flex justify-content-between align-items-center mb-2" id="controles-objetivos">
-                <div class="d-flex align-items-center gap-3">
-                    <label class="form-label mb-0 fw-semibold">Vista:</label>
-                    <div class="btn-group" role="group" aria-label="Tipo de vista">
-                        <input type="radio" class="btn-check" name="vista-objetivos" id="vista-lista" value="lista" checked>
-                        <label class="btn btn-outline-primary btn-sm" for="vista-lista">
-                            <i class="bi bi-list-ul me-1"></i>Lista
-                        </label>
-                        
-                        <input type="radio" class="btn-check" name="vista-objetivos" id="vista-tarjetas" value="tarjetas">
-                        <label class="btn btn-outline-primary btn-sm" for="vista-tarjetas">
-                            <i class="bi bi-grid-3x3-gap me-1"></i>Tarjetas
-                        </label>
-                    </div>
-                </div>
-                <div class="d-flex align-items-center gap-2">
-                    <label for="orden-objetivos" class="form-label mb-0 fw-semibold">Ordenar por:</label>
-                    <select class="form-select form-select-sm" id="orden-objetivos" style="width: auto;">
-                        <option value="backend" selected>Orden inteligente (completados al final)</option>
-                        <option value="orden">Orden personalizado</option>
-                        <option value="fecha_creacion">Fecha de creación</option>
-                        <option value="completado">Estado (completado/pendiente)</option>
-                        <option value="prioridad">Prioridad</option>
-                        <option value="titulo">Título</option>
-                    </select>
-                </div>
-            </div>
-            <div class="card mt-3" id="card-objetivos">
-                <div class="card-body">
-                    <div class="d-flex justify-content-end mb-3">
-                        <button class="btn btn-primary" type="button" id="btn-abrir-modal-objetivo">
-                            <i class="bi bi-plus"></i> Nuevo Objetivo
-                        </button>
-                    </div>
-                    <div class="d-flex justify-content-end mb-2 gap-2">
-                        <button class="btn btn-outline-secondary btn-sm" id="btn-deseleccionar-recurrentes" type="button">
-                            <i class="bi bi-arrow-counterclockwise"></i> Desmarcar todos los recurrentes
-                        </button>
-                        <button class="btn btn-outline-warning btn-sm" id="btn-reset-diarios" type="button" title="Reset automático de objetivos diarios recurrentes">
-                            <i class="bi bi-sunrise"></i> Reset diarios
-                        </button>
-                    </div>
-                    <div class="objetivos-grid" id="lista-objetivos">
-                        <!-- Objetivos se renderizan aquí por JS -->
-                    </div>
-                </div>
-            </div>
-            <!-- Contenedor para el histórico -->
-            <div class="card mt-3" id="card-historico" style="display:none;">
-                <div class="card-body">
-                    <h5 class="mb-3"><i class="bi bi-archive"></i> Histórico de Objetivos</h5>
-                    <div id="filtros-historico" class="mb-3 row g-2">
-                        <div class="col-md-3">
-                            <label for="filtro-tipo-historico" class="form-label fw-bold">Tipo de objetivo</label>
-                            <select class="form-select" id="filtro-tipo-historico">
-                                <option value="">Todos los tipos</option>
-                                <option value="diario">Diarios</option>
-                                <option value="semanal">Semanales</option>
-                                <option value="mensual">Mensuales</option>
-                                <option value="anual">Anuales</option>
-                            </select>
-                        </div>
-                        <div class="col-md-3">
-                            <label for="filtro-estado-historico" class="form-label fw-bold">Estado</label>
-                            <select class="form-select" id="filtro-estado-historico">
-                                <option value="">Todos los estados</option>
-                                <option value="completado">Completados</option>
-                                <option value="vencido">Vencidos</option>
-                            </select>
-                        </div>
-                        <div class="col-md-3">
-                            <label for="filtro-fecha-inicio-historico" class="form-label fw-bold">Desde</label>
-                            <input type="date" class="form-control" id="filtro-fecha-inicio-historico" placeholder="Desde">
-                        </div>
-                        <div class="col-md-3">
-                            <label for="filtro-fecha-fin-historico" class="form-label fw-bold">Hasta</label>
-                            <input type="date" class="form-control" id="filtro-fecha-fin-historico" placeholder="Hasta">
-                        </div>
-                        <div class="col-md-12 mt-2">
-                            <label for="filtro-busqueda-historico" class="form-label fw-bold">Buscar por palabra clave</label>
-                            <input type="text" class="form-control" id="filtro-busqueda-historico" placeholder="Ej: salud, trabajo, meta...">
-                        </div>
-                    </div>
-                    <ul class="list-group" id="lista-historico">
-                        <!-- Histórico se renderiza aquí por JS -->
-                    </ul>
-                    <div class="d-flex justify-content-center mt-3">
-                        <button class="btn btn-outline-primary" id="btn-cargar-mas-historico">Cargar más</button>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Contenedor para las frases -->
-            <div class="card mt-3" id="card-frases" style="display:none;">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center mb-4">
-                        <div>
-                            <h5 class="mb-1"><i class="bi bi-chat-quote"></i> Frases Inspiracionales</h5>
-                            <p class="text-muted mb-0">Repasa frases motivacionales para tu crecimiento personal</p>
-                        </div>
-                        <div class="d-flex gap-2">
-                            <a href="{{ url_for('gestion_categorias') }}" class="btn btn-outline-secondary">
-                                <i class="bi bi-tags"></i> Gestionar Categorías
-                            </a>
-                            <button class="btn btn-primary" id="btn-nueva-frase">
-                                <i class="bi bi-plus-circle me-1"></i>Nueva Frase
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <!-- Estadísticas de frases -->
-                    <div class="row text-center mb-3">
-                        <div class="col-md-3">
-                            <div class="bg-light rounded py-3">
-                                <div class="h4 mb-0 text-primary" id="total-frases">0</div>
-                                <small class="text-muted">Total Frases</small>
-                                <div class="mt-1">
-                                    <span class="badge bg-success" id="frases-activas-stats">Activas: 0 / 0</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="bg-light rounded py-3">
-                                <div class="h4 mb-0 text-success" id="frases-hoy">0</div>
-                                <small class="text-muted">Repasadas Hoy</small>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="bg-light rounded py-3">
-                                <div class="h4 mb-0 text-warning" id="frases-semana">0</div>
-                                <small class="text-muted">Esta Semana</small>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="bg-light rounded py-3">
-                                <div class="h4 mb-0 text-info" id="total-repasos">0</div>
-                                <small class="text-muted">Total Repasos</small>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Indicador de filtro activo -->
-                    <div class="text-center mb-4">
-                        <small id="indicador-filtro-estadisticas" class="text-muted">Estadísticas generales</small>
-                    </div>
-                    
-                    <!-- Filtros y controles -->
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <div class="row g-2 flex-grow-1 align-items-end">
-                            <div class="col-sm-4">
-                                <label class="form-label mb-0 fw-semibold">Categoría</label>
-                                <select class="form-select form-select-sm" id="filtro-categoria-frases">
-                                    <option value="">Todas las categorías</option>
-                                </select>
-                            </div>
-                            <div class="col-sm-4">
-                                <label class="form-label mb-0 fw-semibold">Subcategoría</label>
-                                <select class="form-select form-select-sm" id="filtro-subcategoria-frases">
-                                    <option value="">Todas las subcategorías</option>
-                                </select>
-                            </div>
-                            <div class="col-sm-4">
-                                <label class="form-label mb-0 fw-semibold">Ordenar por</label>
-                                <select class="form-select form-select-sm" id="orden-frases">
-                                    <option value="menos_repasada">Menos repasada primero</option>
-                                    <option value="mas_repasada">Más repasada primero</option>
-                                </select>
-                                <script>
-                                document.addEventListener('DOMContentLoaded', function() {
-                                    const ordenFrases = document.getElementById('orden-frases');
-                                    if (ordenFrases) {
-                                        ordenFrases.addEventListener('change', function() {
-                                            if (typeof renderizarFrases === 'function') {
-                                                renderizarFrases();
-                                            }
-                                        });
-                                    }
-                                });
-                                </script>
-                            </div>
-                        </div>
-                        <div class="d-flex align-items-center gap-2 ms-3">
-                            <button class="btn btn-outline-success btn-sm" id="btn-repasar-todas">
-                                <i class="bi bi-arrow-repeat me-1"></i>Repasar por filtros
-                            </button>
-                            <button class="btn btn-outline-info btn-sm" id="btn-frase-aleatoria">
-                                <i class="bi bi-shuffle me-1"></i>Frase Aleatoria
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <!-- Lista de frases -->
-                    <div id="lista-frases">
-                        <!-- Las frases se cargarán aquí dinámicamente -->
-                    </div>
-                    
-                    <!-- Mensaje cuando no hay frases -->
-                    <div id="mensaje-sin-frases" class="text-center py-5" style="display: none;">
-                        <i class="bi bi-chat-quote text-muted" style="font-size: 4rem; opacity: 0.3;"></i>
-                        <h6 class="text-muted mt-3">No tienes frases agregadas</h6>
-                        <p class="text-muted">Agrega tu primera frase inspiracional para comenzar</p>
-                        <button class="btn btn-primary" onclick="document.getElementById('btn-nueva-frase').click()">
-                            <i class="bi bi-plus-circle me-1"></i>Agregar Primera Frase
-                        </button>
-                    </div>
-                </div>
-            </div>
+  <div class="mb-4">
+    <h2 class="mb-1">Desarrollo Personal</h2>
+    <p class="text-muted">
+      Tu espacio integral para el crecimiento personal, objetivos, reflexión y
+      bienestar mental.
+    </p>
+  </div>
+  <div class="card mb-4">
+    <div class="card-body">
+      <ul class="nav nav-tabs mb-3">
+        <li class="nav-item">
+          <a class="nav-link active" id="tab-objetivos" href="#">Objetivos</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" id="tab-frases" href="#">Frases</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link disabled" href="#">Audios</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link disabled" href="#">Progreso</a>
+        </li>
+      </ul>
+      <div
+        class="d-flex justify-content-between align-items-center mb-4"
+        id="titulo-objetivos"
+      >
+        <div>
+          <h5 class="mb-1">
+            <i class="bi bi-bullseye"></i> Objetivos de Desarrollo
+          </h5>
+          <p class="text-muted mb-0">
+            Gestiona tus metas y objetivos para alcanzar tu crecimiento personal
+          </p>
         </div>
+      </div>
+      <div class="row text-center mb-4">
+        <div class="col-md-3 mb-2">
+          <div class="bg-light rounded py-3">
+            <div class="h4 mb-0" id="objetivos-diarios">0/0</div>
+            <small class="text-muted">Objetivos Diarios</small>
+          </div>
+        </div>
+        <div class="col-md-3 mb-2">
+          <div class="bg-light rounded py-3">
+            <div class="h4 mb-0 text-success" id="objetivos-semanales">0/0</div>
+            <small class="text-muted">Progreso Semanal</small>
+          </div>
+        </div>
+        <div class="col-md-3 mb-2">
+          <div class="bg-light rounded py-3">
+            <div class="h4 mb-0 text-primary" id="objetivos-mensuales">0/0</div>
+            <small class="text-muted">Progreso Mensual</small>
+          </div>
+        </div>
+        <div class="col-md-3 mb-2">
+          <div class="bg-light rounded py-3">
+            <div class="h4 mb-0 text-warning" id="objetivos-anuales">0/0</div>
+            <small class="text-muted">Progreso Anual</small>
+          </div>
+        </div>
+        <div class="col-md-3 mb-2">
+          <div class="bg-light rounded py-3">
+            <div class="h4 mb-0 text-info" id="objetivos-generales">0/0</div>
+            <small class="text-muted">Objetivos Generales</small>
+          </div>
+        </div>
+      </div>
+      <ul class="nav nav-pills justify-content-center mb-3">
+        <li class="nav-item">
+          <a class="nav-link" href="#" data-periodo="todos">Todos</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link active" href="#" data-periodo="diario">Diarios</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="#" data-periodo="semanal">Semanales</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="#" data-periodo="mensual">Mensuales</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="#" data-periodo="anual">Anuales</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="#" data-periodo="general">Generales</a>
+        </li>
+        <li class="nav-item">
+          <a
+            class="nav-link"
+            id="tab-historico"
+            href="#"
+            data-periodo="historico"
+            >Histórico</a
+          >
+        </li>
+      </ul>
+      <div
+        class="d-flex justify-content-between align-items-center mb-2"
+        id="controles-objetivos"
+      >
+        <div class="d-flex align-items-center gap-3">
+          <label class="form-label mb-0 fw-semibold">Vista:</label>
+          <div class="btn-group" role="group" aria-label="Tipo de vista">
+            <input
+              type="radio"
+              class="btn-check"
+              name="vista-objetivos"
+              id="vista-lista"
+              value="lista"
+              checked
+            />
+            <label class="btn btn-outline-primary btn-sm" for="vista-lista">
+              <i class="bi bi-list-ul me-1"></i>Lista
+            </label>
+
+            <input
+              type="radio"
+              class="btn-check"
+              name="vista-objetivos"
+              id="vista-tarjetas"
+              value="tarjetas"
+            />
+            <label class="btn btn-outline-primary btn-sm" for="vista-tarjetas">
+              <i class="bi bi-grid-3x3-gap me-1"></i>Tarjetas
+            </label>
+          </div>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+          <label for="orden-objetivos" class="form-label mb-0 fw-semibold"
+            >Ordenar por:</label
+          >
+          <select
+            class="form-select form-select-sm"
+            id="orden-objetivos"
+            style="width: auto"
+          >
+            <option value="backend" selected>
+              Orden inteligente (completados al final)
+            </option>
+            <option value="orden">Orden personalizado</option>
+            <option value="fecha_creacion">Fecha de creación</option>
+            <option value="completado">Estado (completado/pendiente)</option>
+            <option value="prioridad">Prioridad</option>
+            <option value="titulo">Título</option>
+          </select>
+        </div>
+      </div>
+      <div class="card mt-3" id="card-objetivos">
+        <div class="card-body">
+          <div class="d-flex justify-content-end mb-3">
+            <button
+              class="btn btn-primary"
+              type="button"
+              id="btn-abrir-modal-objetivo"
+            >
+              <i class="bi bi-plus"></i> Nuevo Objetivo
+            </button>
+          </div>
+          <div class="d-flex justify-content-end mb-2 gap-2">
+            <button
+              class="btn btn-outline-secondary btn-sm"
+              id="btn-deseleccionar-recurrentes"
+              type="button"
+            >
+              <i class="bi bi-arrow-counterclockwise"></i> Desmarcar todos los
+              recurrentes
+            </button>
+            <button
+              class="btn btn-outline-warning btn-sm"
+              id="btn-reset-diarios"
+              type="button"
+              title="Reset automático de objetivos diarios recurrentes"
+            >
+              <i class="bi bi-sunrise"></i> Reset diarios
+            </button>
+          </div>
+          <!-- Spinner de carga para objetivos -->
+          <div
+            id="objetivos-loading"
+            class="text-center py-5"
+            style="display: none"
+          >
+            <div class="d-flex justify-content-center mb-4">
+              <div class="spinner-gradient">
+                <div
+                  class="spinner-border text-primary"
+                  role="status"
+                  style="width: 3rem; height: 3rem; border-width: 3px"
+                >
+                  <span class="visually-hidden">Cargando...</span>
+                </div>
+              </div>
+            </div>
+            <div class="loading-content">
+              <h6 class="text-primary mb-2">
+                <i class="bi bi-bullseye me-2"></i>
+                Cargando objetivos...
+              </h6>
+              <p class="text-muted mb-0 loading-text">
+                Preparando tu espacio de desarrollo personal
+              </p>
+            </div>
+
+            <!-- Indicadores de progreso adicionales -->
+            <div class="mt-4">
+              <div class="row justify-content-center">
+                <div class="col-auto">
+                  <div class="d-flex align-items-center text-muted">
+                    <div
+                      class="spinner-border spinner-border-sm me-2"
+                      role="status"
+                      style="width: 1rem; height: 1rem"
+                    >
+                      <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <small>Sincronizando datos...</small>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="objetivos-grid" id="lista-objetivos">
+            <!-- Objetivos se renderizan aquí por JS -->
+          </div>
+        </div>
+      </div>
+      <!-- Contenedor para el histórico -->
+      <div class="card mt-3" id="card-historico" style="display: none">
+        <div class="card-body">
+          <h5 class="mb-3">
+            <i class="bi bi-archive"></i> Histórico de Objetivos
+          </h5>
+          <div id="filtros-historico" class="mb-3 row g-2">
+            <div class="col-md-3">
+              <label for="filtro-tipo-historico" class="form-label fw-bold"
+                >Tipo de objetivo</label
+              >
+              <select class="form-select" id="filtro-tipo-historico">
+                <option value="">Todos los tipos</option>
+                <option value="diario">Diarios</option>
+                <option value="semanal">Semanales</option>
+                <option value="mensual">Mensuales</option>
+                <option value="anual">Anuales</option>
+              </select>
+            </div>
+            <div class="col-md-3">
+              <label for="filtro-estado-historico" class="form-label fw-bold"
+                >Estado</label
+              >
+              <select class="form-select" id="filtro-estado-historico">
+                <option value="">Todos los estados</option>
+                <option value="completado">Completados</option>
+                <option value="vencido">Vencidos</option>
+              </select>
+            </div>
+            <div class="col-md-3">
+              <label
+                for="filtro-fecha-inicio-historico"
+                class="form-label fw-bold"
+                >Desde</label
+              >
+              <input
+                type="date"
+                class="form-control"
+                id="filtro-fecha-inicio-historico"
+                placeholder="Desde"
+              />
+            </div>
+            <div class="col-md-3">
+              <label for="filtro-fecha-fin-historico" class="form-label fw-bold"
+                >Hasta</label
+              >
+              <input
+                type="date"
+                class="form-control"
+                id="filtro-fecha-fin-historico"
+                placeholder="Hasta"
+              />
+            </div>
+            <div class="col-md-12 mt-2">
+              <label for="filtro-busqueda-historico" class="form-label fw-bold"
+                >Buscar por palabra clave</label
+              >
+              <input
+                type="text"
+                class="form-control"
+                id="filtro-busqueda-historico"
+                placeholder="Ej: salud, trabajo, meta..."
+              />
+            </div>
+          </div>
+          <ul class="list-group" id="lista-historico">
+            <!-- Histórico se renderiza aquí por JS -->
+          </ul>
+          <div class="d-flex justify-content-center mt-3">
+            <button
+              class="btn btn-outline-primary"
+              id="btn-cargar-mas-historico"
+            >
+              Cargar más
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Contenedor para las frases -->
+      <div class="card mt-3" id="card-frases" style="display: none">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+              <h5 class="mb-1">
+                <i class="bi bi-chat-quote"></i> Frases Inspiracionales
+              </h5>
+              <p class="text-muted mb-0">
+                Repasa frases motivacionales para tu crecimiento personal
+              </p>
+            </div>
+            <div class="d-flex gap-2">
+              <a
+                href="{{ url_for('gestion_categorias') }}"
+                class="btn btn-outline-secondary"
+              >
+                <i class="bi bi-tags"></i> Gestionar Categorías
+              </a>
+              <button class="btn btn-primary" id="btn-nueva-frase">
+                <i class="bi bi-plus-circle me-1"></i>Nueva Frase
+              </button>
+            </div>
+          </div>
+
+          <!-- Estadísticas de frases -->
+          <div class="row text-center mb-3">
+            <div class="col-md-3">
+              <div class="bg-light rounded py-3">
+                <div class="h4 mb-0 text-primary" id="total-frases">0</div>
+                <small class="text-muted">Total Frases</small>
+                <div class="mt-1">
+                  <span class="badge bg-success" id="frases-activas-stats"
+                    >Activas: 0 / 0</span
+                  >
+                </div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="bg-light rounded py-3">
+                <div class="h4 mb-0 text-success" id="frases-hoy">0</div>
+                <small class="text-muted">Repasadas Hoy</small>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="bg-light rounded py-3">
+                <div class="h4 mb-0 text-warning" id="frases-semana">0</div>
+                <small class="text-muted">Esta Semana</small>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="bg-light rounded py-3">
+                <div class="h4 mb-0 text-info" id="total-repasos">0</div>
+                <small class="text-muted">Total Repasos</small>
+              </div>
+            </div>
+          </div>
+
+          <!-- Indicador de filtro activo -->
+          <div class="text-center mb-4">
+            <small id="indicador-filtro-estadisticas" class="text-muted"
+              >Estadísticas generales</small
+            >
+          </div>
+
+          <!-- Filtros y controles -->
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <div class="row g-2 flex-grow-1 align-items-end">
+              <div class="col-sm-4">
+                <label class="form-label mb-0 fw-semibold">Categoría</label>
+                <select
+                  class="form-select form-select-sm"
+                  id="filtro-categoria-frases"
+                >
+                  <option value="">Todas las categorías</option>
+                </select>
+              </div>
+              <div class="col-sm-4">
+                <label class="form-label mb-0 fw-semibold">Subcategoría</label>
+                <select
+                  class="form-select form-select-sm"
+                  id="filtro-subcategoria-frases"
+                >
+                  <option value="">Todas las subcategorías</option>
+                </select>
+              </div>
+              <div class="col-sm-4">
+                <label class="form-label mb-0 fw-semibold">Ordenar por</label>
+                <select class="form-select form-select-sm" id="orden-frases">
+                  <option value="menos_repasada">Menos repasada primero</option>
+                  <option value="mas_repasada">Más repasada primero</option>
+                </select>
+                <script>
+                  document.addEventListener("DOMContentLoaded", function () {
+                    const ordenFrases = document.getElementById("orden-frases");
+                    if (ordenFrases) {
+                      ordenFrases.addEventListener("change", function () {
+                        if (typeof renderizarFrases === "function") {
+                          renderizarFrases();
+                        }
+                      });
+                    }
+                  });
+                </script>
+              </div>
+            </div>
+            <div class="d-flex align-items-center gap-2 ms-3">
+              <button
+                class="btn btn-outline-success btn-sm"
+                id="btn-repasar-todas"
+              >
+                <i class="bi bi-arrow-repeat me-1"></i>Repasar por filtros
+              </button>
+              <button
+                class="btn btn-outline-info btn-sm"
+                id="btn-frase-aleatoria"
+              >
+                <i class="bi bi-shuffle me-1"></i>Frase Aleatoria
+              </button>
+            </div>
+          </div>
+
+          <!-- Lista de frases -->
+          <div id="lista-frases">
+            <!-- Las frases se cargarán aquí dinámicamente -->
+          </div>
+
+          <!-- Mensaje cuando no hay frases -->
+          <div
+            id="mensaje-sin-frases"
+            class="text-center py-5"
+            style="display: none"
+          >
+            <i
+              class="bi bi-chat-quote text-muted"
+              style="font-size: 4rem; opacity: 0.3"
+            ></i>
+            <h6 class="text-muted mt-3">No tienes frases agregadas</h6>
+            <p class="text-muted">
+              Agrega tu primera frase inspiracional para comenzar
+            </p>
+            <button
+              class="btn btn-primary"
+              onclick="document.getElementById('btn-nueva-frase').click()"
+            >
+              <i class="bi bi-plus-circle me-1"></i>Agregar Primera Frase
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
+  </div>
 </div>
 
 <!-- Modal Nueva Frase -->
-<div class="modal fade" id="modalNuevaFrase" tabindex="-1" aria-labelledby="modalNuevaFraseLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <form id="form-nueva-frase">
-                <div class="modal-header">
-                    <div class="d-flex align-items-center gap-2">
-                        <span class="modal-icon"><i class="bi bi-chat-quote"></i></span>
-                        <h5 class="modal-title mb-0" id="modalNuevaFraseLabel">Agregar Nueva Frase</h5>
-                    </div>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label for="frase-texto" class="form-label fw-semibold">Frase</label>
-                        <textarea class="form-control" id="frase-texto" rows="3" placeholder="Escribe la frase inspiracional..." required></textarea>
-                    </div>
-                    <div class="mb-3">
-                        <label for="frase-autor" class="form-label fw-semibold">Autor (opcional)</label>
-                        <input type="text" class="form-control" id="frase-autor" placeholder="Nombre del autor">
-                    </div>
-                    <div class="mb-3">
-                        <label for="frase-categoria" class="form-label fw-semibold">Categoría</label>
-                        <div class="d-flex gap-2">
-                            <select class="form-select" id="frase-categoria" required>
-                                <option value="">Selecciona una categoría</option>
-                                <option value="nueva">+ Nueva categoría</option>
-                            </select>
-                        </div>
-                        <div id="nueva-categoria-container" class="mt-2" style="display: none;">
-                            <input type="text" class="form-control" id="nueva-categoria-input" placeholder="Nombre de la nueva categoría" maxlength="50">
-                            <small class="text-muted">Solo letras, números y espacios. Máximo 50 caracteres.</small>
-                        </div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="frase-subcategoria" class="form-label fw-semibold">Subcategoría</label>
-                        <div class="d-flex gap-2">
-                            <select class="form-select" id="frase-subcategoria" required>
-                                <option value="">Selecciona una subcategoría</option>
-                                <option value="nueva">+ Nueva subcategoría</option>
-                            </select>
-                        </div>
-                        <!-- Contenedor para crear una nueva subcategoría (utilizado cuando se selecciona 'nueva') -->
-                        <div id="nueva-subcategoria-container" class="mt-2" style="display: none;">
-                            <input type="text" class="form-control" id="nueva-subcategoria-input" placeholder="Nombre de la nueva subcategoría" maxlength="50">
-                            <small class="text-muted">Solo letras, números y espacios. Máximo 50 caracteres.</small>
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <label for="frase-notas" class="form-label fw-semibold">Notas personales (opcional)</label>
-                        <textarea class="form-control" id="frase-notas" rows="2" placeholder="¿Por qué es importante esta frase para ti?"></textarea>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-primary">Guardar Frase</button>
-                </div>
-            </form>
+<div
+  class="modal fade"
+  id="modalNuevaFrase"
+  tabindex="-1"
+  aria-labelledby="modalNuevaFraseLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form id="form-nueva-frase">
+        <div class="modal-header">
+          <div class="d-flex align-items-center gap-2">
+            <span class="modal-icon"><i class="bi bi-chat-quote"></i></span>
+            <h5 class="modal-title mb-0" id="modalNuevaFraseLabel">
+              Agregar Nueva Frase
+            </h5>
+          </div>
+          <button
+            type="button"
+            class="btn-close"
+            data-bs-dismiss="modal"
+            aria-label="Close"
+          ></button>
         </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="frase-texto" class="form-label fw-semibold"
+              >Frase</label
+            >
+            <textarea
+              class="form-control"
+              id="frase-texto"
+              rows="3"
+              placeholder="Escribe la frase inspiracional..."
+              required
+            ></textarea>
+          </div>
+          <div class="mb-3">
+            <label for="frase-autor" class="form-label fw-semibold"
+              >Autor (opcional)</label
+            >
+            <input
+              type="text"
+              class="form-control"
+              id="frase-autor"
+              placeholder="Nombre del autor"
+            />
+          </div>
+          <div class="mb-3">
+            <label for="frase-categoria" class="form-label fw-semibold"
+              >Categoría</label
+            >
+            <div class="d-flex gap-2">
+              <select class="form-select" id="frase-categoria" required>
+                <option value="">Selecciona una categoría</option>
+                <option value="nueva">+ Nueva categoría</option>
+              </select>
+            </div>
+            <div
+              id="nueva-categoria-container"
+              class="mt-2"
+              style="display: none"
+            >
+              <input
+                type="text"
+                class="form-control"
+                id="nueva-categoria-input"
+                placeholder="Nombre de la nueva categoría"
+                maxlength="50"
+              />
+              <small class="text-muted"
+                >Solo letras, números y espacios. Máximo 50 caracteres.</small
+              >
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label for="frase-subcategoria" class="form-label fw-semibold"
+              >Subcategoría</label
+            >
+            <div class="d-flex gap-2">
+              <select class="form-select" id="frase-subcategoria" required>
+                <option value="">Selecciona una subcategoría</option>
+                <option value="nueva">+ Nueva subcategoría</option>
+              </select>
+            </div>
+            <!-- Contenedor para crear una nueva subcategoría (utilizado cuando se selecciona 'nueva') -->
+            <div
+              id="nueva-subcategoria-container"
+              class="mt-2"
+              style="display: none"
+            >
+              <input
+                type="text"
+                class="form-control"
+                id="nueva-subcategoria-input"
+                placeholder="Nombre de la nueva subcategoría"
+                maxlength="50"
+              />
+              <small class="text-muted"
+                >Solo letras, números y espacios. Máximo 50 caracteres.</small
+              >
+            </div>
+          </div>
+          <div class="mb-3">
+            <label for="frase-notas" class="form-label fw-semibold"
+              >Notas personales (opcional)</label
+            >
+            <textarea
+              class="form-control"
+              id="frase-notas"
+              rows="2"
+              placeholder="¿Por qué es importante esta frase para ti?"
+            ></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button
+            type="button"
+            class="btn btn-outline-secondary"
+            data-bs-dismiss="modal"
+          >
+            Cancelar
+          </button>
+          <button type="submit" class="btn btn-primary">Guardar Frase</button>
+        </div>
+      </form>
     </div>
+  </div>
 </div>
 
 <!-- Modal Editar Frase -->
-<div class="modal fade" id="modalEditarFrase" tabindex="-1" aria-labelledby="modalEditarFraseLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <form id="form-editar-frase">
-                <div class="modal-header">
-                    <div class="d-flex align-items-center gap-2">
-                        <span class="modal-icon"><i class="bi bi-pencil-square"></i></span>
-                        <h5 class="modal-title mb-0" id="modalEditarFraseLabel">Editar Frase</h5>
-                    </div>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <input type="hidden" id="editar-frase-id">
-                    <div class="mb-3">
-                        <label for="editar-frase-texto" class="form-label fw-semibold">Frase</label>
-                        <textarea class="form-control" id="editar-frase-texto" rows="3" required></textarea>
-                    </div>
-                    <div class="mb-3">
-                        <label for="editar-frase-autor" class="form-label fw-semibold">Autor (opcional)</label>
-                        <input type="text" class="form-control" id="editar-frase-autor">
-                    </div>
-                    <div class="mb-3">
-                        <label for="editar-frase-categoria" class="form-label fw-semibold">Categoría</label>
-                        <div class="d-flex gap-2">
-                            <select class="form-select" id="editar-frase-categoria" required>
-                                <option value="">Selecciona una categoría</option>
-                                <option value="nueva">+ Nueva categoría</option>
-                            </select>
-                        </div>
-                        <div id="editar-nueva-categoria-container" class="mt-2" style="display: none;">
-                            <input type="text" class="form-control" id="editar-nueva-categoria-input" placeholder="Nombre de la nueva categoría" maxlength="50">
-                            <small class="text-muted">Solo letras, números y espacios. Máximo 50 caracteres.</small>
-                        </div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="editar-frase-subcategoria" class="form-label fw-semibold">Subcategoría</label>
-                        <div class="d-flex gap-2">
-                            <select class="form-select" id="editar-frase-subcategoria" required>
-                                <option value="">Selecciona una subcategoría</option>
-                                <option value="nueva">+ Nueva subcategoría</option>
-                            </select>
-                        </div>
-                        <div id="editar-nueva-subcategoria-container" class="mt-2" style="display: none;">
-                            <input type="text" class="form-control" id="editar-nueva-subcategoria-input" placeholder="Nombre de la nueva subcategoría" maxlength="50">
-                            <small class="text-muted">Solo letras, números y espacios. Máximo 50 caracteres.</small>
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <label for="editar-frase-notas" class="form-label fw-semibold">Notas personales (opcional)</label>
-                        <textarea class="form-control" id="editar-frase-notas" rows="2"></textarea>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-primary">Guardar Cambios</button>
-                </div>
-            </form>
+<div
+  class="modal fade"
+  id="modalEditarFrase"
+  tabindex="-1"
+  aria-labelledby="modalEditarFraseLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form id="form-editar-frase">
+        <div class="modal-header">
+          <div class="d-flex align-items-center gap-2">
+            <span class="modal-icon"><i class="bi bi-pencil-square"></i></span>
+            <h5 class="modal-title mb-0" id="modalEditarFraseLabel">
+              Editar Frase
+            </h5>
+          </div>
+          <button
+            type="button"
+            class="btn-close"
+            data-bs-dismiss="modal"
+            aria-label="Close"
+          ></button>
         </div>
+        <div class="modal-body">
+          <input type="hidden" id="editar-frase-id" />
+          <div class="mb-3">
+            <label for="editar-frase-texto" class="form-label fw-semibold"
+              >Frase</label
+            >
+            <textarea
+              class="form-control"
+              id="editar-frase-texto"
+              rows="3"
+              required
+            ></textarea>
+          </div>
+          <div class="mb-3">
+            <label for="editar-frase-autor" class="form-label fw-semibold"
+              >Autor (opcional)</label
+            >
+            <input type="text" class="form-control" id="editar-frase-autor" />
+          </div>
+          <div class="mb-3">
+            <label for="editar-frase-categoria" class="form-label fw-semibold"
+              >Categoría</label
+            >
+            <div class="d-flex gap-2">
+              <select class="form-select" id="editar-frase-categoria" required>
+                <option value="">Selecciona una categoría</option>
+                <option value="nueva">+ Nueva categoría</option>
+              </select>
+            </div>
+            <div
+              id="editar-nueva-categoria-container"
+              class="mt-2"
+              style="display: none"
+            >
+              <input
+                type="text"
+                class="form-control"
+                id="editar-nueva-categoria-input"
+                placeholder="Nombre de la nueva categoría"
+                maxlength="50"
+              />
+              <small class="text-muted"
+                >Solo letras, números y espacios. Máximo 50 caracteres.</small
+              >
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label
+              for="editar-frase-subcategoria"
+              class="form-label fw-semibold"
+              >Subcategoría</label
+            >
+            <div class="d-flex gap-2">
+              <select
+                class="form-select"
+                id="editar-frase-subcategoria"
+                required
+              >
+                <option value="">Selecciona una subcategoría</option>
+                <option value="nueva">+ Nueva subcategoría</option>
+              </select>
+            </div>
+            <div
+              id="editar-nueva-subcategoria-container"
+              class="mt-2"
+              style="display: none"
+            >
+              <input
+                type="text"
+                class="form-control"
+                id="editar-nueva-subcategoria-input"
+                placeholder="Nombre de la nueva subcategoría"
+                maxlength="50"
+              />
+              <small class="text-muted"
+                >Solo letras, números y espacios. Máximo 50 caracteres.</small
+              >
+            </div>
+          </div>
+          <div class="mb-3">
+            <label for="editar-frase-notas" class="form-label fw-semibold"
+              >Notas personales (opcional)</label
+            >
+            <textarea
+              class="form-control"
+              id="editar-frase-notas"
+              rows="2"
+            ></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button
+            type="button"
+            class="btn btn-outline-secondary"
+            data-bs-dismiss="modal"
+          >
+            Cancelar
+          </button>
+          <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+        </div>
+      </form>
     </div>
+  </div>
 </div>
 
 <!-- Modal Agregar Nuevo Objetivo -->
-<div class="modal fade" id="modalNuevoObjetivo" tabindex="-1" aria-labelledby="modalNuevoObjetivoLabel" aria-hidden="true">
+<div
+  class="modal fade"
+  id="modalNuevoObjetivo"
+  tabindex="-1"
+  aria-labelledby="modalNuevoObjetivoLabel"
+  aria-hidden="true"
+>
   <div class="modal-dialog">
     <div class="modal-content">
       <form id="form-modal-nuevo-objetivo">
         <div class="modal-header pt-1">
           <div class="d-flex align-items-center gap-2">
             <span class="modal-icon"><i class="bi bi-bullseye"></i></span>
-            <h5 class="modal-title mb-0" id="modalNuevoObjetivoLabel">Agregar Nuevo Objetivo</h5>
+            <h5 class="modal-title mb-0" id="modalNuevoObjetivoLabel">
+              Agregar Nuevo Objetivo
+            </h5>
           </div>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          <button
+            type="button"
+            class="btn-close"
+            data-bs-dismiss="modal"
+            aria-label="Close"
+          ></button>
         </div>
         <div class="modal-body">
-          <div class="mb-2 text-muted" style="font-size:1rem;">
+          <div class="mb-2 text-muted" style="font-size: 1rem">
             Completa los campos para crear un nuevo objetivo.
           </div>
           <div class="mb-3">
-            <label for="modal-titulo-objetivo" class="form-label fw-semibold">Título</label>
-            <input type="text" class="form-control" id="modal-titulo-objetivo" placeholder="Título del objetivo" required>
+            <label for="modal-titulo-objetivo" class="form-label fw-semibold"
+              >Título</label
+            >
+            <input
+              type="text"
+              class="form-control"
+              id="modal-titulo-objetivo"
+              placeholder="Título del objetivo"
+              required
+            />
           </div>
           <div class="mb-3">
-            <label for="modal-desc-objetivo" class="form-label fw-semibold">Descripción</label>
-            <textarea class="form-control" id="modal-desc-objetivo" rows="2" placeholder="Descripción detallada del objetivo"></textarea>
+            <label for="modal-desc-objetivo" class="form-label fw-semibold"
+              >Descripción</label
+            >
+            <textarea
+              class="form-control"
+              id="modal-desc-objetivo"
+              rows="2"
+              placeholder="Descripción detallada del objetivo"
+            ></textarea>
           </div>
           <div class="row">
             <div class="col mb-3">
-              <label for="modal-prioridad-objetivo" class="form-label fw-semibold">Prioridad</label>
+              <label
+                for="modal-prioridad-objetivo"
+                class="form-label fw-semibold"
+                >Prioridad</label
+              >
               <select class="form-select" id="modal-prioridad-objetivo">
                 <option value="alta">Alta</option>
                 <option value="media" selected>Media</option>
@@ -432,9 +791,19 @@
               </select>
             </div>
             <div class="col mb-3">
-              <label for="modal-categoria-objetivo" class="form-label fw-semibold">Categoría <span style="color:red">*</span></label>
-              <select class="form-select" id="modal-categoria-objetivo" required>
-                <option value="" disabled selected>Selecciona una categoría</option>
+              <label
+                for="modal-categoria-objetivo"
+                class="form-label fw-semibold"
+                >Categoría <span style="color: red">*</span></label
+              >
+              <select
+                class="form-select"
+                id="modal-categoria-objetivo"
+                required
+              >
+                <option value="" disabled selected>
+                  Selecciona una categoría
+                </option>
                 <option value="diario">Diarios</option>
                 <option value="semanal">Semanales</option>
                 <option value="mensual">Mensuales</option>
@@ -444,7 +813,9 @@
             </div>
           </div>
           <div class="mb-3">
-            <label for="modal-padre-objetivo" class="form-label fw-semibold">Objetivo Padre (Opcional)</label>
+            <label for="modal-padre-objetivo" class="form-label fw-semibold"
+              >Objetivo Padre (Opcional)</label
+            >
             <select class="form-select" id="modal-padre-objetivo">
               <option value="">Seleccionar objetivo padre</option>
               <!-- Opciones dinámicas por JS -->
@@ -452,7 +823,9 @@
           </div>
           <div class="row">
             <div class="col mb-3">
-              <label for="modal-estado-objetivo" class="form-label fw-semibold">Estado</label>
+              <label for="modal-estado-objetivo" class="form-label fw-semibold"
+                >Estado</label
+              >
               <select class="form-select" id="modal-estado-objetivo">
                 <option value="pendiente">Pendiente</option>
                 <option value="en_progreso">En progreso</option>
@@ -461,7 +834,11 @@
               </select>
             </div>
             <div class="col mb-3">
-              <label for="modal-dificultad-objetivo" class="form-label fw-semibold">Dificultad</label>
+              <label
+                for="modal-dificultad-objetivo"
+                class="form-label fw-semibold"
+                >Dificultad</label
+              >
               <select class="form-select" id="modal-dificultad-objetivo">
                 <option value="1">1 - Muy fácil</option>
                 <option value="2">2</option>
@@ -473,68 +850,181 @@
           </div>
           <div class="row">
             <div class="col mb-3">
-              <label for="modal-fecha-inicio-objetivo" class="form-label fw-semibold">Fecha inicio</label>
-              <input type="date" class="form-control" id="modal-fecha-inicio-objetivo">
+              <label
+                for="modal-fecha-inicio-objetivo"
+                class="form-label fw-semibold"
+                >Fecha inicio</label
+              >
+              <input
+                type="date"
+                class="form-control"
+                id="modal-fecha-inicio-objetivo"
+              />
             </div>
             <div class="col mb-3">
-              <label for="modal-fecha-fin-objetivo" class="form-label fw-semibold">Fecha fin</label>
-              <input type="date" class="form-control" id="modal-fecha-fin-objetivo">
+              <label
+                for="modal-fecha-fin-objetivo"
+                class="form-label fw-semibold"
+                >Fecha fin</label
+              >
+              <input
+                type="date"
+                class="form-control"
+                id="modal-fecha-fin-objetivo"
+              />
             </div>
           </div>
           <div class="mb-3">
-            <label for="modal-fecha-proyeccion-comienzo-objetivo" class="form-label fw-semibold">Fecha Proyección Comienzo</label>
-            <input type="date" class="form-control" id="modal-fecha-proyeccion-comienzo-objetivo" placeholder="¿Cuándo planeas comenzar este objetivo?">
-            <small class="form-text text-muted">Fecha estimada para comenzar el objetivo</small>
+            <label
+              for="modal-fecha-proyeccion-comienzo-objetivo"
+              class="form-label fw-semibold"
+              >Fecha Proyección Comienzo</label
+            >
+            <input
+              type="date"
+              class="form-control"
+              id="modal-fecha-proyeccion-comienzo-objetivo"
+              placeholder="¿Cuándo planeas comenzar este objetivo?"
+            />
+            <small class="form-text text-muted"
+              >Fecha estimada para comenzar el objetivo</small
+            >
           </div>
           <div class="mb-3">
-            <label for="modal-horas-estimadas-objetivo" class="form-label fw-semibold">Duración estimada</label>
+            <label
+              for="modal-horas-estimadas-objetivo"
+              class="form-label fw-semibold"
+              >Duración estimada</label
+            >
             <div class="row g-2">
               <div class="col">
-                <input type="number" class="form-control" id="modal-horas-estimadas-objetivo" min="0" placeholder="Horas">
+                <input
+                  type="number"
+                  class="form-control"
+                  id="modal-horas-estimadas-objetivo"
+                  min="0"
+                  placeholder="Horas"
+                />
               </div>
               <div class="col">
-                <input type="number" class="form-control" id="modal-minutos-estimados-objetivo" min="0" max="59" placeholder="Minutos">
+                <input
+                  type="number"
+                  class="form-control"
+                  id="modal-minutos-estimados-objetivo"
+                  min="0"
+                  max="59"
+                  placeholder="Minutos"
+                />
               </div>
             </div>
           </div>
           <div class="mb-3">
-            <label for="modal-recompensa-objetivo" class="form-label fw-semibold">Recompensa</label>
-            <input type="text" class="form-control" id="modal-recompensa-objetivo" placeholder="¿Qué te darás si lo logras?">
+            <label
+              for="modal-recompensa-objetivo"
+              class="form-label fw-semibold"
+              >Recompensa</label
+            >
+            <input
+              type="text"
+              class="form-control"
+              id="modal-recompensa-objetivo"
+              placeholder="¿Qué te darás si lo logras?"
+            />
           </div>
           <div class="mb-3">
-            <label for="modal-etiquetas-objetivo" class="form-label fw-semibold">Etiquetas</label>
-            <input type="text" class="form-control" id="modal-etiquetas-objetivo" placeholder="Ej: salud, trabajo, meta...">
+            <label for="modal-etiquetas-objetivo" class="form-label fw-semibold"
+              >Etiquetas</label
+            >
+            <input
+              type="text"
+              class="form-control"
+              id="modal-etiquetas-objetivo"
+              placeholder="Ej: salud, trabajo, meta..."
+            />
           </div>
           <div class="mb-3">
-            <label for="modal-notas-adicionales-objetivo" class="form-label fw-semibold">Notas adicionales</label>
-            <textarea class="form-control" id="modal-notas-adicionales-objetivo" rows="1" placeholder="Notas, recordatorios, etc."></textarea>
+            <label
+              for="modal-notas-adicionales-objetivo"
+              class="form-label fw-semibold"
+              >Notas adicionales</label
+            >
+            <textarea
+              class="form-control"
+              id="modal-notas-adicionales-objetivo"
+              rows="1"
+              placeholder="Notas, recordatorios, etc."
+            ></textarea>
           </div>
-          <hr style="border-top: 1.5px dashed #b6d4fe; margin: 1.2rem 0 1rem 0;">
+          <hr
+            style="border-top: 1.5px dashed #b6d4fe; margin: 1.2rem 0 1rem 0"
+          />
           <div class="mb-3 d-flex align-items-center gap-2">
-            <label class="form-label fw-semibold mb-0" for="modal-recurrente-objetivo"><i class="bi bi-repeat"></i> Hacer este objetivo recurrente</label>
-            <input type="checkbox" class="form-check-input" id="modal-recurrente-objetivo">
+            <label
+              class="form-label fw-semibold mb-0"
+              for="modal-recurrente-objetivo"
+              ><i class="bi bi-repeat"></i> Hacer este objetivo
+              recurrente</label
+            >
+            <input
+              type="checkbox"
+              class="form-check-input"
+              id="modal-recurrente-objetivo"
+            />
           </div>
           <div class="mb-3 d-flex align-items-center gap-2">
-            <label class="form-label fw-semibold mb-0" for="modal-es-padre-objetivo">¿Este objetivo es padre?</label>
-            <input type="checkbox" class="form-check-input" id="modal-es-padre-objetivo">
+            <label
+              class="form-label fw-semibold mb-0"
+              for="modal-es-padre-objetivo"
+              >¿Este objetivo es padre?</label
+            >
+            <input
+              type="checkbox"
+              class="form-check-input"
+              id="modal-es-padre-objetivo"
+            />
           </div>
-          <hr style="border-top: 1.5px dashed #b6d4fe; margin: 1.2rem 0 1rem 0;">
+          <hr
+            style="border-top: 1.5px dashed #b6d4fe; margin: 1.2rem 0 1rem 0"
+          />
           <div class="mb-3">
-            <button type="button" class="btn btn-outline-info btn-sm" id="btn-toggle-checklist-nuevo">
+            <button
+              type="button"
+              class="btn btn-outline-info btn-sm"
+              id="btn-toggle-checklist-nuevo"
+            >
               <i class="bi bi-list-check"></i> Agregar checklist (subobjetivos)
             </button>
           </div>
-          <div class="mb-3" id="checklist-nuevo-container" style="display:none;">
-            <label class="form-label fw-semibold">Checklist (subobjetivos)</label>
+          <div
+            class="mb-3"
+            id="checklist-nuevo-container"
+            style="display: none"
+          >
+            <label class="form-label fw-semibold"
+              >Checklist (subobjetivos)</label
+            >
             <div id="checklist-nuevo-list"></div>
             <div class="d-flex mt-2">
-              <input type="text" class="form-control form-control-sm me-2" id="checklist-nuevo-input" placeholder="Nuevo subobjetivo...">
-              <button type="button" class="btn btn-sm btn-primary" id="checklist-nuevo-add-btn">Agregar</button>
+              <input
+                type="text"
+                class="form-control form-control-sm me-2"
+                id="checklist-nuevo-input"
+                placeholder="Nuevo subobjetivo..."
+              />
+              <button
+                type="button"
+                class="btn btn-sm btn-primary"
+                id="checklist-nuevo-add-btn"
+              >
+                Agregar
+              </button>
             </div>
           </div>
         </div>
         <div class="modal-footer">
-          <button type="submit" class="btn btn-primary">Guardar objetivo</button>
+          <button type="submit" class="btn btn-primary">
+            Guardar objetivo
+          </button>
         </div>
       </form>
     </div>
@@ -542,33 +1032,63 @@
 </div>
 
 <!-- Modal Editar Objetivo -->
-<div class="modal fade" id="modalEditarObjetivo" tabindex="-1" aria-labelledby="modalEditarObjetivoLabel" aria-hidden="true">
+<div
+  class="modal fade"
+  id="modalEditarObjetivo"
+  tabindex="-1"
+  aria-labelledby="modalEditarObjetivoLabel"
+  aria-hidden="true"
+>
   <div class="modal-dialog">
     <div class="modal-content">
       <form id="form-modal-editar-objetivo">
         <div class="modal-header pt-1">
           <div class="d-flex align-items-center gap-2">
             <span class="modal-icon"><i class="bi bi-pencil-square"></i></span>
-            <h5 class="modal-title mb-0" id="modalEditarObjetivoLabel">Editar Objetivo</h5>
+            <h5 class="modal-title mb-0" id="modalEditarObjetivoLabel">
+              Editar Objetivo
+            </h5>
           </div>
-          <button type="button" class="btn-close position-absolute end-0 me-3" data-bs-dismiss="modal" aria-label="Close"></button>
+          <button
+            type="button"
+            class="btn-close position-absolute end-0 me-3"
+            data-bs-dismiss="modal"
+            aria-label="Close"
+          ></button>
         </div>
         <div class="modal-body">
-          <div class="mb-2 text-muted text-center" style="font-size:1rem;">
+          <div class="mb-2 text-muted text-center" style="font-size: 1rem">
             Modifica los campos que desees y guarda los cambios.
           </div>
-          <input type="hidden" id="editar-id-objetivo">
+          <input type="hidden" id="editar-id-objetivo" />
           <div class="mb-3">
-            <label for="editar-titulo-objetivo" class="form-label fw-semibold">Título</label>
-            <input type="text" class="form-control" id="editar-titulo-objetivo" required>
+            <label for="editar-titulo-objetivo" class="form-label fw-semibold"
+              >Título</label
+            >
+            <input
+              type="text"
+              class="form-control"
+              id="editar-titulo-objetivo"
+              required
+            />
           </div>
           <div class="mb-3">
-            <label for="editar-desc-objetivo" class="form-label fw-semibold">Descripción</label>
-            <textarea class="form-control" id="editar-desc-objetivo" rows="2"></textarea>
+            <label for="editar-desc-objetivo" class="form-label fw-semibold"
+              >Descripción</label
+            >
+            <textarea
+              class="form-control"
+              id="editar-desc-objetivo"
+              rows="2"
+            ></textarea>
           </div>
           <div class="row">
             <div class="col mb-3">
-              <label for="editar-prioridad-objetivo" class="form-label fw-semibold">Prioridad</label>
+              <label
+                for="editar-prioridad-objetivo"
+                class="form-label fw-semibold"
+                >Prioridad</label
+              >
               <select class="form-select" id="editar-prioridad-objetivo">
                 <option value="alta">Alta</option>
                 <option value="media">Media</option>
@@ -576,9 +1096,19 @@
               </select>
             </div>
             <div class="col mb-3">
-              <label for="editar-categoria-objetivo" class="form-label fw-semibold">Categoría <span style="color:red">*</span></label>
-              <select class="form-select" id="editar-categoria-objetivo" required>
-                <option value="" disabled selected>Selecciona una categoría</option>
+              <label
+                for="editar-categoria-objetivo"
+                class="form-label fw-semibold"
+                >Categoría <span style="color: red">*</span></label
+              >
+              <select
+                class="form-select"
+                id="editar-categoria-objetivo"
+                required
+              >
+                <option value="" disabled selected>
+                  Selecciona una categoría
+                </option>
                 <option value="diario">Diarios</option>
                 <option value="semanal">Semanales</option>
                 <option value="mensual">Mensuales</option>
@@ -588,7 +1118,9 @@
             </div>
           </div>
           <div class="mb-3">
-            <label for="editar-padre-objetivo" class="form-label fw-semibold">Objetivo Padre (Opcional)</label>
+            <label for="editar-padre-objetivo" class="form-label fw-semibold"
+              >Objetivo Padre (Opcional)</label
+            >
             <select class="form-select" id="editar-padre-objetivo">
               <option value="">Seleccionar objetivo padre</option>
               <!-- Opciones dinámicas por JS -->
@@ -596,7 +1128,9 @@
           </div>
           <div class="row">
             <div class="col mb-3">
-              <label for="editar-estado-objetivo" class="form-label fw-semibold">Estado</label>
+              <label for="editar-estado-objetivo" class="form-label fw-semibold"
+                >Estado</label
+              >
               <select class="form-select" id="editar-estado-objetivo">
                 <option value="pendiente">Pendiente</option>
                 <option value="en_progreso">En progreso</option>
@@ -605,7 +1139,11 @@
               </select>
             </div>
             <div class="col mb-3">
-              <label for="editar-dificultad-objetivo" class="form-label fw-semibold">Dificultad</label>
+              <label
+                for="editar-dificultad-objetivo"
+                class="form-label fw-semibold"
+                >Dificultad</label
+              >
               <select class="form-select" id="editar-dificultad-objetivo">
                 <option value="1">1 - Muy fácil</option>
                 <option value="2">2</option>
@@ -617,68 +1155,187 @@
           </div>
           <div class="row">
             <div class="col mb-3">
-              <label for="editar-fecha-inicio-objetivo" class="form-label fw-semibold">Fecha inicio</label>
-              <input type="date" class="form-control" id="editar-fecha-inicio-objetivo">
+              <label
+                for="editar-fecha-inicio-objetivo"
+                class="form-label fw-semibold"
+                >Fecha inicio</label
+              >
+              <input
+                type="date"
+                class="form-control"
+                id="editar-fecha-inicio-objetivo"
+              />
             </div>
             <div class="col mb-3">
-              <label for="editar-fecha-fin-objetivo" class="form-label fw-semibold">Fecha fin</label>
-              <input type="date" class="form-control" id="editar-fecha-fin-objetivo">
+              <label
+                for="editar-fecha-fin-objetivo"
+                class="form-label fw-semibold"
+                >Fecha fin</label
+              >
+              <input
+                type="date"
+                class="form-control"
+                id="editar-fecha-fin-objetivo"
+              />
             </div>
           </div>
           <div class="mb-3">
-            <label for="editar-fecha-proyeccion-comienzo-objetivo" class="form-label fw-semibold">Fecha Proyección Comienzo</label>
-            <input type="date" class="form-control" id="editar-fecha-proyeccion-comienzo-objetivo" placeholder="¿Cuándo planeas comenzar este objetivo?">
-            <small class="form-text text-muted">Fecha estimada para comenzar el objetivo</small>
+            <label
+              for="editar-fecha-proyeccion-comienzo-objetivo"
+              class="form-label fw-semibold"
+              >Fecha Proyección Comienzo</label
+            >
+            <input
+              type="date"
+              class="form-control"
+              id="editar-fecha-proyeccion-comienzo-objetivo"
+              placeholder="¿Cuándo planeas comenzar este objetivo?"
+            />
+            <small class="form-text text-muted"
+              >Fecha estimada para comenzar el objetivo</small
+            >
           </div>
           <div class="mb-3">
-            <label for="editar-horas-estimadas-objetivo" class="form-label fw-semibold">Duración estimada</label>
+            <label
+              for="editar-horas-estimadas-objetivo"
+              class="form-label fw-semibold"
+              >Duración estimada</label
+            >
             <div class="row g-2">
               <div class="col">
-                <input type="number" class="form-control" id="editar-horas-estimadas-objetivo" min="0" placeholder="Horas">
+                <input
+                  type="number"
+                  class="form-control"
+                  id="editar-horas-estimadas-objetivo"
+                  min="0"
+                  placeholder="Horas"
+                />
               </div>
               <div class="col">
-                <input type="number" class="form-control" id="editar-minutos-estimados-objetivo" min="0" max="59" placeholder="Minutos">
+                <input
+                  type="number"
+                  class="form-control"
+                  id="editar-minutos-estimados-objetivo"
+                  min="0"
+                  max="59"
+                  placeholder="Minutos"
+                />
               </div>
             </div>
           </div>
           <div class="mb-3">
-            <label for="editar-etiquetas-objetivo" class="form-label fw-semibold">Etiquetas</label>
-            <input type="text" class="form-control" id="editar-etiquetas-objetivo" placeholder="Ej: salud, trabajo, meta...">
+            <label
+              for="editar-etiquetas-objetivo"
+              class="form-label fw-semibold"
+              >Etiquetas</label
+            >
+            <input
+              type="text"
+              class="form-control"
+              id="editar-etiquetas-objetivo"
+              placeholder="Ej: salud, trabajo, meta..."
+            />
           </div>
           <div class="mb-3">
-            <label for="editar-recompensa-objetivo" class="form-label fw-semibold">Recompensa</label>
-            <input type="text" class="form-control" id="editar-recompensa-objetivo" placeholder="¿Qué te darás si lo logras?">
+            <label
+              for="editar-recompensa-objetivo"
+              class="form-label fw-semibold"
+              >Recompensa</label
+            >
+            <input
+              type="text"
+              class="form-control"
+              id="editar-recompensa-objetivo"
+              placeholder="¿Qué te darás si lo logras?"
+            />
           </div>
           <div class="mb-3">
-            <label for="editar-notas-adicionales-objetivo" class="form-label fw-semibold">Notas adicionales</label>
-            <textarea class="form-control" id="editar-notas-adicionales-objetivo" rows="1" placeholder="Notas, recordatorios, etc."></textarea>
+            <label
+              for="editar-notas-adicionales-objetivo"
+              class="form-label fw-semibold"
+              >Notas adicionales</label
+            >
+            <textarea
+              class="form-control"
+              id="editar-notas-adicionales-objetivo"
+              rows="1"
+              placeholder="Notas, recordatorios, etc."
+            ></textarea>
           </div>
-          <hr style="border-top: 1.5px dashed #b6d4fe; margin: 1.2rem 0 1rem 0;">
+          <hr
+            style="border-top: 1.5px dashed #b6d4fe; margin: 1.2rem 0 1rem 0"
+          />
           <div class="mb-3 d-flex align-items-center gap-2">
-            <label class="form-label fw-semibold mb-0" for="editar-recurrente-objetivo"><i class="bi bi-repeat"></i> Hacer este objetivo recurrente</label>
-            <input type="checkbox" class="form-check-input" id="editar-recurrente-objetivo">
+            <label
+              class="form-label fw-semibold mb-0"
+              for="editar-recurrente-objetivo"
+              ><i class="bi bi-repeat"></i> Hacer este objetivo
+              recurrente</label
+            >
+            <input
+              type="checkbox"
+              class="form-check-input"
+              id="editar-recurrente-objetivo"
+            />
           </div>
           <div class="mb-3 d-flex align-items-center gap-2">
-            <label class="form-label fw-semibold mb-0" for="editar-es-padre-objetivo">¿Este objetivo es padre?</label>
-            <input type="checkbox" class="form-check-input" id="editar-es-padre-objetivo">
+            <label
+              class="form-label fw-semibold mb-0"
+              for="editar-es-padre-objetivo"
+              >¿Este objetivo es padre?</label
+            >
+            <input
+              type="checkbox"
+              class="form-check-input"
+              id="editar-es-padre-objetivo"
+            />
           </div>
-          <hr style="border-top: 1.5px dashed #b6d4fe; margin: 1.2rem 0 1rem 0;">
+          <hr
+            style="border-top: 1.5px dashed #b6d4fe; margin: 1.2rem 0 1rem 0"
+          />
           <div class="mb-3">
-            <button type="button" class="btn btn-outline-info btn-sm" id="btn-toggle-checklist-editar">
+            <button
+              type="button"
+              class="btn btn-outline-info btn-sm"
+              id="btn-toggle-checklist-editar"
+            >
               <i class="bi bi-list-check"></i> Editar checklist (subobjetivos)
             </button>
           </div>
-          <div class="mb-3" id="checklist-editar-container" style="display:none;">
-            <label class="form-label fw-semibold">Checklist (subobjetivos)</label>
+          <div
+            class="mb-3"
+            id="checklist-editar-container"
+            style="display: none"
+          >
+            <label class="form-label fw-semibold"
+              >Checklist (subobjetivos)</label
+            >
             <div id="checklist-editar-list"></div>
             <div class="d-flex mt-2">
-              <input type="text" class="form-control form-control-sm me-2" id="checklist-editar-input" placeholder="Nuevo subobjetivo...">
-              <button type="button" class="btn btn-sm btn-primary" id="checklist-editar-add-btn">Agregar</button>
+              <input
+                type="text"
+                class="form-control form-control-sm me-2"
+                id="checklist-editar-input"
+                placeholder="Nuevo subobjetivo..."
+              />
+              <button
+                type="button"
+                class="btn btn-sm btn-primary"
+                id="checklist-editar-add-btn"
+              >
+                Agregar
+              </button>
             </div>
           </div>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button
+            type="button"
+            class="btn btn-outline-secondary"
+            data-bs-dismiss="modal"
+          >
+            Cancelar
+          </button>
           <button type="submit" class="btn btn-primary">Guardar Cambios</button>
         </div>
       </form>
@@ -695,697 +1352,814 @@
 <!-- Toggle de activar/desactivar ahora gestionado por main.js -->
 
 <script>
-// === SISTEMA DE CATEGORÍAS Y SUBCATEGORÍAS ===
+  // === SISTEMA DE CATEGORÍAS Y SUBCATEGORÍAS ===
 
-// Objeto para almacenar las relaciones entre categorías y subcategorías
-const categoriasSubcategorias = {};
+  // Objeto para almacenar las relaciones entre categorías y subcategorías
+  const categoriasSubcategorias = {};
 
-// Función para normalizar nombres de categorías y subcategorías
-function normalizarNombre(nombre) {
-    if (!nombre) return '';
-    
+  // Función para normalizar nombres de categorías y subcategorías
+  function normalizarNombre(nombre) {
+    if (!nombre) return "";
+
     return nombre
-        .split('_')
-        .map(palabra => palabra.charAt(0).toUpperCase() + palabra.slice(1).toLowerCase())
-        .join(' ');
-}
+      .split("_")
+      .map(
+        (palabra) =>
+          palabra.charAt(0).toUpperCase() + palabra.slice(1).toLowerCase()
+      )
+      .join(" ");
+  }
 
-// Cargar categorías y configurar eventos al cargar la página
-document.addEventListener('DOMContentLoaded', async function() {
+  // Cargar categorías y configurar eventos al cargar la página
+  document.addEventListener("DOMContentLoaded", async function () {
     // Cargar categorías en los selects
     await cargarCategoriasParaFormularios();
-    
+
     // Configurar eventos para el modal de nueva frase
     configurarEventosNuevaFrase();
-    
+
     // Configurar eventos para el modal de editar frase
     configurarEventosEditarFrase();
-});
+  });
 
-// Función para cargar categorías en los formularios
-async function cargarCategoriasParaFormularios() {
+  // Función para cargar categorías en los formularios
+  async function cargarCategoriasParaFormularios() {
     try {
-        // Cargar categorías principales para los formularios
-        await cargarCategoriasGlobales();
+      // Cargar categorías principales para los formularios
+      await cargarCategoriasGlobales();
 
-        // Si hay una categoría seleccionada (por ejemplo edición), la subcategoría se cargará al cambiar la categoría
+      // Si hay una categoría seleccionada (por ejemplo edición), la subcategoría se cargará al cambiar la categoría
     } catch (error) {
-        console.error('Error al cargar categorías para formularios:', error);
+      console.error("Error al cargar categorías para formularios:", error);
     }
-}
+  }
 
-// Cargar solo categorías (evita N+1)
-// Cargar subcategorías globales (todas las subcategorías del usuario)
-async function cargarCategoriasGlobales() {
+  // Cargar solo categorías (evita N+1)
+  // Cargar subcategorías globales (todas las subcategorías del usuario)
+  async function cargarCategoriasGlobales() {
     try {
-        console.log('Cargando categorías...');
-        const response = await fetch('/api/frases/categorias');
-        console.log('Respuesta del servidor:', response.status);
+      console.log("Cargando categorías...");
+      const response = await fetch("/api/frases/categorias");
+      console.log("Respuesta del servidor:", response.status);
 
-        if (!response.ok) {
-            const errorText = await response.text();
-            console.error('Error del servidor:', errorText);
-            throw new Error('Error al cargar categorías');
-        }
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Error del servidor:", errorText);
+        throw new Error("Error al cargar categorías");
+      }
 
-        const data = await response.json();
-        console.log('Datos recibidos:', data);
+      const data = await response.json();
+      console.log("Datos recibidos:", data);
 
-        const categorias = Array.isArray(data.categorias) ? data.categorias : [];
+      const categorias = Array.isArray(data.categorias) ? data.categorias : [];
 
-        // Actualizar los selects de categoría en los modales
-        actualizarSelectConOpciones('frase-categoria', categorias);
-        actualizarSelectConOpciones('editar-frase-categoria', categorias);
+      // Actualizar los selects de categoría en los modales
+      actualizarSelectConOpciones("frase-categoria", categorias);
+      actualizarSelectConOpciones("editar-frase-categoria", categorias);
 
-        console.log('Categorías cargadas:', categorias);
-        return categorias;
+      console.log("Categorías cargadas:", categorias);
+      return categorias;
     } catch (error) {
-        console.error('Error al cargar categorías:', error);
-        return [];
+      console.error("Error al cargar categorías:", error);
+      return [];
     }
-}
+  }
 
-// Función para cargar subcategorías de una categoría específica
-async function cargarSubcategoriasParaCategoria(categoria, selectId) {
+  // Función para cargar subcategorías de una categoría específica
+  async function cargarSubcategoriasParaCategoria(categoria, selectId) {
     // Si ya tenemos las subcategorías en caché (incluido vacío), usarlas
-    if (Object.prototype.hasOwnProperty.call(categoriasSubcategorias, categoria)) {
-        actualizarSelectSubcategorias(selectId, categoriasSubcategorias[categoria] || []);
-        return;
+    if (
+      Object.prototype.hasOwnProperty.call(categoriasSubcategorias, categoria)
+    ) {
+      actualizarSelectSubcategorias(
+        selectId,
+        categoriasSubcategorias[categoria] || []
+      );
+      return;
     }
-    
-    try {
-        const response = await fetch(`/api/frases/categorias?categoria=${encodeURIComponent(categoria)}`);
-        if (!response.ok) throw new Error('Error al cargar subcategorías');
-        const data = await response.json();
-        
-        // Guardar en caché las subcategorías para esta categoría
-        categoriasSubcategorias[categoria] = data.subcategorias || [];
-        
-        // Actualizar el select de subcategorías
-        actualizarSelectSubcategorias(selectId, categoriasSubcategorias[categoria]);
-    } catch (error) {
-        console.error('Error al cargar subcategorías:', error);
-        actualizarSelectSubcategorias(selectId, []);
-    }
-}
 
-// Función auxiliar para actualizar el select de subcategorías
-function actualizarSelectSubcategorias(selectId, subcategorias) {
+    try {
+      const response = await fetch(
+        `/api/frases/categorias?categoria=${encodeURIComponent(categoria)}`
+      );
+      if (!response.ok) throw new Error("Error al cargar subcategorías");
+      const data = await response.json();
+
+      // Guardar en caché las subcategorías para esta categoría
+      categoriasSubcategorias[categoria] = data.subcategorias || [];
+
+      // Actualizar el select de subcategorías
+      actualizarSelectSubcategorias(
+        selectId,
+        categoriasSubcategorias[categoria]
+      );
+    } catch (error) {
+      console.error("Error al cargar subcategorías:", error);
+      actualizarSelectSubcategorias(selectId, []);
+    }
+  }
+
+  // Función auxiliar para actualizar el select de subcategorías
+  function actualizarSelectSubcategorias(selectId, subcategorias) {
     const select = document.getElementById(selectId);
     if (!select) return;
-    
+
     // Guardar la subcategoría seleccionada actualmente
     const selectedSubcategoria = select.value;
-    
+
     // Limpiar opciones existentes
-    select.innerHTML = '<option value="">Selecciona una subcategoría</option><option value="nueva">+ Nueva subcategoría</option>';
-    
+    select.innerHTML =
+      '<option value="">Selecciona una subcategoría</option><option value="nueva">+ Nueva subcategoría</option>';
+
     // Agregar las subcategorías al select con nombres normalizados
-    subcategorias.forEach(subcat => {
-        const option = document.createElement('option');
-        option.value = subcat; // Valor original para el backend
-        option.textContent = normalizarNombre(subcat); // Nombre normalizado para mostrar
-        select.appendChild(option);
+    subcategorias.forEach((subcat) => {
+      const option = document.createElement("option");
+      option.value = subcat; // Valor original para el backend
+      option.textContent = normalizarNombre(subcat); // Nombre normalizado para mostrar
+      select.appendChild(option);
     });
-    
+
     // Restaurar la selección anterior si existe
     if (selectedSubcategoria && subcategorias.includes(selectedSubcategoria)) {
-        select.value = selectedSubcategoria;
+      select.value = selectedSubcategoria;
     }
-}
+  }
 
-// Función auxiliar para actualizar un select con opciones
-function actualizarSelectConOpciones(selectId, opciones) {
+  // Función auxiliar para actualizar un select con opciones
+  function actualizarSelectConOpciones(selectId, opciones) {
     const select = document.getElementById(selectId);
     if (!select) return;
-    
+
     // Guardar la opción seleccionada actual
     const selectedValue = select.value;
-    
-    // Limpiar todas las opciones
-    select.innerHTML = '';
-    
-    // Agregar opción por defecto
-    const defaultOption = document.createElement('option');
-    defaultOption.value = '';
-    defaultOption.textContent = 'Selecciona una categoría';
-    select.appendChild(defaultOption);
-    
-    // Añadir las nuevas opciones con nombres normalizados
-    opciones.forEach(opcion => {
-        const option = document.createElement('option');
-        option.value = opcion; // Valor original para el backend
-        option.textContent = normalizarNombre(opcion); // Nombre normalizado para mostrar
-        select.appendChild(option);
-    });
-    
-    // Agregar opción de nueva categoría
-    const nuevaOption = document.createElement('option');
-    nuevaOption.value = 'nueva';
-    nuevaOption.textContent = '+ Nueva categoría';
-    select.appendChild(nuevaOption);
-    
-    // Restaurar la selección anterior si existe en las nuevas opciones
-    if (selectedValue && (selectedValue === 'nueva' || opciones.includes(selectedValue))) {
-        select.value = selectedValue;
-    }
-}
 
-// Configurar eventos para el modal de nueva frase
-function configurarEventosNuevaFrase() {
+    // Limpiar todas las opciones
+    select.innerHTML = "";
+
+    // Agregar opción por defecto
+    const defaultOption = document.createElement("option");
+    defaultOption.value = "";
+    defaultOption.textContent = "Selecciona una categoría";
+    select.appendChild(defaultOption);
+
+    // Añadir las nuevas opciones con nombres normalizados
+    opciones.forEach((opcion) => {
+      const option = document.createElement("option");
+      option.value = opcion; // Valor original para el backend
+      option.textContent = normalizarNombre(opcion); // Nombre normalizado para mostrar
+      select.appendChild(option);
+    });
+
+    // Agregar opción de nueva categoría
+    const nuevaOption = document.createElement("option");
+    nuevaOption.value = "nueva";
+    nuevaOption.textContent = "+ Nueva categoría";
+    select.appendChild(nuevaOption);
+
+    // Restaurar la selección anterior si existe en las nuevas opciones
+    if (
+      selectedValue &&
+      (selectedValue === "nueva" || opciones.includes(selectedValue))
+    ) {
+      select.value = selectedValue;
+    }
+  }
+
+  // Configurar eventos para el modal de nueva frase
+  function configurarEventosNuevaFrase() {
     // Cuando cambia la categoría, cargar las subcategorías correspondientes
-    document.getElementById('frase-categoria').addEventListener('change', async function() {
+    document
+      .getElementById("frase-categoria")
+      .addEventListener("change", async function () {
         const categoria = this.value;
         // Mostrar/ocultar nuevo input de categoría
-        document.getElementById('nueva-categoria-container').style.display = categoria === 'nueva' ? 'block' : 'none';
+        document.getElementById("nueva-categoria-container").style.display =
+          categoria === "nueva" ? "block" : "none";
 
         // Limpiar y preparar select de subcategorías
-        const subSelect = document.getElementById('frase-subcategoria');
-        if (subSelect) subSelect.innerHTML = '<option value="">Selecciona una subcategoría</option><option value="nueva">+ Nueva subcategoría</option>';
+        const subSelect = document.getElementById("frase-subcategoria");
+        if (subSelect)
+          subSelect.innerHTML =
+            '<option value="">Selecciona una subcategoría</option><option value="nueva">+ Nueva subcategoría</option>';
 
-        if (categoria && categoria !== 'nueva') {
-            await cargarSubcategoriasParaCategoria(categoria, 'frase-subcategoria');
+        if (categoria && categoria !== "nueva") {
+          await cargarSubcategoriasParaCategoria(
+            categoria,
+            "frase-subcategoria"
+          );
         }
-    });
+      });
 
     // Manejar cambio de subcategoría para mostrar input nuevo
-    document.getElementById('frase-subcategoria').addEventListener('change', function() {
-        document.getElementById('nueva-subcategoria-container').style.display = this.value === 'nueva' ? 'block' : 'none';
-    });
+    document
+      .getElementById("frase-subcategoria")
+      .addEventListener("change", function () {
+        document.getElementById("nueva-subcategoria-container").style.display =
+          this.value === "nueva" ? "block" : "none";
+      });
 
     // Configurar envío del formulario
-    document.getElementById('form-nueva-frase').addEventListener('submit', async function(e) {
+    document
+      .getElementById("form-nueva-frase")
+      .addEventListener("submit", async function (e) {
         e.preventDefault();
         await enviarNuevaFrase();
-    });
-}
+      });
+  }
 
-// Configurar eventos para el modal de editar frase
-function configurarEventosEditarFrase() {
+  // Configurar eventos para el modal de editar frase
+  function configurarEventosEditarFrase() {
     // Cuando cambia la categoría en edición, cargar subcategorías
-    document.getElementById('editar-frase-categoria').addEventListener('change', async function() {
+    document
+      .getElementById("editar-frase-categoria")
+      .addEventListener("change", async function () {
         const categoria = this.value;
-        document.getElementById('editar-nueva-categoria-container').style.display = categoria === 'nueva' ? 'block' : 'none';
+        document.getElementById(
+          "editar-nueva-categoria-container"
+        ).style.display = categoria === "nueva" ? "block" : "none";
 
-        const subSelect = document.getElementById('editar-frase-subcategoria');
-        if (subSelect) subSelect.innerHTML = '<option value="">Selecciona una subcategoría</option><option value="nueva">+ Nueva subcategoría</option>';
+        const subSelect = document.getElementById("editar-frase-subcategoria");
+        if (subSelect)
+          subSelect.innerHTML =
+            '<option value="">Selecciona una subcategoría</option><option value="nueva">+ Nueva subcategoría</option>';
 
-        if (categoria && categoria !== 'nueva') {
-            await cargarSubcategoriasParaCategoria(categoria, 'editar-frase-subcategoria');
+        if (categoria && categoria !== "nueva") {
+          await cargarSubcategoriasParaCategoria(
+            categoria,
+            "editar-frase-subcategoria"
+          );
         }
-    });
+      });
 
     // Manejar cambio de subcategoría en edición
-    document.getElementById('editar-frase-subcategoria').addEventListener('change', function() {
-        document.getElementById('editar-nueva-subcategoria-container').style.display = this.value === 'nueva' ? 'block' : 'none';
-    });
+    document
+      .getElementById("editar-frase-subcategoria")
+      .addEventListener("change", function () {
+        document.getElementById(
+          "editar-nueva-subcategoria-container"
+        ).style.display = this.value === "nueva" ? "block" : "none";
+      });
 
     // Configurar envío del formulario de edición
-    document.getElementById('form-editar-frase').addEventListener('submit', async function(e) {
+    document
+      .getElementById("form-editar-frase")
+      .addEventListener("submit", async function (e) {
         e.preventDefault();
         await enviarEditarFrase();
-    });
-}
+      });
+  }
 
-// Función para enviar nueva frase
-async function enviarNuevaFrase() {
-    const texto = document.getElementById('frase-texto').value.trim();
-    const autor = document.getElementById('frase-autor').value.trim();
-    const notas = document.getElementById('frase-notas').value.trim();
-    const categoria = document.getElementById('frase-categoria').value;
-    let subcategoria = document.getElementById('frase-subcategoria').value;
+  // Función para enviar nueva frase
+  async function enviarNuevaFrase() {
+    const texto = document.getElementById("frase-texto").value.trim();
+    const autor = document.getElementById("frase-autor").value.trim();
+    const notas = document.getElementById("frase-notas").value.trim();
+    const categoria = document.getElementById("frase-categoria").value;
+    let subcategoria = document.getElementById("frase-subcategoria").value;
 
     // Manejar nueva categoría
-    if (categoria === 'nueva') {
-        const nuevaCategoria = document.getElementById('nueva-categoria-input').value.trim();
-        if (!nuevaCategoria) {
-            alert('Por favor ingresa un nombre para la nueva categoría');
-            return;
-        }
+    if (categoria === "nueva") {
+      const nuevaCategoria = document
+        .getElementById("nueva-categoria-input")
+        .value.trim();
+      if (!nuevaCategoria) {
+        alert("Por favor ingresa un nombre para la nueva categoría");
+        return;
+      }
     }
 
     // Manejar nueva subcategoría inline
-    if (subcategoria === 'nueva') {
-        const nuevaSubcategoria = document.getElementById('nueva-subcategoria-input').value.trim();
-        if (!nuevaSubcategoria) {
-            alert('Por favor ingresa un nombre para la nueva subcategoría');
-            return;
-        }
-        subcategoria = nuevaSubcategoria;
+    if (subcategoria === "nueva") {
+      const nuevaSubcategoria = document
+        .getElementById("nueva-subcategoria-input")
+        .value.trim();
+      if (!nuevaSubcategoria) {
+        alert("Por favor ingresa un nombre para la nueva subcategoría");
+        return;
+      }
+      subcategoria = nuevaSubcategoria;
     }
 
     // Validación: subcategoría obligatoria
     if (!texto || !categoria || !subcategoria) {
-        alert('Por favor selecciona categoría y subcategoría antes de guardar la frase');
-        return;
+      alert(
+        "Por favor selecciona categoría y subcategoría antes de guardar la frase"
+      );
+      return;
     }
-    
-    try {
-        const response = await fetch('/api/frases', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                texto,
-                autor: autor || null,
-                categoria: categoria === 'nueva' ? document.getElementById('nueva-categoria-input').value.trim() : categoria,
-                subcategoria,
-                notas: notas || null
-            })
-        });
-        
-        if (!response.ok) throw new Error('Error al guardar la frase');
-        
-        // Cerrar el modal y recargar la lista
-        const modal = bootstrap.Modal.getInstance(document.getElementById('modalNuevaFrase'));
-        modal.hide();
-        
-        // Limpiar el formulario
-        document.getElementById('form-nueva-frase').reset();
-        document.getElementById('nueva-categoria-container').style.display = 'none';
-        document.getElementById('nueva-subcategoria-container').style.display = 'none';
-        
-        // Recargar la lista de frases
-        if (typeof cargarFrases === 'function') {
-            await cargarFrases();
-        }
-        
-    } catch (error) {
-        console.error('Error al guardar la frase:', error);
-        alert('Error al guardar la frase. Por favor, inténtalo de nuevo.');
-    }
-}
 
-// Función para enviar edición de frase
-async function enviarEditarFrase() {
-    const id = document.getElementById('editar-frase-id').value;
-    const texto = document.getElementById('editar-frase-texto').value.trim();
-    const autor = document.getElementById('editar-frase-autor').value.trim();
-    const notas = document.getElementById('editar-frase-notas').value.trim();
-    const categoria = document.getElementById('editar-frase-categoria').value;
-    let subcategoria = document.getElementById('editar-frase-subcategoria').value;
+    try {
+      const response = await fetch("/api/frases", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          texto,
+          autor: autor || null,
+          categoria:
+            categoria === "nueva"
+              ? document.getElementById("nueva-categoria-input").value.trim()
+              : categoria,
+          subcategoria,
+          notas: notas || null,
+        }),
+      });
+
+      if (!response.ok) throw new Error("Error al guardar la frase");
+
+      // Cerrar el modal y recargar la lista
+      const modal = bootstrap.Modal.getInstance(
+        document.getElementById("modalNuevaFrase")
+      );
+      modal.hide();
+
+      // Limpiar el formulario
+      document.getElementById("form-nueva-frase").reset();
+      document.getElementById("nueva-categoria-container").style.display =
+        "none";
+      document.getElementById("nueva-subcategoria-container").style.display =
+        "none";
+
+      // Recargar la lista de frases
+      if (typeof cargarFrases === "function") {
+        await cargarFrases();
+      }
+    } catch (error) {
+      console.error("Error al guardar la frase:", error);
+      alert("Error al guardar la frase. Por favor, inténtalo de nuevo.");
+    }
+  }
+
+  // Función para enviar edición de frase
+  async function enviarEditarFrase() {
+    const id = document.getElementById("editar-frase-id").value;
+    const texto = document.getElementById("editar-frase-texto").value.trim();
+    const autor = document.getElementById("editar-frase-autor").value.trim();
+    const notas = document.getElementById("editar-frase-notas").value.trim();
+    const categoria = document.getElementById("editar-frase-categoria").value;
+    let subcategoria = document.getElementById(
+      "editar-frase-subcategoria"
+    ).value;
 
     // Manejar nueva categoría
-    if (categoria === 'nueva') {
-        const nuevaCategoria = document.getElementById('editar-nueva-categoria-input').value.trim();
-        if (!nuevaCategoria) {
-            alert('Por favor ingresa un nombre para la nueva categoría');
-            return;
-        }
+    if (categoria === "nueva") {
+      const nuevaCategoria = document
+        .getElementById("editar-nueva-categoria-input")
+        .value.trim();
+      if (!nuevaCategoria) {
+        alert("Por favor ingresa un nombre para la nueva categoría");
+        return;
+      }
     }
 
     // Manejar nueva subcategoría inline
-    if (subcategoria === 'nueva') {
-        const nuevaSubcategoria = document.getElementById('editar-nueva-subcategoria-input').value.trim();
-        if (!nuevaSubcategoria) {
-            alert('Por favor ingresa un nombre para la nueva subcategoría');
-            return;
-        }
-        subcategoria = nuevaSubcategoria;
+    if (subcategoria === "nueva") {
+      const nuevaSubcategoria = document
+        .getElementById("editar-nueva-subcategoria-input")
+        .value.trim();
+      if (!nuevaSubcategoria) {
+        alert("Por favor ingresa un nombre para la nueva subcategoría");
+        return;
+      }
+      subcategoria = nuevaSubcategoria;
     }
 
     if (!id || !texto || !categoria || !subcategoria) {
-        alert('Por favor completa todos los campos requeridos (categoria y subcategoria obligatorias)');
-        return;
+      alert(
+        "Por favor completa todos los campos requeridos (categoria y subcategoria obligatorias)"
+      );
+      return;
     }
-    
-    try {
-        const response = await fetch(`/api/frases/${id}`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                texto,
-                autor: autor || null,
-                categoria: categoria === 'nueva' ? document.getElementById('editar-nueva-categoria-input').value.trim() : categoria,
-                subcategoria,
-                notas: notas || null
-            })
-        });
-        
-        if (!response.ok) throw new Error('Error al actualizar la frase');
-        
-        // Cerrar el modal
-        const modal = bootstrap.Modal.getInstance(document.getElementById('modalEditarFrase'));
-        modal.hide();
-        
-        // Recargar la lista de frases
-        if (typeof cargarFrases === 'function') {
-            await cargarFrases();
-        }
-        
-    } catch (error) {
-        console.error('Error al actualizar la frase:', error);
-        alert('Error al actualizar la frase. Por favor, inténtalo de nuevo.');
-    }
-}
 
-// Función para abrir el modal de edición con los datos de la frase
-function abrirModalEditarFrase(frase) {
-    document.getElementById('editar-frase-id').value = frase.id;
-    document.getElementById('editar-frase-texto').value = frase.texto || '';
-    document.getElementById('editar-frase-autor').value = frase.autor || '';
-    document.getElementById('editar-frase-notas').value = frase.notas || '';
-    
-    // Establecer la categoría
-    const selectCategoria = document.getElementById('editar-frase-categoria');
-    if (frase.categoria && !Array.from(selectCategoria.options).some(opt => opt.value === frase.categoria)) {
-        const option = document.createElement('option');
-        option.value = frase.categoria;
-        option.textContent = frase.categoria;
-        selectCategoria.insertBefore(option, selectCategoria.lastElementChild);
+    try {
+      const response = await fetch(`/api/frases/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          texto,
+          autor: autor || null,
+          categoria:
+            categoria === "nueva"
+              ? document
+                  .getElementById("editar-nueva-categoria-input")
+                  .value.trim()
+              : categoria,
+          subcategoria,
+          notas: notas || null,
+        }),
+      });
+
+      if (!response.ok) throw new Error("Error al actualizar la frase");
+
+      // Cerrar el modal
+      const modal = bootstrap.Modal.getInstance(
+        document.getElementById("modalEditarFrase")
+      );
+      modal.hide();
+
+      // Recargar la lista de frases
+      if (typeof cargarFrases === "function") {
+        await cargarFrases();
+      }
+    } catch (error) {
+      console.error("Error al actualizar la frase:", error);
+      alert("Error al actualizar la frase. Por favor, inténtalo de nuevo.");
     }
-    selectCategoria.value = frase.categoria || '';
-    
+  }
+
+  // Función para abrir el modal de edición con los datos de la frase
+  function abrirModalEditarFrase(frase) {
+    document.getElementById("editar-frase-id").value = frase.id;
+    document.getElementById("editar-frase-texto").value = frase.texto || "";
+    document.getElementById("editar-frase-autor").value = frase.autor || "";
+    document.getElementById("editar-frase-notas").value = frase.notas || "";
+
+    // Establecer la categoría
+    const selectCategoria = document.getElementById("editar-frase-categoria");
+    if (
+      frase.categoria &&
+      !Array.from(selectCategoria.options).some(
+        (opt) => opt.value === frase.categoria
+      )
+    ) {
+      const option = document.createElement("option");
+      option.value = frase.categoria;
+      option.textContent = frase.categoria;
+      selectCategoria.insertBefore(option, selectCategoria.lastElementChild);
+    }
+    selectCategoria.value = frase.categoria || "";
+
     // Cargar subcategorías para la categoría seleccionada
     if (frase.categoria) {
-        cargarSubcategoriasParaCategoria(frase.categoria, 'editar-frase-subcategoria').then(() => {
-            const selectSubcategoria = document.getElementById('editar-frase-subcategoria');
-            if (frase.subcategoria) {
-                // Si la subcategoría no está en las opciones, la añadimos
-                if (!Array.from(selectSubcategoria.options).some(opt => opt.value === frase.subcategoria)) {
-                    const option = document.createElement('option');
-                    option.value = frase.subcategoria;
-                    option.textContent = frase.subcategoria;
-                    selectSubcategoria.add(option);
-                }
-                selectSubcategoria.value = frase.subcategoria;
-            }
-        });
+      cargarSubcategoriasParaCategoria(
+        frase.categoria,
+        "editar-frase-subcategoria"
+      ).then(() => {
+        const selectSubcategoria = document.getElementById(
+          "editar-frase-subcategoria"
+        );
+        if (frase.subcategoria) {
+          // Si la subcategoría no está en las opciones, la añadimos
+          if (
+            !Array.from(selectSubcategoria.options).some(
+              (opt) => opt.value === frase.subcategoria
+            )
+          ) {
+            const option = document.createElement("option");
+            option.value = frase.subcategoria;
+            option.textContent = frase.subcategoria;
+            selectSubcategoria.add(option);
+          }
+          selectSubcategoria.value = frase.subcategoria;
+        }
+      });
     }
-    
+
     // Mostrar el modal
-    const modal = new bootstrap.Modal(document.getElementById('modalEditarFrase'));
+    const modal = new bootstrap.Modal(
+      document.getElementById("modalEditarFrase")
+    );
     modal.show();
-}
+  }
 
-// === SISTEMA DE FILTROS ===
+  // === SISTEMA DE FILTROS ===
 
-// Variables para almacenar los filtros actuales
-let filtrosActivos = {
-    categoria: '',
-    subcategoria: ''
-};
+  // Variables para almacenar los filtros actuales
+  let filtrosActivos = {
+    categoria: "",
+    subcategoria: "",
+  };
 
-// Configurar eventos de filtros
-function configurarEventosFiltros() {
+  // Configurar eventos de filtros
+  function configurarEventosFiltros() {
     // Cargar categorías en el filtro
     cargarCategoriasParaFiltros();
-    
+
     // Evento para cambio de categoría en filtros
-    document.getElementById('filtro-categoria-frases').addEventListener('change', async function() {
+    document
+      .getElementById("filtro-categoria-frases")
+      .addEventListener("change", async function () {
         const categoria = this.value;
         filtrosActivos.categoria = categoria;
-        
+
         // Cargar subcategorías para la categoría seleccionada
         if (categoria) {
-            await cargarSubcategoriasParaFiltros(categoria);
+          await cargarSubcategoriasParaFiltros(categoria);
         } else {
-            // Limpiar subcategorías si no hay categoría seleccionada
-            const subSelect = document.getElementById('filtro-subcategoria-frases');
-            subSelect.innerHTML = '<option value="">Todas las subcategorías</option>';
-            filtrosActivos.subcategoria = '';
+          // Limpiar subcategorías si no hay categoría seleccionada
+          const subSelect = document.getElementById(
+            "filtro-subcategoria-frases"
+          );
+          subSelect.innerHTML =
+            '<option value="">Todas las subcategorías</option>';
+          filtrosActivos.subcategoria = "";
         }
-        
+
         // Aplicar filtros automáticamente
         aplicarFiltros();
-    });
-    
+      });
+
     // Evento para cambio de subcategoría en filtros
-    document.getElementById('filtro-subcategoria-frases').addEventListener('change', function() {
+    document
+      .getElementById("filtro-subcategoria-frases")
+      .addEventListener("change", function () {
         filtrosActivos.subcategoria = this.value;
         aplicarFiltros();
-    });
-    
+      });
+
     // Evento para botón aplicar filtro
-    document.getElementById('btn-aplicar-filtro').addEventListener('click', function() {
+    document
+      .getElementById("btn-aplicar-filtro")
+      .addEventListener("click", function () {
         aplicarFiltros();
-    });
-    
+      });
+
     // Evento para botón limpiar filtro
-    document.getElementById('btn-limpiar-filtro').addEventListener('click', function() {
+    document
+      .getElementById("btn-limpiar-filtro")
+      .addEventListener("click", function () {
         limpiarFiltros();
-    });
-    
+      });
+
     // Evento para repasar por filtros
-    document.getElementById('btn-repasar-todas').addEventListener('click', function() {
+    document
+      .getElementById("btn-repasar-todas")
+      .addEventListener("click", function () {
         repasarPorFiltros();
-    });
-}
+      });
+  }
 
-// Cargar categorías para los filtros
-async function cargarCategoriasParaFiltros() {
+  // Cargar categorías para los filtros
+  async function cargarCategoriasParaFiltros() {
     try {
-        console.log('Cargando categorías para filtros...');
-        const response = await fetch('/api/frases/categorias');
-        console.log('Respuesta del servidor (filtros):', response.status);
-        
-        if (!response.ok) {
-            const errorText = await response.text();
-            console.error('Error del servidor (filtros):', errorText);
-            throw new Error('Error al cargar categorías');
-        }
-        
-        const data = await response.json();
-        console.log('Datos recibidos (filtros):', data);
-        
-        const select = document.getElementById('filtro-categoria-frases');
-        if (!select) {
-            console.error('No se encontró el elemento filtro-categoria-frases');
-            return;
-        }
-        
-        select.innerHTML = '<option value="">Todas las categorías</option>';
-        
-        if (data.categorias && Array.isArray(data.categorias)) {
-            data.categorias.forEach(categoria => {
-                const option = document.createElement('option');
-                option.value = categoria; // Valor original para el backend
-                option.textContent = normalizarNombre(categoria); // Nombre normalizado para mostrar
-                select.appendChild(option);
-            });
-            console.log('Categorías cargadas en filtros:', data.categorias);
-        } else {
-            console.error('No hay categorías disponibles o formato incorrecto');
-        }
-    } catch (error) {
-        console.error('Error al cargar categorías para filtros:', error);
-    }
-}
+      console.log("Cargando categorías para filtros...");
+      const response = await fetch("/api/frases/categorias");
+      console.log("Respuesta del servidor (filtros):", response.status);
 
-// Cargar subcategorías para filtros
-async function cargarSubcategoriasParaFiltros(categoria) {
-    try {
-        const response = await fetch(`/api/frases/categorias?categoria=${encodeURIComponent(categoria)}`);
-        if (!response.ok) throw new Error('Error al cargar subcategorías');
-        const data = await response.json();
-        
-        const select = document.getElementById('filtro-subcategoria-frases');
-        select.innerHTML = '<option value="">Todas las subcategorías</option>';
-        
-        data.subcategorias.forEach(subcategoria => {
-            const option = document.createElement('option');
-            option.value = subcategoria; // Valor original para el backend
-            option.textContent = normalizarNombre(subcategoria); // Nombre normalizado para mostrar
-            select.appendChild(option);
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Error del servidor (filtros):", errorText);
+        throw new Error("Error al cargar categorías");
+      }
+
+      const data = await response.json();
+      console.log("Datos recibidos (filtros):", data);
+
+      const select = document.getElementById("filtro-categoria-frases");
+      if (!select) {
+        console.error("No se encontró el elemento filtro-categoria-frases");
+        return;
+      }
+
+      select.innerHTML = '<option value="">Todas las categorías</option>';
+
+      if (data.categorias && Array.isArray(data.categorias)) {
+        data.categorias.forEach((categoria) => {
+          const option = document.createElement("option");
+          option.value = categoria; // Valor original para el backend
+          option.textContent = normalizarNombre(categoria); // Nombre normalizado para mostrar
+          select.appendChild(option);
         });
+        console.log("Categorías cargadas en filtros:", data.categorias);
+      } else {
+        console.error("No hay categorías disponibles o formato incorrecto");
+      }
     } catch (error) {
-        console.error('Error al cargar subcategorías para filtros:', error);
+      console.error("Error al cargar categorías para filtros:", error);
     }
-}
+  }
 
-// Aplicar filtros a las frases
-function aplicarFiltros() {
+  // Cargar subcategorías para filtros
+  async function cargarSubcategoriasParaFiltros(categoria) {
+    try {
+      const response = await fetch(
+        `/api/frases/categorias?categoria=${encodeURIComponent(categoria)}`
+      );
+      if (!response.ok) throw new Error("Error al cargar subcategorías");
+      const data = await response.json();
+
+      const select = document.getElementById("filtro-subcategoria-frases");
+      select.innerHTML = '<option value="">Todas las subcategorías</option>';
+
+      data.subcategorias.forEach((subcategoria) => {
+        const option = document.createElement("option");
+        option.value = subcategoria; // Valor original para el backend
+        option.textContent = normalizarNombre(subcategoria); // Nombre normalizado para mostrar
+        select.appendChild(option);
+      });
+    } catch (error) {
+      console.error("Error al cargar subcategorías para filtros:", error);
+    }
+  }
+
+  // Aplicar filtros a las frases
+  function aplicarFiltros() {
     // Actualizar indicador de filtro activo
     actualizarIndicadorFiltro();
-    
+
     // Recargar frases con filtros aplicados
-    if (typeof cargarFrases === 'function') {
-        cargarFrases();
+    if (typeof cargarFrases === "function") {
+      cargarFrases();
     }
-}
+  }
 
-// Limpiar todos los filtros
-function limpiarFiltros() {
-    document.getElementById('filtro-categoria-frases').value = '';
-    document.getElementById('filtro-subcategoria-frases').value = '';
-    document.getElementById('filtro-subcategoria-frases').innerHTML = '<option value="">Todas las subcategorías</option>';
-    
-    filtrosActivos.categoria = '';
-    filtrosActivos.subcategoria = '';
-    
+  // Limpiar todos los filtros
+  function limpiarFiltros() {
+    document.getElementById("filtro-categoria-frases").value = "";
+    document.getElementById("filtro-subcategoria-frases").value = "";
+    document.getElementById("filtro-subcategoria-frases").innerHTML =
+      '<option value="">Todas las subcategorías</option>';
+
+    filtrosActivos.categoria = "";
+    filtrosActivos.subcategoria = "";
+
     aplicarFiltros();
-}
+  }
 
-// Actualizar indicador de filtro activo
-function actualizarIndicadorFiltro() {
-    const indicador = document.getElementById('indicador-filtro-estadisticas');
+  // Actualizar indicador de filtro activo
+  function actualizarIndicadorFiltro() {
+    const indicador = document.getElementById("indicador-filtro-estadisticas");
     if (!indicador) return;
-    
-    let texto = 'Estadísticas generales';
+
+    let texto = "Estadísticas generales";
     if (filtrosActivos.categoria || filtrosActivos.subcategoria) {
-        const filtros = [];
-        if (filtrosActivos.categoria) filtros.push(`Categoría: ${normalizarNombre(filtrosActivos.categoria)}`);
-        if (filtrosActivos.subcategoria) filtros.push(`Subcategoría: ${normalizarNombre(filtrosActivos.subcategoria)}`);
-        texto = `Filtros activos: ${filtros.join(', ')}`;
+      const filtros = [];
+      if (filtrosActivos.categoria)
+        filtros.push(
+          `Categoría: ${normalizarNombre(filtrosActivos.categoria)}`
+        );
+      if (filtrosActivos.subcategoria)
+        filtros.push(
+          `Subcategoría: ${normalizarNombre(filtrosActivos.subcategoria)}`
+        );
+      texto = `Filtros activos: ${filtros.join(", ")}`;
     }
-    
+
     indicador.textContent = texto;
-}
+  }
 
-// Repasar frases por filtros
-async function repasarPorFiltros() {
-    const btnRepasar = document.getElementById('btn-repasar-todas');
+  // Repasar frases por filtros
+  async function repasarPorFiltros() {
+    const btnRepasar = document.getElementById("btn-repasar-todas");
     const textoOriginal = btnRepasar.innerHTML;
-    
+
     try {
-        // Mostrar indicador de carga
-        btnRepasar.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Procesando...';
-        btnRepasar.disabled = true;
-        
-        const payload = {
-            categoria: filtrosActivos.categoria || null,
-            subcategoria: filtrosActivos.subcategoria || null
-        };
-        
-        const response = await fetch('/api/frases/repasar_filtradas', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(payload)
-        });
-        
-        if (!response.ok) throw new Error('Error al repasar frases');
-        
-        const data = await response.json();
-        
-        // Recargar la lista primero y esperar a que termine
-        if (typeof cargarFrases === 'function') {
-            await cargarFrases();
-        }
-        
-        // Sin notificaciones - solo recargar la lista
-        
+      // Mostrar indicador de carga
+      btnRepasar.innerHTML =
+        '<i class="bi bi-hourglass-split me-1"></i>Procesando...';
+      btnRepasar.disabled = true;
+
+      const payload = {
+        categoria: filtrosActivos.categoria || null,
+        subcategoria: filtrosActivos.subcategoria || null,
+      };
+
+      const response = await fetch("/api/frases/repasar_filtradas", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) throw new Error("Error al repasar frases");
+
+      const data = await response.json();
+
+      // Recargar la lista primero y esperar a que termine
+      if (typeof cargarFrases === "function") {
+        await cargarFrases();
+      }
+
+      // Sin notificaciones - solo recargar la lista
     } catch (error) {
-        console.error('Error al repasar frases:', error);
-        // Sin notificaciones de error - solo log en consola
+      console.error("Error al repasar frases:", error);
+      // Sin notificaciones de error - solo log en consola
     } finally {
-        // Restaurar botón
-        btnRepasar.innerHTML = textoOriginal;
-        btnRepasar.disabled = false;
+      // Restaurar botón
+      btnRepasar.innerHTML = textoOriginal;
+      btnRepasar.disabled = false;
     }
-}
+  }
 
-// Obtener filtros actuales (para usar en otras funciones)
-function obtenerFiltrosActivos() {
+  // Obtener filtros actuales (para usar en otras funciones)
+  function obtenerFiltrosActivos() {
     return { ...filtrosActivos };
-}
+  }
 
-// JavaScript para manejar las pestañas
-document.addEventListener('DOMContentLoaded', function() {
+  // JavaScript para manejar las pestañas
+  document.addEventListener("DOMContentLoaded", function () {
     // Manejar cambio de pestañas principales
-    const tabObjetivos = document.getElementById('tab-objetivos');
-    const tabFrases = document.getElementById('tab-frases');
-    
+    const tabObjetivos = document.getElementById("tab-objetivos");
+    const tabFrases = document.getElementById("tab-frases");
+
     if (tabObjetivos) {
-        tabObjetivos.addEventListener('click', function(e) {
-            e.preventDefault();
-            
-            // Cambiar tabs activos
-            document.querySelectorAll('.nav-tabs .nav-link').forEach(tab => tab.classList.remove('active'));
-            this.classList.add('active');
-            
-            // Mostrar/ocultar contenido
-            document.getElementById('card-objetivos').style.display = 'block';
-            document.getElementById('card-historico').style.display = 'none';
-            document.getElementById('card-frases').style.display = 'none';
-            
-            // Mostrar estadísticas de objetivos
-            const statsRow = document.querySelector('.row.text-center.mb-4');
-            if (statsRow && !statsRow.closest('#card-frases')) {
-                statsRow.style.display = 'flex';
-            }
-            
-            // Mostrar filtros de objetivos
-            const navPills = document.querySelector('.nav.nav-pills');
-            if (navPills) {
-                navPills.style.display = 'flex';
-            }
-            
-            // Mostrar título y controles de objetivos
-            const tituloObjetivos = document.getElementById('titulo-objetivos');
-            const controlesObjetivos = document.getElementById('controles-objetivos');
-            
-            if (tituloObjetivos) {
-                tituloObjetivos.classList.remove('d-none');
-                tituloObjetivos.style.setProperty('display', 'flex', 'important');
-            }
-            
-            console.log('Mostrando controles:', controlesObjetivos);
-            if (controlesObjetivos) {
-                controlesObjetivos.classList.remove('d-none');
-                controlesObjetivos.style.setProperty('display', 'flex', 'important');
-                console.log('Controles mostrados');
-            }
-        });
+      tabObjetivos.addEventListener("click", function (e) {
+        e.preventDefault();
+
+        // Cambiar tabs activos
+        document
+          .querySelectorAll(".nav-tabs .nav-link")
+          .forEach((tab) => tab.classList.remove("active"));
+        this.classList.add("active");
+
+        // Mostrar/ocultar contenido
+        document.getElementById("card-objetivos").style.display = "block";
+        document.getElementById("card-historico").style.display = "none";
+        document.getElementById("card-frases").style.display = "none";
+
+        // Mostrar estadísticas de objetivos
+        const statsRow = document.querySelector(".row.text-center.mb-4");
+        if (statsRow && !statsRow.closest("#card-frases")) {
+          statsRow.style.display = "flex";
+        }
+
+        // Mostrar filtros de objetivos
+        const navPills = document.querySelector(".nav.nav-pills");
+        if (navPills) {
+          navPills.style.display = "flex";
+        }
+
+        // Mostrar título y controles de objetivos
+        const tituloObjetivos = document.getElementById("titulo-objetivos");
+        const controlesObjetivos = document.getElementById(
+          "controles-objetivos"
+        );
+
+        if (tituloObjetivos) {
+          tituloObjetivos.classList.remove("d-none");
+          tituloObjetivos.style.setProperty("display", "flex", "important");
+        }
+
+        console.log("Mostrando controles:", controlesObjetivos);
+        if (controlesObjetivos) {
+          controlesObjetivos.classList.remove("d-none");
+          controlesObjetivos.style.setProperty("display", "flex", "important");
+          console.log("Controles mostrados");
+        }
+      });
     }
-    
+
     if (tabFrases) {
-        tabFrases.addEventListener('click', function(e) {
-            e.preventDefault();
-            
-            // Cambiar tabs activos
-            document.querySelectorAll('.nav-tabs .nav-link').forEach(tab => tab.classList.remove('active'));
-            this.classList.add('active');
-            
-            // Mostrar/ocultar contenido
-            document.getElementById('card-objetivos').style.display = 'none';
-            document.getElementById('card-historico').style.display = 'none';
-            document.getElementById('card-frases').style.display = 'block';
-            
-            // Ocultar estadísticas de objetivos
-            const statsRow = document.querySelector('.row.text-center.mb-4');
-            if (statsRow && !statsRow.closest('#card-frases')) {
-                statsRow.style.display = 'none';
-            }
-            
-            // Ocultar filtros de objetivos
-            const navPills = document.querySelector('.nav.nav-pills');
-            if (navPills) {
-                navPills.style.display = 'none';
-            }
-            
-            // Ocultar título y controles de objetivos
-            const tituloObjetivos = document.getElementById('titulo-objetivos');
-            const controlesObjetivos = document.getElementById('controles-objetivos');
-            
-            if (tituloObjetivos) {
-                tituloObjetivos.classList.add('d-none');
-                tituloObjetivos.style.setProperty('display', 'none', 'important');
-            }
-            
-            console.log('Ocultando controles:', controlesObjetivos);
-            if (controlesObjetivos) {
-                controlesObjetivos.classList.add('d-none');
-                controlesObjetivos.style.setProperty('display', 'none', 'important');
-                console.log('Controles ocultados');
-            }
-            
-            // Cargar frases
-            if (typeof cargarFrases === 'function') {
-                cargarFrases();
-            }
-            
-            // Configurar event listeners de frases cuando la pestaña está activa
-            setTimeout(() => {
-                configurarEventListenersFrases();
-                configurarEventosFiltros();
-            }, 100);
-        });
+      tabFrases.addEventListener("click", function (e) {
+        e.preventDefault();
+
+        // Cambiar tabs activos
+        document
+          .querySelectorAll(".nav-tabs .nav-link")
+          .forEach((tab) => tab.classList.remove("active"));
+        this.classList.add("active");
+
+        // Mostrar/ocultar contenido
+        document.getElementById("card-objetivos").style.display = "none";
+        document.getElementById("card-historico").style.display = "none";
+        document.getElementById("card-frases").style.display = "block";
+
+        // Ocultar estadísticas de objetivos
+        const statsRow = document.querySelector(".row.text-center.mb-4");
+        if (statsRow && !statsRow.closest("#card-frases")) {
+          statsRow.style.display = "none";
+        }
+
+        // Ocultar filtros de objetivos
+        const navPills = document.querySelector(".nav.nav-pills");
+        if (navPills) {
+          navPills.style.display = "none";
+        }
+
+        // Ocultar título y controles de objetivos
+        const tituloObjetivos = document.getElementById("titulo-objetivos");
+        const controlesObjetivos = document.getElementById(
+          "controles-objetivos"
+        );
+
+        if (tituloObjetivos) {
+          tituloObjetivos.classList.add("d-none");
+          tituloObjetivos.style.setProperty("display", "none", "important");
+        }
+
+        console.log("Ocultando controles:", controlesObjetivos);
+        if (controlesObjetivos) {
+          controlesObjetivos.classList.add("d-none");
+          controlesObjetivos.style.setProperty("display", "none", "important");
+          console.log("Controles ocultados");
+        }
+
+        // Cargar frases
+        if (typeof cargarFrases === "function") {
+          cargarFrases();
+        }
+
+        // Configurar event listeners de frases cuando la pestaña está activa
+        setTimeout(() => {
+          configurarEventListenersFrases();
+          configurarEventosFiltros();
+        }, 100);
+      });
     }
-});
+  });
 </script>
-{% endblock %} 
+{% endblock %}
