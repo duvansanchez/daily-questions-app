@@ -3728,17 +3728,22 @@ async function mostrarFraseAleatoria() {
     // Obtener filtro de categoría actual
     const filtroCategoria = document.getElementById('filtro-categoria-frases')?.value || '';
     
-    // Filtrar frases según la categoría seleccionada
+    // Filtrar frases según la categoría seleccionada y que estén activas
     let frasesDisponibles;
     if (filtroCategoria) {
-        frasesDisponibles = frases.filter(f => f.categoria === filtroCategoria);
+        frasesDisponibles = frases.filter(f => f.categoria === filtroCategoria && f.activa);
         if (frasesDisponibles.length === 0) {
             const nombreCategoria = capitalizarPrimeraLetra(filtroCategoria.replace(/_/g, ' '));
-            showInfo(`No tienes frases en la categoría "${nombreCategoria}"`);
+            showInfo(`No tienes frases activas en la categoría "${nombreCategoria}"`);
             return;
         }
     } else {
-        frasesDisponibles = frases;
+        // Solo frases activas
+        frasesDisponibles = frases.filter(f => f.activa);
+        if (frasesDisponibles.length === 0) {
+            showInfo('No tienes frases activas disponibles');
+            return;
+        }
     }
     
     const fraseAleatoria = frasesDisponibles[Math.floor(Math.random() * frasesDisponibles.length)];
