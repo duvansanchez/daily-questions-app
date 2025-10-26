@@ -1448,7 +1448,11 @@ function renderObjetivos() {
             elemento.className = 'objetivo-lista-item';
             if (obj.completado) elemento.classList.add('objetivo-completado');
             if (obj.saltado_hoy) elemento.classList.add('objetivo-inactivo-hoy');
-            if (!obj.completado && !obj.saltado_hoy && obj.estado !== 'histórico') elemento.classList.add('resaltado-activo');
+            // Aplicar borde azul a objetivos activos (no completados, no saltados, no históricos)
+            const esActivo = !obj.completado && !obj.saltado_hoy && obj.estado !== 'histórico' && categoriaActual !== 'historico';
+            if (esActivo) {
+                elemento.classList.add('resaltado-activo');
+            }
             
             // Crear etiquetas para la vista de lista
             let etiquetas = [];
@@ -1499,7 +1503,11 @@ function renderObjetivos() {
             elemento.className = 'objetivo-card mb-3';
             if (obj.completado) elemento.classList.add('objetivo-completado');
             if (obj.saltado_hoy) elemento.classList.add('objetivo-inactivo-hoy');
-            if (!obj.completado && !obj.saltado_hoy && obj.estado !== 'histórico') elemento.classList.add('resaltado-activo');
+            // Aplicar borde azul a objetivos activos (no completados, no saltados, no históricos)
+            const esActivo = !obj.completado && !obj.saltado_hoy && obj.estado !== 'histórico' && categoriaActual !== 'historico';
+            if (esActivo) {
+                elemento.classList.add('resaltado-activo');
+            }
             elemento.innerHTML = `
             <div style=\"flex:1;min-width:0;position:relative;\">
                 <input type=\"checkbox\" class=\"form-check-input me-2 check-objetivo\" ${obj.completado ? 'checked' : ''} data-id=\"${obj.id}\">

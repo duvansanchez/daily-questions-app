@@ -306,6 +306,72 @@
                                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                             </div>
                             <div class="modal-body">
+                                <!-- Filtros para el calendario de objetivos -->
+                                <div class="mb-3 p-3 bg-light rounded">
+                                    <div class="row g-2 align-items-end">
+                                        <div class="col-md-3">
+                                            <label for="filtro-frecuencia-objetivos" class="form-label fw-semibold mb-1">
+                                                <i class="bi bi-funnel me-1"></i>Filtrar por tipo
+                                            </label>
+                                            <select class="form-select form-select-sm" id="filtro-frecuencia-objetivos">
+                                                <option value="">Todas las frecuencias</option>
+                                                <option value="diario">Solo Diarios</option>
+                                                <option value="semanal">Solo Semanales</option>
+                                                <option value="mensual">Solo Mensuales</option>
+                                                <option value="anual">Solo Anuales</option>
+                                                <option value="general">Solo Generales</option>
+                                                <option value="recurrente">Solo Recurrentes</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label for="filtro-estado-objetivos" class="form-label fw-semibold mb-1">
+                                                <i class="bi bi-check-circle me-1"></i>Filtrar por estado
+                                            </label>
+                                            <select class="form-select form-select-sm" id="filtro-estado-objetivos">
+                                                <option value="">Todos los estados</option>
+                                                <option value="completado">Solo Completados</option>
+                                                <option value="pendiente">Solo Pendientes</option>
+                                                <option value="en_progreso">En Progreso</option>
+                                                <option value="cancelado">Cancelados</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label for="filtro-fecha-desde" class="form-label fw-semibold mb-1">
+                                                <i class="bi bi-calendar-range me-1"></i>Desde
+                                            </label>
+                                            <input type="date" class="form-control form-control-sm" id="filtro-fecha-desde">
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label for="filtro-fecha-hasta" class="form-label fw-semibold mb-1">
+                                                <i class="bi bi-calendar-range me-1"></i>Hasta
+                                            </label>
+                                            <input type="date" class="form-control form-control-sm" id="filtro-fecha-hasta">
+                                        </div>
+                                        <div class="col-md-2 d-flex align-items-end">
+                                            <div class="d-flex gap-1 w-100">
+                                                <button class="btn btn-outline-info btn-sm flex-fill" id="btn-mes-actual-objetivos" title="Establecer rango del mes actual">
+                                                    <i class="bi bi-calendar-month"></i>
+                                                </button>
+                                                <button class="btn btn-outline-secondary btn-sm flex-fill" id="btn-limpiar-filtros-objetivos" title="Limpiar todos los filtros">
+                                                    <i class="bi bi-arrow-counterclockwise"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="mt-2 d-flex justify-content-between align-items-center">
+                                        <small class="text-muted">
+                                            <i class="bi bi-magic me-1"></i>
+                                            Los filtros se aplican automáticamente. Use <i class="bi bi-calendar-month"></i> para el rango del mes actual.
+                                        </small>
+                                        <div id="indicador-filtros-activos" class="d-none">
+                                            <small class="badge bg-primary">
+                                                <i class="bi bi-funnel-fill me-1"></i>
+                                                <span id="contador-filtros">0</span> filtros activos
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                                
                                 <div id="objetivos-detallados-lista" class="objetivos-detallados-lista">
                                     <!-- Aquí se cargarán los objetivos -->
                                 </div>
@@ -1494,6 +1560,43 @@ function renderObjetivosCalendario(data) {
     console.log(`Calendario renderizado: ${totalCreados} creados, ${totalCompletados} completados`);
 }
 
+function establecerFechasPorDefecto(mes, anio) {
+    const filtroFechaDesde = document.getElementById('filtro-fecha-desde');
+    const filtroFechaHasta = document.getElementById('filtro-fecha-hasta');
+    
+    if (filtroFechaDesde && filtroFechaHasta) {
+        // Establecer el primer día del mes como fecha desde
+        const primerDia = new Date(anio, mes, 1);
+        const fechaDesde = primerDia.toISOString().split('T')[0];
+        
+        // Establecer el último día del mes como fecha hasta
+        const ultimoDia = new Date(anio, mes + 1, 0);
+        const fechaHasta = ultimoDia.toISOString().split('T')[0];
+        
+        filtroFechaDesde.value = fechaDesde;
+        filtroFechaHasta.value = fechaHasta;
+    }
+}
+
+function establecerRangoMesActual() {
+    const selMes = document.getElementById('obj-cal-mes');
+    const selAnio = document.getElementById('obj-cal-anio');
+    
+    if (selMes && selAnio) {
+        const mes = parseInt(selMes.value, 10);
+        const anio = parseInt(selAnio.value, 10);
+        establecerFechasPorDefecto(mes, anio);
+        
+        // Aplicar filtros automáticamente
+        aplicarFiltrosYRenderizar();
+        
+        if (typeof showInfo === 'function') {
+            const mesNombre = MESES_NOMBRES[mes];
+            showInfo(`Rango establecido: ${mesNombre} ${anio}`);
+        }
+    }
+}
+
 async function desplegarObjetivosDetallados() {
     const selMes = document.getElementById('obj-cal-mes');
     const selAnio = document.getElementById('obj-cal-anio');
@@ -1517,6 +1620,9 @@ async function desplegarObjetivosDetallados() {
             Objetivos de ${mesNombre} ${anio}
         `;
     }
+    
+    // Establecer valores por defecto en los filtros de fecha
+    establecerFechasPorDefecto(mes, anio);
     
     // Mostrar modal con indicador de carga
     const modal = new bootstrap.Modal(document.getElementById('modalObjetivosDetallados'));
@@ -1576,6 +1682,9 @@ async function desplegarObjetivosDetallados() {
     }
 }
 
+// Variable global para almacenar los datos originales
+let datosObjetivosOriginales = null;
+
 function renderObjetivosDetallados(data) {
     const lista = document.getElementById('objetivos-detallados-lista');
     if (!lista || !data) {
@@ -1583,6 +1692,163 @@ function renderObjetivosDetallados(data) {
         return;
     }
     
+    // Guardar datos originales para filtros
+    datosObjetivosOriginales = data;
+    
+    // Aplicar filtros
+    const objetivosFiltrados = aplicarFiltrosObjetivos(data.objetivos);
+    const dataFiltrada = { ...data, objetivos: objetivosFiltrados };
+    
+    renderObjetivosDetalladosInterno(dataFiltrada);
+}
+
+function aplicarFiltrosObjetivos(objetivos) {
+    const filtroFrecuencia = document.getElementById('filtro-frecuencia-objetivos')?.value || '';
+    const filtroEstado = document.getElementById('filtro-estado-objetivos')?.value || '';
+    const fechaDesde = document.getElementById('filtro-fecha-desde')?.value || '';
+    const fechaHasta = document.getElementById('filtro-fecha-hasta')?.value || '';
+    
+    let objetivosFiltrados = [...objetivos];
+    
+    // Filtrar por frecuencia
+    if (filtroFrecuencia) {
+        if (filtroFrecuencia === 'recurrente') {
+            // Filtrar solo objetivos recurrentes
+            objetivosFiltrados = objetivosFiltrados.filter(obj => obj.recurrente === true || obj.recurrente === 1);
+        } else {
+            // Filtrar por categoría específica
+            objetivosFiltrados = objetivosFiltrados.filter(obj => 
+                (obj.categoria || 'diario').toLowerCase() === filtroFrecuencia.toLowerCase()
+            );
+        }
+    }
+    
+    // Filtrar por estado
+    if (filtroEstado) {
+        if (filtroEstado === 'completado') {
+            objetivosFiltrados = objetivosFiltrados.filter(obj => obj.completado);
+        } else if (filtroEstado === 'pendiente') {
+            objetivosFiltrados = objetivosFiltrados.filter(obj => !obj.completado && obj.estado !== 'histórico');
+        } else {
+            objetivosFiltrados = objetivosFiltrados.filter(obj => 
+                (obj.estado || 'pendiente').toLowerCase() === filtroEstado.toLowerCase()
+            );
+        }
+    }
+    
+    // Filtrar por rango de fechas
+    if (fechaDesde || fechaHasta) {
+        objetivosFiltrados = objetivosFiltrados.filter(obj => {
+            // Usar fecha de creación como referencia principal
+            const fechaObjetivo = obj.fecha_creacion;
+            if (!fechaObjetivo) return false;
+            
+            // Convertir fecha del objetivo a formato comparable
+            const fechaObj = new Date(fechaObjetivo + 'T00:00:00');
+            
+            // Verificar rango desde
+            if (fechaDesde) {
+                const desde = new Date(fechaDesde + 'T00:00:00');
+                if (fechaObj < desde) return false;
+            }
+            
+            // Verificar rango hasta
+            if (fechaHasta) {
+                const hasta = new Date(fechaHasta + 'T23:59:59');
+                if (fechaObj > hasta) return false;
+            }
+            
+            return true;
+        });
+    }
+    
+    return objetivosFiltrados;
+}
+
+function aplicarFiltrosYRenderizar() {
+    if (!datosObjetivosOriginales) {
+        console.warn('No hay datos originales para filtrar');
+        return;
+    }
+    
+    const lista = document.getElementById('objetivos-detallados-lista');
+    
+    // Efecto visual de filtrado
+    if (lista) {
+        lista.style.opacity = '0.6';
+        lista.style.transition = 'opacity 0.2s ease';
+    }
+    
+    // Aplicar filtros y renderizar con un pequeño delay para el efecto visual
+    setTimeout(() => {
+        const objetivosFiltrados = aplicarFiltrosObjetivos(datosObjetivosOriginales.objetivos);
+        const dataFiltrada = { ...datosObjetivosOriginales, objetivos: objetivosFiltrados };
+        
+        renderObjetivosDetalladosInterno(dataFiltrada);
+        
+        // Actualizar indicador de filtros activos
+        actualizarIndicadorFiltros();
+        
+        // Restaurar opacidad
+        if (lista) {
+            lista.style.opacity = '1';
+        }
+    }, 100);
+}
+
+function limpiarFiltrosObjetivos() {
+    // Limpiar los selectores
+    const filtroFrecuencia = document.getElementById('filtro-frecuencia-objetivos');
+    const filtroEstado = document.getElementById('filtro-estado-objetivos');
+    const filtroFechaDesde = document.getElementById('filtro-fecha-desde');
+    const filtroFechaHasta = document.getElementById('filtro-fecha-hasta');
+    
+    if (filtroFrecuencia) filtroFrecuencia.value = '';
+    if (filtroEstado) filtroEstado.value = '';
+    if (filtroFechaDesde) filtroFechaDesde.value = '';
+    if (filtroFechaHasta) filtroFechaHasta.value = '';
+    
+    // Renderizar con datos originales
+    if (datosObjetivosOriginales) {
+        renderObjetivosDetalladosInterno(datosObjetivosOriginales);
+        
+        // Actualizar indicador de filtros
+        actualizarIndicadorFiltros();
+        
+        // Mostrar mensaje solo al limpiar manualmente
+        if (typeof showInfo === 'function') {
+            showInfo('Filtros limpiados');
+        }
+    }
+}
+
+function actualizarIndicadorFiltros() {
+    const indicador = document.getElementById('indicador-filtros-activos');
+    const contador = document.getElementById('contador-filtros');
+    const filtroFrecuencia = document.getElementById('filtro-frecuencia-objetivos')?.value || '';
+    const filtroEstado = document.getElementById('filtro-estado-objetivos')?.value || '';
+    const fechaDesde = document.getElementById('filtro-fecha-desde')?.value || '';
+    const fechaHasta = document.getElementById('filtro-fecha-hasta')?.value || '';
+    
+    // Contar filtros activos
+    let filtrosActivos = 0;
+    if (filtroFrecuencia) filtrosActivos++;
+    if (filtroEstado) filtrosActivos++;
+    if (fechaDesde) filtrosActivos++;
+    if (fechaHasta) filtrosActivos++;
+    
+    if (indicador && contador) {
+        if (filtrosActivos > 0) {
+            indicador.classList.remove('d-none');
+            contador.textContent = filtrosActivos;
+        } else {
+            indicador.classList.add('d-none');
+        }
+    }
+}
+
+function renderObjetivosDetalladosInterno(data) {
+    const lista = document.getElementById('objetivos-detallados-lista');
     const { objetivos, mes, anio } = data;
     const mesNombre = MESES_NOMBRES[mes];
     
@@ -1810,7 +2076,51 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         // Eventos (idempotentes)
         const btnDesplegar = document.getElementById('obj-cal-desplegar');
-        if (btnDesplegar && !btnDesplegar.__bound) { btnDesplegar.addEventListener('click', desplegarObjetivosDetallados); btnDesplegar.__bound = true; }
+        const btnLimpiarFiltros = document.getElementById('btn-limpiar-filtros-objetivos');
+        const btnMesActual = document.getElementById('btn-mes-actual-objetivos');
+        const filtroFrecuencia = document.getElementById('filtro-frecuencia-objetivos');
+        const filtroEstado = document.getElementById('filtro-estado-objetivos');
+        
+        if (btnDesplegar && !btnDesplegar.__bound) { 
+            btnDesplegar.addEventListener('click', desplegarObjetivosDetallados); 
+            btnDesplegar.__bound = true; 
+        }
+        
+        if (btnLimpiarFiltros && !btnLimpiarFiltros.__bound) {
+            btnLimpiarFiltros.addEventListener('click', limpiarFiltrosObjetivos);
+            btnLimpiarFiltros.__bound = true;
+        }
+        
+        if (btnMesActual && !btnMesActual.__bound) {
+            btnMesActual.addEventListener('click', establecerRangoMesActual);
+            btnMesActual.__bound = true;
+        }
+        
+        // Event listeners para filtros dinámicos
+        if (filtroFrecuencia && !filtroFrecuencia.__bound) {
+            filtroFrecuencia.addEventListener('change', aplicarFiltrosYRenderizar);
+            filtroFrecuencia.__bound = true;
+        }
+        
+        if (filtroEstado && !filtroEstado.__bound) {
+            filtroEstado.addEventListener('change', aplicarFiltrosYRenderizar);
+            filtroEstado.__bound = true;
+        }
+        
+        // Event listeners para filtros de fecha
+        const filtroFechaDesde = document.getElementById('filtro-fecha-desde');
+        const filtroFechaHasta = document.getElementById('filtro-fecha-hasta');
+        
+        if (filtroFechaDesde && !filtroFechaDesde.__bound) {
+            filtroFechaDesde.addEventListener('change', aplicarFiltrosYRenderizar);
+            filtroFechaDesde.__bound = true;
+        }
+        
+        if (filtroFechaHasta && !filtroFechaHasta.__bound) {
+            filtroFechaHasta.addEventListener('change', aplicarFiltrosYRenderizar);
+            filtroFechaHasta.__bound = true;
+        }
+        
         if (!selMes.__bound) { selMes.addEventListener('change', cargarCalendarioObjetivos); selMes.__bound = true; }
         if (!selAnio.__bound) { selAnio.addEventListener('change', cargarCalendarioObjetivos); selAnio.__bound = true; }
         // Carga inicial segura del calendario

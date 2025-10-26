@@ -900,11 +900,19 @@ h1 {
 }
 
 .objetivo-card.resaltado-activo {
-    box-shadow: 0 0 0 1px var(--primary-color), 0 4px 16px rgba(13, 110, 253, 0.08);
-    border: 0.5px solid var(--primary-color);
+    /* Hacer el estado resaltado más sutil y consistente con la lista */
     background: #f8fbff;
-    transition: box-shadow 0.2s, border 0.2s, background 0.2s;
+    border: 0.5px solid rgba(13,110,253,0.28) !important; /* color primario con menor opacidad */
+    box-shadow: 0 0 0 1px rgba(13,110,253,0.12) !important; /* anillo sutil en lugar de un glow fuerte */
+    transition: box-shadow 0.18s ease, border 0.18s ease, background 0.18s ease;
     z-index: 1;
+}
+
+/* Asegurar que todos los objetivos activos en vista de tarjetas tengan borde azul */
+.objetivo-card:not(.objetivo-completado):not(.objetivo-inactivo-hoy) {
+    border: 0.5px solid rgba(13,110,253,0.28);
+    box-shadow: 0 0 0 1px rgba(13,110,253,0.12);
+    background: #f8fbff;
 }
 
 /* Mejora visual para los modales de objetivo */
@@ -1375,9 +1383,26 @@ h1 {
 }
 
 .objetivo-lista-item.resaltado-activo {
+    /* Unificar estilo de resaltado con la vista de tarjetas: más sutil y persistente */
     background: #f8fbff;
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 1px var(--primary-color);
+    border: 0.5px solid rgba(13,110,253,0.28) !important;
+    box-shadow: 0 0 0 1px rgba(13,110,253,0.12) !important;
+    transition: box-shadow 0.18s ease, border 0.18s ease, background 0.18s ease;
+    z-index: 1;
+}
+
+/* Asegurar que todos los objetivos activos tengan borde azul por defecto */
+.objetivo-lista-item:not(.objetivo-completado):not(.objetivo-inactivo-hoy) {
+    border: 0.5px solid rgba(13,110,253,0.28);
+    box-shadow: 0 0 0 1px rgba(13,110,253,0.12);
+    background: #f8fbff;
+}
+
+/* Excepciones para históricos */
+#lista-historico .objetivo-lista-item:not(.objetivo-completado):not(.objetivo-inactivo-hoy) {
+    border: 1px solid #e5e7eb !important;
+    box-shadow: none !important;
+    background: #fff !important;
 }
 
 .objetivo-lista-checkbox {
@@ -2274,11 +2299,8 @@ STILOS PARA CATEGORÍAS PERSONALIZADAS DE FRASES === */
     border: 5px solid transparent;
     border-top-color: #1f2937;
     z-index: 1000;
-}/* === ESTIL
-OS PARA OBJETIVOS DETALLADOS DEL CALENDARIO === */
-.objetivos-detallados-lista {
-    /* El modal ya maneja el scroll con modal-dialog-scrollable */
-}
+}/* === ESTILOS PARA OBJETIVOS DETALLADOS DEL CALENDARIO === */
+/* El modal ya maneja el scroll con modal-dialog-scrollable - no se necesitan reglas adicionales aquí */
 
 .objetivos-grupo {
     display: flex;
@@ -2647,4 +2669,30 @@ s para etiquetas de objetivos saltados */
 .fade-transition.visible {
     opacity: 1;
     transform: translateY(0);
+}
+
+/* En la vista Histórico no mostrar el borde de resaltado (preferencia: histórico sin highlight) */
+#lista-historico .objetivo-lista-item,
+#lista-historico .list-group-item,
+#lista-historico .objetivo-lista-item.resaltado-activo,
+#lista-historico .list-group-item.resaltado-activo {
+    border: none;
+    box-shadow: none;
+    background: #fff;
+}
+
+/* Items detallados marcados como histórico (plantillas de stats) tampoco deben mostrar highlight */
+.objetivo-detalle-item.historico {
+    border: none;
+    box-shadow: none;
+    background: #fff;
+}
+
+/* Reglas con mayor especificidad para asegurar que NO se muestre borde/sombra en históricos dentro de modales/listas con ID */
+#modalObjetivosDetallados .objetivo-detalle-item.historico,
+#lista-historico .objetivo-detalle-item.historico,
+#lista-historico .objetivo-lista-item.historico,
+#lista-historico .list-group-item.historico {
+    border: none !important;
+    box-shadow: none !important;
 }
