@@ -744,9 +744,11 @@ document.addEventListener('DOMContentLoaded', function() {
         try {
             let url = `/api/stats/frequency/${preguntaId}?periodo=${parametrosPeriodo.tipo}`;
             
-            // Agregar parámetros adicionales si es un mes específico
+            // Agregar parámetros adicionales según el tipo de período
             if (parametrosPeriodo.tipo === 'mes') {
                 url += `&mes=${parametrosPeriodo.mes}&anio=${parametrosPeriodo.anio}`;
+            } else if (parametrosPeriodo.tipo === 'custom') {
+                url += `&fecha_desde=${parametrosPeriodo.fecha_desde}&fecha_hasta=${parametrosPeriodo.fecha_hasta}`;
             }
             
             const response = await fetch(url, {
@@ -865,18 +867,30 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const selectedOption = preguntaSelector.options[preguntaSelector.selectedIndex];
         const tipo = selectedOption.getAttribute('data-tipo');
-        const periodoRadio = document.querySelector('.periodo-radio:checked');
         const graficoRadio = document.querySelector('.grafico-radio:checked');
-        const periodo = periodoRadio ? periodoRadio.value : '7dias';
         const tipoGrafico = graficoRadio ? graficoRadio.value : 'barras';
 
-        // Obtener parámetros específicos según el período
-        let parametrosPeriodo = { tipo: periodo };
-        if (periodo === 'mes') {
-            const selectorMes = document.getElementById('selector-mes');
-            const selectorAnio = document.getElementById('selector-anio');
-            parametrosPeriodo.mes = selectorMes ? parseInt(selectorMes.value) : new Date().getMonth();
-            parametrosPeriodo.anio = selectorAnio ? parseInt(selectorAnio.value) : new Date().getFullYear();
+        // Obtener parámetros del nuevo sistema de fechas (buscar en ambas secciones)
+        let fechaDesde = document.getElementById('fecha-desde');
+        let fechaHasta = document.getElementById('fecha-hasta');
+        
+        // Si no encuentra los primeros, buscar los segundos
+        if (!fechaDesde) fechaDesde = document.getElementById('fecha-desde-2');
+        if (!fechaHasta) fechaHasta = document.getElementById('fecha-hasta-2');
+        
+        let parametrosPeriodo = { tipo: 'custom' };
+        
+        if (fechaDesde && fechaHasta && fechaDesde.value && fechaHasta.value) {
+            parametrosPeriodo.fecha_desde = fechaDesde.value;
+            parametrosPeriodo.fecha_hasta = fechaHasta.value;
+        } else {
+            // Si no hay fechas seleccionadas, usar últimos 7 días por defecto
+            const hoy = new Date();
+            const hace7dias = new Date();
+            hace7dias.setDate(hoy.getDate() - 7);
+            
+            parametrosPeriodo.fecha_desde = hace7dias.toISOString().split('T')[0];
+            parametrosPeriodo.fecha_hasta = hoy.toISOString().split('T')[0];
         }
 
         // Actualizar títulos
@@ -886,18 +900,9 @@ document.addEventListener('DOMContentLoaded', function() {
             tituloGrafico.textContent = `Análisis: ${selectedOption.text}`;
         }
         if (subtituloGrafico) {
-            let periodoTexto = '';
-            switch(periodo) {
-                case '7dias': 
-                    periodoTexto = 'Últimos 7 días'; 
-                    break;
-                case 'mes': 
-                    const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-                                  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-                    const mesNombre = meses[parametrosPeriodo.mes] || 'Mes';
-                    periodoTexto = `${mesNombre} ${parametrosPeriodo.anio}`;
-                    break;
-            }
+            const fechaDesdeFormatted = new Date(parametrosPeriodo.fecha_desde).toLocaleDateString('es-ES');
+            const fechaHastaFormatted = new Date(parametrosPeriodo.fecha_hasta).toLocaleDateString('es-ES');
+            const periodoTexto = `${fechaDesdeFormatted} - ${fechaHastaFormatted}`;
             subtituloGrafico.textContent = `${periodoTexto} • Visualización: ${tipoGrafico}`;
         }
 
@@ -1019,93 +1024,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
             
-            // Habilitar/deshabilitar botones
-            const btnActualizar = document.getElementById('btnActualizarGrafico');
-            const btnExportar = document.getElementById('btnExportarGrafico');
-            if (btnActualizar) btnActualizar.disabled = !this.value;
-            if (btnExportar) btnExportar.disabled = !this.value;
+            // Los botones de actualizar y exportar fueron eliminados
             
             actualizarFrecuencia();
         });
     }
 
-    // Inicializar selector de años
-    function inicializarSelectorAnios() {
-        const selectorAnio = document.getElementById('selector-anio');
-        if (selectorAnio) {
-            const anioActual = new Date().getFullYear();
-            selectorAnio.innerHTML = '';
-            
-            // Agregar años desde el actual hacia atrás (últimos 5 años)
-            for (let i = 0; i < 5; i++) {
-                const anio = anioActual - i;
-                const option = document.createElement('option');
-                option.value = anio;
-                option.textContent = anio;
-                if (i === 0) option.selected = true; // Seleccionar año actual por defecto
-                selectorAnio.appendChild(option);
-            }
-        }
-    }
-
-    // Inicializar selector de mes actual
-    function inicializarSelectorMes() {
-        const selectorMes = document.getElementById('selector-mes');
-        if (selectorMes) {
-            const mesActual = new Date().getMonth();
-            selectorMes.value = mesActual;
-        }
-    }
-
-    // Eventos para radio buttons de período
-    const periodoRadios = document.querySelectorAll('.periodo-radio');
-    periodoRadios.forEach(radio => {
-        radio.addEventListener('change', function() {
-            const selectorMesContainer = document.getElementById('selector-mes-container');
-            
-            if (this.value === 'mes') {
-                // Mostrar selector de mes
-                if (selectorMesContainer) {
-                    selectorMesContainer.style.display = 'block';
-                }
-            } else {
-                // Ocultar selector de mes
-                if (selectorMesContainer) {
-                    selectorMesContainer.style.display = 'none';
-                }
-            }
-            
-            if (this.checked) {
-                actualizarFrecuencia();
-            }
-        });
-    });
-
-    // Eventos para selectores de mes y año
-    const selectorMes = document.getElementById('selector-mes');
-    const selectorAnio = document.getElementById('selector-anio');
-    
-    if (selectorMes) {
-        selectorMes.addEventListener('change', function() {
-            const periodoMes = document.getElementById('periodo-mes');
-            if (periodoMes && periodoMes.checked) {
-                actualizarFrecuencia();
-            }
-        });
-    }
-    
-    if (selectorAnio) {
-        selectorAnio.addEventListener('change', function() {
-            const periodoMes = document.getElementById('periodo-mes');
-            if (periodoMes && periodoMes.checked) {
-                actualizarFrecuencia();
-            }
-        });
-    }
-
-    // Inicializar selectores
-    inicializarSelectorAnios();
-    inicializarSelectorMes();
+    // Las funciones de inicialización de selectores fueron eliminadas
+    // porque los elementos fueron reemplazados por selectores de fecha
 
     // Eventos para radio buttons de tipo de gráfico
     const graficoRadios = document.querySelectorAll('.grafico-radio');
@@ -1139,7 +1065,187 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+    
+    // Hacer la función actualizarFrecuencia accesible globalmente
+    if (typeof actualizarFrecuencia === 'function') {
+        window.actualizarFrecuencia = actualizarFrecuencia;
     }
+    }
+
+    // Función global para actualizar frecuencia (independiente del tab)
+    window.actualizarFrecuenciaGlobal = async function() {
+        
+        const preguntaSelector = document.getElementById('preguntaSelector');
+        if (!preguntaSelector || !preguntaSelector.value) {
+            console.log('No hay pregunta seleccionada');
+            return;
+        }
+
+        const selectedOption = preguntaSelector.options[preguntaSelector.selectedIndex];
+        const tipo = selectedOption.getAttribute('data-tipo');
+        
+        // Verificar si es texto abierto
+        if (tipo === 'texto' || tipo === 'text' || tipo === 'open') {
+            console.log('Pregunta de texto abierto, no se puede analizar');
+            return;
+        }
+
+        // Obtener fechas
+        let fechaDesde = document.getElementById('fecha-desde');
+        let fechaHasta = document.getElementById('fecha-hasta');
+        
+        if (!fechaDesde) fechaDesde = document.getElementById('fecha-desde-2');
+        if (!fechaHasta) fechaHasta = document.getElementById('fecha-hasta-2');
+        
+        if (!fechaDesde || !fechaHasta || !fechaDesde.value || !fechaHasta.value) {
+            console.log('Fechas no disponibles');
+            return;
+        }
+
+        const preguntaId = selectedOption.value;
+        const desde = fechaDesde.value;
+        const hasta = fechaHasta.value;
+
+        try {
+            // Mostrar indicador de carga
+            const graficoFrecuencia = document.getElementById('graficoFrecuencia');
+            if (graficoFrecuencia) {
+                graficoFrecuencia.innerHTML = `
+                    <div class="d-flex align-items-center justify-content-center h-100" style="min-height: 400px;">
+                        <div class="text-center">
+                            <div class="spinner-border text-primary mb-3" role="status"></div>
+                            <div class="text-muted">Analizando respuestas...</div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Hacer petición al backend
+            const response = await fetch(`/api/stats/frequency/${preguntaId}?periodo=custom&fecha_desde=${desde}&fecha_hasta=${hasta}`);
+            
+            if (!response.ok) {
+                throw new Error('Error al obtener datos del servidor');
+            }
+            
+            const datos = await response.json();
+            
+            // Verificar si hay datos
+            if (!datos.labels || datos.labels.length === 0) {
+                if (graficoFrecuencia) {
+                    graficoFrecuencia.innerHTML = `
+                        <div class="d-flex align-items-center justify-content-center h-100 text-muted" style="min-height: 400px;">
+                            <div class="text-center">
+                                <i class="bi bi-inbox" style="font-size: 4rem; opacity: 0.3;"></i>
+                                <div class="mt-3">
+                                    <h6>Sin datos suficientes</h6>
+                                    <p class="mb-0">No hay respuestas para esta pregunta en el período seleccionado</p>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+                return;
+            }
+            
+            // Actualizar títulos
+            const tituloGrafico = document.getElementById('tituloGrafico');
+            const subtituloGrafico = document.getElementById('subtituloGrafico');
+            
+            if (tituloGrafico) {
+                tituloGrafico.textContent = `Análisis: ${selectedOption.text}`;
+            }
+            
+            if (subtituloGrafico) {
+                const fechaDesdeFormatted = new Date(desde).toLocaleDateString('es-ES');
+                const fechaHastaFormatted = new Date(hasta).toLocaleDateString('es-ES');
+                subtituloGrafico.textContent = `${fechaDesdeFormatted} - ${fechaHastaFormatted} • Visualización: barras`;
+            }
+            
+            // Renderizar gráfico
+            if (graficoFrecuencia) {
+                graficoFrecuencia.innerHTML = '';
+                
+                const canvas = document.createElement('canvas');
+                canvas.height = 350;
+                graficoFrecuencia.appendChild(canvas);
+                
+                // Preparar datos para Chart.js
+                let chartData;
+                if (datos.datasets && datos.datasets.length > 0) {
+                    chartData = {
+                        labels: datos.labels,
+                        datasets: datos.datasets
+                    };
+                } else if (datos.data) {
+                    chartData = {
+                        labels: datos.labels,
+                        datasets: [{
+                            label: 'Frecuencia',
+                            data: datos.data,
+                            backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                            borderColor: 'rgba(54, 162, 235, 1)',
+                            borderWidth: 1
+                        }]
+                    };
+                } else {
+                    return;
+                }
+                
+                const chart = new Chart(canvas, {
+                    type: 'bar',
+                    data: chartData,
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            datalabels: {
+                                display: true,
+                                color: 'white',
+                                font: {
+                                    weight: 'bold',
+                                    size: 14
+                                },
+                                formatter: function(value, context) {
+                                    return value > 0 ? value : '';
+                                },
+                                anchor: 'center',
+                                align: 'center'
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    stepSize: 1
+                                }
+                            }
+                        }
+                    },
+                    plugins: [ChartDataLabels]
+                });
+            }
+            
+        } catch (error) {
+            console.error('Error actualizando gráfico:', error);
+            const graficoFrecuencia = document.getElementById('graficoFrecuencia');
+            if (graficoFrecuencia) {
+                graficoFrecuencia.innerHTML = `
+                    <div class="d-flex align-items-center justify-content-center h-100" style="min-height: 400px;">
+                        <div class="text-center text-danger">
+                            <i class="bi bi-exclamation-triangle" style="font-size: 4rem; opacity: 0.5;"></i>
+                            <div class="mt-3">
+                                <h6>Error al cargar datos</h6>
+                                <p class="mb-0 text-muted">${error.message}</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+    };
 
     // === Objetivos Desarrollo Personal ===
     console.log('Buscando botón de modal...');

@@ -506,51 +506,36 @@
                                                 </div>
                                             </div>
                                             
-                                            <!-- Período de análisis -->
+                                                                                        <!-- Período de análisis -->
                                             <div class="mb-3">
                                                 <label class="form-label fw-semibold mb-2">Período de análisis:</label>
-                                                <div class="btn-group w-100 mb-2" role="group">
-                                                    <input type="radio" class="btn-check periodo-radio" name="periodo" id="periodo-7dias" value="7dias" checked>
-                                                    <label class="btn btn-outline-primary" for="periodo-7dias">
-                                                        <i class="bi bi-calendar-week me-1"></i>Últimos 7 días
-                                                    </label>
-                                                    
-                                                    <input type="radio" class="btn-check periodo-radio" name="periodo" id="periodo-mes" value="mes">
-                                                    <label class="btn btn-outline-primary" for="periodo-mes">
-                                                        <i class="bi bi-calendar-month me-1"></i>Por mes específico
-                                                    </label>
-                                                </div>
-                                                
-                                                <!-- Selector de mes (solo visible cuando se selecciona "Por mes específico") -->
-                                                <div id="selector-mes-container" class="mt-2" style="display: none;">
-                                                    <div class="row g-2">
-                                                        <div class="col-7">
-                                                            <select class="form-select" id="selector-mes">
-                                                                <option value="0">Enero</option>
-                                                                <option value="1">Febrero</option>
-                                                                <option value="2">Marzo</option>
-                                                                <option value="3">Abril</option>
-                                                                <option value="4">Mayo</option>
-                                                                <option value="5">Junio</option>
-                                                                <option value="6">Julio</option>
-                                                                <option value="7">Agosto</option>
-                                                                <option value="8">Septiembre</option>
-                                                                <option value="9">Octubre</option>
-                                                                <option value="10">Noviembre</option>
-                                                                <option value="11">Diciembre</option>
-                                                            </select>
-                                                        </div>
-                                                        <div class="col-5">
-                                                            <select class="form-select" id="selector-anio">
-                                                                <!-- Se llena dinámicamente con JavaScript -->
-                                                            </select>
-                                                        </div>
+                                                <div class="row g-2">
+                                                    <div class="col-6">
+                                                        <label class="form-label text-muted small">Fecha desde:</label>
+                                                        <input type="date" class="form-control" id="fecha-desde" value="">
                                                     </div>
-                                                    <small class="text-muted mt-1 d-block">
-                                                        <i class="bi bi-info-circle me-1"></i>
-                                                        Selecciona el mes y año específico a analizar
-                                                    </small>
+                                                    <div class="col-6">
+                                                        <label class="form-label text-muted small">Fecha hasta:</label>
+                                                        <input type="date" class="form-control" id="fecha-hasta" value="">
+                                                    </div>
                                                 </div>
+                                                <div class="mt-2">
+                                                    <div class="btn-group w-100" role="group">
+                                                        <button type="button" class="btn btn-outline-secondary btn-sm" id="btn-ultimos-7dias">
+                                                            <i class="bi bi-calendar-week me-1"></i>Últimos 7 días
+                                                        </button>
+                                                        <button type="button" class="btn btn-outline-secondary btn-sm" id="btn-ultimo-mes">
+                                                            <i class="bi bi-calendar-month me-1"></i>Último mes
+                                                        </button>
+                                                        <button type="button" class="btn btn-outline-secondary btn-sm" id="btn-ultimos-3meses">
+                                                            <i class="bi bi-calendar3 me-1"></i>Últimos 3 meses
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                                <small class="text-muted mt-1 d-block">
+                                                    <i class="bi bi-info-circle me-1"></i>
+                                                    Selecciona un rango personalizado o usa los botones de acceso rápido
+                                                </small>
                                             </div>
                                             
                                             <!-- Tipo de gráfico -->
@@ -560,11 +545,6 @@
                                                     <input type="radio" class="btn-check grafico-radio" name="grafico" id="grafico-barras" value="barras" checked>
                                                     <label class="btn btn-outline-secondary" for="grafico-barras">
                                                         <i class="bi bi-bar-chart me-1"></i>Barras
-                                                    </label>
-                                                    
-                                                    <input type="radio" class="btn-check grafico-radio" name="grafico" id="grafico-lineas" value="lineas">
-                                                    <label class="btn btn-outline-secondary" for="grafico-lineas">
-                                                        <i class="bi bi-graph-up me-1"></i>Líneas
                                                     </label>
                                                 </div>
                                             </div>
@@ -580,14 +560,6 @@
                                         <div>
                                             <h5 class="mb-1" id="tituloGrafico">Análisis de Frecuencia</h5>
                                             <small class="text-muted" id="subtituloGrafico">Selecciona una pregunta para comenzar el análisis</small>
-                                        </div>
-                                        <div class="d-flex align-items-center gap-2">
-                                            <button class="btn btn-sm btn-outline-primary" id="btnActualizarGrafico" disabled>
-                                                <i class="bi bi-arrow-clockwise me-1"></i>Actualizar
-                                            </button>
-                                            <button class="btn btn-sm btn-outline-secondary" id="btnExportarGrafico" disabled>
-                                                <i class="bi bi-download me-1"></i>Exportar
-                                            </button>
                                         </div>
                                     </div>
                                     
@@ -1008,51 +980,36 @@
                                                 </div>
                                             </div>
                                             
-                                            <!-- Período de análisis -->
+                                                                                        <!-- Período de análisis -->
                                             <div class="mb-3">
                                                 <label class="form-label fw-semibold mb-2">Período de análisis:</label>
-                                                <div class="btn-group w-100 mb-2" role="group">
-                                                    <input type="radio" class="btn-check periodo-radio" name="periodo" id="periodo-7dias" value="7dias" checked>
-                                                    <label class="btn btn-outline-primary" for="periodo-7dias">
-                                                        <i class="bi bi-calendar-week me-1"></i>Últimos 7 días
-                                                    </label>
-                                                    
-                                                    <input type="radio" class="btn-check periodo-radio" name="periodo" id="periodo-mes" value="mes">
-                                                    <label class="btn btn-outline-primary" for="periodo-mes">
-                                                        <i class="bi bi-calendar-month me-1"></i>Por mes específico
-                                                    </label>
-                                                </div>
-                                                
-                                                <!-- Selector de mes (solo visible cuando se selecciona "Por mes específico") -->
-                                                <div id="selector-mes-container" class="mt-2" style="display: none;">
-                                                    <div class="row g-2">
-                                                        <div class="col-7">
-                                                            <select class="form-select" id="selector-mes">
-                                                                <option value="0">Enero</option>
-                                                                <option value="1">Febrero</option>
-                                                                <option value="2">Marzo</option>
-                                                                <option value="3">Abril</option>
-                                                                <option value="4">Mayo</option>
-                                                                <option value="5">Junio</option>
-                                                                <option value="6">Julio</option>
-                                                                <option value="7">Agosto</option>
-                                                                <option value="8">Septiembre</option>
-                                                                <option value="9">Octubre</option>
-                                                                <option value="10">Noviembre</option>
-                                                                <option value="11">Diciembre</option>
-                                                            </select>
-                                                        </div>
-                                                        <div class="col-5">
-                                                            <select class="form-select" id="selector-anio">
-                                                                <!-- Se llena dinámicamente con JavaScript -->
-                                                            </select>
-                                                        </div>
+                                                <div class="row g-2">
+                                                    <div class="col-6">
+                                                        <label class="form-label text-muted small">Fecha desde:</label>
+                                                        <input type="date" class="form-control" id="fecha-desde-2" value="">
                                                     </div>
-                                                    <small class="text-muted mt-1 d-block">
-                                                        <i class="bi bi-info-circle me-1"></i>
-                                                        Selecciona el mes y año específico a analizar
-                                                    </small>
+                                                    <div class="col-6">
+                                                        <label class="form-label text-muted small">Fecha hasta:</label>
+                                                        <input type="date" class="form-control" id="fecha-hasta-2" value="">
+                                                    </div>
                                                 </div>
+                                                <div class="mt-2">
+                                                    <div class="btn-group w-100" role="group">
+                                                        <button type="button" class="btn btn-outline-secondary btn-sm" id="btn-ultimos-7dias-2">
+                                                            <i class="bi bi-calendar-week me-1"></i>Últimos 7 días
+                                                        </button>
+                                                        <button type="button" class="btn btn-outline-secondary btn-sm" id="btn-ultimo-mes-2">
+                                                            <i class="bi bi-calendar-month me-1"></i>Último mes
+                                                        </button>
+                                                        <button type="button" class="btn btn-outline-secondary btn-sm" id="btn-ultimos-3meses-2">
+                                                            <i class="bi bi-calendar3 me-1"></i>Últimos 3 meses
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                                <small class="text-muted mt-1 d-block">
+                                                    <i class="bi bi-info-circle me-1"></i>
+                                                    Selecciona un rango personalizado o usa los botones de acceso rápido
+                                                </small>
                                             </div>
                                             
                                             <!-- Tipo de gráfico -->
@@ -1062,11 +1019,6 @@
                                                     <input type="radio" class="btn-check grafico-radio" name="grafico" id="grafico-barras" value="barras" checked>
                                                     <label class="btn btn-outline-secondary" for="grafico-barras">
                                                         <i class="bi bi-bar-chart me-1"></i>Barras
-                                                    </label>
-                                                    
-                                                    <input type="radio" class="btn-check grafico-radio" name="grafico" id="grafico-lineas" value="lineas">
-                                                    <label class="btn btn-outline-secondary" for="grafico-lineas">
-                                                        <i class="bi bi-graph-up me-1"></i>Líneas
                                                     </label>
                                                 </div>
                                             </div>
@@ -1082,14 +1034,6 @@
                                         <div>
                                             <h5 class="mb-1" id="tituloGrafico">Análisis de Frecuencia</h5>
                                             <small class="text-muted" id="subtituloGrafico">Selecciona una pregunta para comenzar el análisis</small>
-                                        </div>
-                                        <div class="d-flex align-items-center gap-2">
-                                            <button class="btn btn-sm btn-outline-primary" id="btnActualizarGrafico" disabled>
-                                                <i class="bi bi-arrow-clockwise me-1"></i>Actualizar
-                                            </button>
-                                            <button class="btn btn-sm btn-outline-secondary" id="btnExportarGrafico" disabled>
-                                                <i class="bi bi-download me-1"></i>Exportar
-                                            </button>
                                         </div>
                                     </div>
                                     
@@ -2062,8 +2006,6 @@ function renderObjetivoItem(objetivo, esCompletado, esHistorico = false) {
     `;
 }
 
-
-
 // Inicialización del calendario de objetivos
 document.addEventListener('DOMContentLoaded', () => {
     const initObjCal = () => {
@@ -2406,6 +2348,134 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
     </div>
 </div>
+
+<!-- Script para actualización dinámica del gráfico de frecuencia -->
+<script>
+// Variables para detectar cambios
+let ultimaFechaDesde = '';
+let ultimaFechaHasta = '';
+let ultimaPregunta = '';
+
+// Función de actualización
+function actualizarGrafico() {
+    if (typeof window.actualizarFrecuenciaGlobal === 'function') {
+        window.actualizarFrecuenciaGlobal();
+    }
+}
+
+// Verificar cambios cada 300ms
+function verificarCambios() {
+    const fechaDesde = document.getElementById('fecha-desde');
+    const fechaHasta = document.getElementById('fecha-hasta');
+    const preguntaSelector = document.getElementById('preguntaSelector');
+    
+    if (fechaDesde && fechaHasta && preguntaSelector) {
+        const nuevaFechaDesde = fechaDesde.value;
+        const nuevaFechaHasta = fechaHasta.value;
+        const nuevaPregunta = preguntaSelector.value;
+        
+        if (nuevaFechaDesde !== ultimaFechaDesde || 
+            nuevaFechaHasta !== ultimaFechaHasta || 
+            nuevaPregunta !== ultimaPregunta) {
+            
+            ultimaFechaDesde = nuevaFechaDesde;
+            ultimaFechaHasta = nuevaFechaHasta;
+            ultimaPregunta = nuevaPregunta;
+            
+            if (nuevaPregunta && nuevaFechaDesde && nuevaFechaHasta) {
+                actualizarGrafico();
+            }
+        }
+    }
+}
+
+// Iniciar verificación
+setInterval(verificarCambios, 300);
+
+// Event listeners de respaldo
+setTimeout(() => {
+    const fechaDesde = document.getElementById('fecha-desde');
+    const fechaHasta = document.getElementById('fecha-hasta');
+    
+    if (fechaDesde && fechaHasta) {
+        fechaDesde.onchange = actualizarGrafico;
+        fechaHasta.onchange = actualizarGrafico;
+        fechaDesde.oninput = actualizarGrafico;
+        fechaHasta.oninput = actualizarGrafico;
+    }
+    
+    // Agregar botón de descarga de Excel
+    const frecuenciaSection = document.getElementById('frecuencia');
+    if (frecuenciaSection && !document.getElementById('btn-descargar-excel-respuestas')) {
+        const headerDiv = frecuenciaSection.querySelector('.d-flex.justify-content-between.align-items-center.mb-4');
+        if (headerDiv) {
+            // Crear el botón
+            const buttonContainer = document.createElement('div');
+            buttonContainer.innerHTML = `
+                <button class="btn btn-success btn-sm" id="btn-descargar-excel-respuestas" title="Descargar Excel con todas las respuestas organizadas por tipo">
+                    <i class="bi bi-file-earmark-excel me-1"></i>
+                    Descargar Excel
+                </button>
+            `;
+            headerDiv.appendChild(buttonContainer);
+            
+            // Configurar evento del botón
+            const btnDescargarExcel = document.getElementById('btn-descargar-excel-respuestas');
+            if (btnDescargarExcel) {
+                btnDescargarExcel.addEventListener('click', async function() {
+                    const btn = this;
+                    const originalText = btn.innerHTML;
+                    
+                    try {
+                        btn.disabled = true;
+                        btn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Generando Excel...';
+                        
+                        // Obtener fechas del filtro actual
+                        const fechaDesde = document.getElementById('fecha-desde').value;
+                        const fechaHasta = document.getElementById('fecha-hasta').value;
+                        
+                        const response = await fetch(`/api/export/respuestas-excel?fecha_desde=${fechaDesde}&fecha_hasta=${fechaHasta}`);
+                        
+                        if (!response.ok) {
+                            const errorData = await response.json();
+                            throw new Error(errorData.message || 'Error al generar el archivo');
+                        }
+                        
+                        const blob = await response.blob();
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        
+                        // Obtener nombre del archivo desde headers o usar uno por defecto
+                        const contentDisposition = response.headers.get('content-disposition');
+                        let filename = 'respuestas_analisis.xlsx';
+                        if (contentDisposition) {
+                            const filenameMatch = contentDisposition.match(/filename="(.+)"/);
+                            if (filenameMatch) {
+                                filename = filenameMatch[1];
+                            }
+                        }
+                        
+                        a.download = filename;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        window.URL.revokeObjectURL(url);
+                        
+                    } catch (error) {
+                        console.error('Error descargando Excel:', error);
+                        alert('Error al descargar Excel: ' + error.message);
+                    } finally {
+                        btn.disabled = false;
+                        btn.innerHTML = originalText;
+                    }
+                });
+            }
+        }
+    }
+}, 500);
+</script>
+
 {% endblock %}
 
 {% block scripts %}

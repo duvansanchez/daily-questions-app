@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, make_response, session
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, make_response, session, send_file
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from flask_mail import Mail, Message
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -555,9 +555,11 @@ def objetivos_mes_detallado():
         with get_db_connection() as conn:
             cursor = conn.cursor()
             
-            # Buscar objetivos creados en este mes O completados en este mes
+            # Buscar objetivos que deberían aparecer en este mes:
+            # 1. Objetivos creados en este mes
+            # 2. Objetivos completados en este mes  
+            # 3. Objetivos activos que por su frecuencia deberían estar disponibles en este mes
             # INCLUIMOS objetivos históricos para mostrar todo lo que pasó en el mes
-            # También incluimos el conteo de veces saltadas
             cursor.execute(
                 """
                 SELECT DISTINCT o.id, o.titulo, o.descripcion, o.completado, 
@@ -568,12 +570,27 @@ def objetivos_mes_detallado():
                 FROM objetivos o
                 WHERE o.user_id = ?
                   AND (
+                    -- Objetivos creados en este mes
                     (o.fecha_creacion >= ? AND o.fecha_creacion < ?) OR
-                    (o.completado = 1 AND o.fecha_completado >= ? AND o.fecha_completado < ?)
+                    -- Objetivos completados en este mes
+                    (o.completado = 1 AND o.fecha_completado >= ? AND o.fecha_completado < ?) OR
+                    -- Objetivos activos por frecuencia que deberían estar disponibles
+                    (o.estado != 'histórico' AND o.fecha_creacion < ? AND (
+                        -- Objetivos diarios: siempre activos si fueron creados antes del mes
+                        (o.categoria = 'diario' OR o.categoria IS NULL) OR
+                        -- Objetivos semanales: activos si fueron creados antes del mes
+                        o.categoria = 'semanal' OR
+                        -- Objetivos mensuales: activos si fueron creados antes del mes
+                        o.categoria = 'mensual' OR
+                        -- Objetivos anuales: activos si fueron creados antes del mes
+                        o.categoria = 'anual' OR
+                        -- Objetivos generales: siempre activos
+                        o.categoria = 'general'
+                    ))
                   )
                 ORDER BY o.fecha_creacion DESC, o.fecha_completado DESC
                 """,
-                (current_user.id, inicio, fin, inicio, fin)
+                (current_user.id, inicio, fin, inicio, fin, fin)
             )
             
             for row in cursor.fetchall():
@@ -2248,6 +2265,27 @@ def get_question_frequency(question_id):
                     fin = datetime(anio + 1, 1, 1) - timedelta(seconds=1)
                 else:
                     fin = datetime(anio, mes_python + 1, 1) - timedelta(seconds=1)
+            elif periodo == 'custom':
+                # Período personalizado con fechas específicas
+                fecha_desde_str = request.args.get('fecha_desde')
+                fecha_hasta_str = request.args.get('fecha_hasta')
+                
+                if not fecha_desde_str or not fecha_hasta_str:
+                    return jsonify({'error': 'Se requieren fecha_desde y fecha_hasta para período personalizado'}), 400
+                
+                try:
+                    # Parsear las fechas (formato YYYY-MM-DD)
+                    inicio = datetime.strptime(fecha_desde_str, '%Y-%m-%d')
+                    fin = datetime.strptime(fecha_hasta_str, '%Y-%m-%d')
+                    # Agregar 23:59:59 a la fecha final para incluir todo el día
+                    fin = fin.replace(hour=23, minute=59, second=59)
+                    
+                    # Validar que la fecha desde sea anterior a la fecha hasta
+                    if inicio > fin:
+                        return jsonify({'error': 'La fecha desde debe ser anterior a la fecha hasta'}), 400
+                        
+                except ValueError:
+                    return jsonify({'error': 'Formato de fecha inválido. Use YYYY-MM-DD'}), 400
             else:
                 # Fallback para compatibilidad
                 inicio = hoy - timedelta(days=7)
@@ -2626,6 +2664,489 @@ def objetivos():
 def test_calendario():
     """Página de prueba para el calendario de objetivos"""
     return render_template('test_calendario.html')
+
+@app.route('/api/export/respuestas-excel')
+@login_required
+def export_respuestas_excel():
+    """
+    Exporta todas las respuestas del usuario en un archivo Excel con 4 hojas:
+    1. Preguntas Sí/No
+    2. Preguntas de Texto Libre  
+    3. Preguntas de Selección Múltiple
+    4. Preguntas de Opción Única
+    
+    Columnas según imagen de referencia:
+    - Pregunta
+    - Fecha Inicio Mensual
+    - Porcentaje Sí
+    - Porcentaje No
+    - Segunda Más Elegida
+    - Longitud Promedio de Respuesta
+    - Tiempo Promedio
+    - Resumen Previo
+    """
+    try:
+        import pandas as pd
+        from io import BytesIO
+        from datetime import datetime, timedelta
+        
+        # Obtener fechas del filtro
+        fecha_desde = request.args.get('fecha_desde')
+        fecha_hasta = request.args.get('fecha_hasta')
+        
+
+        
+        logger.info(f"Exportando respuestas a Excel para usuario {current_user.id} desde {fecha_desde} hasta {fecha_hasta}")
+        
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            
+            # Obtener todas las preguntas del usuario con sus respuestas
+            # Construir consulta con filtro de fechas si están disponibles
+            query = """
+                SELECT DISTINCT 
+                    q.id, q.text, q.type, q.options,
+                    r.response, r.date, r.response_time, r.start_time
+                FROM question q
+                LEFT JOIN response r ON q.id = r.question_id
+                WHERE q.assigned_user_id = ? AND q.active = 1
+            """
+            params = [current_user.id]
+            
+            # Agregar filtro de fechas si están disponibles
+            if fecha_desde and fecha_hasta:
+                # Agregar un día completo al final para incluir todo el día final
+                fecha_hasta_completa = fecha_hasta + ' 23:59:59'
+                query += " AND (r.date IS NULL OR (r.date >= ? AND r.date <= ?))"
+                params.extend([fecha_desde, fecha_hasta_completa])
+            
+            query += " ORDER BY q.text, r.date"
+            
+            cursor.execute(query, params)
+            
+            data = cursor.fetchall()
+            
+            # Organizar datos por tipo de pregunta
+            preguntas_por_tipo = {
+                'si_no': [],
+                'texto_libre': [],
+                'seleccion_multiple': [],
+                'opcion_unica': []
+            }
+            
+            # Organizar respuestas individuales para texto libre
+            respuestas_individuales_texto = []
+            
+            # Procesar cada pregunta
+            preguntas_procesadas = {}
+            
+            for row in data:
+                q_id, q_text, q_type, q_options, response, date, response_time, start_time = row
+                
+                if q_id not in preguntas_procesadas:
+                    preguntas_procesadas[q_id] = {
+                        'text': q_text,
+                        'type': q_type,
+                        'options': q_options,
+                        'responses': []
+                    }
+                
+                if response:
+                    preguntas_procesadas[q_id]['responses'].append({
+                        'response': response,
+                        'date': date,
+                        'response_time': response_time,
+                        'start_time': start_time
+                    })
+            
+            # Clasificar preguntas por tipo y calcular estadísticas
+            for q_id, pregunta in preguntas_procesadas.items():
+                q_type = pregunta['type']
+                responses = pregunta['responses']
+                
+                if not responses:
+                    continue
+                
+                # Clasificar por tipo y calcular estadísticas específicas
+                if q_type in ['yes_no', 'select'] or (q_type == 'radio' and pregunta['options'] and 'sí,no' in pregunta['options'].lower()):
+                    stats = calcular_estadisticas_si_no(pregunta, fecha_desde, fecha_hasta)
+                    preguntas_por_tipo['si_no'].append(stats)
+                elif q_type in ['text', 'textarea']:
+                    stats = calcular_estadisticas_texto_libre(pregunta, fecha_desde, fecha_hasta)
+                    preguntas_por_tipo['texto_libre'].append(stats)
+                    # También recopilar respuestas individuales
+                    respuestas_individuales = obtener_respuestas_individuales_texto_libre(pregunta, fecha_desde, fecha_hasta)
+                    respuestas_individuales_texto.extend(respuestas_individuales)
+                elif q_type == 'checkbox':
+                    stats = calcular_estadisticas_seleccion_multiple(pregunta, fecha_desde, fecha_hasta)
+                    preguntas_por_tipo['seleccion_multiple'].append(stats)
+                elif q_type in ['radio', 'multiple_choice']:
+                    stats = calcular_estadisticas_opcion_unica(pregunta, fecha_desde, fecha_hasta)
+                    preguntas_por_tipo['opcion_unica'].append(stats)
+        
+        # Crear archivo Excel
+        output = BytesIO()
+        
+        with pd.ExcelWriter(output, engine='openpyxl') as writer:
+            # Hoja 1: Preguntas Sí/No
+            if preguntas_por_tipo['si_no']:
+                df_si_no = pd.DataFrame(preguntas_por_tipo['si_no'])
+                df_si_no.to_excel(writer, sheet_name='Si No', index=False)
+            
+            # Hoja 2: Texto Libre
+            if preguntas_por_tipo['texto_libre']:
+                df_texto = pd.DataFrame(preguntas_por_tipo['texto_libre'])
+                df_texto.to_excel(writer, sheet_name='Texto Libre', index=False)
+                
+                # Agregar respuestas individuales debajo si existen
+                if respuestas_individuales_texto:
+                    # Obtener la hoja de trabajo
+                    worksheet = writer.sheets['Texto Libre']
+                    
+                    # Calcular la fila donde empezar (después de las métricas + 2 filas de separación)
+                    start_row = len(preguntas_por_tipo['texto_libre']) + 3
+                    
+                    # Escribir título de sección
+                    worksheet.cell(row=start_row, column=1, value="RESPUESTAS INDIVIDUALES")
+                    
+                    # Escribir respuestas individuales
+                    df_respuestas = pd.DataFrame(respuestas_individuales_texto)
+                    
+                    # Escribir headers
+                    for col_num, column_title in enumerate(df_respuestas.columns, 1):
+                        worksheet.cell(row=start_row + 1, column=col_num, value=column_title)
+                    
+                    # Escribir datos
+                    for row_num, row_data in enumerate(df_respuestas.values, start_row + 2):
+                        for col_num, cell_value in enumerate(row_data, 1):
+                            worksheet.cell(row=row_num, column=col_num, value=cell_value)
+            
+            # Hoja 3: Selección Múltiple
+            if preguntas_por_tipo['seleccion_multiple']:
+                df_multiple = pd.DataFrame(preguntas_por_tipo['seleccion_multiple'])
+                df_multiple.to_excel(writer, sheet_name='Seleccion Multiple', index=False)
+            
+            # Hoja 4: Opción Única
+            if preguntas_por_tipo['opcion_unica']:
+                df_unica = pd.DataFrame(preguntas_por_tipo['opcion_unica'])
+                df_unica.to_excel(writer, sheet_name='Opcion Unica', index=False)
+        
+        output.seek(0)
+        
+        # Generar nombre de archivo con fechas del filtro
+        if fecha_desde and fecha_hasta:
+            # Convertir fechas para el nombre del archivo (formato YYYY-MM-DD a YYYYMMDD)
+            fecha_desde_formato = fecha_desde.replace('-', '')
+            fecha_hasta_formato = fecha_hasta.replace('-', '')
+            filename = f'respuestas_analisis_{fecha_desde_formato}_a_{fecha_hasta_formato}.xlsx'
+        else:
+            # Fallback si no hay fechas del filtro
+            fecha_actual = datetime.now().strftime('%Y%m%d_%H%M%S')
+            filename = f'respuestas_analisis_{fecha_actual}.xlsx'
+        
+        return send_file(
+            output,
+            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            as_attachment=True,
+            download_name=filename
+        )
+        
+    except ImportError:
+        return jsonify({
+            'status': 'error',
+            'message': 'pandas no está instalado. Instala con: pip install pandas openpyxl'
+        }), 500
+    except Exception as e:
+        logger.error(f"Error exportando respuestas a Excel: {str(e)}", exc_info=True)
+        return jsonify({
+            'status': 'error',
+            'message': f'Error al generar el archivo Excel: {str(e)}'
+        }), 500
+
+def calcular_estadisticas_si_no(pregunta, fecha_desde=None, fecha_hasta=None):
+    """Calcula estadísticas específicas para preguntas Sí/No"""
+    responses = pregunta['responses']
+    
+    # Datos básicos para preguntas Sí/No
+    stats = {
+        'Pregunta': pregunta['text'],
+        'Fecha Inicio Métrica': '',
+        'Fecha Fin Métrica': '',
+        'Porcentaje Sí': 0,
+        'Veces Sí': 0,
+        'Porcentaje No': 0,
+        'Veces No': 0,
+        'Resumen Propio': ''
+    }
+    
+    if not responses:
+        return stats
+    
+    # Usar fechas del filtro si están disponibles, sino usar fechas de las respuestas
+    if fecha_desde and fecha_hasta:
+        stats['Fecha Inicio Métrica'] = fecha_desde
+        stats['Fecha Fin Métrica'] = fecha_hasta
+    else:
+        # Fechas de inicio y fin del rango de datos
+        fechas = [r['date'] for r in responses if r['date']]
+        if fechas:
+            primera_fecha = min(fechas)
+            ultima_fecha = max(fechas)
+            stats['Fecha Inicio Métrica'] = primera_fecha.strftime('%Y-%m-%d') if hasattr(primera_fecha, 'strftime') else str(primera_fecha)
+            stats['Fecha Fin Métrica'] = ultima_fecha.strftime('%Y-%m-%d') if hasattr(ultima_fecha, 'strftime') else str(ultima_fecha)
+    
+    # Análisis de respuestas
+    respuestas_texto = [r['response'] for r in responses if r['response']]
+    
+    if respuestas_texto:
+        # Conteos y porcentajes para preguntas Sí/No
+        total_respuestas = len(respuestas_texto)
+        si_count = sum(1 for r in respuestas_texto if r.lower() in ['sí', 'si', 'yes', '1', 'true'])
+        no_count = sum(1 for r in respuestas_texto if r.lower() in ['no', 'false', '0'])
+        
+        # Guardar conteos absolutos
+        stats['Veces Sí'] = si_count
+        stats['Veces No'] = no_count
+        
+        # Calcular porcentajes
+        if si_count + no_count > 0:
+            stats['Porcentaje Sí'] = round((si_count / total_respuestas) * 100, 1)
+            stats['Porcentaje No'] = round((no_count / total_respuestas) * 100, 1)
+        
+        # Resumen propio (respuesta más común)
+        from collections import Counter
+        contador = Counter(respuestas_texto)
+        mas_comunes = contador.most_common(2)
+        if mas_comunes:
+            stats['Resumen Propio'] = mas_comunes[0][0]
+    
+    return stats
+
+def calcular_estadisticas_texto_libre(pregunta, fecha_desde=None, fecha_hasta=None):
+    """Calcula estadísticas específicas para preguntas de texto libre"""
+    responses = pregunta['responses']
+    
+    # Datos básicos para texto libre con estructura exacta
+    stats = {
+        'Pregunta': pregunta['text'],
+        'Fecha Inicio Métrica': '',
+        'Fecha Fin Métrica': '',
+        'Palabra Que Más Aparece': '',
+        'Segunda Palabra Que Más Aparece': '',
+        'Longitud Promedio de Respuesta': 0,
+        'Tiempo Promedio': 0
+    }
+    
+    if not responses:
+        return stats
+    
+    # Usar fechas del filtro si están disponibles
+    if fecha_desde and fecha_hasta:
+        stats['Fecha Inicio Métrica'] = fecha_desde
+        stats['Fecha Fin Métrica'] = fecha_hasta
+    
+    # Análisis de respuestas de texto
+    respuestas_texto = [r['response'] for r in responses if r['response']]
+    
+    if respuestas_texto:
+        # Análisis de palabras más frecuentes
+        from collections import Counter
+        import re
+        
+        # Extraer todas las palabras (sin palabras vacías comunes)
+        palabras_vacias = {'el', 'la', 'de', 'que', 'y', 'a', 'en', 'un', 'es', 'se', 'no', 'te', 'lo', 'le', 'da', 'su', 'por', 'son', 'con', 'para', 'al', 'del', 'los', 'las', 'una', 'como', 'pero', 'sus', 'me', 'ya', 'muy', 'mi', 'si', 'más', 'este', 'esta', 'todo', 'bien', 'fue', 'han', 'hay', 'donde', 'quien', 'desde', 'todos', 'durante', 'tanto', 'menos', 'puede', 'ser', 'estar', 'tener', 'hacer', 'ir', 'ver', 'dar', 'saber', 'querer', 'venir', 'poder', 'decir', 'otro', 'algún', 'qué', 'sí', 'porque', 'cuando', 'mucho', 'sin', 'sobre', 'también', 'me', 'le', 'ya', 'todo', 'esta', 'entre', 'era', 'estos', 'mucho', 'había', 'él', 'hasta', 'poder', 'dónde', 'ir', 'le', 'tiempo', 'cada', 'caso', 'esos', 'pues', 'ahora', 'donde', 'modo', 'bien', 'saber', 'qué', 'trabajo', 'vida', 'día', 'grupo', 'momento', 'primer', 'vez', 'sin', 'lugar', 'año', 'trabajo', 'hombre', 'tanto', 'gobierno', 'parte', 'niño', 'punto', 'mundo', 'venir', 'parecer', 'existir', 'creer', 'hablar', 'llevar', 'dejar', 'nada', 'cada', 'seguir', 'menos', 'nuevo'}
+        
+        todas_palabras = []
+        for respuesta in respuestas_texto:
+            # Limpiar y extraer palabras (mínimo 3 caracteres)
+            palabras = re.findall(r'\b[a-záéíóúñü]{3,}\b', respuesta.lower())
+            # Filtrar palabras vacías
+            palabras_filtradas = [p for p in palabras if p not in palabras_vacias]
+            todas_palabras.extend(palabras_filtradas)
+        
+        if todas_palabras:
+            contador_palabras = Counter(todas_palabras)
+            mas_comunes_palabras = contador_palabras.most_common(5)
+            
+            if len(mas_comunes_palabras) > 0:
+                stats['Palabra Que Más Aparece'] = f"{mas_comunes_palabras[0][0]} ({mas_comunes_palabras[0][1]})"
+            
+            if len(mas_comunes_palabras) > 1:
+                stats['Segunda Palabra Que Más Aparece'] = f"{mas_comunes_palabras[1][0]} ({mas_comunes_palabras[1][1]})"
+        
+        # Longitud promedio de respuesta
+        longitudes = [len(str(r)) for r in respuestas_texto]
+        stats['Longitud Promedio de Respuesta'] = round(sum(longitudes) / len(longitudes), 1)
+        
+        # Tiempo promedio de respuesta (en segundos)
+        tiempos = [r['response_time'] for r in responses if r['response_time']]
+        if tiempos:
+            stats['Tiempo Promedio'] = round(sum(tiempos) / len(tiempos), 1)
+    
+    return stats
+
+def obtener_respuestas_individuales_texto_libre(pregunta, fecha_desde=None, fecha_hasta=None):
+    """Obtiene respuestas individuales para preguntas de texto libre"""
+    responses = pregunta['responses']
+    
+    if not responses:
+        return []
+    
+    # Crear una lista de respuestas individuales
+    respuestas_individuales = []
+    
+    for response in responses:
+        if response['response']:  # Solo incluir respuestas no vacías
+            respuesta_individual = {
+                'Pregunta': pregunta['text'],
+                'Fecha Respuesta': response['date'].strftime('%Y-%m-%d') if response['date'] else '',
+                'Respuesta': response['response'],
+                'Longitud Respuesta': len(response['response']) if response['response'] else 0,
+                'Tiempo Respuesta': response['response_time'] if response['response_time'] else 0
+            }
+            respuestas_individuales.append(respuesta_individual)
+    
+    return respuestas_individuales
+
+def calcular_estadisticas_seleccion_multiple(pregunta, fecha_desde=None, fecha_hasta=None):
+    """Calcula estadísticas específicas para preguntas de selección múltiple"""
+    responses = pregunta['responses']
+    
+    # Datos básicos para selección múltiple con estructura exacta
+    stats = {
+        'Pregunta': pregunta['text'],
+        'Fecha Inicio Métrica': '',
+        'Fecha Fin Métrica': '',
+        'Opción Más Elegida': '',
+        'Segunda Más Elegida': '',
+        'Tercera Más Elegida': '',
+        'Cuarta Más Elegida': '',
+        'Quinta Más Elegida': '',
+        'Sexta Más Elegida': '',
+        'Tiempo Promedio': 0
+    }
+    
+    if not responses:
+        return stats
+    
+    # Usar fechas del filtro si están disponibles
+    if fecha_desde and fecha_hasta:
+        stats['Fecha Inicio Métrica'] = fecha_desde
+        stats['Fecha Fin Métrica'] = fecha_hasta
+    
+    # Análisis de opciones seleccionadas
+    respuestas_texto = [r['response'] for r in responses if r['response']]
+    
+    if respuestas_texto:
+        from collections import Counter
+        
+        # Para checkboxes, las respuestas pueden venir separadas por comas
+        todas_opciones = []
+        for respuesta in respuestas_texto:
+            if ',' in respuesta:
+                opciones = [opt.strip() for opt in respuesta.split(',')]
+                todas_opciones.extend(opciones)
+            else:
+                todas_opciones.append(respuesta.strip())
+        
+        contador = Counter(todas_opciones)
+        mas_comunes = contador.most_common(6)  # Obtener hasta 6 opciones
+        
+        if len(mas_comunes) > 0:
+            stats['Opción Más Elegida'] = f"{mas_comunes[0][0]} ({mas_comunes[0][1]})"
+        
+        if len(mas_comunes) > 1:
+            stats['Segunda Más Elegida'] = f"{mas_comunes[1][0]} ({mas_comunes[1][1]})"
+            
+        if len(mas_comunes) > 2:
+            stats['Tercera Más Elegida'] = f"{mas_comunes[2][0]} ({mas_comunes[2][1]})"
+            
+        if len(mas_comunes) > 3:
+            stats['Cuarta Más Elegida'] = f"{mas_comunes[3][0]} ({mas_comunes[3][1]})"
+            
+        if len(mas_comunes) > 4:
+            stats['Quinta Más Elegida'] = f"{mas_comunes[4][0]} ({mas_comunes[4][1]})"
+            
+        if len(mas_comunes) > 5:
+            stats['Sexta Más Elegida'] = f"{mas_comunes[5][0]} ({mas_comunes[5][1]})"
+        
+        # Tiempo promedio de respuesta (en segundos)
+        tiempos = [r['response_time'] for r in responses if r['response_time']]
+        if tiempos:
+            stats['Tiempo Promedio'] = round(sum(tiempos) / len(tiempos), 1)
+    
+    return stats
+
+def calcular_estadisticas_opcion_unica(pregunta, fecha_desde=None, fecha_hasta=None):
+    """Calcula estadísticas específicas para preguntas de opción única"""
+    responses = pregunta['responses']
+    
+    # Datos básicos para opción única con estructura exacta
+    stats = {
+        'Pregunta': pregunta['text'],
+        'Fecha Inicio Métrica': '',
+        'Fecha Fin Métrica': '',
+        'Opción Más Elegida': '',
+        'Segunda Más Elegida': '',
+        'Tercera Más Elegida': '',
+        'Cuarta Más Elegida': '',
+        'Quinta Más Elegida': '',
+        'Sexta Más Elegida': '',
+        'Tiempo Promedio': 0
+    }
+    
+    if not responses:
+        return stats
+    
+    # Usar fechas del filtro si están disponibles
+    if fecha_desde and fecha_hasta:
+        stats['Fecha Inicio Métrica'] = fecha_desde
+        stats['Fecha Fin Métrica'] = fecha_hasta
+    
+    # Análisis de opciones seleccionadas
+    respuestas_texto = [r['response'] for r in responses if r['response']]
+    
+    if respuestas_texto:
+        from collections import Counter
+        
+        contador = Counter(respuestas_texto)
+        mas_comunes = contador.most_common(6)  # Obtener hasta 6 opciones
+        total = len(respuestas_texto)
+        
+        if len(mas_comunes) > 0:
+            porcentaje = round((mas_comunes[0][1] / total) * 100, 1)
+            stats['Opción Más Elegida'] = f"{mas_comunes[0][0]} ({mas_comunes[0][1]} - {porcentaje}%)"
+        
+        if len(mas_comunes) > 1:
+            porcentaje = round((mas_comunes[1][1] / total) * 100, 1)
+            stats['Segunda Más Elegida'] = f"{mas_comunes[1][0]} ({mas_comunes[1][1]} - {porcentaje}%)"
+            
+        if len(mas_comunes) > 2:
+            porcentaje = round((mas_comunes[2][1] / total) * 100, 1)
+            stats['Tercera Más Elegida'] = f"{mas_comunes[2][0]} ({mas_comunes[2][1]} - {porcentaje}%)"
+            
+        if len(mas_comunes) > 3:
+            porcentaje = round((mas_comunes[3][1] / total) * 100, 1)
+            stats['Cuarta Más Elegida'] = f"{mas_comunes[3][0]} ({mas_comunes[3][1]} - {porcentaje}%)"
+            
+        if len(mas_comunes) > 4:
+            porcentaje = round((mas_comunes[4][1] / total) * 100, 1)
+            stats['Quinta Más Elegida'] = f"{mas_comunes[4][0]} ({mas_comunes[4][1]} - {porcentaje}%)"
+            
+        if len(mas_comunes) > 5:
+            porcentaje = round((mas_comunes[5][1] / total) * 100, 1)
+            stats['Sexta Más Elegida'] = f"{mas_comunes[5][0]} ({mas_comunes[5][1]} - {porcentaje}%)"
+        
+        # Distribución general
+        distribuciones = [f"{opcion}: {count}" for opcion, count in mas_comunes[:3]]
+        stats['Distribución'] = " | ".join(distribuciones)
+        
+        # Tiempo promedio de respuesta (en segundos)
+        tiempos = [r['response_time'] for r in responses if r['response_time']]
+        if tiempos:
+            stats['Tiempo Promedio'] = round(sum(tiempos) / len(tiempos), 1)
+    
+    return stats
 
 @app.route('/debug-preguntas-mensuales')
 @login_required
