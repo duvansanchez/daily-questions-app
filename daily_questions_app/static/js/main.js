@@ -646,77 +646,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Validación del submit solo del campo visible
-    const form = document.getElementById('add-question-form');
-    if (form) {
-        form.addEventListener('submit', async function(e) {
-            e.preventDefault();
-            console.log('Submit capturado'); // Para depuración
-            // Solo valida los bloques de categoría si es el formulario de preguntas
-            if (form.id === 'add-question-form') {
-                const bloqueCatExistenteNueva = document.getElementById('bloque-categoria-existente-nueva');
-                const bloqueNuevaCatNueva = document.getElementById('bloque-nueva-categoria-nueva');
-            if (!bloqueCatExistenteNueva || !bloqueNuevaCatNueva) {
-                console.error('No se encontraron los bloques de categoría.');
-                return;
-                }
-            }
-            const submitBtn = document.getElementById('submit-question');
-            const originalBtnText = submitBtn.innerHTML;
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Guardando...';
-            const formData = new FormData(form);
-            let categoriaExistente = '';
-            let nuevaCategoria = '';
-            if (bloqueCatExistenteNueva && bloqueCatExistenteNueva.style.display !== 'none') {
-                categoriaExistente = formData.get('categoria_existente') || '';
-            }
-            if (bloqueNuevaCatNueva && bloqueNuevaCatNueva.style.display !== 'none') {
-                nuevaCategoria = formData.get('nueva_categoria') || '';
-            }
-            if (categoriaExistente && nuevaCategoria) {
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = 'Crear Pregunta';
-                showError('No puedes seleccionar una categoría existente y escribir una nueva al mismo tiempo.');
-                return false;
-            }
-            // Construir el objeto de datos para enviar
-            const data = {
-                text: formData.get('text') || '',
-                type: formData.get('type') || 'text',
-                options: formData.get('options') || '',
-                descripcion: formData.get('descripcion') || '',
-                is_required: document.getElementById('is_required').checked ? 1 : 0,
-                categoria_existente: categoriaExistente,
-                nueva_categoria: nuevaCategoria
-            };
-            try {
-                const response = await fetch('/add_question', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest'
-                    },
-                    credentials: 'same-origin',
-                    body: JSON.stringify(data)
-                });
-                const result = await response.json();
-                if (result.status === 'success') {
-                    showSuccess('Pregunta creada exitosamente');
-                    setTimeout(() => {
-                        window.location.href = window.location.href.split('?')[0];
-                    }, 1200);
-                } else {
-                    showError(result.message || 'Error al crear la pregunta');
-                }
-            } catch (err) {
-                showError('Error al crear la pregunta: ' + (err.message || err));
-            } finally {
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = 'Crear Pregunta';
-            }
-        });
-    }
+    // Handler del formulario de crear pregunta movido a admin.html para evitar duplicación
 
     // ================= FRECUENCIA DE RESPUESTA (Intermedias) =================
 
@@ -2077,6 +2007,9 @@ if (formEditar) {
       frecuencia = categoria;
     }
     if (!id || !titulo) return;
+    
+
+    
     try {
       const res = await fetch(`/api/objetivos/${id}`, {
         method: 'PATCH',
@@ -2813,124 +2746,7 @@ if (modalEditar) {
         if (checklistCont) checklistCont.style.display = '';
     });
 }
-// --- GUARDAR SUBOBJETIVOS AL EDITAR ---
-const formEditar = document.getElementById('form-modal-editar-objetivo');
-if (formEditar) {
-    formEditar.addEventListener('submit', async function(e) {
-        e.preventDefault();
-        const btnGuardar = document.querySelector('#modalEditarObjetivo .btn-guardar');
-        if (btnGuardar) btnGuardar.disabled = true;
-        const id = document.getElementById('editar-id-objetivo').value;
-        const titulo = document.getElementById('editar-titulo-objetivo').value.trim();
-        const descripcion = document.getElementById('editar-desc-objetivo').value.trim();
-        const prioridad = document.getElementById('editar-prioridad-objetivo').value;
-        const categoria = document.getElementById('editar-categoria-objetivo').value.trim();
-        const esPadre = document.getElementById('editar-es-padre-objetivo').checked;
-        const objetivoPadreId = document.getElementById('editar-padre-objetivo').value || null;
-        const estado = document.getElementById('editar-estado-objetivo').value;
-        const fechaInicio = document.getElementById('editar-fecha-inicio-objetivo').value || null;
-        const fechaFin = document.getElementById('editar-fecha-fin-objetivo').value || null;
-        const horasEdit = document.getElementById('editar-horas-estimadas-objetivo').value;
-        const minutosEdit = document.getElementById('editar-minutos-estimados-objetivo').value;
-        let horasEstimadas = null;
-        if (horasEdit || minutosEdit) {
-          const h = parseInt(horasEdit) || 0;
-          const m = parseInt(minutosEdit) || 0;
-          horasEstimadas = h + (m / 60);
-        }
-        const dificultad = document.getElementById('editar-dificultad-objetivo').value || null;
-        const etiquetas = document.getElementById('editar-etiquetas-objetivo').value.trim();
-        const recompensa = document.getElementById('editar-recompensa-objetivo').value.trim();
-        const notasAdicionales = document.getElementById('editar-notas-adicionales-objetivo').value.trim();
-        const chkRecEdit = document.getElementById('editar-recurrente-objetivo');
-        let recurrente = false;
-        if (chkRecEdit) {
-            recurrente = chkRecEdit.checked;
-        }
-        let frecuencia = null;
-        if (recurrente && ["diario", "semanal", "mensual", "anual"].includes(categoria)) {
-          frecuencia = categoria;
-        }
-        if (!id || !titulo) return;
-        try {
-          const res = await fetch(`/api/objetivos/${id}`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              titulo,
-              descripcion,
-              prioridad,
-              categoria,
-              es_padre: esPadre,
-              objetivo_padre_id: objetivoPadreId,
-              estado,
-              fecha_inicio: fechaInicio,
-              fecha_fin: fechaFin,
-              horas_estimadas: horasEstimadas,
-              dificultad,
-              etiquetas,
-              recompensa,
-              notas_adicionales: notasAdicionales,
-              recurrente,
-              frecuencia
-            })
-          });
-          const result = await res.json();
-          if (result.status === 'success') {
-            // Sincronizar subobjetivos: crear, actualizar, eliminar
-            const objetivoId = id;
-            // Obtener subobjetivos actuales del backend
-            let backendSubs = [];
-            try {
-                const res = await fetch(`/api/objetivos/${objetivoId}/subobjetivos`);
-                backendSubs = await res.json();
-            } catch {}
-            // Crear nuevos
-            for (const sub of checklistEditar) {
-                if ((!sub.id || typeof sub.id === 'undefined') && sub.titulo.trim()) {
-                    await fetch(`/api/objetivos/${objetivoId}/subobjetivos`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ titulo: sub.titulo, completado: sub.completado })
-                    });
-                } else if (sub.id) {
-                    // Actualizar si cambió
-                    const backendSub = backendSubs.find(s => s.id === sub.id);
-                    if (backendSub && (backendSub.titulo !== sub.titulo || backendSub.completado !== sub.completado)) {
-                        await fetch(`/api/subobjetivos/${sub.id}`, {
-                            method: 'PATCH',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ titulo: sub.titulo, completado: sub.completado })
-                        });
-                    }
-                }
-            }
-            // Eliminar los que ya no están
-            for (const backendSub of backendSubs) {
-                if (!checklistEditar.find(s => s.id === backendSub.id)) {
-                    await fetch(`/api/subobjetivos/${backendSub.id}`, { method: 'DELETE' });
-                }
-            }
-            // Recargar subobjetivos del backend para limpiar duplicados
-            try {
-                const res = await fetch(`/api/objetivos/${objetivoId}/subobjetivos`);
-                const subs = await res.json();
-                checklistEditar = subs.map(s => ({ id: s.id, titulo: s.titulo, completado: s.completado }));
-            } catch {}
-            await cargarObjetivos();
-            const modal = bootstrap.Modal.getInstance(document.getElementById('modalEditarObjetivo'));
-            if (modal) modal.hide();
-          } else {
-            showError(result.error || 'Error al actualizar objetivo');
-          }
-        } catch (err) {
-          console.error('Error al actualizar objetivo:', err);
-          showError('Error al actualizar objetivo');
-        } finally {
-          if (btnGuardar) btnGuardar.disabled = false;
-        }
-    });
-}
+// --- GUARDAR SUBOBJETIVOS AL EDITAR --- (código movido arriba para evitar duplicación)
 
 
 

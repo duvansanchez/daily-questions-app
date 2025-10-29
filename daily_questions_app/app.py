@@ -3574,9 +3574,13 @@ def api_create_objetivo():
 def api_update_objetivo(objetivo_id):
     data = request.get_json()
     
-    # Si se está marcando como recurrente (restaurando del histórico)
-    if 'recurrente' in data and data['recurrente'] == True:
-        return restaurar_objetivo_completo(objetivo_id)
+
+    
+    # Si se está marcando como recurrente Y viene del histórico (solo restaurar si cambia de False a True)
+    # Esta lógica debería ejecutarse solo cuando se restaura desde histórico, no en ediciones normales
+    # Por ahora la comentamos para permitir ediciones normales de objetivos recurrentes
+    # if 'recurrente' in data and data['recurrente'] == True:
+    #     return restaurar_objetivo_completo(objetivo_id)
     
     campos = {}
     for campo in ['titulo', 'descripcion', 'prioridad', 'categoria', 'objetivo_padre_id', 'es_padre', 'estado', 'fecha_inicio', 'fecha_fin', 'fecha_proyeccion_comienzo', 'horas_estimadas', 'dificultad', 'etiquetas', 'recompensa', 'notas_adicionales', 'recurrente', 'frecuencia']:
@@ -3608,9 +3612,8 @@ def api_update_objetivo(objetivo_id):
     values.extend([objetivo_id, current_user.id])
     with get_db_connection() as conn:
         cursor = conn.cursor()
-        cursor.execute(f"""
-            UPDATE objetivos SET {', '.join(set_clause)} WHERE id = ? AND user_id = ?
-        """, tuple(values))
+        query = f"UPDATE objetivos SET {', '.join(set_clause)} WHERE id = ? AND user_id = ?"
+        cursor.execute(query, tuple(values))
         conn.commit()
         return jsonify({'status': 'success'})
 
