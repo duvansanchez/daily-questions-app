@@ -519,19 +519,19 @@ endblock %} {% block content %}
           <div class="row mb-4">
             <div class="col-md-4">
               <label for="filtro-categoria-audios" class="form-label fw-semibold">Categoría</label>
-              <select class="form-select" id="filtro-categoria-audios">
+              <select class="form-select form-select-sm" id="filtro-categoria-audios">
                 <option value="">Todas las categorías</option>
               </select>
             </div>
             <div class="col-md-4">
               <label for="filtro-subcategoria-audios" class="form-label fw-semibold">Subcategoría</label>
-              <select class="form-select" id="filtro-subcategoria-audios">
+              <select class="form-select form-select-sm" id="filtro-subcategoria-audios">
                 <option value="">Todas las subcategorías</option>
               </select>
             </div>
             <div class="col-md-4">
               <label for="orden-audios" class="form-label fw-semibold">Ordenar por</label>
-              <select class="form-select" id="orden-audios">
+              <select class="form-select form-select-sm" id="orden-audios">
                 <option value="reciente">Más recientes</option>
                 <option value="antiguo">Más antiguos</option>
                 <option value="mas_escuchado">Más escuchados</option>
@@ -2474,6 +2474,7 @@ endblock %} {% block content %}
         document.getElementById("card-objetivos").style.display = "block";
         document.getElementById("card-historico").style.display = "none";
         document.getElementById("card-frases").style.display = "none";
+        document.getElementById("card-audios").style.display = "none";
 
         // Mostrar estadísticas de objetivos
         const statsRow = document.querySelector(".row.text-center.mb-4");
@@ -2520,6 +2521,7 @@ endblock %} {% block content %}
         // Mostrar/ocultar contenido
         document.getElementById("card-objetivos").style.display = "none";
         document.getElementById("card-historico").style.display = "none";
+        document.getElementById("card-audios").style.display = "none";
         document.getElementById("card-frases").style.display = "block";
 
         // Ocultar estadísticas de objetivos

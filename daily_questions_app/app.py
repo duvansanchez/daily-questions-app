@@ -5156,37 +5156,33 @@ def api_create_audio():
         if not titulo:
             return jsonify({'error': 'El título es requerido'}), 400
         
-        # Generar nombre único para el archivo
+        # Leer el contenido binario del archivo
+        file.seek(0)  # Asegurar que estamos al inicio del archivo
+        contenido_binario = file.read()
+        
+        # Determinar tipo MIME
+        tipo_mime_map = {
+            '.mp3': 'audio/mpeg',
+            '.wav': 'audio/wav',
+            '.m4a': 'audio/mp4',
+            '.ogg': 'audio/ogg'
+        }
+        tipo_mime = tipo_mime_map.get(file_ext, 'audio/mpeg')
+        
+        # Generar ID único para el audio
         import uuid
-        unique_filename = f"{uuid.uuid4().hex}{file_ext}"
+        audio_uuid = uuid.uuid4().hex
         
-        # Crear directorio del usuario si no existe
-        app_dir = os.path.dirname(os.path.abspath(__file__))
-        user_dir = os.path.join(app_dir, 'static', 'uploads', 'audios', str(current_user.id))
-        os.makedirs(user_dir, exist_ok=True)
-        
-        # Guardar archivo
-        file_path = os.path.join(user_dir, unique_filename)
-        file.save(file_path)
-        
-        # Verificar que el archivo se guardó
-        if not os.path.exists(file_path):
-            logger.error(f"ERROR: El archivo no se guardó en {file_path}")
-            return jsonify({'error': 'Error al guardar el archivo de audio'}), 500
-        
-        # URL relativa para acceder al archivo
-        archivo_url = f"/static/uploads/audios/{current_user.id}/{unique_filename}"
-        
-        # Guardar en base de datos
+        # Guardar en base de datos con contenido binario
         with get_db_connection() as conn:
             cursor = conn.cursor()
             cursor.execute('''
-                INSERT INTO audios (user_id, titulo, descripcion, archivo_nombre, archivo_url, 
-                                  categoria, subcategoria, notas)
+                INSERT INTO audios (user_id, titulo, descripcion, archivo_nombre, 
+                                  categoria, subcategoria, notas, contenido_binario, tipo_mime)
                 OUTPUT INSERTED.id
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            ''', (current_user.id, titulo, descripcion, file.filename, archivo_url, 
-                  categoria, subcategoria, notas))
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (current_user.id, titulo, descripcion, file.filename, 
+                  categoria, subcategoria, notas, contenido_binario, tipo_mime))
             
             audio_id = cursor.fetchone()[0]
             conn.commit()
