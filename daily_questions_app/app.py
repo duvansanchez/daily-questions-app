@@ -5063,6 +5063,356 @@ def _ensure_subcategoria_schema(cursor):
         END
     ''')
 
+# ==================== RUTAS DE AUDIOS ====================
+
+@app.route('/api/audios', methods=['GET'])
+@login_required
+def api_get_audios():
+    """Obtener audios del usuario con filtros opcionales"""
+    try:
+        categoria = request.args.get('categoria', '')
+        subcategoria = request.args.get('subcategoria', '')
+        solo_activas = request.args.get('solo_activas', '1') == '1'
+        
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            
+            # Construir query con filtros
+            query = '''
+                SELECT id, titulo, descripcion, archivo_nombre, archivo_url, 
+                       duracion_segundos, categoria, subcategoria, notas, 
+                       total_reproducciones, ultima_reproduccion, activa, fecha_creacion
+                FROM audios 
+                WHERE user_id = ?
+            '''
+            params = [current_user.id]
+            
+            if categoria:
+                query += ' AND categoria = ?'
+                params.append(categoria)
+                
+            if subcategoria:
+                query += ' AND subcategoria = ?'
+                params.append(subcategoria)
+                
+            if solo_activas:
+                query += ' AND activa = 1'
+            
+            query += ' ORDER BY fecha_creacion DESC'
+            
+            cursor.execute(query, params)
+            rows = cursor.fetchall()
+            
+            audios = []
+            for row in rows:
+                audios.append({
+                    'id': row[0],
+                    'titulo': row[1],
+                    'descripcion': row[2],
+                    'archivo_nombre': row[3],
+                    'archivo_url': row[4],
+                    'duracion_segundos': row[5],
+                    'categoria': row[6],
+                    'subcategoria': row[7],
+                    'notas': row[8],
+                    'total_reproducciones': row[9],
+                    'ultima_reproduccion': row[10].isoformat() if row[10] else None,
+                    'activa': bool(row[11]),
+                    'fecha_creacion': row[12].isoformat() if row[12] else None
+                })
+            
+            return jsonify(audios)
+            
+    except Exception as e:
+        logger.error(f"Error al obtener audios: {str(e)}")
+        return jsonify({'error': 'Error al obtener audios'}), 500
+
+@app.route('/api/audios', methods=['POST'])
+@login_required
+def api_create_audio():
+    """Crear un nuevo audio"""
+    try:
+        # Verificar si se subió un archivo
+        if 'audio_file' not in request.files:
+            return jsonify({'error': 'No se proporcionó archivo de audio'}), 400
+        
+        file = request.files['audio_file']
+        if file.filename == '':
+            return jsonify({'error': 'No se seleccionó archivo'}), 400
+        
+        # Validar tipo de archivo
+        allowed_extensions = {'.mp3', '.wav', '.m4a', '.ogg'}
+        file_ext = os.path.splitext(file.filename)[1].lower()
+        if file_ext not in allowed_extensions:
+            return jsonify({'error': 'Formato de audio no permitido. Use: MP3, WAV, M4A, OGG'}), 400
+        
+        # Obtener datos del formulario
+        titulo = request.form.get('titulo', '').strip()
+        descripcion = request.form.get('descripcion', '').strip()
+        categoria = request.form.get('categoria', '').strip()
+        subcategoria = request.form.get('subcategoria', '').strip()
+        notas = request.form.get('notas', '').strip()
+        
+        if not titulo:
+            return jsonify({'error': 'El título es requerido'}), 400
+        
+        # Generar nombre único para el archivo
+        import uuid
+        unique_filename = f"{uuid.uuid4().hex}{file_ext}"
+        
+        # Crear directorio del usuario si no existe
+        app_dir = os.path.dirname(os.path.abspath(__file__))
+        user_dir = os.path.join(app_dir, 'static', 'uploads', 'audios', str(current_user.id))
+        os.makedirs(user_dir, exist_ok=True)
+        
+        # Guardar archivo
+        file_path = os.path.join(user_dir, unique_filename)
+        file.save(file_path)
+        
+        # Verificar que el archivo se guardó
+        if not os.path.exists(file_path):
+            logger.error(f"ERROR: El archivo no se guardó en {file_path}")
+            return jsonify({'error': 'Error al guardar el archivo de audio'}), 500
+        
+        # URL relativa para acceder al archivo
+        archivo_url = f"/static/uploads/audios/{current_user.id}/{unique_filename}"
+        
+        # Guardar en base de datos
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('''
+                INSERT INTO audios (user_id, titulo, descripcion, archivo_nombre, archivo_url, 
+                                  categoria, subcategoria, notas)
+                OUTPUT INSERTED.id
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (current_user.id, titulo, descripcion, file.filename, archivo_url, 
+                  categoria, subcategoria, notas))
+            
+            audio_id = cursor.fetchone()[0]
+            conn.commit()
+            
+            return jsonify({
+                'status': 'success',
+                'message': 'Audio creado exitosamente',
+                'audio_id': audio_id
+            })
+            
+    except Exception as e:
+        logger.error(f"Error al crear audio: {str(e)}")
+        return jsonify({'error': 'Error al crear audio'}), 500
+
+@app.route('/api/audios/<int:audio_id>', methods=['PUT'])
+@login_required
+def api_update_audio(audio_id):
+    """Actualizar un audio existente"""
+    try:
+        data = request.get_json()
+        
+        titulo = data.get('titulo', '').strip()
+        descripcion = data.get('descripcion', '').strip()
+        categoria = data.get('categoria', '').strip()
+        subcategoria = data.get('subcategoria', '').strip()
+        notas = data.get('notas', '').strip()
+        
+        if not titulo:
+            return jsonify({'error': 'El título es requerido'}), 400
+        
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('''
+                UPDATE audios 
+                SET titulo = ?, descripcion = ?, categoria = ?, subcategoria = ?, notas = ?
+                WHERE id = ? AND user_id = ?
+            ''', (titulo, descripcion, categoria, subcategoria, notas, audio_id, current_user.id))
+            
+            if cursor.rowcount == 0:
+                return jsonify({'error': 'Audio no encontrado'}), 404
+            
+            conn.commit()
+            return jsonify({'status': 'success'})
+            
+    except Exception as e:
+        logger.error(f"Error al actualizar audio: {str(e)}")
+        return jsonify({'error': 'Error al actualizar audio'}), 500
+
+@app.route('/api/audios/<int:audio_id>', methods=['DELETE'])
+@login_required
+def api_delete_audio(audio_id):
+    """Eliminar un audio"""
+    try:
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            
+            # Obtener información del archivo antes de eliminar
+            cursor.execute('''
+                SELECT archivo_url FROM audios 
+                WHERE id = ? AND user_id = ?
+            ''', (audio_id, current_user.id))
+            
+            result = cursor.fetchone()
+            if not result:
+                return jsonify({'error': 'Audio no encontrado'}), 404
+            
+            archivo_url = result[0]
+            
+            # Eliminar de la base de datos
+            cursor.execute('''
+                DELETE FROM audios 
+                WHERE id = ? AND user_id = ?
+            ''', (audio_id, current_user.id))
+            
+            conn.commit()
+            
+            # Intentar eliminar el archivo físico
+            try:
+                file_path = os.path.join('daily_questions_app', archivo_url.lstrip('/'))
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+            except Exception as e:
+                logger.warning(f"No se pudo eliminar archivo físico: {str(e)}")
+            
+            return jsonify({'status': 'success'})
+            
+    except Exception as e:
+        logger.error(f"Error al eliminar audio: {str(e)}")
+        return jsonify({'error': 'Error al eliminar audio'}), 500
+
+@app.route('/api/audios/<int:audio_id>/toggle', methods=['POST'])
+@login_required
+def api_toggle_audio_activa(audio_id):
+    """Alternar estado activa de un audio"""
+    try:
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            
+            # Obtener estado actual
+            cursor.execute('''
+                SELECT activa FROM audios 
+                WHERE id = ? AND user_id = ?
+            ''', (audio_id, current_user.id))
+            
+            result = cursor.fetchone()
+            if not result:
+                return jsonify({'error': 'Audio no encontrado'}), 404
+            
+            # Alternar estado
+            nueva_activa = not result[0]
+            
+            cursor.execute('''
+                UPDATE audios 
+                SET activa = ?
+                WHERE id = ? AND user_id = ?
+            ''', (nueva_activa, audio_id, current_user.id))
+            
+            conn.commit()
+            
+            return jsonify({
+                'status': 'success',
+                'activa': nueva_activa
+            })
+            
+    except Exception as e:
+        logger.error(f"Error al alternar estado de audio {audio_id}: {str(e)}")
+        return jsonify({'error': 'Error al cambiar estado del audio'}), 500
+
+@app.route('/api/audios/<int:audio_id>/reproducir', methods=['POST'])
+@login_required
+def api_reproducir_audio(audio_id):
+    """Registrar reproducción de un audio"""
+    try:
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('''
+                UPDATE audios 
+                SET total_reproducciones = total_reproducciones + 1,
+                    ultima_reproduccion = GETDATE()
+                WHERE id = ? AND user_id = ?
+            ''', (audio_id, current_user.id))
+            
+            if cursor.rowcount == 0:
+                return jsonify({'error': 'Audio no encontrado'}), 404
+            
+            conn.commit()
+            return jsonify({'status': 'success'})
+            
+    except Exception as e:
+        logger.error(f"Error al registrar reproducción: {str(e)}")
+        return jsonify({'error': 'Error al registrar reproducción'}), 500
+
+@app.route('/api/audios/categorias', methods=['GET'])
+@login_required
+def api_get_categorias_audios():
+    """Obtener categorías y subcategorías que tienen audios asociados"""
+    try:
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            
+            # Obtener categorías que tienen audios
+            cursor.execute('''
+                SELECT DISTINCT categoria 
+                FROM audios 
+                WHERE user_id = ? AND categoria IS NOT NULL AND categoria != ''
+                ORDER BY categoria
+            ''', (current_user.id,))
+            
+            categorias = [row[0] for row in cursor.fetchall()]
+            
+            # Obtener subcategorías que tienen audios
+            cursor.execute('''
+                SELECT DISTINCT subcategoria 
+                FROM audios 
+                WHERE user_id = ? AND subcategoria IS NOT NULL AND subcategoria != ''
+                ORDER BY subcategoria
+            ''', (current_user.id,))
+            
+            subcategorias = [row[0] for row in cursor.fetchall()]
+            
+            return jsonify({
+                'categorias': categorias,
+                'subcategorias': subcategorias
+            })
+            
+    except Exception as e:
+        logger.error(f"Error al obtener categorías de audios: {str(e)}")
+        return jsonify({'error': 'Error al obtener categorías'}), 500
+
+@app.route('/api/audios/subcategorias', methods=['GET'])
+@login_required
+def api_get_subcategorias_audios():
+    """Obtener subcategorías que tienen audios asociados para una categoría específica"""
+    try:
+        categoria = request.args.get('categoria', '')
+        
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            
+            if categoria:
+                # Obtener subcategorías para una categoría específica que tienen audios
+                cursor.execute('''
+                    SELECT DISTINCT subcategoria 
+                    FROM audios 
+                    WHERE user_id = ? AND categoria = ? AND subcategoria IS NOT NULL AND subcategoria != ''
+                    ORDER BY subcategoria
+                ''', (current_user.id, categoria))
+            else:
+                # Obtener todas las subcategorías que tienen audios
+                cursor.execute('''
+                    SELECT DISTINCT subcategoria 
+                    FROM audios 
+                    WHERE user_id = ? AND subcategoria IS NOT NULL AND subcategoria != ''
+                    ORDER BY subcategoria
+                ''', (current_user.id,))
+            
+            subcategorias = [row[0] for row in cursor.fetchall()]
+            
+            return jsonify({
+                'subcategorias': subcategorias
+            })
+            
+    except Exception as e:
+        logger.error(f"Error al obtener subcategorías de audios: {str(e)}")
+        return jsonify({'error': 'Error al obtener subcategorías'}), 500
+
 if __name__ == '__main__':
     start_scheduler()
     app.run(host='0.0.0.0', port=5000, debug=True)

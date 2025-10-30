@@ -3786,6 +3786,204 @@ function formatearFechaRelativa(fecha) {
     return fechaObj.toLocaleDateString();
 }
 
+// Función para configurar event listeners de audios
+function configurarEventListenersAudios() {
+    // Botón nuevo audio
+    const btnNuevoAudio = document.getElementById('btn-nuevo-audio');
+    if (btnNuevoAudio && !btnNuevoAudio.hasAttribute('data-listener-added')) {
+        btnNuevoAudio.addEventListener('click', async function() {
+            const modal = new bootstrap.Modal(document.getElementById('modalNuevoAudio'));
+            modal.show();
+            
+            // Cargar categorías cuando se abre el modal
+            setTimeout(async () => {
+                if (typeof cargarCategoriasParaFormularios === 'function') {
+                    await cargarCategoriasParaFormularios();
+                }
+                
+                configurarEventListenersCategorias();
+                preseleccionarFiltrosEnModalAudio();
+            }, 100);
+        });
+        btnNuevoAudio.setAttribute('data-listener-added', 'true');
+    }
+    
+    // Botón audio aleatorio
+    const btnAudioAleatorio = document.getElementById('btn-audio-aleatorio');
+    if (btnAudioAleatorio) {
+        btnAudioAleatorio.addEventListener('click', reproducirAudioAleatorio);
+    }
+    
+    // Filtro de categoría
+    const filtroCategoria = document.getElementById('filtro-categoria-audios');
+    if (filtroCategoria && !filtroCategoria.hasAttribute('data-listener-added')) {
+        filtroCategoria.addEventListener('change', function() {
+            console.log('EVENTO: Cambio detectado en filtro de categoría de audios');
+            console.log('Valor seleccionado:', this.value);
+
+            // Limpiar filtro de subcategoría cuando cambia la categoría
+            const filtroSubcategoria = document.getElementById('filtro-subcategoria-audios');
+            if (filtroSubcategoria) {
+                filtroSubcategoria.value = '';
+            }
+
+            // Cargar subcategorías para la nueva categoría
+            cargarSubcategoriasAudios(this.value);
+            
+            // Recargar audios con el nuevo filtro
+            cargarAudios();
+        });
+        filtroCategoria.setAttribute('data-listener-added', 'true');
+    }
+
+    // Filtro de subcategoría
+    const filtroSubcategoria = document.getElementById('filtro-subcategoria-audios');
+    if (filtroSubcategoria && !filtroSubcategoria.hasAttribute('data-listener-added')) {
+        filtroSubcategoria.addEventListener('change', function() {
+            console.log('EVENTO: Cambio detectado en filtro de subcategoría de audios');
+            cargarAudios();
+        });
+        filtroSubcategoria.setAttribute('data-listener-added', 'true');
+    }
+
+    // Filtro de orden
+    const ordenAudios = document.getElementById('orden-audios');
+    if (ordenAudios && !ordenAudios.hasAttribute('data-listener-added')) {
+        ordenAudios.addEventListener('change', function() {
+            renderizarAudios();
+        });
+        ordenAudios.setAttribute('data-listener-added', 'true');
+    }
+    
+    // Form nuevo audio
+    const formNuevoAudio = document.getElementById('form-nuevo-audio');
+    if (formNuevoAudio && !formNuevoAudio.hasAttribute('data-listener-added')) {
+        formNuevoAudio.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData();
+            formData.append('titulo', document.getElementById('audio-titulo').value.trim());
+            formData.append('descripcion', document.getElementById('audio-descripcion').value.trim());
+            formData.append('categoria', document.getElementById('audio-categoria').value);
+            formData.append('subcategoria', document.getElementById('audio-subcategoria').value);
+            formData.append('notas', document.getElementById('audio-notas').value.trim());
+            
+            const fileInput = document.getElementById('audio-file');
+            if (fileInput.files[0]) {
+                formData.append('audio_file', fileInput.files[0]);
+            }
+            
+            try {
+                const response = await fetch('/api/audios', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                if (result.status === 'success') {
+                    showSuccess('Audio agregado exitosamente');
+                    bootstrap.Modal.getInstance(document.getElementById('modalNuevoAudio')).hide();
+                    formNuevoAudio.reset();
+                    await cargarAudios();
+                } else {
+                    showError(result.error || 'Error al agregar audio');
+                }
+            } catch (error) {
+                console.error('Error al agregar audio:', error);
+                showError('Error al agregar audio: ' + error.message);
+            }
+        });
+        formNuevoAudio.setAttribute('data-listener-added', 'true');
+    }
+    
+    // Form editar audio
+    const formEditarAudio = document.getElementById('form-editar-audio');
+    if (formEditarAudio && !formEditarAudio.hasAttribute('data-listener-added')) {
+        formEditarAudio.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const audioId = document.getElementById('editar-audio-id').value;
+            const data = {
+                titulo: document.getElementById('editar-audio-titulo').value.trim(),
+                descripcion: document.getElementById('editar-audio-descripcion').value.trim(),
+                categoria: document.getElementById('editar-audio-categoria').value,
+                subcategoria: document.getElementById('editar-audio-subcategoria').value,
+                notas: document.getElementById('editar-audio-notas').value.trim()
+            };
+            
+            try {
+                const response = await fetch(`/api/audios/${audioId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                if (result.status === 'success') {
+                    showSuccess('Audio actualizado exitosamente');
+                    bootstrap.Modal.getInstance(document.getElementById('modalEditarAudio')).hide();
+                    await cargarAudios();
+                } else {
+                    showError(result.error || 'Error al actualizar audio');
+                }
+            } catch (error) {
+                console.error('Error al actualizar audio:', error);
+                showError('Error al actualizar audio: ' + error.message);
+            }
+        });
+        formEditarAudio.setAttribute('data-listener-added', 'true');
+    }
+}
+
+// Preseleccionar filtros actuales en el modal de nuevo audio
+function preseleccionarFiltrosEnModalAudio() {
+    // Obtener valores actuales de los filtros
+    const filtroCategoria = document.getElementById('filtro-categoria-audios')?.value || '';
+    const filtroSubcategoria = document.getElementById('filtro-subcategoria-audios')?.value || '';
+    
+    let preseleccionados = [];
+    
+    // Preseleccionar categoría si hay una seleccionada
+    const modalCategoria = document.getElementById('audio-categoria');
+    if (modalCategoria && filtroCategoria) {
+        // Buscar si la categoría existe en las opciones del modal
+        const opcionCategoria = Array.from(modalCategoria.options).find(option => option.value === filtroCategoria);
+        if (opcionCategoria) {
+            modalCategoria.value = filtroCategoria;
+            preseleccionados.push(`categoría "${capitalizarPrimeraLetra(filtroCategoria.replace(/_/g, ' '))}"`);
+            
+            // Disparar evento change para cargar subcategorías
+            modalCategoria.dispatchEvent(new Event('change'));
+            
+            // Preseleccionar subcategoría después de un pequeño delay para que se carguen las opciones
+            setTimeout(() => {
+                const modalSubcategoria = document.getElementById('audio-subcategoria');
+                if (modalSubcategoria && filtroSubcategoria) {
+                    const opcionSubcategoria = Array.from(modalSubcategoria.options).find(option => option.value === filtroSubcategoria);
+                    if (opcionSubcategoria) {
+                        modalSubcategoria.value = filtroSubcategoria;
+                        preseleccionados.push(`subcategoría "${capitalizarPrimeraLetra(filtroSubcategoria.replace(/_/g, ' '))}"`);
+                        
+                        // Mostrar mensaje informativo si se preseleccionaron campos
+                        if (preseleccionados.length > 0) {
+                            const mensaje = `Se preseleccionó ${preseleccionados.join(' y ')} según tu filtro actual`;
+                            showInfo(mensaje, 3000);
+                        }
+                    }
+                }
+            }, 200);
+        }
+    } else if (preseleccionados.length > 0) {
+        // Mostrar mensaje si solo se preseleccionó categoría
+        setTimeout(() => {
+            const mensaje = `Se preseleccionó ${preseleccionados.join(' y ')} según tu filtro actual`;
+            showInfo(mensaje, 3000);
+        }, 100);
+    }
+}
+
 // Función para configurar event listeners de frases
 function configurarEventListenersFrases() {
     // Botón nueva frase
@@ -3991,12 +4189,158 @@ function configurarEventListenersFrases() {
 document.addEventListener('DOMContentLoaded', function() {
     // Configurar event listeners iniciales
     configurarEventListenersFrases();
+    configurarEventListenersAudios();
 
     // Cargar frases si estamos en la página de frases
     if (document.getElementById('card-frases')) {
         cargarFrases();
     }
+    
+    // Cargar audios si estamos en la página de audios
+    if (document.getElementById('card-audios')) {
+        cargarAudios();
+    }
 });
+
+// ==================== FUNCIONES DE AUDIOS ====================
+
+// Variables globales para audios
+let audios = [];
+let audioActual = null;
+
+// Cargar audios desde el servidor
+async function cargarAudios() {
+    try {
+        // Obtener filtros activos desde los elementos del DOM
+        const filtroCategoria = document.getElementById('filtro-categoria-audios')?.value || '';
+        const filtroSubcategoria = document.getElementById('filtro-subcategoria-audios')?.value || '';
+
+        // Construir URL con parámetros de filtro
+        const params = new URLSearchParams();
+        if (filtroCategoria) params.set('categoria', filtroCategoria);
+        if (filtroSubcategoria) params.set('subcategoria', filtroSubcategoria);
+        params.set('solo_activas', '0');
+
+        const url = `/api/audios?${params.toString()}`;
+        const response = await fetch(url);
+        
+        if (!response.ok) {
+            throw new Error(`Error ${response.status}: ${response.statusText}`);
+        }
+        
+        audios = await response.json();
+        
+        // Cargar categorías para los filtros
+        await cargarCategoriasAudios();
+        
+        // Renderizar audios
+        renderizarAudios();
+        
+        // Actualizar estadísticas
+        actualizarEstadisticasAudios();
+        
+    } catch (error) {
+        console.error('Error al cargar audios:', error);
+        showError('Error al cargar audios: ' + error.message);
+    }
+}
+
+// Cargar categorías para filtros de audios (solo las que tienen audios)
+async function cargarCategoriasAudios() {
+    try {
+        const response = await fetch('/api/audios/categorias');
+        const data = await response.json();
+        
+        // Actualizar filtro de categorías
+        const filtroCategoria = document.getElementById('filtro-categoria-audios');
+        if (filtroCategoria) {
+            const valorActual = filtroCategoria.value;
+            filtroCategoria.innerHTML = '<option value="">Todas las categorías</option>';
+
+            if (data.categorias && data.categorias.length > 0) {
+                data.categorias.forEach(cat => {
+                    const option = document.createElement('option');
+                    option.value = cat;
+                    option.textContent = capitalizarPrimeraLetra(cat.replace(/_/g, ' '));
+                    filtroCategoria.appendChild(option);
+                });
+            }
+
+            // Restaurar valor seleccionado si existe
+            if (valorActual && data.categorias && data.categorias.includes(valorActual)) {
+                filtroCategoria.value = valorActual;
+            }
+        }
+        
+        // Actualizar filtro de subcategorías con todas las subcategorías que tienen audios
+        const filtroSubcategoria = document.getElementById('filtro-subcategoria-audios');
+        if (filtroSubcategoria) {
+            const valorActualSub = filtroSubcategoria.value;
+            filtroSubcategoria.innerHTML = '<option value="">Todas las subcategorías</option>';
+
+            if (data.subcategorias && data.subcategorias.length > 0) {
+                data.subcategorias.forEach(sub => {
+                    const option = document.createElement('option');
+                    option.value = sub;
+                    option.textContent = capitalizarPrimeraLetra(sub.replace(/_/g, ' '));
+                    filtroSubcategoria.appendChild(option);
+                });
+            }
+
+            // Restaurar valor seleccionado si existe
+            if (valorActualSub && data.subcategorias && data.subcategorias.includes(valorActualSub)) {
+                filtroSubcategoria.value = valorActualSub;
+            }
+        }
+        
+    } catch (error) {
+        console.error('Error al cargar categorías de audios:', error);
+    }
+}
+
+// Cargar subcategorías para una categoría específica (solo las que tienen audios)
+async function cargarSubcategoriasAudios(categoria) {
+    const filtroSubcategoria = document.getElementById('filtro-subcategoria-audios');
+    if (!filtroSubcategoria) return;
+
+    filtroSubcategoria.innerHTML = '<option value="">Todas las subcategorías</option>';
+
+    if (!categoria) {
+        // Si no hay categoría seleccionada, cargar todas las subcategorías que tienen audios
+        try {
+            const response = await fetch('/api/audios/subcategorias');
+            const data = await response.json();
+            
+            if (data.subcategorias && data.subcategorias.length > 0) {
+                data.subcategorias.forEach(sub => {
+                    const option = document.createElement('option');
+                    option.value = sub;
+                    option.textContent = capitalizarPrimeraLetra(sub.replace(/_/g, ' '));
+                    filtroSubcategoria.appendChild(option);
+                });
+            }
+        } catch (error) {
+            console.error('Error al cargar subcategorías de audios:', error);
+        }
+        return;
+    }
+
+    try {
+        const response = await fetch(`/api/audios/subcategorias?categoria=${encodeURIComponent(categoria)}`);
+        const data = await response.json();
+        
+        if (data.subcategorias && data.subcategorias.length > 0) {
+            data.subcategorias.forEach(sub => {
+                const option = document.createElement('option');
+                option.value = sub;
+                option.textContent = capitalizarPrimeraLetra(sub.replace(/_/g, ' '));
+                filtroSubcategoria.appendChild(option);
+            });
+        }
+    } catch (error) {
+        console.error('Error al cargar subcategorías de audios:', error);
+    }
+}
 
 // Preseleccionar filtros actuales en el modal de nueva frase
 function preseleccionarFiltrosEnModal() {
@@ -4042,6 +4386,393 @@ function preseleccionarFiltrosEnModal() {
             const mensaje = `Se preseleccionó ${preseleccionados.join(' y ')} según tu filtro actual`;
             showInfo(mensaje, 3000);
         }, 100);
+    }
+}
+
+// Renderizar lista de audios
+function renderizarAudios() {
+    const lista = document.getElementById('lista-audios');
+    const mensajeSin = document.getElementById('mensaje-sin-audios');
+    const filtroCategoria = document.getElementById('filtro-categoria-audios')?.value || '';
+    const filtroSubcategoria = document.getElementById('filtro-subcategoria-audios')?.value || '';
+    
+    if (!lista) return;
+
+    // Filtrar audios por categoría y subcategoría
+    let audiosFiltrados = audios;
+    
+    if (filtroCategoria) {
+        audiosFiltrados = audiosFiltrados.filter(a => a.categoria === filtroCategoria);
+    }
+    
+    if (filtroSubcategoria) {
+        audiosFiltrados = audiosFiltrados.filter(a => a.subcategoria === filtroSubcategoria);
+    }
+
+    // Separar activos e inactivos
+    const activos = audiosFiltrados.filter(a => a.activa);
+    const inactivos = audiosFiltrados.filter(a => !a.activa);
+
+    // Ordenar audios según el criterio seleccionado
+    const orden = document.getElementById('orden-audios')?.value || 'reciente';
+    
+    function ordenarAudios(audiosArray) {
+        switch (orden) {
+            case 'reciente':
+                return audiosArray.slice().sort((a, b) => new Date(b.fecha_creacion) - new Date(a.fecha_creacion));
+            case 'antiguo':
+                return audiosArray.slice().sort((a, b) => new Date(a.fecha_creacion) - new Date(b.fecha_creacion));
+            case 'mas_escuchado':
+                return audiosArray.slice().sort((a, b) => (b.total_reproducciones || 0) - (a.total_reproducciones || 0));
+            case 'menos_escuchado':
+                return audiosArray.slice().sort((a, b) => (a.total_reproducciones || 0) - (b.total_reproducciones || 0));
+            case 'titulo':
+                return audiosArray.slice().sort((a, b) => a.titulo.localeCompare(b.titulo));
+            default:
+                return audiosArray;
+        }
+    }
+
+    const activosOrdenados = ordenarAudios(activos);
+    const inactivosOrdenados = ordenarAudios(inactivos);
+
+    // Mostrar/ocultar mensaje sin audios
+    if (audiosFiltrados.length === 0) {
+        lista.style.display = 'none';
+        mensajeSin.style.display = 'block';
+        return;
+    } else {
+        lista.style.display = 'block';
+        mensajeSin.style.display = 'none';
+    }
+
+    // Renderizar audios
+    lista.innerHTML = '';
+
+    // Renderizar audios activos
+    activosOrdenados.forEach(audio => {
+        const audioElement = crearElementoAudio(audio, false);
+        lista.appendChild(audioElement);
+    });
+
+    // Separador si hay inactivos
+    if (inactivosOrdenados.length > 0 && activosOrdenados.length > 0) {
+        const separador = document.createElement('div');
+        separador.className = 'text-center my-4';
+        separador.innerHTML = '<hr><small class="text-muted bg-white px-3">Audios Inactivos</small><hr>';
+        lista.appendChild(separador);
+    }
+
+    // Renderizar audios inactivos
+    inactivosOrdenados.forEach(audio => {
+        const audioElement = crearElementoAudio(audio, true);
+        lista.appendChild(audioElement);
+    });
+}
+
+// Crear elemento HTML para un audio
+function crearElementoAudio(audio, esInactivo) {
+    const div = document.createElement('div');
+    div.className = `card mb-3 ${esInactivo ? 'opacity-50' : ''}`;
+    
+    const duracionTexto = audio.duracion_segundos ? 
+        `${Math.floor(audio.duracion_segundos / 60)}:${(audio.duracion_segundos % 60).toString().padStart(2, '0')}` : 
+        'Desconocida';
+    
+    const fechaCreacion = audio.fecha_creacion ? 
+        new Date(audio.fecha_creacion).toLocaleDateString('es-ES') : '';
+    
+    const ultimaReproduccion = audio.ultima_reproduccion ? 
+        new Date(audio.ultima_reproduccion).toLocaleDateString('es-ES') : 'Nunca';
+
+    div.innerHTML = `
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-start mb-3">
+                <div class="flex-grow-1">
+                    <h6 class="card-title mb-1">${audio.titulo}</h6>
+                    ${audio.descripcion ? `<p class="card-text text-muted small mb-2">${audio.descripcion}</p>` : ''}
+                    <div class="d-flex flex-wrap gap-2 mb-2">
+                        ${audio.categoria ? `<span class="badge bg-primary">${capitalizarPrimeraLetra(audio.categoria.replace(/_/g, ' '))}</span>` : ''}
+                        ${audio.subcategoria ? `<span class="badge bg-secondary">${capitalizarPrimeraLetra(audio.subcategoria.replace(/_/g, ' '))}</span>` : ''}
+                    </div>
+                </div>
+                <div class="dropdown">
+                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                        <i class="bi bi-three-dots"></i>
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="#" onclick="editarAudio(${audio.id})"><i class="bi bi-pencil me-2"></i>Editar</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="toggleAudioActivo(${audio.id})">
+                            <i class="bi bi-${audio.activa ? 'eye-slash' : 'eye'} me-2"></i>${audio.activa ? 'Desactivar' : 'Activar'}
+                        </a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item text-danger" href="#" onclick="eliminarAudio(${audio.id})"><i class="bi bi-trash me-2"></i>Eliminar</a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- Player de audio -->
+            <div class="audio-player mb-3">
+                <audio controls class="w-100" preload="metadata" 
+                       onplay="registrarReproduccion(${audio.id})"
+                       onerror="manejarErrorAudio(this, '${audio.titulo}')">
+                    <source src="${audio.archivo_url}" type="audio/mpeg">
+                    <source src="${audio.archivo_url}" type="audio/ogg">
+                    <source src="${audio.archivo_url}" type="audio/wav">
+                    Tu navegador no soporta el elemento de audio.
+                </audio>
+                <div class="audio-error-message" style="display: none;">
+                    <div class="alert alert-warning small mb-0">
+                        <i class="bi bi-exclamation-triangle me-1"></i>
+                        Archivo de audio no disponible: <code>${audio.archivo_url}</code>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Información adicional -->
+            <div class="row text-center small text-muted">
+                <div class="col-3">
+                    <div><strong>${audio.total_reproducciones || 0}</strong></div>
+                    <div>Reproducciones</div>
+                </div>
+                <div class="col-3">
+                    <div><strong>${duracionTexto}</strong></div>
+                    <div>Duración</div>
+                </div>
+                <div class="col-3">
+                    <div><strong>${fechaCreacion}</strong></div>
+                    <div>Creado</div>
+                </div>
+                <div class="col-3">
+                    <div><strong>${ultimaReproduccion}</strong></div>
+                    <div>Último</div>
+                </div>
+            </div>
+            
+            ${audio.notas ? `<div class="mt-3 p-2 bg-light rounded"><small><strong>Notas:</strong> ${audio.notas}</small></div>` : ''}
+        </div>
+    `;
+    
+    return div;
+}
+
+// Actualizar estadísticas de audios
+function actualizarEstadisticasAudios() {
+    const totalAudios = document.getElementById('total-audios');
+    const audiosHoy = document.getElementById('audios-hoy');
+    const audiosSemana = document.getElementById('audios-semana');
+    const totalReproducciones = document.getElementById('total-reproducciones');
+    
+    // Obtener filtros actuales
+    const filtroCategoria = document.getElementById('filtro-categoria-audios')?.value || '';
+    const filtroSubcategoria = document.getElementById('filtro-subcategoria-audios')?.value || '';
+    
+    // Filtrar audios según los filtros seleccionados
+    let audiosFiltrados = audios;
+    
+    if (filtroCategoria) {
+        audiosFiltrados = audiosFiltrados.filter(a => a.categoria === filtroCategoria);
+    }
+    
+    if (filtroSubcategoria) {
+        audiosFiltrados = audiosFiltrados.filter(a => a.subcategoria === filtroSubcategoria);
+    }
+
+    // Calcular estadísticas
+    const hoy = new Date();
+    const inicioSemana = new Date(hoy);
+    inicioSemana.setDate(hoy.getDate() - hoy.getDay());
+    inicioSemana.setHours(0, 0, 0, 0);
+
+    const audiosEscuchadosHoy = audiosFiltrados.filter(a => {
+        if (!a.ultima_reproduccion) return false;
+        const fechaReproduccion = new Date(a.ultima_reproduccion);
+        return fechaReproduccion.toDateString() === hoy.toDateString();
+    }).length;
+
+    const audiosEscuchadosSemana = audiosFiltrados.filter(a => {
+        if (!a.ultima_reproduccion) return false;
+        const fechaReproduccion = new Date(a.ultima_reproduccion);
+        return fechaReproduccion >= inicioSemana;
+    }).length;
+
+    const totalReproduccionesCount = audiosFiltrados.reduce((sum, a) => sum + (a.total_reproducciones || 0), 0);
+
+    // Actualizar elementos
+    if (totalAudios) totalAudios.textContent = audiosFiltrados.length;
+    if (audiosHoy) audiosHoy.textContent = audiosEscuchadosHoy;
+    if (audiosSemana) audiosSemana.textContent = audiosEscuchadosSemana;
+    if (totalReproducciones) totalReproducciones.textContent = totalReproduccionesCount;
+}
+
+// Registrar reproducción de audio
+async function registrarReproduccion(audioId) {
+    try {
+        await fetch(`/api/audios/${audioId}/reproducir`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        // Actualizar estadísticas localmente
+        const audio = audios.find(a => a.id === audioId);
+        if (audio) {
+            audio.total_reproducciones = (audio.total_reproducciones || 0) + 1;
+            audio.ultima_reproduccion = new Date().toISOString();
+            actualizarEstadisticasAudios();
+        }
+    } catch (error) {
+        console.error('Error al registrar reproducción:', error);
+    }
+}
+
+// Editar audio
+async function editarAudio(audioId) {
+    const audio = audios.find(a => a.id === audioId);
+    if (!audio) return;
+
+    // Llenar el modal con los datos del audio
+    document.getElementById('editar-audio-id').value = audio.id;
+    document.getElementById('editar-audio-titulo').value = audio.titulo || '';
+    document.getElementById('editar-audio-descripcion').value = audio.descripcion || '';
+    document.getElementById('editar-audio-notas').value = audio.notas || '';
+    
+    // Cargar categorías y subcategorías
+    await cargarCategoriasParaFormularios();
+    
+    // Seleccionar categoría y subcategoría actuales
+    const categoriaSelect = document.getElementById('editar-audio-categoria');
+    const subcategoriaSelect = document.getElementById('editar-audio-subcategoria');
+    
+    if (categoriaSelect && audio.categoria) {
+        categoriaSelect.value = audio.categoria;
+        // Cargar subcategorías para esta categoría
+        await cargarSubcategoriasParaCategoria(audio.categoria, 'editar-audio-subcategoria');
+        if (subcategoriaSelect && audio.subcategoria) {
+            subcategoriaSelect.value = audio.subcategoria;
+        }
+    }
+    
+    const modal = new bootstrap.Modal(document.getElementById('modalEditarAudio'));
+    modal.show();
+}
+
+// Toggle estado activo de audio
+async function toggleAudioActivo(audioId) {
+    try {
+        const response = await fetch(`/api/audios/${audioId}/toggle`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        const result = await response.json();
+        if (result.status === 'success') {
+            // Actualizar estado local
+            const audio = audios.find(a => a.id === audioId);
+            if (audio) {
+                audio.activa = result.activa;
+            }
+            
+            // Re-renderizar
+            renderizarAudios();
+            showSuccess(`Audio ${result.activa ? 'activado' : 'desactivado'} exitosamente`);
+        } else {
+            showError(result.error || 'Error al cambiar estado del audio');
+        }
+    } catch (error) {
+        console.error('Error al cambiar estado del audio:', error);
+        showError('Error al cambiar estado del audio');
+    }
+}
+
+// Eliminar audio
+async function eliminarAudio(audioId) {
+    const audio = audios.find(a => a.id === audioId);
+    if (!audio) return;
+
+    const confirmacion = await Swal.fire({
+        title: '¿Eliminar audio?',
+        text: `¿Estás seguro de que quieres eliminar "${audio.titulo}"? Esta acción no se puede deshacer.`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar'
+    });
+
+    if (confirmacion.isConfirmed) {
+        try {
+            const response = await fetch(`/api/audios/${audioId}`, {
+                method: 'DELETE'
+            });
+            
+            const result = await response.json();
+            if (result.status === 'success') {
+                // Remover del array local
+                const index = audios.findIndex(a => a.id === audioId);
+                if (index > -1) {
+                    audios.splice(index, 1);
+                }
+                
+                // Re-renderizar
+                renderizarAudios();
+                actualizarEstadisticasAudios();
+                showSuccess('Audio eliminado exitosamente');
+            } else {
+                showError(result.error || 'Error al eliminar audio');
+            }
+        } catch (error) {
+            console.error('Error al eliminar audio:', error);
+            showError('Error al eliminar audio');
+        }
+    }
+}
+
+// Reproducir audio aleatorio
+function reproducirAudioAleatorio() {
+    const filtroCategoria = document.getElementById('filtro-categoria-audios')?.value || '';
+    const filtroSubcategoria = document.getElementById('filtro-subcategoria-audios')?.value || '';
+    
+    // Filtrar audios activos según los filtros seleccionados
+    let audiosDisponibles = audios.filter(a => a.activa);
+    
+    if (filtroCategoria) {
+        audiosDisponibles = audiosDisponibles.filter(a => a.categoria === filtroCategoria);
+    }
+    
+    if (filtroSubcategoria) {
+        audiosDisponibles = audiosDisponibles.filter(a => a.subcategoria === filtroSubcategoria);
+    }
+    if (filtroCategoria) {
+        audiosDisponibles = audios.filter(a => a.categoria === filtroCategoria && a.activa);
+        if (audiosDisponibles.length === 0) {
+            const nombreCategoria = capitalizarPrimeraLetra(filtroCategoria.replace(/_/g, ' '));
+            showInfo(`No tienes audios activos en la categoría "${nombreCategoria}"`);
+            return;
+        }
+    } else {
+        audiosDisponibles = audios.filter(a => a.activa);
+        if (audiosDisponibles.length === 0) {
+            showInfo('No tienes audios activos para reproducir');
+            return;
+        }
+    }
+
+    // Seleccionar audio aleatorio
+    const audioAleatorio = audiosDisponibles[Math.floor(Math.random() * audiosDisponibles.length)];
+    
+    // Buscar el elemento de audio en el DOM y reproducirlo
+    const audioElements = document.querySelectorAll('audio');
+    for (let audioElement of audioElements) {
+        if (audioElement.src.includes(audioAleatorio.archivo_url)) {
+            audioElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            audioElement.play();
+            break;
+        }
     }
 }
 
@@ -4120,5 +4851,29 @@ window.eliminarFrase = eliminarFrase;
 window.cargarFrases = cargarFrases;
 window.configurarEventListenersFrases = configurarEventListenersFrases;
 window.configurarEventListenersCategorias = configurarEventListenersCategorias;
+
+// Función para manejar errores de audio
+function manejarErrorAudio(audioElement, titulo) {
+    console.error(`Error al cargar audio: ${titulo}`);
+    
+    // Ocultar el reproductor de audio
+    audioElement.style.display = 'none';
+    
+    // Mostrar mensaje de error
+    const errorDiv = audioElement.parentElement.querySelector('.audio-error-message');
+    if (errorDiv) {
+        errorDiv.style.display = 'block';
+    }
+}
+
+// Funciones globales de audios
+window.cargarAudios = cargarAudios;
+window.editarAudio = editarAudio;
+window.eliminarAudio = eliminarAudio;
+window.toggleAudioActivo = toggleAudioActivo;
+window.registrarReproduccion = registrarReproduccion;
+window.reproducirAudioAleatorio = reproducirAudioAleatorio;
+window.configurarEventListenersAudios = configurarEventListenersAudios;
+window.manejarErrorAudio = manejarErrorAudio;
 
 } // Fin del check de carga múltiple
