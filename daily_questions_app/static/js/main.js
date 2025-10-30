@@ -1237,7 +1237,7 @@ document.addEventListener('DOMContentLoaded', function() {
 // === Objetivos Desarrollo Personal (Integración API) ===
 let objetivos = [];
 let ordenActual = 'backend'; // Variable global para el ordenamiento (backend maneja el orden por defecto)
-let vistaActual = 'lista'; // Variable global para el tipo de vista
+let vistaActual = 'tarjetas'; // Variable global para el tipo de vista
 
 async function cargarObjetivos() {
     // Mostrar spinner de carga
@@ -3798,6 +3798,7 @@ function configurarEventListenersFrases() {
             // Configurar event listeners cuando se abre el modal
             setTimeout(() => {
                 configurarEventListenersCategorias();
+                preseleccionarFiltrosEnModal();
             }, 100);
         });
         btnNuevaFrase.setAttribute('data-listener-added', 'true');
@@ -3996,6 +3997,53 @@ document.addEventListener('DOMContentLoaded', function() {
         cargarFrases();
     }
 });
+
+// Preseleccionar filtros actuales en el modal de nueva frase
+function preseleccionarFiltrosEnModal() {
+    // Obtener valores actuales de los filtros
+    const filtroCategoria = document.getElementById('filtro-categoria-frases')?.value || '';
+    const filtroSubcategoria = document.getElementById('filtro-subcategoria-frases')?.value || '';
+    
+    let preseleccionados = [];
+    
+    // Preseleccionar categoría si hay una seleccionada
+    const modalCategoria = document.getElementById('frase-categoria');
+    if (modalCategoria && filtroCategoria) {
+        // Buscar si la categoría existe en las opciones del modal
+        const opcionCategoria = Array.from(modalCategoria.options).find(option => option.value === filtroCategoria);
+        if (opcionCategoria) {
+            modalCategoria.value = filtroCategoria;
+            preseleccionados.push(`categoría "${capitalizarPrimeraLetra(filtroCategoria.replace(/_/g, ' '))}"`);
+            
+            // Disparar evento change para cargar subcategorías
+            modalCategoria.dispatchEvent(new Event('change'));
+            
+            // Preseleccionar subcategoría después de un pequeño delay para que se carguen las opciones
+            setTimeout(() => {
+                const modalSubcategoria = document.getElementById('frase-subcategoria');
+                if (modalSubcategoria && filtroSubcategoria) {
+                    const opcionSubcategoria = Array.from(modalSubcategoria.options).find(option => option.value === filtroSubcategoria);
+                    if (opcionSubcategoria) {
+                        modalSubcategoria.value = filtroSubcategoria;
+                        preseleccionados.push(`subcategoría "${capitalizarPrimeraLetra(filtroSubcategoria.replace(/_/g, ' '))}"`);
+                        
+                        // Mostrar mensaje informativo si se preseleccionaron campos
+                        if (preseleccionados.length > 0) {
+                            const mensaje = `Se preseleccionó ${preseleccionados.join(' y ')} según tu filtro actual`;
+                            showInfo(mensaje, 3000);
+                        }
+                    }
+                }
+            }, 200);
+        }
+    } else if (preseleccionados.length > 0) {
+        // Mostrar mensaje si solo se preseleccionó categoría
+        setTimeout(() => {
+            const mensaje = `Se preseleccionó ${preseleccionados.join(' y ')} según tu filtro actual`;
+            showInfo(mensaje, 3000);
+        }, 100);
+    }
+}
 
 // Configurar event listeners para categorías personalizadas
 function configurarEventListenersCategorias() {
