@@ -5110,7 +5110,7 @@ def api_get_audios():
                     'titulo': row[1],
                     'descripcion': row[2],
                     'archivo_nombre': row[3],
-                    'archivo_url': row[4],
+                    'archivo_url': f'/api/audios/{row[0]}/stream',  # Nueva URL de streaming desde BD
                     'duracion_segundos': row[5],
                     'categoria': row[6],
                     'subcategoria': row[7],
@@ -5334,6 +5334,46 @@ def api_reproducir_audio(audio_id):
     except Exception as e:
         logger.error(f"Error al registrar reproducción: {str(e)}")
         return jsonify({'error': 'Error al registrar reproducción'}), 500
+
+@app.route('/api/audios/<int:audio_id>/stream', methods=['GET'])
+@login_required
+def api_stream_audio(audio_id):
+    """Servir archivo de audio desde la base de datos"""
+    try:
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('''
+                SELECT contenido_binario, tipo_mime, archivo_nombre
+                FROM audios 
+                WHERE id = ? AND user_id = ?
+            ''', (audio_id, current_user.id))
+            
+            result = cursor.fetchone()
+            if not result:
+                return jsonify({'error': 'Audio no encontrado'}), 404
+            
+            contenido_binario, tipo_mime, archivo_nombre = result
+            
+            if not contenido_binario:
+                return jsonify({'error': 'Contenido de audio no disponible'}), 404
+            
+            # Crear respuesta con el contenido binario
+            from flask import Response
+            response = Response(
+                contenido_binario,
+                mimetype=tipo_mime or 'audio/mpeg',
+                headers={
+                    'Content-Disposition': f'inline; filename="{archivo_nombre}"',
+                    'Accept-Ranges': 'bytes',
+                    'Content-Length': str(len(contenido_binario))
+                }
+            )
+            
+            return response
+            
+    except Exception as e:
+        logger.error(f"Error al servir audio {audio_id}: {str(e)}")
+        return jsonify({'error': 'Error al servir audio'}), 500
 
 @app.route('/api/audios/categorias', methods=['GET'])
 @login_required
