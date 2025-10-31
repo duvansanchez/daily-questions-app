@@ -212,6 +212,7 @@
 {% endblock %}
 
 {% block scripts %}
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
 <script>
 // Variables globales
 let categorias = [];
@@ -404,8 +405,8 @@ function confirmarEliminarSubcategoria() {
 // Cargar categorías
 function cargarCategorias() {
     console.log('Iniciando carga de categorías...');
-    // Llamada para obtener categorías y subcategorías
-    fetch('/api/categorias?t=' + Date.now())
+    // Llamada para obtener categorías y subcategorías (incluye activas e inactivas)
+    fetch('/api/categorias/gestion?t=' + Date.now())
         .then(response => response.json())
         .then(data => {
             console.log('Datos recibidos de la API:', data);
@@ -547,11 +548,17 @@ function renderizarCategorias() {
         categoriaElement.setAttribute('data-id', categoria.id);
         categoriaElement.innerHTML = `
             <div class="d-flex align-items-center flex-grow-1">
-                <i class="bi bi-folder me-2"></i>
-                <span>${categoria.nombre}</span>
+                <i class="bi bi-folder me-2 ${categoria.activa ? 'text-success' : 'text-muted'}"></i>
+                <span class="${categoria.activa ? '' : 'text-muted'}">${categoria.nombre}</span>
+                ${categoria.activa ? '' : '<small class="text-muted ms-2">(Desactivada)</small>'}
                 <span class="badge bg-secondary rounded-pill ms-2" id="contador-${categoria.id}">${subcategoriasUnicas.length}</span>
             </div>
             <div class="btn-group btn-group-sm">
+                <button class="btn btn-outline-${categoria.activa ? 'warning' : 'success'} btn-sm" 
+                        onclick="event.stopPropagation(); toggleCategoria(${categoria.id});"
+                        title="${categoria.activa ? 'Desactivar' : 'Activar'} categoría">
+                    <i class="bi bi-${categoria.activa ? 'eye-slash' : 'eye'}"></i>
+                </button>
                 <button class="btn btn-outline-primary btn-sm" onclick="event.stopPropagation(); mostrarModalEditarCategoria(${categoria.id});">
                     <i class="bi bi-pencil"></i>
                 </button>
@@ -655,11 +662,17 @@ function renderizarSubcategorias() {
 
         subcategoriaElement.innerHTML = `
             <div class="d-flex align-items-center flex-grow-1">
-                <i class="bi bi-tag me-2"></i>
-                <span>${subcategoria.nombreNormalizado || subcategoria.nombre}</span>
+                <i class="bi bi-tag me-2 ${subcategoria.activa ? 'text-success' : 'text-muted'}"></i>
+                <span class="${subcategoria.activa ? '' : 'text-muted'}">${subcategoria.nombreNormalizado || subcategoria.nombre}</span>
+                ${subcategoria.activa ? '' : '<small class="text-muted ms-2">(Desactivada)</small>'}
                 ${badgeHtml}
             </div>
             <div class="btn-group btn-group-sm">
+                <button class="btn btn-outline-${subcategoria.activa ? 'warning' : 'success'} btn-sm" 
+                        onclick="event.stopPropagation(); toggleSubcategoria(${subcategoria.id});"
+                        title="${subcategoria.activa ? 'Desactivar' : 'Activar'} subcategoría">
+                    <i class="bi bi-${subcategoria.activa ? 'eye-slash' : 'eye'}"></i>
+                </button>
                 <button class="btn btn-outline-primary btn-sm" onclick="event.stopPropagation(); mostrarModalEditarSubcategoria(${subcategoria.id});">
                     <i class="bi bi-pencil"></i>
                 </button>
@@ -897,6 +910,82 @@ document.getElementById('btn-nueva-subcategoria').addEventListener('click', func
         mostrarAlerta('Error', 'Debes seleccionar una categoría primero', 'warning');
     }
 });
+
+// Toggle estado de categoría
+function toggleCategoria(categoriaId) {
+    fetch(`/api/categorias/${categoriaId}/toggle`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            // Recargar categorías para reflejar el cambio
+            cargarCategorias();
+            
+            // Mostrar mensaje de éxito con SweetAlert2
+            if (typeof showSuccess === 'function') {
+                showSuccess(data.message);
+            } else {
+                alert(data.message);
+            }
+        } else {
+            if (typeof showError === 'function') {
+                showError(data.error || 'Error al cambiar estado de categoría');
+            } else {
+                alert('Error: ' + (data.error || 'Error al cambiar estado de categoría'));
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        if (typeof showError === 'function') {
+            showError('Error al cambiar estado de categoría');
+        } else {
+            alert('Error al cambiar estado de categoría');
+        }
+    });
+}
+
+// Toggle estado de subcategoría
+function toggleSubcategoria(subcategoriaId) {
+    fetch(`/api/subcategorias/${subcategoriaId}/toggle`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            // Recargar categorías para reflejar el cambio
+            cargarCategorias();
+            
+            // Mostrar mensaje de éxito con SweetAlert2
+            if (typeof showSuccess === 'function') {
+                showSuccess(data.message);
+            } else {
+                alert(data.message);
+            }
+        } else {
+            if (typeof showError === 'function') {
+                showError(data.error || 'Error al cambiar estado de subcategoría');
+            } else {
+                alert('Error: ' + (data.error || 'Error al cambiar estado de subcategoría'));
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        if (typeof showError === 'function') {
+            showError('Error al cambiar estado de subcategoría');
+        } else {
+            alert('Error al cambiar estado de subcategoría');
+        }
+    });
+}
 </script>
 {% endblock %}
 

@@ -4012,11 +4012,11 @@ def api_list_categorias():
                     }
                 })
             
-            # Obtener categorías del usuario
+            # Obtener categorías activas del usuario
             cursor.execute('''
                 SELECT id, nombre, fecha_creacion 
                 FROM categorias 
-                WHERE user_id = ?
+                WHERE user_id = ? AND activa = 1
                 ORDER BY nombre
             ''', (current_user.id,))
             
@@ -4026,12 +4026,12 @@ def api_list_categorias():
                 'fecha_creacion': row[2].strftime('%Y-%m-%d %H:%M:%S') if row[2] else None
             } for row in cursor.fetchall()]
             
-            # Obtener todas las subcategorías del usuario
+            # Obtener todas las subcategorías activas del usuario (de categorías activas)
             cursor.execute('''
                 SELECT s.id, s.nombre, s.categoria_id, s.fecha_creacion 
                 FROM subcategorias s
                 INNER JOIN categorias c ON s.categoria_id = c.id
-                WHERE c.user_id = ?
+                WHERE c.user_id = ? AND c.activa = 1 AND s.activa = 1
                 ORDER BY s.nombre
             ''', (current_user.id,))
             
@@ -4052,6 +4052,63 @@ def api_list_categorias():
             
     except Exception as e:
         logger.error(f"Error al obtener categorías: {str(e)}")
+        return jsonify({
+            'status': 'error',
+            'message': 'Error al obtener las categorías',
+            'error': str(e)
+        }), 500
+
+@app.route('/api/categorias/gestion', methods=['GET'])
+@login_required
+def api_list_categorias_gestion():
+    """Obtener todas las categorías del usuario para gestión (incluye activas e inactivas)"""
+    try:
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            
+            # Obtener categorías del usuario con estado activo
+            cursor.execute('''
+                SELECT id, nombre, activa, fecha_creacion 
+                FROM categorias 
+                WHERE user_id = ?
+                ORDER BY nombre
+            ''', (current_user.id,))
+            
+            categorias = [{
+                'id': row[0],
+                'nombre': row[1],
+                'activa': bool(row[2]),
+                'fecha_creacion': row[3].strftime('%Y-%m-%d %H:%M:%S') if row[3] else None
+            } for row in cursor.fetchall()]
+            
+            # Obtener todas las subcategorías del usuario con estado activo
+            cursor.execute('''
+                SELECT s.id, s.nombre, s.categoria_id, s.activa, s.fecha_creacion, c.nombre as categoria_nombre
+                FROM subcategorias s
+                INNER JOIN categorias c ON s.categoria_id = c.id
+                WHERE c.user_id = ?
+                ORDER BY c.nombre, s.nombre
+            ''', (current_user.id,))
+            
+            subcategorias = [{
+                'id': row[0],
+                'nombre': row[1],
+                'categoria_id': row[2],
+                'activa': bool(row[3]),
+                'fecha_creacion': row[4].strftime('%Y-%m-%d %H:%M:%S') if row[4] else None,
+                'categoria_nombre': row[5]
+            } for row in cursor.fetchall()]
+            
+            return jsonify({
+                'status': 'success',
+                'data': {
+                    'categorias': categorias,
+                    'subcategorias': subcategorias
+                }
+            })
+            
+    except Exception as e:
+        logger.error(f"Error al obtener categorías para gestión: {str(e)}")
         return jsonify({
             'status': 'error',
             'message': 'Error al obtener las categorías',
@@ -4213,6 +4270,57 @@ def api_update_categoria(categoria_id):
     except Exception as e:
         logger.error(f"Error al actualizar categoría: {str(e)}")
         return jsonify({'error': 'Error al actualizar categoría'}), 500
+
+@app.route('/api/categorias/<int:categoria_id>/toggle', methods=['POST'])
+@login_required
+def api_toggle_categoria(categoria_id):
+    """Activar/desactivar una categoría"""
+    try:
+        logger.info(f"Toggle categoría {categoria_id} para usuario {current_user.id}")
+        
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            
+            # Verificar que la categoría pertenece al usuario
+            cursor.execute('''
+                SELECT activa FROM categorias 
+                WHERE id = ? AND user_id = ?
+            ''', (categoria_id, current_user.id))
+            
+            result = cursor.fetchone()
+            if not result:
+                logger.warning(f"Categoría {categoria_id} no encontrada para usuario {current_user.id}")
+                return jsonify({'error': 'Categoría no encontrada'}), 404
+            
+            # Cambiar estado
+            nueva_activa = not result[0]
+            logger.info(f"Cambiando categoría {categoria_id} de {result[0]} a {nueva_activa}")
+            
+            cursor.execute('''
+                UPDATE categorias 
+                SET activa = ? 
+                WHERE id = ? AND user_id = ?
+            ''', (nueva_activa, categoria_id, current_user.id))
+            
+            # Si se desactiva la categoría, también desactivar sus subcategorías
+            if not nueva_activa:
+                cursor.execute('''
+                    UPDATE subcategorias 
+                    SET activa = 0 
+                    WHERE categoria_id = ? AND user_id = ?
+                ''', (categoria_id, current_user.id))
+            
+            conn.commit()
+            
+            return jsonify({
+                'status': 'success',
+                'activa': nueva_activa,
+                'message': f'Categoría {"activada" if nueva_activa else "desactivada"} exitosamente'
+            })
+            
+    except Exception as e:
+        logger.error(f"Error al cambiar estado de categoría {categoria_id}: {str(e)}")
+        return jsonify({'error': 'Error al cambiar estado de categoría'}), 500
 
 @app.route('/api/categorias/<int:categoria_id>', methods=['DELETE'])
 @login_required
@@ -4395,6 +4503,54 @@ def api_update_subcategoria(subcategoria_id):
     except Exception as e:
         logger.error(f"Error al actualizar subcategoría: {str(e)}")
         return jsonify({'error': 'Error al actualizar subcategoría'}), 500
+
+@app.route('/api/subcategorias/<int:subcategoria_id>/toggle', methods=['POST'])
+@login_required
+def api_toggle_subcategoria(subcategoria_id):
+    """Activar/desactivar una subcategoría"""
+    try:
+        logger.info(f"Toggle subcategoría {subcategoria_id} para usuario {current_user.id}")
+        
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            
+            # Verificar que la subcategoría pertenece al usuario y obtener info de la categoría
+            cursor.execute('''
+                SELECT s.activa, c.activa as categoria_activa
+                FROM subcategorias s
+                INNER JOIN categorias c ON s.categoria_id = c.id
+                WHERE s.id = ? AND s.user_id = ?
+            ''', (subcategoria_id, current_user.id))
+            
+            result = cursor.fetchone()
+            if not result:
+                return jsonify({'error': 'Subcategoría no encontrada'}), 404
+            
+            subcategoria_activa, categoria_activa = result
+            
+            # No permitir activar subcategoría si la categoría está desactivada
+            if not categoria_activa and not subcategoria_activa:
+                return jsonify({'error': 'No se puede activar la subcategoría porque su categoría está desactivada'}), 400
+            
+            # Cambiar estado
+            nueva_activa = not subcategoria_activa
+            cursor.execute('''
+                UPDATE subcategorias 
+                SET activa = ? 
+                WHERE id = ? AND user_id = ?
+            ''', (nueva_activa, subcategoria_id, current_user.id))
+            
+            conn.commit()
+            
+            return jsonify({
+                'status': 'success',
+                'activa': nueva_activa,
+                'message': f'Subcategoría {"activada" if nueva_activa else "desactivada"} exitosamente'
+            })
+            
+    except Exception as e:
+        logger.error(f"Error al cambiar estado de subcategoría {subcategoria_id}: {str(e)}")
+        return jsonify({'error': 'Error al cambiar estado de subcategoría'}), 500
 
 @app.route('/api/subcategorias/<int:subcategoria_id>', methods=['DELETE'])
 @login_required
@@ -4763,11 +4919,11 @@ def api_list_categorias_frases():
         with get_db_connection() as conn:
             cursor = conn.cursor()
 
-            # Categorías principales (de la tabla categorias para obtener las categorías reales)
+            # Categorías principales activas (de la tabla categorias para obtener las categorías reales)
             cursor.execute('''
                 SELECT id, nombre
                 FROM categorias
-                WHERE user_id = ?
+                WHERE user_id = ? AND activa = 1
                 ORDER BY nombre
             ''', (current_user.id,))
             categorias_data = cursor.fetchall()
@@ -4788,18 +4944,19 @@ def api_list_categorias_frases():
                     cursor.execute('''
                         SELECT DISTINCT COALESCE(s.nombre,'') AS sub
                         FROM subcategorias s
-                        WHERE s.user_id = ? AND s.categoria_id = ?
+                        WHERE s.user_id = ? AND s.categoria_id = ? AND s.activa = 1
                     ''', (current_user.id, categoria_id))
                     subs = [row[0] for row in cursor.fetchall() if (row[0] or '').strip() != '']
                 else:
                     subs = []
                 subs.sort()
             else:
-                # Todas las subcategorías del usuario
+                # Todas las subcategorías activas del usuario
                 cursor.execute('''
                     SELECT DISTINCT COALESCE(s.nombre,'') AS sub
                     FROM subcategorias s
-                    WHERE s.user_id = ?
+                    INNER JOIN categorias c ON s.categoria_id = c.id
+                    WHERE s.user_id = ? AND s.activa = 1 AND c.activa = 1
                 ''', (current_user.id,))
                 subs = [row[0] for row in cursor.fetchall() if (row[0] or '').strip() != '']
                 subs.sort()
