@@ -2316,45 +2316,83 @@ document.addEventListener('change', async function(e) {
 
 document.getElementById('btn-deseleccionar-recurrentes')?.addEventListener('click', async function() {
     const recurrentesMarcados = objetivos.filter(obj => obj.recurrente && obj.completado && !es_objetivo_vencido_front(obj));
+    
     if (recurrentesMarcados.length === 0) {
-        showInfo('No hay objetivos recurrentes marcados para desmarcar.');
-        return;
-    }
-    for (const obj of recurrentesMarcados) {
-        await fetch(`/api/objetivos/${obj.id}`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ completado: false })
+        Swal.fire({
+            icon: 'info',
+            title: 'Sin objetivos para desmarcar',
+            text: 'No hay objetivos recurrentes marcados para desmarcar.',
+            confirmButtonColor: '#0d6efd'
         });
-    }
-    await cargarObjetivos();
-    showSuccess('Todos los objetivos recurrentes han sido desmarcados.');
-});
-
-// Botón para reset automático de objetivos diarios
-document.getElementById('btn-reset-diarios')?.addEventListener('click', async function() {
-    if (!confirm('¿Estás seguro de que quieres ejecutar el reset de objetivos diarios recurrentes? Esto desmarcará todos los objetivos diarios recurrentes completados.')) {
         return;
     }
     
+    // Mostrar confirmación con SweetAlert
+    const result = await Swal.fire({
+        icon: 'warning',
+        title: '¿Desmarcar todos los recurrentes?',
+        html: `
+            <p>Esta acción desmarcará <strong>${recurrentesMarcados.length} objetivo(s) recurrente(s)</strong> completados.</p>
+            <p class="text-muted small">Los objetivos volverán a aparecer como pendientes.</p>
+        `,
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Sí, desmarcar todos',
+        cancelButtonText: 'Cancelar',
+        focusCancel: true
+    });
+    
+    if (!result.isConfirmed) {
+        return;
+    }
+    
+    // Mostrar loading
+    Swal.fire({
+        title: 'Desmarcando objetivos...',
+        text: 'Por favor espera mientras se procesan los cambios.',
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        showConfirmButton: false,
+        didOpen: () => {
+            Swal.showLoading();
+        }
+    });
+    
     try {
-        const response = await fetch('/api/reset-objetivos-diarios', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' }
+        // Desmarcar todos los objetivos
+        for (const obj of recurrentesMarcados) {
+            await fetch(`/api/objetivos/${obj.id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ completado: false })
+            });
+        }
+        
+        // Recargar objetivos
+        await cargarObjetivos();
+        
+        // Mostrar éxito
+        Swal.fire({
+            icon: 'success',
+            title: '¡Objetivos desmarcados!',
+            text: `Se han desmarcado ${recurrentesMarcados.length} objetivo(s) recurrente(s) exitosamente.`,
+            confirmButtonColor: '#198754',
+            timer: 3000,
+            timerProgressBar: true
         });
         
-        const result = await response.json();
-        
-        if (result.status === 'success') {
-            await cargarObjetivos();
-            showSuccess('Reset de objetivos diarios completado exitosamente.');
-        } else {
-            showError('Error al ejecutar el reset: ' + result.message);
-        }
     } catch (error) {
-        showError('Error al ejecutar el reset: ' + error.message);
+        console.error('Error al desmarcar objetivos:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'Error al desmarcar',
+            text: 'Ocurrió un error al desmarcar los objetivos. Por favor intenta nuevamente.',
+            confirmButtonColor: '#dc3545'
+        });
     }
 });
+
 
 function es_objetivo_vencido_front(obj) {
     // Lógica similar a backend para saber si el objetivo ya está vencido
