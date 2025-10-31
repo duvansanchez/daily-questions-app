@@ -2695,4 +2695,32 @@ s para etiquetas de objetivos saltados */
 #lista-historico .list-group-item.historico {
     border: none !important;
     box-shadow: none !important;
+}/
+* Estilos para indicador de progreso de subida */
+#upload-progress {
+    border-left: 4px solid var(--primary-color);
+    background-color: #e7f3ff;
+    border-color: var(--primary-color);
+    animation: pulse-border 2s infinite;
+}
+
+#upload-progress .spinner-border {
+    color: var(--primary-color);
+}
+
+@keyframes pulse-border {
+    0% { border-left-color: var(--primary-color); }
+    50% { border-left-color: var(--primary-hover); }
+    100% { border-left-color: var(--primary-color); }
+}
+
+/* Botón deshabilitado durante subida */
+.btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+/* Animación suave para el texto del botón */
+.btn {
+    transition: all 0.3s ease;
 }

@@ -3861,6 +3861,46 @@ function configurarEventListenersAudios() {
         formNuevoAudio.addEventListener('submit', async function(e) {
             e.preventDefault();
             
+            // Validar que se haya seleccionado un archivo
+            const audioFileInput = document.getElementById('audio-file');
+            if (!audioFileInput.files[0]) {
+                showError('Por favor selecciona un archivo de audio');
+                return;
+            }
+            
+            // Prevenir múltiples envíos
+            const submitBtn = this.querySelector('button[type="submit"]');
+            if (submitBtn.disabled) {
+                return; // Ya se está procesando
+            }
+            
+            // Deshabilitar botón y mostrar estado de carga
+            submitBtn.disabled = true;
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Subiendo...';
+            
+            // Agregar indicador de progreso al modal
+            const modalBody = this.closest('.modal-content').querySelector('.modal-body');
+            const progressIndicator = document.createElement('div');
+            progressIndicator.id = 'upload-progress';
+            progressIndicator.className = 'alert alert-info d-flex align-items-center mt-3';
+            
+            // Obtener información del archivo
+            const fileName = audioFileInput.files[0] ? audioFileInput.files[0].name : 'archivo';
+            const fileSize = audioFileInput.files[0] ? (audioFileInput.files[0].size / 1024 / 1024).toFixed(2) : '0';
+            
+            progressIndicator.innerHTML = `
+                <div class="spinner-border spinner-border-sm me-2" role="status">
+                    <span class="visually-hidden">Cargando...</span>
+                </div>
+                <div>
+                    <strong>Subiendo audio...</strong><br>
+                    <small><i class="bi bi-file-earmark-music me-1"></i>${fileName} (${fileSize} MB)</small><br>
+                    <small class="text-muted">Por favor espera, los archivos de audio pueden tardar un momento en procesarse.</small>
+                </div>
+            `;
+            modalBody.appendChild(progressIndicator);
+            
             const formData = new FormData();
             formData.append('titulo', document.getElementById('audio-titulo').value.trim());
             formData.append('descripcion', document.getElementById('audio-descripcion').value.trim());
@@ -3881,16 +3921,27 @@ function configurarEventListenersAudios() {
                 
                 const result = await response.json();
                 if (result.status === 'success') {
+                    // Mostrar éxito y cerrar modal inmediatamente
                     showSuccess('Audio agregado exitosamente');
                     bootstrap.Modal.getInstance(document.getElementById('modalNuevoAudio')).hide();
                     formNuevoAudio.reset();
-                    await cargarAudios();
+                    
+                    // Cargar audios en segundo plano
+                    cargarAudios().catch(console.error);
                 } else {
                     showError(result.error || 'Error al agregar audio');
                 }
             } catch (error) {
                 console.error('Error al agregar audio:', error);
                 showError('Error al agregar audio: ' + error.message);
+            } finally {
+                // Restaurar botón y remover indicador
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+                const progressEl = document.getElementById('upload-progress');
+                if (progressEl) {
+                    progressEl.remove();
+                }
             }
         });
         formNuevoAudio.setAttribute('data-listener-added', 'true');
@@ -3901,6 +3952,17 @@ function configurarEventListenersAudios() {
     if (formEditarAudio && !formEditarAudio.hasAttribute('data-listener-added')) {
         formEditarAudio.addEventListener('submit', async function(e) {
             e.preventDefault();
+            
+            // Prevenir múltiples envíos
+            const submitBtn = this.querySelector('button[type="submit"]');
+            if (submitBtn.disabled) {
+                return; // Ya se está procesando
+            }
+            
+            // Deshabilitar botón y mostrar estado de carga
+            submitBtn.disabled = true;
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Actualizando...';
             
             const audioId = document.getElementById('editar-audio-id').value;
             const data = {
@@ -3924,13 +3986,19 @@ function configurarEventListenersAudios() {
                 if (result.status === 'success') {
                     showSuccess('Audio actualizado exitosamente');
                     bootstrap.Modal.getInstance(document.getElementById('modalEditarAudio')).hide();
-                    await cargarAudios();
+                    
+                    // Cargar audios en segundo plano
+                    cargarAudios().catch(console.error);
                 } else {
                     showError(result.error || 'Error al actualizar audio');
                 }
             } catch (error) {
                 console.error('Error al actualizar audio:', error);
                 showError('Error al actualizar audio: ' + error.message);
+            } finally {
+                // Restaurar botón
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
             }
         });
         formEditarAudio.setAttribute('data-listener-added', 'true');
@@ -4514,7 +4582,7 @@ function crearElementoAudio(audio, esInactivo) {
             <!-- Player de audio -->
             <div class="audio-player mb-3">
                 <audio controls class="w-100" preload="metadata" 
-                       onplay="registrarReproduccion(${audio.id})"
+                       onended="registrarReproduccion(${audio.id})"
                        onerror="manejarErrorAudio(this, '${audio.titulo}')">
                     <source src="${audio.archivo_url}" type="audio/mpeg">
                     <source src="${audio.archivo_url}" type="audio/ogg">
