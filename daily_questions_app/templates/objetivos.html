@@ -1363,11 +1363,145 @@ endblock %} {% block content %}
   </div>
 </div>
 
+<!-- Modal Modo Focus -->
+<div
+  class="modal fade"
+  id="modalFocusObjetivo"
+  tabindex="-1"
+  aria-labelledby="modalFocusObjetivoLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content">
+      <div class="modal-header border-0 pb-0">
+        <div class="d-flex align-items-center gap-3">
+          <span class="modal-icon fs-2"
+            ><i class="bi bi-bullseye text-primary"></i
+          ></span>
+          <div>
+            <h4 class="modal-title mb-0" id="modalFocusObjetivoLabel">
+              Modo Focus
+            </h4>
+            <small class="text-muted">Concéntrate en este objetivo</small>
+          </div>
+        </div>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        ></button>
+      </div>
+
+      <div class="modal-body p-4">
+        <!-- Información del objetivo -->
+        <div class="focus-objetivo-info mb-4">
+          <h2 class="focus-titulo mb-3" id="focus-titulo"></h2>
+          <p
+            class="focus-descripcion text-muted mb-3"
+            id="focus-descripcion"
+          ></p>
+
+          <!-- Metadatos del objetivo -->
+          <div class="focus-meta d-flex flex-wrap gap-3 mb-4">
+            <span
+              class="badge bg-light text-dark border"
+              id="focus-categoria"
+            ></span>
+            <span
+              class="badge bg-light text-dark border"
+              id="focus-prioridad"
+            ></span>
+            <span
+              class="badge bg-light text-dark border"
+              id="focus-parte-dia"
+            ></span>
+            <span
+              class="badge bg-light text-dark border"
+              id="focus-tiempo"
+            ></span>
+          </div>
+        </div>
+
+        <!-- Timer/Cronómetro -->
+        <div class="focus-timer mb-4 text-center">
+          <div class="timer-display mb-3">
+            <span
+              class="timer-time fs-1 fw-bold text-primary"
+              id="timer-display"
+              >00:00:00</span
+            >
+          </div>
+          <div class="timer-controls">
+            <button class="btn btn-success me-2" id="timer-start">
+              <i class="bi bi-play-fill"></i> Iniciar
+            </button>
+            <button
+              class="btn btn-warning me-2"
+              id="timer-pause"
+              style="display: none"
+            >
+              <i class="bi bi-pause-fill"></i> Pausar
+            </button>
+            <button class="btn btn-secondary" id="timer-reset">
+              <i class="bi bi-arrow-clockwise"></i> Reiniciar
+            </button>
+          </div>
+        </div>
+
+        <!-- Progreso de subobjetivos -->
+        <div class="focus-subobjetivos mb-4">
+          <h5 class="mb-3">
+            <i class="bi bi-list-check me-2"></i>Progreso del objetivo
+            <span class="badge bg-primary ms-2" id="focus-progreso">0/0</span>
+          </h5>
+          <div class="subobjetivos-focus-list" id="focus-subobjetivos-list">
+            <!-- Los subobjetivos se cargarán aquí -->
+          </div>
+        </div>
+
+        <!-- Notas de sesión -->
+        <div class="focus-notas mb-4">
+          <h5 class="mb-3">
+            <i class="bi bi-journal-text me-2"></i>Notas de la sesión
+          </h5>
+          <textarea
+            class="form-control"
+            id="focus-notas-texto"
+            rows="4"
+            placeholder="Anota tu progreso, ideas o reflexiones sobre este objetivo..."
+          >
+          </textarea>
+        </div>
+      </div>
+
+      <div class="modal-footer border-0 pt-0">
+        <div class="d-flex justify-content-between w-100">
+          <div>
+            <button
+              type="button"
+              class="btn btn-outline-secondary"
+              data-bs-dismiss="modal"
+            >
+              <i class="bi bi-x-lg me-1"></i>Salir del Focus
+            </button>
+          </div>
+          <div>
+            <button type="button" class="btn btn-success" id="focus-completar">
+              <i class="bi bi-check-lg me-1"></i>Completar Objetivo
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Masonry.js CDN -->
 <script src="https://unpkg.com/masonry-layout@4/dist/masonry.pkgd.min.js"></script>
 
 <!-- Main JS para funcionalidad de frases -->
-<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+<script src="{{ url_for('static', filename='js/main.js') }}?v=20241031-3"></script>
 
 <!-- Toggle de activar/desactivar ahora gestionado por main.js -->
 

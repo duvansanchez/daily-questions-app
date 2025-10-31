@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test - Modo Focus</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="static/css/style.css">
+</head>
+<body>
+    <div class="container mt-4">
+        <h2>🎯 Test - Modo Focus</h2>
+        <p class="text-muted">Prueba del modal de concentración para objetivos</p>
+        
+        <!-- Botón para abrir el modal de prueba -->
+        <button class="btn btn-primary mb-4" onclick="abrirModalFocusDemo()">
+            <i class="bi bi-bullseye me-2"></i>Abrir Modo Focus (Demo)
+        </button>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <h4>✨ Funcionalidades del Modo Focus:</h4>
+                <ul class="list-group">
+                    <li class="list-group-item">🎯 <strong>Vista concentrada</strong> - Solo el objetivo actual</li>
+                    <li class="list-group-item">⏱️ <strong>Timer integrado</strong> - Cronómetro para sesiones</li>
+                    <li class="list-group-item">✅ <strong>Progreso visual</strong> - Subobjetivos con checkboxes</li>
+                    <li class="list-group-item">📝 <strong>Notas de sesión</strong> - Anota tu progreso</li>
+                    <li class="list-group-item">🚀 <strong>Acciones rápidas</strong> - Completar/Editar objetivo</li>
+                    <li class="list-group-item">📊 <strong>Metadatos</strong> - Categoría, prioridad, tiempo estimado</li>
+                </ul>
+            </div>
+            
+            <div class="col-md-6">
+                <h4>🎨 Características visuales:</h4>
+                <ul class="list-group">
+                    <li class="list-group-item">🖼️ <strong>Modal grande</strong> - Máximo espacio de trabajo</li>
+                    <li class="list-group-item">🎨 <strong>Diseño limpio</strong> - Sin distracciones</li>
+                    <li class="list-group-item">📱 <strong>Responsive</strong> - Funciona en móviles</li>
+                    <li class="list-group-item">🔄 <strong>Tiempo real</strong> - Actualizaciones instantáneas</li>
+                    <li class="list-group-item">🎯 <strong>Botón destacado</strong> - Fácil acceso desde objetivos</li>
+                    <li class="list-group-item">⚡ <strong>Animaciones suaves</strong> - Experiencia fluida</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="mt-4">
+            <div class="alert alert-info">
+                <h5><i class="bi bi-info-circle me-2"></i>Cómo usar el Modo Focus:</h5>
+                <ol>
+                    <li><strong>Haz clic en el botón 🎯</strong> de cualquier objetivo</li>
+                    <li><strong>Inicia el timer</strong> para medir tu sesión de trabajo</li>
+                    <li><strong>Marca subobjetivos</strong> conforme los completes</li>
+                    <li><strong>Toma notas</strong> de tu progreso o ideas</li>
+                    <li><strong>Completa el objetivo</strong> cuando termines</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Focus (copiado del original para demo) -->
+    <div class="modal fade" id="modalFocusDemo" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header border-0 pb-0">
+                    <div class="d-flex align-items-center gap-3">
+                        <span class="modal-icon fs-2"><i class="bi bi-bullseye text-primary"></i></span>
+                        <div>
+                            <h4 class="modal-title mb-0">Modo Focus</h4>
+                            <small class="text-muted">Concéntrate en este objetivo</small>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                
+                <div class="modal-body p-4">
+                    <!-- Información del objetivo -->
+                    <div class="focus-objetivo-info mb-4">
+                        <h2 class="focus-titulo mb-3">Completar proyecto de desarrollo web</h2>
+                        <p class="focus-descripcion text-muted mb-3">Finalizar el desarrollo del sistema de gestión de objetivos con todas las funcionalidades requeridas</p>
+                        
+                        <!-- Metadatos del objetivo -->
+                        <div class="focus-meta d-flex flex-wrap gap-3 mb-4">
+                            <span class="badge bg-light text-dark border">📋 Proyecto</span>
+                            <span class="badge bg-light text-dark border">Prioridad: Alta</span>
+                            <span class="badge bg-light text-dark border">🌞 Tarde</span>
+                            <span class="badge bg-light text-dark border">⏱️ 3h 30min</span>
+                        </div>
+                    </div>
+
+                    <!-- Timer/Cronómetro -->
+                    <div class="focus-timer mb-4 text-center">
+                        <div class="timer-display mb-3">
+                            <span class="timer-time fs-1 fw-bold text-primary">00:25:43</span>
+                        </div>
+                        <div class="timer-controls">
+                            <button class="btn btn-warning me-2">
+                                <i class="bi bi-pause-fill"></i> Pausar
+                            </button>
+                            <button class="btn btn-secondary">
+                                <i class="bi bi-arrow-clockwise"></i> Reiniciar
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Progreso de subobjetivos -->
+                    <div class="focus-subobjetivos mb-4">
+                        <h5 class="mb-3">
+                            <i class="bi bi-list-check me-2"></i>Progreso del objetivo
+                            <span class="badge bg-primary ms-2">3/5</span>
+                        </h5>
+                        <div class="focus-progreso-bar mb-3">
+                            <div class="focus-progreso-fill" style="width: 60%"></div>
+                        </div>
+                        <div class="subobjetivos-focus-list">
+                            <div class="focus-subobjetivo-item completado">
+                                <input type="checkbox" class="focus-subobjetivo-checkbox" checked>
+                                <span class="focus-subobjetivo-titulo completado">Diseñar interfaz de usuario</span>
+                            </div>
+                            <div class="focus-subobjetivo-item completado">
+                                <input type="checkbox" class="focus-subobjetivo-checkbox" checked>
+                                <span class="focus-subobjetivo-titulo completado">Implementar backend básico</span>
+                            </div>
+                            <div class="focus-subobjetivo-item completado">
+                                <input type="checkbox" class="focus-subobjetivo-checkbox" checked>
+                                <span class="focus-subobjetivo-titulo completado">Agregar funcionalidad de objetivos</span>
+                            </div>
+                            <div class="focus-subobjetivo-item">
+                                <input type="checkbox" class="focus-subobjetivo-checkbox">
+                                <span class="focus-subobjetivo-titulo">Implementar modo focus</span>
+                            </div>
+                            <div class="focus-subobjetivo-item">
+                                <input type="checkbox" class="focus-subobjetivo-checkbox">
+                                <span class="focus-subobjetivo-titulo">Realizar pruebas finales</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Notas de sesión -->
+                    <div class="focus-notas mb-4">
+                        <h5 class="mb-3"><i class="bi bi-journal-text me-2"></i>Notas de la sesión</h5>
+                        <textarea class="form-control" rows="4" placeholder="Anota tu progreso, ideas o reflexiones sobre este objetivo...">El modo focus está quedando muy bien. La interfaz es limpia y funcional. Falta agregar algunas animaciones y mejorar la responsividad en móviles.</textarea>
+                    </div>
+                </div>
+
+                <div class="modal-footer border-0 pt-0">
+                    <div class="d-flex justify-content-between w-100">
+                        <div>
+                            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                                <i class="bi bi-x-lg me-1"></i>Salir del Focus
+                            </button>
+                        </div>
+                        <div>
+                            <button type="button" class="btn btn-success">
+                                <i class="bi bi-check-lg me-1"></i>Completar Objetivo
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function abrirModalFocusDemo() {
+            const modal = new bootstrap.Modal(document.getElementById('modalFocusDemo'));
+            modal.show();
+        }
+    </script>
+</body>
+</html>

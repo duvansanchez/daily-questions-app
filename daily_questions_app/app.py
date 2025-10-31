@@ -3569,6 +3569,54 @@ def api_create_objetivo():
         conn.commit()
         return jsonify({'status': 'success', 'id': objetivo_id})
 
+@app.route('/api/objetivos/<int:objetivo_id>', methods=['GET'])
+@login_required
+def api_get_objetivo(objetivo_id):
+    """Obtener un objetivo específico por ID"""
+    try:
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('''
+                SELECT o.id, o.titulo, o.descripcion, o.prioridad, o.categoria, o.completado, 
+                       o.fecha_creacion, o.fecha_completado, o.objetivo_padre_id, o.es_padre, 
+                       o.estado, o.fecha_inicio, o.fecha_fin, o.horas_estimadas, o.recompensa, 
+                       o.parte_dia, o.recurrente, o.frecuencia, o.orden
+                FROM objetivos o
+                WHERE o.id = ? AND o.user_id = ?
+            ''', (objetivo_id, current_user.id))
+            
+            row = cursor.fetchone()
+            if not row:
+                return jsonify({'error': 'Objetivo no encontrado'}), 404
+            
+            objetivo = {
+                'id': row[0],
+                'titulo': row[1],
+                'descripcion': row[2],
+                'prioridad': row[3],
+                'categoria': row[4],
+                'completado': bool(row[5]),
+                'fecha_creacion': row[6].strftime('%Y-%m-%d') if row[6] else None,
+                'fecha_completado': row[7].strftime('%Y-%m-%d') if row[7] else None,
+                'objetivo_padre_id': row[8],
+                'es_padre': bool(row[9]),
+                'estado': row[10],
+                'fecha_inicio': row[11].strftime('%Y-%m-%d') if row[11] else None,
+                'fecha_fin': row[12].strftime('%Y-%m-%d') if row[12] else None,
+                'horas_estimadas': row[13],
+                'recompensa': row[14],
+                'parte_dia': row[15],
+                'recurrente': bool(row[16]),
+                'frecuencia': row[17],
+                'orden': row[18]
+            }
+            
+            return jsonify(objetivo)
+            
+    except Exception as e:
+        logger.error(f"Error al obtener objetivo {objetivo_id}: {str(e)}")
+        return jsonify({'error': 'Error interno del servidor'}), 500
+
 @app.route('/api/objetivos/<int:objetivo_id>', methods=['PATCH'])
 @login_required
 def api_update_objetivo(objetivo_id):

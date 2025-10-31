@@ -1528,6 +1528,9 @@ function renderObjetivos() {
                         <button class="objetivo-lista-btn toggle-subobjetivos" title="Mostrar/ocultar subobjetivos" data-objetivo-id="${obj.id}">
                             <i class="bi bi-chevron-down"></i>
                         </button>
+                        <button class="objetivo-lista-btn focus" title="Modo Focus" data-id="${obj.id}">
+                            <i class="bi bi-bullseye"></i>
+                        </button>
                         <button class="objetivo-lista-btn editar" title="Editar" data-id="${obj.id}">
                             <i class="bi bi-pencil"></i>
                         </button>
@@ -1590,6 +1593,7 @@ function renderObjetivos() {
                 </div>
             </div>
             <div class=\"acciones-objetivo\">
+                <button class=\"btn-focus\" title=\"Modo Focus\" data-id=\"${obj.id}\"><i class=\"bi bi-bullseye\"></i></button>
                 <button class=\"btn-editar\" title=\"Editar\" data-id=\"${obj.id}\"><i class=\"bi bi-pencil\"></i></button>
                 <button class=\"btn-eliminar\" title=\"Eliminar\" data-id=\"${obj.id}\"><i class=\"bi bi-trash\"></i></button>
                 ${obj.recurrente && !obj.saltado_hoy && !obj.completado ? `<button class=\"btn-saltar-hoy\" title=\"Saltar hoy\" data-id=\"${obj.id}\"><i class=\"bi bi-arrow-bar-right\"></i> Saltar hoy</button>` : ''}
@@ -4939,3 +4943,394 @@ window.configurarEventListenersAudios = configurarEventListenersAudios;
 window.manejarErrorAudio = manejarErrorAudio;
 
 } // Fin del check de carga múltiple
+
+// ===== MODO FOCUS =====
+
+let timerInterval = null;
+let timerSeconds = 0;
+let timerRunning = false;
+let objetivoEnFocus = null;
+
+// Event listeners para botones de Focus
+document.addEventListener('click', function(e) {
+    if (e.target.closest('.btn-focus') || e.target.closest('.objetivo-lista-btn.focus')) {
+        e.preventDefault();
+        const button = e.target.closest('[data-id]');
+        if (!button) {
+            console.error('Botón sin data-id encontrado');
+            showError('Error: Botón de focus inválido');
+            return;
+        }
+        const objetivoId = button.getAttribute('data-id');
+        console.log('Click en botón focus, objetivoId:', objetivoId);
+        abrirModoFocus(objetivoId);
+    }
+});
+
+async function abrirModoFocus(objetivoId) {
+    console.log('🎯 Iniciando modo focus para objetivo:', objetivoId);
+    
+    try {
+        // Obtener el objetivo del backend
+        console.log('📡 Obteniendo objetivo del servidor...');
+        const response = await fetch(`/api/objetivos/${objetivoId}`);
+        
+        if (!response.ok) {
+            console.error('❌ Error HTTP:', response.status, response.statusText);
+            if (response.status === 404) {
+                showError('Objetivo no encontrado');
+            } else {
+                showError('Error al cargar el objetivo del servidor');
+            }
+            return;
+        }
+        
+        const objetivo = await response.json();
+        console.log('✅ Objetivo obtenido:', objetivo);
+        
+        // Guardar objetivo en variable global
+        objetivoEnFocus = objetivo;
+        
+        // Cargar datos en el modal
+        console.log('📝 Cargando datos en el modal...');
+        
+        const elementos = {
+            titulo: document.getElementById('focus-titulo'),
+            descripcion: document.getElementById('focus-descripcion'),
+            categoria: document.getElementById('focus-categoria'),
+            prioridad: document.getElementById('focus-prioridad'),
+            parteDia: document.getElementById('focus-parte-dia'),
+            tiempo: document.getElementById('focus-tiempo'),
+            notas: document.getElementById('focus-notas-texto')
+        };
+        
+        // Verificar elementos críticos
+        if (!elementos.titulo || !elementos.descripcion) {
+            console.error('❌ Elementos críticos del modal no encontrados');
+            showError('Error: Modal de focus no disponible');
+            return;
+        }
+        
+        // Cargar información básica
+        elementos.titulo.textContent = objetivo.titulo || 'Sin título';
+        elementos.descripcion.textContent = objetivo.descripcion || 'Sin descripción';
+        
+        // Cargar metadatos
+        if (elementos.categoria) {
+            elementos.categoria.textContent = objetivo.categoria ? 
+                objetivo.categoria.charAt(0).toUpperCase() + objetivo.categoria.slice(1) : 'Sin categoría';
+        }
+        
+        if (elementos.prioridad) {
+            elementos.prioridad.textContent = objetivo.prioridad ? 
+                `Prioridad: ${objetivo.prioridad.charAt(0).toUpperCase() + objetivo.prioridad.slice(1)}` : '';
+        }
+        
+        if (elementos.parteDia) {
+            if (objetivo.parte_dia) {
+                const iconoParte = objetivo.parte_dia === 'mañana' ? '🌅' : 
+                                 objetivo.parte_dia === 'tarde' ? '🌞' : '🌙';
+                elementos.parteDia.textContent = `${iconoParte} ${objetivo.parte_dia.charAt(0).toUpperCase() + objetivo.parte_dia.slice(1)}`;
+                elementos.parteDia.style.display = 'inline-block';
+            } else {
+                elementos.parteDia.style.display = 'none';
+            }
+        }
+        
+        if (elementos.tiempo) {
+            if (objetivo.horas_estimadas) {
+                elementos.tiempo.textContent = `⏱️ ${formatearHorasMinutos(objetivo.horas_estimadas)}`;
+                elementos.tiempo.style.display = 'inline-block';
+            } else {
+                elementos.tiempo.style.display = 'none';
+            }
+        }
+
+        // Cargar subobjetivos
+        console.log('📋 Cargando subobjetivos...');
+        await cargarSubobjetivosFocus(objetivoId);
+        
+        // Resetear timer y limpiar notas
+        console.log('⏱️ Preparando timer y notas...');
+        resetearTimer();
+        
+        if (elementos.notas) {
+            elementos.notas.value = '';
+        }
+        
+        // Mostrar modal
+        console.log('🚀 Abriendo modal...');
+        const modalElement = document.getElementById('modalFocusObjetivo');
+        if (!modalElement) {
+            console.error('❌ Modal de focus no encontrado en el DOM');
+            showError('Error: Modal de focus no disponible');
+            return;
+        }
+        
+        const modal = new bootstrap.Modal(modalElement);
+        modal.show();
+        
+        console.log('✅ Modal de focus abierto exitosamente');
+        
+    } catch (error) {
+        console.error('Error al abrir modo focus:', error);
+        showError('Error al cargar el modo focus');
+    }
+}
+
+async function cargarSubobjetivosFocus(objetivoId) {
+    try {
+        const response = await fetch(`/api/objetivos/${objetivoId}/subobjetivos`);
+        const subobjetivos = await response.json();
+        
+        const container = document.getElementById('focus-subobjetivos-list');
+        
+        if (subobjetivos.length === 0) {
+            container.innerHTML = `
+                <div class="text-center text-muted py-4">
+                    <i class="bi bi-list-check fs-1 mb-2 d-block"></i>
+                    <p>Este objetivo no tiene subobjetivos</p>
+                    <small>Los subobjetivos te ayudan a dividir tareas grandes en pasos más pequeños</small>
+                </div>
+            `;
+            document.getElementById('focus-progreso').textContent = '0/0';
+            return;
+        }
+
+        let html = '';
+        let completados = 0;
+        
+        subobjetivos.forEach(sub => {
+            if (sub.completado) completados++;
+            
+            html += `
+                <div class="focus-subobjetivo-item ${sub.completado ? 'completado' : ''}">
+                    <input 
+                        type="checkbox" 
+                        class="focus-subobjetivo-checkbox" 
+                        ${sub.completado ? 'checked' : ''} 
+                        data-subobjetivo-id="${sub.id}"
+                        data-objetivo-id="${objetivoId}">
+                    <span class="focus-subobjetivo-titulo ${sub.completado ? 'completado' : ''}">${sub.titulo}</span>
+                </div>
+            `;
+        });
+        
+        container.innerHTML = html;
+        
+        // Actualizar progreso
+        document.getElementById('focus-progreso').textContent = `${completados}/${subobjetivos.length}`;
+        
+        // Actualizar barra de progreso (eliminar existente primero)
+        const barraExistente = document.querySelector('.focus-progreso-bar');
+        if (barraExistente) {
+            barraExistente.remove();
+        }
+        
+        const porcentaje = subobjetivos.length > 0 ? (completados / subobjetivos.length) * 100 : 0;
+        const progresoHtml = `
+            <div class="focus-progreso-bar">
+                <div class="focus-progreso-fill" style="width: ${porcentaje}%"></div>
+            </div>
+        `;
+        document.getElementById('focus-progreso').insertAdjacentHTML('afterend', progresoHtml);
+        
+    } catch (error) {
+        console.error('Error al cargar subobjetivos:', error);
+        document.getElementById('focus-subobjetivos-list').innerHTML = `
+            <div class="text-center text-danger py-4">
+                <i class="bi bi-exclamation-triangle fs-1 mb-2 d-block"></i>
+                <p>Error al cargar subobjetivos</p>
+            </div>
+        `;
+    }
+}
+
+// Event listeners para subobjetivos en focus
+document.addEventListener('change', async function(e) {
+    if (e.target.classList.contains('focus-subobjetivo-checkbox')) {
+        const subobjetivoId = e.target.getAttribute('data-subobjetivo-id');
+        const objetivoId = e.target.getAttribute('data-objetivo-id');
+        const completado = e.target.checked;
+        
+        try {
+            const response = await fetch(`/api/subobjetivos/${subobjetivoId}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ completado })
+            });
+            
+            if (response.ok) {
+                // Actualizar visualmente
+                const item = e.target.closest('.focus-subobjetivo-item');
+                const titulo = item.querySelector('.focus-subobjetivo-titulo');
+                
+                if (completado) {
+                    item.classList.add('completado');
+                    titulo.classList.add('completado');
+                } else {
+                    item.classList.remove('completado');
+                    titulo.classList.remove('completado');
+                }
+                
+                // Actualizar progreso sin recargar todo
+                actualizarProgresoFocus();
+                
+                // Recargar objetivos en el fondo
+                await cargarObjetivos();
+                
+            } else {
+                e.target.checked = !completado; // Revertir si falla
+                showError('Error al actualizar subobjetivo');
+            }
+        } catch (error) {
+            e.target.checked = !completado; // Revertir si falla
+            showError('Error al actualizar subobjetivo');
+        }
+    }
+});
+
+// ===== TIMER FUNCTIONALITY =====
+
+document.getElementById('timer-start').addEventListener('click', iniciarTimer);
+document.getElementById('timer-pause').addEventListener('click', pausarTimer);
+document.getElementById('timer-reset').addEventListener('click', resetearTimer);
+
+function iniciarTimer() {
+    if (!timerRunning) {
+        timerRunning = true;
+        timerInterval = setInterval(() => {
+            timerSeconds++;
+            actualizarDisplayTimer();
+        }, 1000);
+        
+        document.getElementById('timer-start').style.display = 'none';
+        document.getElementById('timer-pause').style.display = 'inline-block';
+    }
+}
+
+function pausarTimer() {
+    if (timerRunning) {
+        timerRunning = false;
+        clearInterval(timerInterval);
+        
+        document.getElementById('timer-start').style.display = 'inline-block';
+        document.getElementById('timer-pause').style.display = 'none';
+    }
+}
+
+function resetearTimer() {
+    timerRunning = false;
+    timerSeconds = 0;
+    clearInterval(timerInterval);
+    actualizarDisplayTimer();
+    
+    document.getElementById('timer-start').style.display = 'inline-block';
+    document.getElementById('timer-pause').style.display = 'none';
+}
+
+function actualizarDisplayTimer() {
+    const horas = Math.floor(timerSeconds / 3600);
+    const minutos = Math.floor((timerSeconds % 3600) / 60);
+    const segundos = timerSeconds % 60;
+    
+    const display = `${horas.toString().padStart(2, '0')}:${minutos.toString().padStart(2, '0')}:${segundos.toString().padStart(2, '0')}`;
+    document.getElementById('timer-display').textContent = display;
+}
+
+// ===== BOTONES DE ACCIÓN EN FOCUS =====
+
+document.getElementById('focus-completar').addEventListener('click', async function() {
+    if (objetivoEnFocus) {
+        try {
+            const response = await fetch(`/api/objetivos/${objetivoEnFocus.id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ completado: true })
+            });
+            
+            if (response.ok) {
+                // Cerrar modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('modalFocusObjetivo'));
+                if (modal) modal.hide();
+                
+                // Recargar objetivos
+                await cargarObjetivos();
+                
+                showSuccess('¡Objetivo completado! 🎉');
+            } else {
+                showError('Error al completar objetivo');
+            }
+        } catch (error) {
+            showError('Error al completar objetivo');
+        }
+    }
+});
+
+// Limpiar timer al cerrar modal
+document.getElementById('modalFocusObjetivo').addEventListener('hidden.bs.modal', function() {
+    pausarTimer();
+    resetearTimer();
+    objetivoEnFocus = null;
+});
+
+// Verificación de elementos del modo focus al cargar la página
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Verificando elementos del modo focus...');
+    
+    const elementosRequeridos = [
+        'modalFocusObjetivo',
+        'focus-titulo',
+        'focus-descripcion',
+        'focus-categoria',
+        'focus-prioridad',
+        'focus-parte-dia',
+        'focus-tiempo',
+        'focus-subobjetivos-list',
+        'focus-notas-texto'
+    ];
+    
+    let elementosFaltantes = [];
+    
+    elementosRequeridos.forEach(id => {
+        const elemento = document.getElementById(id);
+        if (!elemento) {
+            elementosFaltantes.push(id);
+        }
+    });
+    
+    if (elementosFaltantes.length > 0) {
+        console.warn('Elementos del modo focus faltantes:', elementosFaltantes);
+    } else {
+        console.log('✅ Todos los elementos del modo focus están disponibles');
+    }
+    
+    // Verificar Bootstrap
+    if (typeof bootstrap === 'undefined' || !bootstrap.Modal) {
+        console.error('❌ Bootstrap no está disponible');
+    } else {
+        console.log('✅ Bootstrap Modal disponible');
+    }
+});
+
+// Función para actualizar solo el progreso sin recargar subobjetivos
+function actualizarProgresoFocus() {
+    const checkboxes = document.querySelectorAll('.focus-subobjetivo-checkbox');
+    const total = checkboxes.length;
+    const completados = Array.from(checkboxes).filter(cb => cb.checked).length;
+    
+    // Actualizar contador
+    const progresoElement = document.getElementById('focus-progreso');
+    if (progresoElement) {
+        progresoElement.textContent = `${completados}/${total}`;
+    }
+    
+    // Actualizar barra de progreso
+    const barraFill = document.querySelector('.focus-progreso-fill');
+    if (barraFill) {
+        const porcentaje = total > 0 ? (completados / total) * 100 : 0;
+        barraFill.style.width = `${porcentaje}%`;
+    }
+    
+    console.log(`📊 Progreso actualizado: ${completados}/${total} (${Math.round((completados/total)*100)}%)`);
+}
