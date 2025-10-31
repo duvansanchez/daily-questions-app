@@ -1484,6 +1484,10 @@ function renderObjetivos() {
             elemento.className = 'objetivo-lista-item';
             if (obj.completado) elemento.classList.add('objetivo-completado');
             if (obj.saltado_hoy) elemento.classList.add('objetivo-inactivo-hoy');
+            // Aplicar clase de parte del día
+            if (obj.parte_dia) {
+                elemento.classList.add(`parte-dia-${obj.parte_dia}`);
+            }
             // Aplicar borde azul a objetivos activos (no completados, no saltados, no históricos)
             const esActivo = !obj.completado && !obj.saltado_hoy && categoriaActual !== 'historico';
             if (esActivo) {
@@ -1506,6 +1510,10 @@ function renderObjetivos() {
             }
             if (obj.recompensa) {
                 etiquetas.push(`<span class="objetivo-lista-etiqueta recompensa"><i class='bi bi-gift me-1'></i>${obj.recompensa}</span>`);
+            }
+            if (obj.parte_dia) {
+                const iconoParte = obj.parte_dia === 'mañana' ? 'sunrise' : obj.parte_dia === 'tarde' ? 'sun' : 'moon';
+                etiquetas.push(`<span class="objetivo-lista-etiqueta parte-dia"><i class='bi bi-${iconoParte} me-1'></i>${obj.parte_dia.charAt(0).toUpperCase() + obj.parte_dia.slice(1)}</span>`);
             }
             
             elemento.innerHTML = `
@@ -1539,6 +1547,10 @@ function renderObjetivos() {
             elemento.className = 'objetivo-card mb-3';
             if (obj.completado) elemento.classList.add('objetivo-completado');
             if (obj.saltado_hoy) elemento.classList.add('objetivo-inactivo-hoy');
+            // Aplicar clase de parte del día
+            if (obj.parte_dia) {
+                elemento.classList.add(`parte-dia-${obj.parte_dia}`);
+            }
             // Aplicar borde azul a objetivos activos (no completados, no saltados, no históricos)
             const esActivo = !obj.completado && !obj.saltado_hoy && categoriaActual !== 'historico';
             if (esActivo) {
@@ -1560,6 +1572,7 @@ function renderObjetivos() {
                     ${fechaInicio ? `<span class=\"objetivo-fecha\"><i class='bi bi-calendar-event'></i> Inicio: ${fechaInicio}</span>` : ''}
                     ${fechaFin ? `<span class=\"objetivo-fecha\"><i class='bi bi-calendar-check'></i> Fin: ${fechaFin}</span>` : ''}
                     ${obj.horas_estimadas ? `<span class=\"objetivo-horas\"><i class='bi bi-clock'></i> ${formatearHorasMinutos(obj.horas_estimadas)}</span>` : ''}
+                    ${obj.parte_dia ? `<span class=\"objetivo-parte-dia\"><i class='bi bi-${obj.parte_dia === 'mañana' ? 'sunrise' : obj.parte_dia === 'tarde' ? 'sun' : 'moon'}'></i> ${obj.parte_dia.charAt(0).toUpperCase() + obj.parte_dia.slice(1)}</span>` : ''}
 
                 </div>
 
@@ -1899,6 +1912,7 @@ if (formNuevo) {
       horasEstimadas = h + (m / 60);
     }
     const recompensa = document.getElementById('modal-recompensa-objetivo').value.trim();
+    const parteDia = document.getElementById('modal-parte-dia-objetivo').value || null;
     const chkRecNuevo = document.getElementById('modal-recurrente-objetivo');
     let recurrente = chkRecNuevo.checked;
     let frecuencia = null;
@@ -1924,6 +1938,7 @@ if (formNuevo) {
           fecha_fin: fechaFin,
           horas_estimadas: horasEstimadas,
           recompensa,
+          parte_dia: parteDia,
           recurrente,
           frecuencia
         })
@@ -1984,6 +1999,7 @@ if (formEditar) {
       horasEstimadas = h + (m / 60);
     }
     const recompensa = document.getElementById('editar-recompensa-objetivo').value.trim();
+    const parteDia = document.getElementById('editar-parte-dia-objetivo').value || null;
     const chkRecEdit = document.getElementById('editar-recurrente-objetivo');
     let recurrente = false;
     if (chkRecEdit) {
@@ -2012,6 +2028,7 @@ if (formEditar) {
           fecha_fin: fechaFin,
           horas_estimadas: horasEstimadas,
           recompensa,
+          parte_dia: parteDia,
           recurrente,
           frecuencia
         })
@@ -2191,6 +2208,7 @@ document.addEventListener('click', async function(e) {
     document.getElementById('editar-horas-estimadas-objetivo').value = objetivo.horas_estimadas ? Math.floor(objetivo.horas_estimadas) : '';
     document.getElementById('editar-minutos-estimados-objetivo').value = objetivo.horas_estimadas ? Math.round((objetivo.horas_estimadas - Math.floor(objetivo.horas_estimadas)) * 60) : '';
     document.getElementById('editar-recompensa-objetivo').value = objetivo.recompensa || '';
+    document.getElementById('editar-parte-dia-objetivo').value = objetivo.parte_dia || '';
     document.getElementById('editar-recurrente-objetivo').checked = !!objetivo.recurrente;
     // Mostrar el modal
     const modal = new bootstrap.Modal(document.getElementById('modalEditarObjetivo'));
@@ -2233,6 +2251,7 @@ function limpiarCamposNuevoObjetivo() {
     document.getElementById('modal-horas-estimadas-objetivo').value = '';
     document.getElementById('modal-minutos-estimados-objetivo').value = '';
     document.getElementById('modal-recompensa-objetivo').value = '';
+    document.getElementById('modal-parte-dia-objetivo').value = '';
     document.getElementById('modal-recurrente-objetivo').checked = false;
 }
 

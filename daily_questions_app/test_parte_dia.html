@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test - Campo Parte del Día</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="static/css/style.css">
+</head>
+<body>
+    <div class="container mt-4">
+        <h2>🌅 Test - Campo "Parte del Día"</h2>
+        <p class="text-muted">Prueba visual de los colores de fondo según la parte del día</p>
+        
+        <div class="row">
+            <div class="col-md-4 mb-3">
+                <div class="objetivo-card parte-dia-mañana p-3">
+                    <h5 class="objetivo-titulo">🌅 Ejercicio matutino</h5>
+                    <p class="objetivo-desc">Rutina de ejercicios para empezar el día con energía</p>
+                    <div class="objetivo-extra mt-2 small text-muted">
+                        <span class="objetivo-parte-dia"><i class='bi bi-sunrise'></i> Mañana</span>
+                        <span class="objetivo-horas"><i class='bi bi-clock'></i> 30 min</span>
+                        <span class="objetivo-recompensa"><i class='bi bi-gift'></i> Desayuno especial</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4 mb-3">
+                <div class="objetivo-card parte-dia-tarde p-3">
+                    <h5 class="objetivo-titulo">🌞 Reunión de equipo</h5>
+                    <p class="objetivo-desc">Revisión semanal de proyectos y planificación</p>
+                    <div class="objetivo-extra mt-2 small text-muted">
+                        <span class="objetivo-parte-dia"><i class='bi bi-sun'></i> Tarde</span>
+                        <span class="objetivo-horas"><i class='bi bi-clock'></i> 1h 30min</span>
+                        <span class="objetivo-fecha"><i class='bi bi-calendar-check'></i> Fin: 15 Nov</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4 mb-3">
+                <div class="objetivo-card parte-dia-noche p-3">
+                    <h5 class="objetivo-titulo">🌙 Lectura relajante</h5>
+                    <p class="objetivo-desc">Tiempo de lectura antes de dormir para relajarse</p>
+                    <div class="objetivo-extra mt-2 small text-muted">
+                        <span class="objetivo-parte-dia"><i class='bi bi-moon'></i> Noche</span>
+                        <span class="objetivo-horas"><i class='bi bi-clock'></i> 45 min</span>
+                        <span class="objetivo-recompensa"><i class='bi bi-gift'></i> Té relajante</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <hr>
+        
+        <h4>Vista de Lista</h4>
+        <div class="objetivo-lista-item parte-dia-mañana p-2 mb-2">
+            <span class="objetivo-titulo">🌅 Ejercicio matutino</span>
+            <div class="objetivo-extra mt-1 small text-muted">
+                <span class="objetivo-parte-dia"><i class='bi bi-sunrise'></i> Mañana</span>
+                <span class="objetivo-horas"><i class='bi bi-clock'></i> 30 min</span>
+            </div>
+        </div>
+        
+        <div class="objetivo-lista-item parte-dia-tarde p-2 mb-2">
+            <span class="objetivo-titulo">🌞 Reunión de trabajo</span>
+            <div class="objetivo-extra mt-1 small text-muted">
+                <span class="objetivo-parte-dia"><i class='bi bi-sun'></i> Tarde</span>
+                <span class="objetivo-horas"><i class='bi bi-clock'></i> 1h 30min</span>
+            </div>
+        </div>
+        
+        <div class="objetivo-lista-item parte-dia-noche p-2 mb-2">
+            <span class="objetivo-titulo">🌙 Lectura antes de dormir</span>
+            <div class="objetivo-extra mt-1 small text-muted">
+                <span class="objetivo-parte-dia"><i class='bi bi-moon'></i> Noche</span>
+                <span class="objetivo-horas"><i class='bi bi-clock'></i> 45 min</span>
+            </div>
+        </div>
+        
+        <div class="mt-4">
+            <h5>✅ Funcionalidades implementadas:</h5>
+            <ul>
+                <li>✅ Campo "Parte del día" agregado a formularios de crear/editar</li>
+                <li>✅ Opciones: Mañana (🌅), Tarde (🌞), Noche (🌙)</li>
+                <li>✅ Colores de fondo: Amarillo claro, Anaranjado, Azul oscuro</li>
+                <li>✅ Orden inteligente: Mañana → Tarde → Noche → Sin especificar</li>
+                <li>✅ Backend actualizado para manejar el campo</li>
+                <li>✅ Frontend actualizado para mostrar colores</li>
+                <li>✅ <strong>Información visible en tarjetas y listas</strong></li>
+                <li>✅ <strong>Iconos específicos: sunrise, sun, moon</strong></li>
+                <li>✅ <strong>Estilos CSS para etiquetas de parte del día</strong></li>
+            </ul>
+            
+            <div class="alert alert-success mt-3">
+                <h6><i class="bi bi-check-circle"></i> ¡Implementación completa!</h6>
+                <p class="mb-0">La parte del día ahora se muestra como información adicional en las tarjetas de objetivos, junto con otros datos como duración, recompensa y fechas.</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

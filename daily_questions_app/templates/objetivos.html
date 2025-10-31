@@ -462,118 +462,128 @@ endblock %} {% block content %}
   </div>
 </div>
 
-      <!-- Contenedor para los audios -->
-      <div class="card mt-3" id="card-audios" style="display: none">
-        <div class="card-body">
-          <div class="d-flex justify-content-between align-items-center mb-4">
-            <div>
-              <h5 class="mb-1">
-                <i class="bi bi-music-note-beamed"></i> Audios Inspiracionales
-              </h5>
-              <p class="text-muted mb-0">
-                Escucha audios motivacionales para tu crecimiento personal
-              </p>
-            </div>
-            <div class="d-flex gap-2">
-              <a
-                href="{{ url_for('gestion_categorias') }}"
-                class="btn btn-outline-secondary"
-              >
-                <i class="bi bi-tags"></i> Gestionar Categorías
-              </a>
-              <button class="btn btn-primary" id="btn-nuevo-audio">
-                <i class="bi bi-plus-circle me-1"></i>Nuevo Audio
-              </button>
-            </div>
-          </div>
+<!-- Contenedor para los audios -->
+<div class="card mt-3" id="card-audios" style="display: none">
+  <div class="card-body">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h5 class="mb-1">
+          <i class="bi bi-music-note-beamed"></i> Audios Inspiracionales
+        </h5>
+        <p class="text-muted mb-0">
+          Escucha audios motivacionales para tu crecimiento personal
+        </p>
+      </div>
+      <div class="d-flex gap-2">
+        <a
+          href="{{ url_for('gestion_categorias') }}"
+          class="btn btn-outline-secondary"
+        >
+          <i class="bi bi-tags"></i> Gestionar Categorías
+        </a>
+        <button class="btn btn-primary" id="btn-nuevo-audio">
+          <i class="bi bi-plus-circle me-1"></i>Nuevo Audio
+        </button>
+      </div>
+    </div>
 
-          <!-- Estadísticas de audios -->
-          <div class="row text-center mb-3">
-            <div class="col-md-3">
-              <div class="bg-light rounded py-3">
-                <div class="h4 mb-0 text-primary" id="total-audios">0</div>
-                <small class="text-muted">Total Audios</small>
-              </div>
-            </div>
-            <div class="col-md-3">
-              <div class="bg-light rounded py-3">
-                <div class="h4 mb-0 text-success" id="audios-hoy">0</div>
-                <small class="text-muted">Escuchados Hoy</small>
-              </div>
-            </div>
-            <div class="col-md-3">
-              <div class="bg-light rounded py-3">
-                <div class="h4 mb-0 text-warning" id="audios-semana">0</div>
-                <small class="text-muted">Esta Semana</small>
-              </div>
-            </div>
-            <div class="col-md-3">
-              <div class="bg-light rounded py-3">
-                <div class="h4 mb-0 text-info" id="total-reproducciones">0</div>
-                <small class="text-muted">Total Reproducciones</small>
-              </div>
-            </div>
-          </div>
-
-          <!-- Filtros y controles -->
-          <div class="row mb-4">
-            <div class="col-md-4">
-              <label for="filtro-categoria-audios" class="form-label fw-semibold">Categoría</label>
-              <select class="form-select form-select-sm" id="filtro-categoria-audios">
-                <option value="">Todas las categorías</option>
-              </select>
-            </div>
-            <div class="col-md-4">
-              <label for="filtro-subcategoria-audios" class="form-label fw-semibold">Subcategoría</label>
-              <select class="form-select form-select-sm" id="filtro-subcategoria-audios">
-                <option value="">Todas las subcategorías</option>
-              </select>
-            </div>
-            <div class="col-md-4">
-              <label for="orden-audios" class="form-label fw-semibold">Ordenar por</label>
-              <select class="form-select form-select-sm" id="orden-audios">
-                <option value="reciente">Más recientes</option>
-                <option value="antiguo">Más antiguos</option>
-                <option value="mas_escuchado">Más escuchados</option>
-                <option value="menos_escuchado">Menos escuchados</option>
-                <option value="titulo">Título (A-Z)</option>
-              </select>
-            </div>
-          </div>
-
-          <!-- Botones de acción -->
-          <div class="d-flex gap-2 mb-4">
-            <button class="btn btn-success" id="btn-audio-aleatorio">
-              <i class="bi bi-shuffle me-1"></i>Audio Aleatorio
-            </button>
-            <button class="btn btn-info" id="btn-playlist-categoria">
-              <i class="bi bi-play-circle me-1"></i>Playlist de Categoría
-            </button>
-          </div>
-
-          <!-- Lista de audios -->
-          <div id="lista-audios">
-            <!-- Los audios se cargarán aquí dinámicamente -->
-          </div>
-
-          <!-- Mensaje cuando no hay audios -->
-          <div id="mensaje-sin-audios" class="text-center py-5" style="display: none">
-            <div class="mb-4">
-              <i class="bi bi-music-note-beamed display-1 text-muted"></i>
-            </div>
-            <h5 class="text-muted mb-3">No tienes audios inspiracionales</h5>
-            <p class="text-muted mb-4">
-              Comienza agregando tu primer audio motivacional para escuchar cuando necesites inspiración.
-            </p>
-            <button
-              class="btn btn-primary"
-              onclick="document.getElementById('btn-nuevo-audio').click()"
-            >
-              <i class="bi bi-plus-circle me-1"></i>Agregar Primer Audio
-            </button>
-          </div>
+    <!-- Estadísticas de audios -->
+    <div class="row text-center mb-3">
+      <div class="col-md-3">
+        <div class="bg-light rounded py-3">
+          <div class="h4 mb-0 text-primary" id="total-audios">0</div>
+          <small class="text-muted">Total Audios</small>
         </div>
       </div>
+      <div class="col-md-3">
+        <div class="bg-light rounded py-3">
+          <div class="h4 mb-0 text-success" id="audios-hoy">0</div>
+          <small class="text-muted">Escuchados Hoy</small>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="bg-light rounded py-3">
+          <div class="h4 mb-0 text-warning" id="audios-semana">0</div>
+          <small class="text-muted">Esta Semana</small>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="bg-light rounded py-3">
+          <div class="h4 mb-0 text-info" id="total-reproducciones">0</div>
+          <small class="text-muted">Total Reproducciones</small>
+        </div>
+      </div>
+    </div>
+
+    <!-- Filtros y controles -->
+    <div class="row mb-4">
+      <div class="col-md-4">
+        <label for="filtro-categoria-audios" class="form-label fw-semibold"
+          >Categoría</label
+        >
+        <select class="form-select form-select-sm" id="filtro-categoria-audios">
+          <option value="">Todas las categorías</option>
+        </select>
+      </div>
+      <div class="col-md-4">
+        <label for="filtro-subcategoria-audios" class="form-label fw-semibold"
+          >Subcategoría</label
+        >
+        <select
+          class="form-select form-select-sm"
+          id="filtro-subcategoria-audios"
+        >
+          <option value="">Todas las subcategorías</option>
+        </select>
+      </div>
+      <div class="col-md-4">
+        <label for="orden-audios" class="form-label fw-semibold"
+          >Ordenar por</label
+        >
+        <select class="form-select form-select-sm" id="orden-audios">
+          <option value="reciente">Más recientes</option>
+          <option value="antiguo">Más antiguos</option>
+          <option value="mas_escuchado">Más escuchados</option>
+          <option value="menos_escuchado">Menos escuchados</option>
+          <option value="titulo">Título (A-Z)</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Botones de acción -->
+    <div class="d-flex gap-2 mb-4">
+      <button class="btn btn-success" id="btn-audio-aleatorio">
+        <i class="bi bi-shuffle me-1"></i>Audio Aleatorio
+      </button>
+      <button class="btn btn-info" id="btn-playlist-categoria">
+        <i class="bi bi-play-circle me-1"></i>Playlist de Categoría
+      </button>
+    </div>
+
+    <!-- Lista de audios -->
+    <div id="lista-audios">
+      <!-- Los audios se cargarán aquí dinámicamente -->
+    </div>
+
+    <!-- Mensaje cuando no hay audios -->
+    <div id="mensaje-sin-audios" class="text-center py-5" style="display: none">
+      <div class="mb-4">
+        <i class="bi bi-music-note-beamed display-1 text-muted"></i>
+      </div>
+      <h5 class="text-muted mb-3">No tienes audios inspiracionales</h5>
+      <p class="text-muted mb-4">
+        Comienza agregando tu primer audio motivacional para escuchar cuando
+        necesites inspiración.
+      </p>
+      <button
+        class="btn btn-primary"
+        onclick="document.getElementById('btn-nuevo-audio').click()"
+      >
+        <i class="bi bi-plus-circle me-1"></i>Agregar Primer Audio
+      </button>
+    </div>
+  </div>
+</div>
 
 <!-- Modal Nueva Frase -->
 <div
@@ -1004,6 +1014,18 @@ endblock %} {% block content %}
             />
           </div>
 
+          <div class="mb-3">
+            <label for="modal-parte-dia-objetivo" class="form-label fw-semibold"
+              >Parte del día (Opcional)</label
+            >
+            <select class="form-select" id="modal-parte-dia-objetivo">
+              <option value="">Sin especificar</option>
+              <option value="mañana">🌅 Mañana</option>
+              <option value="tarde">🌞 Tarde</option>
+              <option value="noche">🌙 Noche</option>
+            </select>
+          </div>
+
           <hr
             style="border-top: 1.5px dashed #b6d4fe; margin: 1.2rem 0 1rem 0"
           />
@@ -1246,6 +1268,20 @@ endblock %} {% block content %}
             />
           </div>
 
+          <div class="mb-3">
+            <label
+              for="editar-parte-dia-objetivo"
+              class="form-label fw-semibold"
+              >Parte del día (Opcional)</label
+            >
+            <select class="form-select" id="editar-parte-dia-objetivo">
+              <option value="">Sin especificar</option>
+              <option value="mañana">🌅 Mañana</option>
+              <option value="tarde">🌞 Tarde</option>
+              <option value="noche">🌙 Noche</option>
+            </select>
+          </div>
+
           <hr
             style="border-top: 1.5px dashed #b6d4fe; margin: 1.2rem 0 1rem 0"
           />
@@ -1364,7 +1400,7 @@ endblock %} {% block content %}
 
     // Configurar eventos para el modal de editar frase
     configurarEventosEditarFrase();
-    
+
     // Configurar eventos para los modales de audios
     configurarEventosAudios();
   });
@@ -1406,15 +1442,18 @@ endblock %} {% block content %}
       // Actualizar los selects de categoría en los modales
       actualizarSelectConOpciones("frase-categoria", categorias);
       actualizarSelectConOpciones("editar-frase-categoria", categorias);
-      
+
       // Actualizar los selects de categoría en los modales de audios
-      console.log('DEBUG: Actualizando selects de audios con categorías:', categorias);
+      console.log(
+        "DEBUG: Actualizando selects de audios con categorías:",
+        categorias
+      );
       actualizarSelectConOpciones("audio-categoria", categorias);
       actualizarSelectConOpciones("editar-audio-categoria", categorias);
-      
+
       // Actualizar los filtros de audios
       actualizarFiltroConOpciones("filtro-categoria-audios", categorias);
-      console.log('DEBUG: Selects y filtros de audios actualizados');
+      console.log("DEBUG: Selects y filtros de audios actualizados");
 
       console.log("Categorías cargadas:", categorias);
       return categorias;
@@ -1436,7 +1475,9 @@ endblock %} {% block content %}
       console.log(`DEBUG: No se encontró el filtro con ID: ${selectId}`);
       return;
     }
-    console.log(`DEBUG: Actualizando filtro ${selectId} con ${opciones.length} opciones`);
+    console.log(
+      `DEBUG: Actualizando filtro ${selectId} con ${opciones.length} opciones`
+    );
 
     // Guardar la opción seleccionada actual
     const selectedValue = select.value;
@@ -1462,8 +1503,10 @@ endblock %} {% block content %}
     if (selectedValue && opciones.includes(selectedValue)) {
       select.value = selectedValue;
     }
-    
-    console.log(`DEBUG: Filtro ${selectId} actualizado con ${select.options.length} opciones`);
+
+    console.log(
+      `DEBUG: Filtro ${selectId} actualizado con ${select.options.length} opciones`
+    );
   }
 
   // Función para cargar subcategorías de una categoría específica
@@ -1533,7 +1576,9 @@ endblock %} {% block content %}
       console.log(`DEBUG: No se encontró el elemento con ID: ${selectId}`);
       return;
     }
-    console.log(`DEBUG: Actualizando select ${selectId} con ${opciones.length} opciones`);
+    console.log(
+      `DEBUG: Actualizando select ${selectId} con ${opciones.length} opciones`
+    );
 
     // Guardar la opción seleccionada actual
     const selectedValue = select.value;
@@ -1573,16 +1618,23 @@ endblock %} {% block content %}
   // Configurar eventos para el modal de nueva frase
   function configurarEventosNuevaFrase() {
     // Event listener para cuando se abre el modal
-    document.getElementById('modalNuevaFrase').addEventListener('show.bs.modal', function () {
-      console.log('DEBUG: Modal nueva frase abierto, verificando categorías...');
-      // Asegurar que las categorías estén cargadas
-      if (window.categoriasGlobales && window.categoriasGlobales.length > 0) {
-        actualizarSelectConOpciones('frase-categoria', window.categoriasGlobales);
-      } else {
-        console.log('DEBUG: Recargando categorías para modal nueva frase...');
-        cargarCategorias();
-      }
-    });
+    document
+      .getElementById("modalNuevaFrase")
+      .addEventListener("show.bs.modal", function () {
+        console.log(
+          "DEBUG: Modal nueva frase abierto, verificando categorías..."
+        );
+        // Asegurar que las categorías estén cargadas
+        if (window.categoriasGlobales && window.categoriasGlobales.length > 0) {
+          actualizarSelectConOpciones(
+            "frase-categoria",
+            window.categoriasGlobales
+          );
+        } else {
+          console.log("DEBUG: Recargando categorías para modal nueva frase...");
+          cargarCategorias();
+        }
+      });
 
     // Cuando cambia la categoría, cargar las subcategorías correspondientes
     document
@@ -1627,16 +1679,25 @@ endblock %} {% block content %}
   // Configurar eventos para el modal de editar frase
   function configurarEventosEditarFrase() {
     // Event listener para cuando se abre el modal
-    document.getElementById('modalEditarFrase').addEventListener('show.bs.modal', function () {
-      console.log('DEBUG: Modal editar frase abierto, verificando categorías...');
-      // Asegurar que las categorías estén cargadas
-      if (window.categoriasGlobales && window.categoriasGlobales.length > 0) {
-        actualizarSelectConOpciones('editar-frase-categoria', window.categoriasGlobales);
-      } else {
-        console.log('DEBUG: Recargando categorías para modal editar frase...');
-        cargarCategorias();
-      }
-    });
+    document
+      .getElementById("modalEditarFrase")
+      .addEventListener("show.bs.modal", function () {
+        console.log(
+          "DEBUG: Modal editar frase abierto, verificando categorías..."
+        );
+        // Asegurar que las categorías estén cargadas
+        if (window.categoriasGlobales && window.categoriasGlobales.length > 0) {
+          actualizarSelectConOpciones(
+            "editar-frase-categoria",
+            window.categoriasGlobales
+          );
+        } else {
+          console.log(
+            "DEBUG: Recargando categorías para modal editar frase..."
+          );
+          cargarCategorias();
+        }
+      });
 
     // Cuando cambia la categoría en edición, cargar subcategorías
     document
@@ -1897,28 +1958,44 @@ endblock %} {% block content %}
   // Configurar eventos para los modales de audios
   function configurarEventosAudios() {
     // Event listener para cuando se abre el modal de nuevo audio
-    document.getElementById('modalNuevoAudio').addEventListener('show.bs.modal', function () {
-      console.log('DEBUG: Modal nuevo audio abierto, verificando categorías...');
-      // Asegurar que las categorías estén cargadas
-      if (window.categoriasGlobales && window.categoriasGlobales.length > 0) {
-        actualizarSelectConOpciones('audio-categoria', window.categoriasGlobales);
-      } else {
-        console.log('DEBUG: Recargando categorías para modal nuevo audio...');
-        cargarCategorias();
-      }
-    });
+    document
+      .getElementById("modalNuevoAudio")
+      .addEventListener("show.bs.modal", function () {
+        console.log(
+          "DEBUG: Modal nuevo audio abierto, verificando categorías..."
+        );
+        // Asegurar que las categorías estén cargadas
+        if (window.categoriasGlobales && window.categoriasGlobales.length > 0) {
+          actualizarSelectConOpciones(
+            "audio-categoria",
+            window.categoriasGlobales
+          );
+        } else {
+          console.log("DEBUG: Recargando categorías para modal nuevo audio...");
+          cargarCategorias();
+        }
+      });
 
     // Event listener para cuando se abre el modal de editar audio
-    document.getElementById('modalEditarAudio').addEventListener('show.bs.modal', function () {
-      console.log('DEBUG: Modal editar audio abierto, verificando categorías...');
-      // Asegurar que las categorías estén cargadas
-      if (window.categoriasGlobales && window.categoriasGlobales.length > 0) {
-        actualizarSelectConOpciones('editar-audio-categoria', window.categoriasGlobales);
-      } else {
-        console.log('DEBUG: Recargando categorías para modal editar audio...');
-        cargarCategorias();
-      }
-    });
+    document
+      .getElementById("modalEditarAudio")
+      .addEventListener("show.bs.modal", function () {
+        console.log(
+          "DEBUG: Modal editar audio abierto, verificando categorías..."
+        );
+        // Asegurar que las categorías estén cargadas
+        if (window.categoriasGlobales && window.categoriasGlobales.length > 0) {
+          actualizarSelectConOpciones(
+            "editar-audio-categoria",
+            window.categoriasGlobales
+          );
+        } else {
+          console.log(
+            "DEBUG: Recargando categorías para modal editar audio..."
+          );
+          cargarCategorias();
+        }
+      });
 
     // Cuando cambia la categoría en nuevo audio, cargar subcategorías
     document
@@ -1946,8 +2023,9 @@ endblock %} {% block content %}
     document
       .getElementById("audio-subcategoria")
       .addEventListener("change", function () {
-        document.getElementById("nueva-subcategoria-container-audio").style.display =
-          this.value === "nueva" ? "block" : "none";
+        document.getElementById(
+          "nueva-subcategoria-container-audio"
+        ).style.display = this.value === "nueva" ? "block" : "none";
       });
 
     // Cuando cambia la categoría en editar audio, cargar subcategorías
@@ -2055,7 +2133,9 @@ endblock %} {% block content %}
     cargarCategoriasParaFiltrosAudios();
 
     // Evento para cambio de categoría en filtros de audios
-    const filtroCategoriaAudios = document.getElementById("filtro-categoria-audios");
+    const filtroCategoriaAudios = document.getElementById(
+      "filtro-categoria-audios"
+    );
     if (filtroCategoriaAudios) {
       filtroCategoriaAudios.addEventListener("change", async function () {
         const categoria = this.value;
@@ -2065,7 +2145,7 @@ endblock %} {% block content %}
           await cargarSubcategoriasParaFiltrosAudios(categoria);
         } else {
           // Si no hay categoría seleccionada, cargar todas las subcategorías que tienen audios
-          await cargarSubcategoriasParaFiltrosAudios('');
+          await cargarSubcategoriasParaFiltrosAudios("");
         }
 
         // Recargar audios con el nuevo filtro
@@ -2076,7 +2156,9 @@ endblock %} {% block content %}
     }
 
     // Evento para cambio de subcategoría en filtros de audios
-    const filtroSubcategoriaAudios = document.getElementById("filtro-subcategoria-audios");
+    const filtroSubcategoriaAudios = document.getElementById(
+      "filtro-subcategoria-audios"
+    );
     if (filtroSubcategoriaAudios) {
       filtroSubcategoriaAudios.addEventListener("change", function () {
         // Recargar audios con el nuevo filtro
@@ -2104,12 +2186,17 @@ endblock %} {% block content %}
       console.log("Datos recibidos (filtros audios):", data);
 
       const categorias = Array.isArray(data.categorias) ? data.categorias : [];
-      const subcategorias = Array.isArray(data.subcategorias) ? data.subcategorias : [];
+      const subcategorias = Array.isArray(data.subcategorias)
+        ? data.subcategorias
+        : [];
 
       // Actualizar el select de categoría en los filtros de audios
-      const selectCategoria = document.getElementById("filtro-categoria-audios");
+      const selectCategoria = document.getElementById(
+        "filtro-categoria-audios"
+      );
       if (selectCategoria) {
-        selectCategoria.innerHTML = '<option value="">Todas las categorías</option>';
+        selectCategoria.innerHTML =
+          '<option value="">Todas las categorías</option>';
 
         categorias.forEach((categoria) => {
           const option = document.createElement("option");
@@ -2120,9 +2207,12 @@ endblock %} {% block content %}
       }
 
       // Actualizar el select de subcategoría en los filtros de audios
-      const selectSubcategoria = document.getElementById("filtro-subcategoria-audios");
+      const selectSubcategoria = document.getElementById(
+        "filtro-subcategoria-audios"
+      );
       if (selectSubcategoria) {
-        selectSubcategoria.innerHTML = '<option value="">Todas las subcategorías</option>';
+        selectSubcategoria.innerHTML =
+          '<option value="">Todas las subcategorías</option>';
 
         subcategorias.forEach((subcategoria) => {
           const option = document.createElement("option");
@@ -2133,10 +2223,16 @@ endblock %} {% block content %}
       }
 
       console.log("Categorías cargadas en filtros de audios:", categorias);
-      console.log("Subcategorías cargadas en filtros de audios:", subcategorias);
+      console.log(
+        "Subcategorías cargadas en filtros de audios:",
+        subcategorias
+      );
       return categorias;
     } catch (error) {
-      console.error("Error al cargar categorías para filtros de audios:", error);
+      console.error(
+        "Error al cargar categorías para filtros de audios:",
+        error
+      );
       return [];
     }
   }
@@ -2163,7 +2259,10 @@ endblock %} {% block content %}
         });
       }
     } catch (error) {
-      console.error("Error al cargar subcategorías para filtros de audios:", error);
+      console.error(
+        "Error al cargar subcategorías para filtros de audios:",
+        error
+      );
     }
   }
 
@@ -2470,7 +2569,9 @@ endblock %} {% block content %}
 
         // Ocultar título y controles de objetivos
         const tituloObjetivos = document.getElementById("titulo-objetivos");
-        const controlesObjetivos = document.getElementById("controles-objetivos");
+        const controlesObjetivos = document.getElementById(
+          "controles-objetivos"
+        );
 
         if (tituloObjetivos) {
           tituloObjetivos.classList.add("d-none");
@@ -2486,11 +2587,11 @@ endblock %} {% block content %}
         setTimeout(async () => {
           // Cargar categorías para audios (después de que el contenido esté visible)
           await cargarCategoriasParaFormularios();
-          
+
           // Configurar event listeners
           configurarEventListenersAudios();
           configurarEventosFiltrosAudios();
-          
+
           // Cargar audios al final
           if (typeof cargarAudios === "function") {
             cargarAudios();
@@ -2520,7 +2621,9 @@ endblock %} {% block content %}
       <form id="form-nuevo-audio" enctype="multipart/form-data">
         <div class="modal-header">
           <div class="d-flex align-items-center gap-2">
-            <span class="modal-icon"><i class="bi bi-music-note-beamed"></i></span>
+            <span class="modal-icon"
+              ><i class="bi bi-music-note-beamed"></i
+            ></span>
             <h5 class="modal-title mb-0" id="modalNuevoAudioLabel">
               Agregar Nuevo Audio
             </h5>
@@ -2567,7 +2670,9 @@ endblock %} {% block content %}
               accept=".mp3,.wav,.m4a,.ogg"
               required
             />
-            <small class="text-muted">Formatos permitidos: MP3, WAV, M4A, OGG. Máximo 50 MB.</small>
+            <small class="text-muted"
+              >Formatos permitidos: MP3, WAV, M4A, OGG. Máximo 50 MB.</small
+            >
           </div>
           <div class="mb-3">
             <label for="audio-categoria" class="form-label fw-semibold"
@@ -2637,7 +2742,11 @@ endblock %} {% block content %}
           </div>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          <button
+            type="button"
+            class="btn btn-secondary"
+            data-bs-dismiss="modal"
+          >
             Cancelar
           </button>
           <button type="submit" class="btn btn-primary">
@@ -2722,11 +2831,17 @@ endblock %} {% block content %}
             </div>
           </div>
           <div class="mb-3">
-            <label for="editar-audio-subcategoria" class="form-label fw-semibold"
+            <label
+              for="editar-audio-subcategoria"
+              class="form-label fw-semibold"
               >Subcategoría</label
             >
             <div class="d-flex gap-2">
-              <select class="form-select" id="editar-audio-subcategoria" required>
+              <select
+                class="form-select"
+                id="editar-audio-subcategoria"
+                required
+              >
                 <option value="">Selecciona una subcategoría</option>
                 <option value="nueva">+ Nueva subcategoría</option>
               </select>
@@ -2757,12 +2872,14 @@ endblock %} {% block content %}
           </div>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          <button
+            type="button"
+            class="btn btn-secondary"
+            data-bs-dismiss="modal"
+          >
             Cancelar
           </button>
-          <button type="submit" class="btn btn-primary">
-            Guardar Cambios
-          </button>
+          <button type="submit" class="btn btn-primary">Guardar Cambios</button>
         </div>
       </form>
     </div>

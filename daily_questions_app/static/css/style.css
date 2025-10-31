@@ -2723,4 +2723,87 @@ s para etiquetas de objetivos saltados */
 /* Animación suave para el texto del botón */
 .btn {
     transition: all 0.3s ease;
+}/* Es
+tilos para partes del día */
+.parte-dia-mañana {
+    background-color: #fff9c4 !important; /* Amarillo claro */
+    border-left: 4px solid #fbbf24 !important;
+}
+
+.parte-dia-tarde {
+    background-color: #fed7aa !important; /* Anaranjado claro */
+    border-left: 4px solid #f97316 !important;
+}
+
+.parte-dia-noche {
+    background-color: #dbeafe !important; /* Azul oscuro claro */
+    border-left: 4px solid #3b82f6 !important;
+    color: #1e40af !important;
+}
+
+/* Asegurar que los estilos se apliquen tanto a cards como a items de lista */
+.objetivo-card.parte-dia-mañana,
+.objetivo-lista-item.parte-dia-mañana {
+    background-color: #fff9c4 !important;
+    border-left: 4px solid #fbbf24 !important;
+}
+
+.objetivo-card.parte-dia-tarde,
+.objetivo-lista-item.parte-dia-tarde {
+    background-color: #fed7aa !important;
+    border-left: 4px solid #f97316 !important;
+}
+
+.objetivo-card.parte-dia-noche,
+.objetivo-lista-item.parte-dia-noche {
+    background-color: #dbeafe !important;
+    border-left: 4px solid #3b82f6 !important;
+    color: #1e40af !important;
+}
+
+/* Estilos para el texto en objetivos de noche */
+.objetivo-card.parte-dia-noche .objetivo-titulo,
+.objetivo-lista-item.parte-dia-noche .objetivo-titulo {
+    color: #1e40af !important;
+}
+
+.objetivo-card.parte-dia-noche .objetivo-desc,
+.objetivo-lista-item.parte-dia-noche .objetivo-desc {
+    color: #1e40af !important;
+}/
+* Estilos para etiquetas de parte del día */
+.objetivo-lista-etiqueta.parte-dia {
+    background-color: #f8f9fa;
+    color: #495057;
+    border: 1px solid #dee2e6;
+}
+
+.objetivo-parte-dia {
+    color: #6c757d !important;
+    font-weight: 500;
+}
+
+/* Colores específicos para iconos de parte del día */
+.objetivo-parte-dia i.bi-sunrise {
+    color: #fbbf24 !important;
+}
+
+.objetivo-parte-dia i.bi-sun {
+    color: #f97316 !important;
+}
+
+.objetivo-parte-dia i.bi-moon {
+    color: #3b82f6 !important;
+}
+
+.objetivo-lista-etiqueta.parte-dia i.bi-sunrise {
+    color: #fbbf24 !important;
+}
+
+.objetivo-lista-etiqueta.parte-dia i.bi-sun {
+    color: #f97316 !important;
+}
+
+.objetivo-lista-etiqueta.parte-dia i.bi-moon {
+    color: #3b82f6 !important;
 }

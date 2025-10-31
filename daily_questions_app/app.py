@@ -3208,7 +3208,7 @@ def api_list_objetivos():
         cursor.execute('''
             SELECT o.id, o.titulo, o.descripcion, o.prioridad, o.categoria, o.completado, o.fecha_creacion, o.fecha_completado, 
                    o.objetivo_padre_id, o.es_padre, o.estado, o.fecha_inicio, o.fecha_fin, 
-                   o.horas_estimadas, o.recompensa, o.recurrente, o.frecuencia, o.orden,
+                   o.horas_estimadas, o.recompensa, o.recurrente, o.frecuencia, o.orden, o.parte_dia,
                    CASE WHEN os.objetivo_id IS NOT NULL THEN 1 ELSE 0 END as saltado_hoy
             FROM objetivos o
             LEFT JOIN objetivos_saltados os ON o.id = os.objetivo_id AND os.user_id = o.user_id AND os.fecha_saltada = ?
@@ -3218,6 +3218,12 @@ def api_list_objetivos():
                     WHEN o.completado = 1 THEN 2
                     WHEN os.objetivo_id IS NOT NULL THEN 1
                     ELSE 0
+                END ASC,
+                CASE 
+                    WHEN o.parte_dia = 'mañana' THEN 1
+                    WHEN o.parte_dia = 'tarde' THEN 2
+                    WHEN o.parte_dia = 'noche' THEN 3
+                    ELSE 4
                 END ASC,
                 o.orden ASC, 
                 o.fecha_creacion DESC
@@ -3244,7 +3250,8 @@ def api_list_objetivos():
                 'recurrente': bool(row[15]) if len(row) > 15 else False,
                 'frecuencia': row[16] if len(row) > 16 else None,
                 'orden': row[17] if len(row) > 17 else 0,
-                'saltado_hoy': bool(row[18]) if len(row) > 18 else False
+                'parte_dia': row[18] if len(row) > 18 else None,
+                'saltado_hoy': bool(row[19]) if len(row) > 19 else False
             }
             # Verificar si el objetivo está vencido
             vencido = es_objetivo_vencido(obj, hoy)
@@ -3539,6 +3546,7 @@ def api_create_objetivo():
     fecha_fin = parse_fecha(data.get('fecha_fin'))
     horas_estimadas = data.get('horas_estimadas')
     recompensa = data.get('recompensa')
+    parte_dia = data.get('parte_dia')
     recurrente = int(bool(data.get('recurrente', False)))
     frecuencia = data.get('frecuencia') if recurrente else None
     if not titulo:
@@ -3554,9 +3562,9 @@ def api_create_objetivo():
         max_orden = cursor.fetchone()[0]
         nuevo_orden = max_orden + 1
         
-        cursor.execute('''INSERT INTO objetivos (user_id, titulo, descripcion, prioridad, categoria, completado, fecha_creacion, objetivo_padre_id, es_padre, estado, fecha_inicio, fecha_fin, horas_estimadas, recompensa, recurrente, frecuencia, orden)
+        cursor.execute('''INSERT INTO objetivos (user_id, titulo, descripcion, prioridad, categoria, completado, fecha_creacion, objetivo_padre_id, es_padre, estado, fecha_inicio, fecha_fin, horas_estimadas, recompensa, parte_dia, recurrente, frecuencia, orden)
         OUTPUT INSERTED.id
-        VALUES (?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''', (current_user.id, titulo, descripcion, prioridad, categoria, fecha_creacion, objetivo_padre_id, es_padre, estado, fecha_inicio, fecha_fin, horas_estimadas, recompensa, recurrente, frecuencia, nuevo_orden))
+        VALUES (?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''', (current_user.id, titulo, descripcion, prioridad, categoria, fecha_creacion, objetivo_padre_id, es_padre, estado, fecha_inicio, fecha_fin, horas_estimadas, recompensa, parte_dia, recurrente, frecuencia, nuevo_orden))
         objetivo_id = cursor.fetchone()[0]
         conn.commit()
         return jsonify({'status': 'success', 'id': objetivo_id})
@@ -3575,7 +3583,7 @@ def api_update_objetivo(objetivo_id):
     #     return restaurar_objetivo_completo(objetivo_id)
     
     campos = {}
-    for campo in ['titulo', 'descripcion', 'prioridad', 'categoria', 'objetivo_padre_id', 'es_padre', 'estado', 'fecha_inicio', 'fecha_fin', 'horas_estimadas', 'recompensa', 'recurrente', 'frecuencia']:
+    for campo in ['titulo', 'descripcion', 'prioridad', 'categoria', 'objetivo_padre_id', 'es_padre', 'estado', 'fecha_inicio', 'fecha_fin', 'horas_estimadas', 'recompensa', 'parte_dia', 'recurrente', 'frecuencia']:
         if campo in data:
             if campo in ['fecha_inicio', 'fecha_fin']:
                 campos[campo] = parse_fecha(data[campo])
