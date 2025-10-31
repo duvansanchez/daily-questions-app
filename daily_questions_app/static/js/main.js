@@ -1485,7 +1485,7 @@ function renderObjetivos() {
             if (obj.completado) elemento.classList.add('objetivo-completado');
             if (obj.saltado_hoy) elemento.classList.add('objetivo-inactivo-hoy');
             // Aplicar borde azul a objetivos activos (no completados, no saltados, no históricos)
-            const esActivo = !obj.completado && !obj.saltado_hoy && obj.estado !== 'histórico' && categoriaActual !== 'historico';
+            const esActivo = !obj.completado && !obj.saltado_hoy && categoriaActual !== 'historico';
             if (esActivo) {
                 elemento.classList.add('resaltado-activo');
             }
@@ -1540,7 +1540,7 @@ function renderObjetivos() {
             if (obj.completado) elemento.classList.add('objetivo-completado');
             if (obj.saltado_hoy) elemento.classList.add('objetivo-inactivo-hoy');
             // Aplicar borde azul a objetivos activos (no completados, no saltados, no históricos)
-            const esActivo = !obj.completado && !obj.saltado_hoy && obj.estado !== 'histórico' && categoriaActual !== 'historico';
+            const esActivo = !obj.completado && !obj.saltado_hoy && categoriaActual !== 'historico';
             if (esActivo) {
                 elemento.classList.add('resaltado-activo');
             }
@@ -1550,7 +1550,7 @@ function renderObjetivos() {
                 <span class=\"objetivo-titulo\">${obj.titulo}</span>
                 <span class=\"etiqueta-prioridad ${obj.prioridad}\">${obj.prioridad.charAt(0).toUpperCase() + obj.prioridad.slice(1)}</span>
                 ${obj.categoria ? `<span class=\"etiqueta-categoria\">${obj.categoria.charAt(0).toUpperCase() + obj.categoria.slice(1)}</span>` : ''}
-                ${obj.estado ? `<span class=\"badge bg-secondary ms-1\">${obj.estado.replace('_', ' ').toUpperCase()}</span>` : ''}
+
                 ${obj.saltado_hoy ? `<span class='badge bg-secondary ms-1'>No activo hoy</span>` : ''}
                 ${obj.objetivo_padre_id && mapaObjetivosPadre[obj.objetivo_padre_id] ? `<div class='objetivo-padre small text-primary'><i class='bi bi-diagram-3'></i> Padre: ${mapaObjetivosPadre[obj.objetivo_padre_id]}</div>` : ''}
                 ${obj.descripcion ? `<div class=\"objetivo-desc\">${obj.descripcion}</div>` : ''}
@@ -1560,10 +1560,9 @@ function renderObjetivos() {
                     ${fechaInicio ? `<span class=\"objetivo-fecha\"><i class='bi bi-calendar-event'></i> Inicio: ${fechaInicio}</span>` : ''}
                     ${fechaFin ? `<span class=\"objetivo-fecha\"><i class='bi bi-calendar-check'></i> Fin: ${fechaFin}</span>` : ''}
                     ${obj.horas_estimadas ? `<span class=\"objetivo-horas\"><i class='bi bi-clock'></i> ${formatearHorasMinutos(obj.horas_estimadas)}</span>` : ''}
-                    ${obj.dificultad ? `<span class=\"objetivo-dificultad\"><i class='bi bi-bar-chart'></i> Dificultad: ${obj.dificultad}</span>` : ''}
-                    ${obj.etiquetas ? `<span class=\"objetivo-etiquetas\"><i class='bi bi-tags'></i> ${obj.etiquetas}</span>` : ''}
+
                 </div>
-                ${obj.notas_adicionales ? `<div class=\"objetivo-notas small text-info mt-1\"><i class='bi bi-info-circle'></i> ${obj.notas_adicionales}</div>` : ''}
+
                 <div class=\"subobjetivos-container\" id=\"subobjetivos-container-${obj.id}\">
                     <div class=\"subobjetivos-list\" id=\"subobjetivos-list-${obj.id}\"></div>
                     <div class=\"subobjetivos-add\" style=\"display:none;\" id=\"subobjetivos-add-${obj.id}\">
@@ -1889,7 +1888,6 @@ if (formNuevo) {
     const categoria = document.getElementById('modal-categoria-objetivo').value;
     const esPadre = document.getElementById('modal-es-padre-objetivo').checked;
     const objetivoPadreId = document.getElementById('modal-padre-objetivo').value || null;
-    const estado = document.getElementById('modal-estado-objetivo').value;
     const fechaInicio = document.getElementById('modal-fecha-inicio-objetivo').value || null;
     const fechaFin = document.getElementById('modal-fecha-fin-objetivo').value || null;
     const horas = document.getElementById('modal-horas-estimadas-objetivo').value;
@@ -1900,10 +1898,7 @@ if (formNuevo) {
       const m = parseInt(minutos) || 0;
       horasEstimadas = h + (m / 60);
     }
-    const dificultad = document.getElementById('modal-dificultad-objetivo').value || null;
-    const etiquetas = document.getElementById('modal-etiquetas-objetivo').value.trim();
     const recompensa = document.getElementById('modal-recompensa-objetivo').value.trim();
-    const notasAdicionales = document.getElementById('modal-notas-adicionales-objetivo').value.trim();
     const chkRecNuevo = document.getElementById('modal-recurrente-objetivo');
     let recurrente = chkRecNuevo.checked;
     let frecuencia = null;
@@ -1925,14 +1920,10 @@ if (formNuevo) {
           categoria,
           es_padre: esPadre,
           objetivo_padre_id: objetivoPadreId,
-          estado,
           fecha_inicio: fechaInicio,
           fecha_fin: fechaFin,
           horas_estimadas: horasEstimadas,
-          dificultad,
-          etiquetas,
           recompensa,
-          notas_adicionales: notasAdicionales,
           recurrente,
           frecuencia
         })
@@ -1982,7 +1973,6 @@ if (formEditar) {
     const categoria = document.getElementById('editar-categoria-objetivo').value.trim();
     const esPadre = document.getElementById('editar-es-padre-objetivo').checked;
     const objetivoPadreId = document.getElementById('editar-padre-objetivo').value || null;
-    const estado = document.getElementById('editar-estado-objetivo').value;
     const fechaInicio = document.getElementById('editar-fecha-inicio-objetivo').value || null;
     const fechaFin = document.getElementById('editar-fecha-fin-objetivo').value || null;
     const horasEdit = document.getElementById('editar-horas-estimadas-objetivo').value;
@@ -1993,10 +1983,7 @@ if (formEditar) {
       const m = parseInt(minutosEdit) || 0;
       horasEstimadas = h + (m / 60);
     }
-    const dificultad = document.getElementById('editar-dificultad-objetivo').value || null;
-    const etiquetas = document.getElementById('editar-etiquetas-objetivo').value.trim();
     const recompensa = document.getElementById('editar-recompensa-objetivo').value.trim();
-    const notasAdicionales = document.getElementById('editar-notas-adicionales-objetivo').value.trim();
     const chkRecEdit = document.getElementById('editar-recurrente-objetivo');
     let recurrente = false;
     if (chkRecEdit) {
@@ -2021,14 +2008,10 @@ if (formEditar) {
           categoria,
           es_padre: esPadre,
           objetivo_padre_id: objetivoPadreId,
-          estado,
           fecha_inicio: fechaInicio,
           fecha_fin: fechaFin,
           horas_estimadas: horasEstimadas,
-          dificultad,
-          etiquetas,
           recompensa,
-          notas_adicionales: notasAdicionales,
           recurrente,
           frecuencia
         })
@@ -2203,15 +2186,11 @@ document.addEventListener('click', async function(e) {
     document.getElementById('editar-categoria-objetivo').value = objetivo.categoria || '';
     document.getElementById('editar-es-padre-objetivo').checked = !!objetivo.es_padre;
     document.getElementById('editar-padre-objetivo').value = objetivo.objetivo_padre_id || '';
-    document.getElementById('editar-estado-objetivo').value = objetivo.estado || 'pendiente';
     document.getElementById('editar-fecha-inicio-objetivo').value = formatFechaInput(objetivo.fecha_inicio);
     document.getElementById('editar-fecha-fin-objetivo').value = formatFechaInput(objetivo.fecha_fin);
     document.getElementById('editar-horas-estimadas-objetivo').value = objetivo.horas_estimadas ? Math.floor(objetivo.horas_estimadas) : '';
     document.getElementById('editar-minutos-estimados-objetivo').value = objetivo.horas_estimadas ? Math.round((objetivo.horas_estimadas - Math.floor(objetivo.horas_estimadas)) * 60) : '';
-    document.getElementById('editar-dificultad-objetivo').value = objetivo.dificultad || '';
-    document.getElementById('editar-etiquetas-objetivo').value = objetivo.etiquetas || '';
     document.getElementById('editar-recompensa-objetivo').value = objetivo.recompensa || '';
-    document.getElementById('editar-notas-adicionales-objetivo').value = objetivo.notas_adicionales || '';
     document.getElementById('editar-recurrente-objetivo').checked = !!objetivo.recurrente;
     // Mostrar el modal
     const modal = new bootstrap.Modal(document.getElementById('modalEditarObjetivo'));
@@ -2249,15 +2228,11 @@ function limpiarCamposNuevoObjetivo() {
     
     document.getElementById('modal-es-padre-objetivo').checked = false;
     document.getElementById('modal-padre-objetivo').value = '';
-    document.getElementById('modal-estado-objetivo').value = 'pendiente';
     document.getElementById('modal-fecha-inicio-objetivo').value = '';
     document.getElementById('modal-fecha-fin-objetivo').value = '';
     document.getElementById('modal-horas-estimadas-objetivo').value = '';
     document.getElementById('modal-minutos-estimados-objetivo').value = '';
-    document.getElementById('modal-dificultad-objetivo').value = '';
-    document.getElementById('modal-etiquetas-objetivo').value = '';
     document.getElementById('modal-recompensa-objetivo').value = '';
-    document.getElementById('modal-notas-adicionales-objetivo').value = '';
     document.getElementById('modal-recurrente-objetivo').checked = false;
 }
 

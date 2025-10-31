@@ -3207,8 +3207,8 @@ def api_list_objetivos():
         hoy = datetime.now().date()
         cursor.execute('''
             SELECT o.id, o.titulo, o.descripcion, o.prioridad, o.categoria, o.completado, o.fecha_creacion, o.fecha_completado, 
-                   o.objetivo_padre_id, o.es_padre, o.estado, o.fecha_inicio, o.fecha_fin, o.fecha_proyeccion_comienzo, 
-                   o.horas_estimadas, o.dificultad, o.etiquetas, o.recompensa, o.notas_adicionales, o.recurrente, o.frecuencia, o.orden,
+                   o.objetivo_padre_id, o.es_padre, o.estado, o.fecha_inicio, o.fecha_fin, 
+                   o.horas_estimadas, o.recompensa, o.recurrente, o.frecuencia, o.orden,
                    CASE WHEN os.objetivo_id IS NOT NULL THEN 1 ELSE 0 END as saltado_hoy
             FROM objetivos o
             LEFT JOIN objetivos_saltados os ON o.id = os.objetivo_id AND os.user_id = o.user_id AND os.fecha_saltada = ?
@@ -3239,16 +3239,12 @@ def api_list_objetivos():
                 'estado': row[10],
                 'fecha_inicio': row[11].strftime('%Y-%m-%d') if row[11] else None,
                 'fecha_fin': row[12].strftime('%Y-%m-%d') if row[12] else None,
-                'fecha_proyeccion_comienzo': row[13].strftime('%Y-%m-%d') if row[13] else None,
-                'horas_estimadas': row[14],
-                'dificultad': row[15],
-                'etiquetas': row[16],
-                'recompensa': row[17],
-                'notas_adicionales': row[18],
-                'recurrente': bool(row[19]) if len(row) > 19 else False,
-                'frecuencia': row[20] if len(row) > 20 else None,
-                'orden': row[21] if len(row) > 21 else 0,
-                'saltado_hoy': bool(row[22]) if len(row) > 22 else False
+                'horas_estimadas': row[13],
+                'recompensa': row[14],
+                'recurrente': bool(row[15]) if len(row) > 15 else False,
+                'frecuencia': row[16] if len(row) > 16 else None,
+                'orden': row[17] if len(row) > 17 else 0,
+                'saltado_hoy': bool(row[18]) if len(row) > 18 else False
             }
             # Verificar si el objetivo está vencido
             vencido = es_objetivo_vencido(obj, hoy)
@@ -3430,7 +3426,7 @@ def verificar_proyecciones_comienzo():
                        u.username, u.password
                 FROM objetivos o
                 JOIN [user] u ON o.user_id = u.id
-                WHERE o.fecha_proyeccion_comienzo = ?
+                WHERE o.fecha_inicio = ?
                 AND o.completado = 0
             """, (hoy,))
             
@@ -3541,12 +3537,8 @@ def api_create_objetivo():
     estado = data.get('estado')
     fecha_inicio = parse_fecha(data.get('fecha_inicio'))
     fecha_fin = parse_fecha(data.get('fecha_fin'))
-    fecha_proyeccion_comienzo = parse_fecha(data.get('fecha_proyeccion_comienzo'))
     horas_estimadas = data.get('horas_estimadas')
-    dificultad = data.get('dificultad')
-    etiquetas = data.get('etiquetas')
     recompensa = data.get('recompensa')
-    notas_adicionales = data.get('notas_adicionales')
     recurrente = int(bool(data.get('recurrente', False)))
     frecuencia = data.get('frecuencia') if recurrente else None
     if not titulo:
@@ -3562,9 +3554,9 @@ def api_create_objetivo():
         max_orden = cursor.fetchone()[0]
         nuevo_orden = max_orden + 1
         
-        cursor.execute('''INSERT INTO objetivos (user_id, titulo, descripcion, prioridad, categoria, completado, fecha_creacion, objetivo_padre_id, es_padre, estado, fecha_inicio, fecha_fin, fecha_proyeccion_comienzo, horas_estimadas, dificultad, etiquetas, recompensa, notas_adicionales, recurrente, frecuencia, orden)
+        cursor.execute('''INSERT INTO objetivos (user_id, titulo, descripcion, prioridad, categoria, completado, fecha_creacion, objetivo_padre_id, es_padre, estado, fecha_inicio, fecha_fin, horas_estimadas, recompensa, recurrente, frecuencia, orden)
         OUTPUT INSERTED.id
-        VALUES (?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''', (current_user.id, titulo, descripcion, prioridad, categoria, fecha_creacion, objetivo_padre_id, es_padre, estado, fecha_inicio, fecha_fin, fecha_proyeccion_comienzo, horas_estimadas, dificultad, etiquetas, recompensa, notas_adicionales, recurrente, frecuencia, nuevo_orden))
+        VALUES (?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''', (current_user.id, titulo, descripcion, prioridad, categoria, fecha_creacion, objetivo_padre_id, es_padre, estado, fecha_inicio, fecha_fin, horas_estimadas, recompensa, recurrente, frecuencia, nuevo_orden))
         objetivo_id = cursor.fetchone()[0]
         conn.commit()
         return jsonify({'status': 'success', 'id': objetivo_id})
@@ -3583,9 +3575,9 @@ def api_update_objetivo(objetivo_id):
     #     return restaurar_objetivo_completo(objetivo_id)
     
     campos = {}
-    for campo in ['titulo', 'descripcion', 'prioridad', 'categoria', 'objetivo_padre_id', 'es_padre', 'estado', 'fecha_inicio', 'fecha_fin', 'fecha_proyeccion_comienzo', 'horas_estimadas', 'dificultad', 'etiquetas', 'recompensa', 'notas_adicionales', 'recurrente', 'frecuencia']:
+    for campo in ['titulo', 'descripcion', 'prioridad', 'categoria', 'objetivo_padre_id', 'es_padre', 'estado', 'fecha_inicio', 'fecha_fin', 'horas_estimadas', 'recompensa', 'recurrente', 'frecuencia']:
         if campo in data:
-            if campo in ['fecha_inicio', 'fecha_fin', 'fecha_proyeccion_comienzo']:
+            if campo in ['fecha_inicio', 'fecha_fin']:
                 campos[campo] = parse_fecha(data[campo])
             elif campo == 'categoria':
                 campos[campo] = data[campo].strip().lower()
@@ -3774,7 +3766,7 @@ def api_objetivos_historico():
 
         where_clause = ' AND '.join(filtros)
         sql = f'''
-            SELECT id, titulo, descripcion, prioridad, categoria, completado, fecha_creacion, fecha_completado, objetivo_padre_id, es_padre, estado, fecha_inicio, fecha_fin, fecha_proyeccion_comienzo, horas_estimadas, dificultad, etiquetas, recompensa, notas_adicionales, recurrente
+            SELECT id, titulo, descripcion, prioridad, categoria, completado, fecha_creacion, fecha_completado, objetivo_padre_id, es_padre, estado, fecha_inicio, fecha_fin, horas_estimadas, recompensa, recurrente
             FROM objetivos
             WHERE {where_clause}
             ORDER BY fecha_creacion DESC
@@ -3801,13 +3793,9 @@ def api_objetivos_historico():
                 'estado': row[10],
                 'fecha_inicio': row[11].strftime('%Y-%m-%d') if row[11] else None,
                 'fecha_fin': row[12].strftime('%Y-%m-%d') if row[12] else None,
-                'fecha_proyeccion_comienzo': row[13].strftime('%Y-%m-%d') if row[13] else None,
-                'horas_estimadas': row[14],
-                'dificultad': row[15],
-                'etiquetas': row[16],
-                'recompensa': row[17],
-                'notas_adicionales': row[18],
-                'recurrente': bool(row[19])
+                'horas_estimadas': row[13],
+                'recompensa': row[14],
+                'recurrente': bool(row[15])
             }
             for row in rows
         ]

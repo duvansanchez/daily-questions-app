@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Upload Prevention</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-5">
+        <h2>🧪 Test: Sistema de Prevención de Múltiples Envíos</h2>
+        
+        <div class="alert alert-info">
+            <h5>✅ Funcionalidades implementadas:</h5>
+            <ul class="mb-0">
+                <li><strong>Prevención de múltiples envíos:</strong> Botón se deshabilita durante la subida</li>
+                <li><strong>Indicador visual:</strong> Spinner y mensaje de progreso</li>
+                <li><strong>Información del archivo:</strong> Nombre y tamaño del archivo</li>
+                <li><strong>Validación:</strong> Verifica que se haya seleccionado un archivo</li>
+                <li><strong>Restauración automática:</strong> Botón se rehabilita al finalizar</li>
+                <li><strong>Cierre inmediato:</strong> Modal se cierra al completar exitosamente</li>
+            </ul>
+        </div>
+        
+        <div class="alert alert-success">
+            <h5>🎯 Comportamiento esperado:</h5>
+            <ol class="mb-0">
+                <li>Usuario selecciona archivo de audio</li>
+                <li>Usuario hace clic en "Subir Audio"</li>
+                <li>Botón cambia a "Subiendo..." y se deshabilita</li>
+                <li>Aparece indicador de progreso con info del archivo</li>
+                <li>Si usuario intenta hacer clic de nuevo, no pasa nada</li>
+                <li>Al completar: modal se cierra, mensaje de éxito, lista se actualiza</li>
+            </ol>
+        </div>
+        
+        <div class="alert alert-warning">
+            <h5>🚫 Problemas solucionados:</h5>
+            <ul class="mb-0">
+                <li>❌ Múltiples envíos por clics repetidos</li>
+                <li>❌ Modal que no se cierra inmediatamente</li>
+                <li>❌ Falta de feedback visual durante la subida</li>
+                <li>❌ Usuario no sabe si el proceso está funcionando</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>

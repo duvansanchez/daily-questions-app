@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Category Filtering</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-5">
+        <h2>🧪 Test: Filtrado de Categorías Desactivadas</h2>
+        
+        <div class="alert alert-success">
+            <h5>✅ Problemas solucionados:</h5>
+            <ul class="mb-0">
+                <li><strong>Endpoint de frases actualizado:</strong> Solo devuelve categorías activas</li>
+                <li><strong>Subcategorías filtradas:</strong> Solo activas de categorías activas</li>
+                <li><strong>Alertas mejoradas:</strong> Usa SweetAlert2 como el resto del sistema</li>
+                <li><strong>Main.js incluido:</strong> Funciones showSuccess/showError disponibles</li>
+            </ul>
+        </div>
+        
+        <div class="alert alert-info">
+            <h5>🔧 Cambios realizados:</h5>
+            <ol class="mb-0">
+                <li><strong>API /api/frases/categorias:</strong> Agregado filtro <code>AND activa = 1</code></li>
+                <li><strong>Subcategorías:</strong> Filtro <code>AND s.activa = 1 AND c.activa = 1</code></li>
+                <li><strong>JavaScript:</strong> Reemplazado <code>alert()</code> por <code>showSuccess()/showError()</code></li>
+                <li><strong>Template:</strong> Incluido <code>main.js</code> para funciones de alerta</li>
+            </ol>
+        </div>
+        
+        <div class="alert alert-warning">
+            <h5>🧪 Flujo de prueba:</h5>
+            <ol class="mb-0">
+                <li>Ir a <strong>Gestionar Categorías</strong></li>
+                <li>Desactivar una categoría → Debería mostrar alerta SweetAlert2</li>
+                <li>Ir a <strong>Frases</strong> → La categoría desactivada NO debe aparecer en filtros</li>
+                <li>Crear nueva frase → La categoría desactivada NO debe aparecer en el select</li>
+                <li>Reactivar categoría → Debe volver a aparecer en frases</li>
+            </ol>
+        </div>
+        
+        <div class="alert alert-primary">
+            <h5>🎯 Comportamiento esperado:</h5>
+            <ul class="mb-0">
+                <li><strong>Gestión:</strong> Alertas bonitas con SweetAlert2</li>
+                <li><strong>Frases:</strong> Solo categorías activas en filtros y formularios</li>
+                <li><strong>Audios:</strong> Solo categorías activas en filtros y formularios</li>
+                <li><strong>Consistencia:</strong> Mismo sistema de alertas en toda la app</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>
