@@ -1258,10 +1258,12 @@ async function cargarObjetivos() {
         await new Promise(resolve => setTimeout(resolve, 300));
         
         renderObjetivos();
+        actualizarBotonToggleSaltados();
         ocultarSpinnerObjetivos();
     } catch (err) {
         objetivos = [];
         renderObjetivos();
+        actualizarBotonToggleSaltados();
         ocultarSpinnerObjetivos();
         showError('Error al cargar objetivos');
     }
@@ -1604,6 +1606,12 @@ function renderObjetivos() {
         }
         
         lista.appendChild(elemento);
+        
+        // Aplicar lógica de visibilidad de objetivos saltados
+        if (!mostrarObjetivosSaltados && obj.saltado_hoy) {
+            elemento.classList.add('objetivo-saltado-oculto');
+            elemento.style.display = 'none';
+        }
         
         // Cargar y renderizar subobjetivos para este objetivo
         if (vistaActual === 'tarjetas') {
@@ -2393,6 +2401,75 @@ document.getElementById('btn-deseleccionar-recurrentes')?.addEventListener('clic
     }
 });
 
+// Variable global para controlar la visibilidad de objetivos saltados
+let mostrarObjetivosSaltados = true;
+
+// Botón para ocultar/mostrar objetivos saltados
+document.getElementById('btn-toggle-saltados')?.addEventListener('click', function() {
+    mostrarObjetivosSaltados = !mostrarObjetivosSaltados;
+    actualizarBotonToggleSaltados();
+});
+
+function actualizarBotonToggleSaltados() {
+    const btn = document.getElementById('btn-toggle-saltados');
+    if (!btn) return;
+    
+    // Contar objetivos saltados
+    const objetivosSaltados = document.querySelectorAll('.objetivo-inactivo-hoy').length;
+    
+    if (mostrarObjetivosSaltados) {
+        // Mostrar objetivos saltados
+        btn.innerHTML = `<i class="bi bi-eye-slash"></i> Ocultar saltados${objetivosSaltados > 0 ? ` (${objetivosSaltados})` : ''}`;
+        btn.className = 'btn btn-outline-info btn-sm';
+        btn.title = 'Ocultar objetivos saltados';
+        
+        // Mostrar todos los objetivos saltados con animación
+        document.querySelectorAll('.objetivo-saltado-oculto').forEach(elemento => {
+            elemento.style.display = '';
+            setTimeout(() => {
+                elemento.classList.remove('objetivo-saltado-oculto');
+            }, 10);
+        });
+        
+    } else {
+        // Ocultar objetivos saltados
+        btn.innerHTML = `<i class="bi bi-eye"></i> Mostrar saltados${objetivosSaltados > 0 ? ` (${objetivosSaltados})` : ''}`;
+        btn.className = 'btn btn-outline-warning btn-sm';
+        btn.title = 'Mostrar objetivos saltados';
+        
+        // Ocultar todos los objetivos saltados con animación
+        document.querySelectorAll('.objetivo-card, .objetivo-lista-item').forEach(elemento => {
+            if (elemento.classList.contains('objetivo-inactivo-hoy')) {
+                elemento.classList.add('objetivo-saltado-oculto');
+                setTimeout(() => {
+                    elemento.style.display = 'none';
+                }, 300); // Esperar a que termine la animación
+            }
+        });
+    }
+}
+
+function actualizarContadorObjetivos() {
+    // Contar objetivos visibles por categoría
+    const categorias = ['diario', 'semanal', 'mensual', 'anual', 'general'];
+    
+    categorias.forEach(categoria => {
+        const selector = categoria === 'general' ? 
+            '.objetivo-card:not([data-categoria]), .objetivo-lista-item:not([data-categoria])' :
+            `.objetivo-card[data-categoria="${categoria}"], .objetivo-lista-item[data-categoria="${categoria}"]`;
+        
+        const objetivosCategoria = document.querySelectorAll(selector);
+        const objetivosVisibles = Array.from(objetivosCategoria).filter(el => 
+            el.style.display !== 'none' && !el.classList.contains('objetivo-saltado-oculto')
+        );
+        
+        // Actualizar badge de contador si existe
+        const badge = document.querySelector(`[data-bs-target="#${categoria}"] .badge`);
+        if (badge) {
+            badge.textContent = objetivosVisibles.length;
+        }
+    });
+}
 
 function es_objetivo_vencido_front(obj) {
     // Lógica similar a backend para saber si el objetivo ya está vencido

@@ -3009,4 +3009,26 @@ tilos para partes del día */
     margin-top: 10px !important;
     padding-top: 6px;
     border-top: 1px solid #f1f5f9;
+}/* Estil
+os para ocultar/mostrar objetivos saltados */
+.objetivo-saltado-oculto {
+    opacity: 0;
+    transform: scale(0.95);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    pointer-events: none;
+}
+
+/* Transición suave para mostrar objetivos */
+.objetivo-card, .objetivo-lista-item {
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+/* Botón de toggle saltados */
+#btn-toggle-saltados {
+    transition: all 0.2s ease;
+}
+
+#btn-toggle-saltados:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
