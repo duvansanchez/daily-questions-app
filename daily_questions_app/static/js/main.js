@@ -5208,8 +5208,28 @@ async function abrirModoFocus(objetivoId) {
         }
         
         if (elementos.tiempo) {
+            let textoTiempo = '';
+            
+            // Mostrar tiempo estimado si existe
             if (objetivo.horas_estimadas) {
-                elementos.tiempo.textContent = `⏱️ ${formatearHorasMinutos(objetivo.horas_estimadas)}`;
+                textoTiempo += `⏱️ Estimado: ${formatearHorasMinutos(objetivo.horas_estimadas)}`;
+            }
+            
+            // Mostrar tiempo acumulado de focus si existe
+            if (objetivo.tiempo_focus && objetivo.tiempo_focus > 0) {
+                const minutos = Math.floor(objetivo.tiempo_focus / 60);
+                const segundos = objetivo.tiempo_focus % 60;
+                const tiempoFocusFormateado = `${minutos}:${segundos.toString().padStart(2, '0')}`;
+                
+                if (textoTiempo) {
+                    textoTiempo += ` | 🎯 Focus: ${tiempoFocusFormateado}`;
+                } else {
+                    textoTiempo = `🎯 Tiempo Focus: ${tiempoFocusFormateado}`;
+                }
+            }
+            
+            if (textoTiempo) {
+                elementos.tiempo.textContent = textoTiempo;
                 elementos.tiempo.style.display = 'inline-block';
             } else {
                 elementos.tiempo.style.display = 'none';
@@ -5413,13 +5433,33 @@ function actualizarDisplayTimer() {
 document.getElementById('focus-completar').addEventListener('click', async function() {
     if (objetivoEnFocus) {
         try {
+            // Preparar datos para enviar
+            const datosActualizacion = {
+                completado: true
+            };
+            
+            // Si hay tiempo transcurrido, incluirlo
+            if (timerSeconds > 0) {
+                datosActualizacion.tiempo_focus = timerSeconds;
+                console.log(`⏱️ Guardando tiempo de focus: ${timerSeconds} segundos (${Math.floor(timerSeconds/60)}:${(timerSeconds%60).toString().padStart(2,'0')})`);
+            }
+            
             const response = await fetch(`/api/objetivos/${objetivoEnFocus.id}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ completado: true })
+                body: JSON.stringify(datosActualizacion)
             });
             
             if (response.ok) {
+                // Mostrar mensaje con tiempo si se registró
+                let mensaje = '¡Objetivo completado! 🎉';
+                if (timerSeconds > 0) {
+                    const minutos = Math.floor(timerSeconds / 60);
+                    const segundos = timerSeconds % 60;
+                    const tiempoFormateado = `${minutos}:${segundos.toString().padStart(2, '0')}`;
+                    mensaje += ` Tiempo registrado: ${tiempoFormateado}`;
+                }
+                
                 // Cerrar modal
                 const modal = bootstrap.Modal.getInstance(document.getElementById('modalFocusObjetivo'));
                 if (modal) modal.hide();
@@ -5427,11 +5467,12 @@ document.getElementById('focus-completar').addEventListener('click', async funct
                 // Recargar objetivos
                 await cargarObjetivos();
                 
-                showSuccess('¡Objetivo completado! 🎉');
+                showSuccess(mensaje);
             } else {
                 showError('Error al completar objetivo');
             }
         } catch (error) {
+            console.error('Error al completar objetivo:', error);
             showError('Error al completar objetivo');
         }
     }

@@ -3729,12 +3729,22 @@ def api_update_objetivo(objetivo_id):
     #     return restaurar_objetivo_completo(objetivo_id)
     
     campos = {}
-    for campo in ['titulo', 'descripcion', 'prioridad', 'categoria', 'objetivo_padre_id', 'es_padre', 'estado', 'fecha_inicio', 'fecha_fin', 'horas_estimadas', 'recompensa', 'parte_dia', 'recurrente', 'frecuencia']:
+    for campo in ['titulo', 'descripcion', 'prioridad', 'categoria', 'objetivo_padre_id', 'es_padre', 'estado', 'fecha_inicio', 'fecha_fin', 'horas_estimadas', 'recompensa', 'parte_dia', 'recurrente', 'frecuencia', 'tiempo_focus']:
         if campo in data:
             if campo in ['fecha_inicio', 'fecha_fin']:
                 campos[campo] = parse_fecha(data[campo])
             elif campo == 'categoria':
                 campos[campo] = data[campo].strip().lower()
+            elif campo == 'tiempo_focus':
+                # Validar que sea un número entero positivo
+                try:
+                    tiempo = int(data[campo])
+                    if tiempo >= 0:
+                        campos[campo] = tiempo
+                    else:
+                        logger.warning(f"Tiempo focus negativo ignorado: {tiempo}")
+                except (ValueError, TypeError):
+                    logger.warning(f"Tiempo focus inválido ignorado: {data[campo]}")
             else:
                 campos[campo] = data[campo]
     if 'completado' in data:
@@ -3758,8 +3768,48 @@ def api_update_objetivo(objetivo_id):
     values.extend([objetivo_id, current_user.id])
     with get_db_connection() as conn:
         cursor = conn.cursor()
+        
+        # Primero verificar si el objetivo es recurrente
+        cursor.execute("SELECT recurrente FROM objetivos WHERE id = ? AND user_id = ?", (objetivo_id, current_user.id))
+        objetivo_info = cursor.fetchone()
+        
+        if not objetivo_info:
+            return jsonify({'error': 'Objetivo no encontrado'}), 404
+        
+        es_recurrente = objetivo_info.recurrente
+        
+        # Actualizar el objetivo
         query = f"UPDATE objetivos SET {', '.join(set_clause)} WHERE id = ? AND user_id = ?"
         cursor.execute(query, tuple(values))
+        
+        # Si es un objetivo recurrente y se está marcando como completado, registrar en el log
+        if 'completado' in data and data['completado'] and es_recurrente:
+            # Verificar si ya existe un registro para hoy
+            hoy = datetime.now().date()
+            cursor.execute("""
+                SELECT COUNT(*) FROM objetivos_completados_log 
+                WHERE objetivo_id = ? AND user_id = ? AND CAST(fecha_completado AS DATE) = ?
+            """, (objetivo_id, current_user.id, hoy))
+            
+            existe_hoy = cursor.fetchone()[0] > 0
+            
+            if not existe_hoy:
+                # Registrar en el log de completados
+                cursor.execute("""
+                    INSERT INTO objetivos_completados_log (objetivo_id, user_id, fecha_completado)
+                    VALUES (?, ?, GETDATE())
+                """, (objetivo_id, current_user.id))
+                logger.info(f"Objetivo recurrente {objetivo_id} registrado en log de completados para hoy")
+        
+        # Si es un objetivo recurrente y se está desmarcando, eliminar del log de hoy
+        elif 'completado' in data and not data['completado'] and es_recurrente:
+            hoy = datetime.now().date()
+            cursor.execute("""
+                DELETE FROM objetivos_completados_log 
+                WHERE objetivo_id = ? AND user_id = ? AND CAST(fecha_completado AS DATE) = ?
+            """, (objetivo_id, current_user.id, hoy))
+            logger.info(f"Objetivo recurrente {objetivo_id} eliminado del log de completados para hoy")
+        
         conn.commit()
         return jsonify({'status': 'success'})
 

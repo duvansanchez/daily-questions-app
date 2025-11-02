@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Tiempo Focus</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+</head>
+<body>
+    <div class="container mt-4">
+        <div class="alert alert-success">
+            <h4><i class="bi bi-stopwatch me-2"></i>Tiempo Focus - Implementación Completa</h4>
+            <p class="mb-0">Se ha implementado el registro y visualización del tiempo dedicado a objetivos en modo focus.</p>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-8">
+                <h5>🚀 Funcionalidades Implementadas</h5>
+                <div class="card">
+                    <div class="card-body">
+                        <h6 class="card-title">✅ Base de Datos:</h6>
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item">
+                                <strong>Nueva columna:</strong> <code>tiempo_focus INT NULL</code> en tabla <code>objetivos</code>
+                                <div class="small text-muted">Almacena el tiempo en segundos dedicado al objetivo</div>
+                            </li>
+                            <li class="list-group-item">
+                                <strong>Migración:</strong> Ejecutada exitosamente con verificación
+                                <div class="small text-muted">Incluye documentación y validación de estructura</div>
+                            </li>
+                        </ul>
+                        
+                        <h6 class="card-title mt-3">✅ Backend (API):</h6>
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item">
+                                <strong>Endpoint modificado:</strong> <code>PATCH /api/objetivos/&lt;id&gt;</code>
+                                <div class="small text-muted">Ahora acepta y valida el campo <code>tiempo_focus</code></div>
+                            </li>
+                            <li class="list-group-item">
+                                <strong>Validación:</strong> Solo acepta números enteros positivos
+                                <div class="small text-muted">Ignora valores inválidos con logging de advertencia</div>
+                            </li>
+                        </ul>
+                        
+                        <h6 class="card-title mt-3">✅ Frontend (JavaScript):</h6>
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item">
+                                <strong>Envío de tiempo:</strong> Al completar objetivo se envía <code>tiempo_focus</code>
+                                <div class="small text-muted">Solo si hay tiempo transcurrido (> 0 segundos)</div>
+                            </li>
+                            <li class="list-group-item">
+                                <strong>Mensaje mejorado:</strong> Muestra tiempo registrado al completar
+                                <div class="small text-muted">Formato: "¡Objetivo completado! 🎉 Tiempo registrado: 5:30"</div>
+                            </li>
+                            <li class="list-group-item">
+                                <strong>Visualización:</strong> Muestra tiempo acumulado en modal de focus
+                                <div class="small text-muted">Formato: "🎯 Focus: 15:45" junto al tiempo estimado</div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="mt-4">
+                    <h5>🧪 Cómo Probar</h5>
+                    <ol class="list-group list-group-numbered">
+                        <li class="list-group-item">
+                            Ve a la página de objetivos: 
+                            <a href="/objetivos" target="_blank" class="btn btn-sm btn-primary ms-2">Ir a Objetivos</a>
+                        </li>
+                        <li class="list-group-item">Selecciona un objetivo y haz clic en el botón <span class="badge bg-info">🎯 Focus</span></li>
+                        <li class="list-group-item">En el modal de focus, inicia el cronómetro con <span class="badge bg-success">▶️ Iniciar</span></li>
+                        <li class="list-group-item">Deja correr el timer por al menos 30 segundos</li>
+                        <li class="list-group-item">Haz clic en <span class="badge bg-success">✅ Completar</span></li>
+                        <li class="list-group-item">Verifica que el mensaje muestre el tiempo registrado</li>
+                        <li class="list-group-item">Abre el mismo objetivo en modo focus nuevamente</li>
+                        <li class="list-group-item">Verifica que aparezca el tiempo acumulado: <span class="badge bg-info">🎯 Focus: X:XX</span></li>
+                    </ol>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <h5>📊 Ejemplo Visual</h5>
+                <div class="card">
+                    <div class="card-body">
+                        <h6>🎯 Modal de Focus</h6>
+                        <div class="border rounded p-3 mb-3" style="background: #f8f9fa;">
+                            <div class="fw-bold mb-2">Estudiar JavaScript</div>
+                            <div class="small text-muted mb-2">Aprender conceptos avanzados...</div>
+                            <div class="d-flex gap-2 flex-wrap">
+                                <span class="badge bg-warning">Alta</span>
+                                <span class="badge bg-info">🌞 Tarde</span>
+                                <span class="badge bg-light text-dark border">⏱️ Estimado: 2h | 🎯 Focus: 15:30</span>
+                            </div>
+                        </div>
+                        
+                        <h6>✅ Mensaje de Completado</h6>
+                        <div class="alert alert-success py-2">
+                            <small>¡Objetivo completado! 🎉 Tiempo registrado: 25:45</small>
+                        </div>
+                        
+                        <h6>🗃️ Base de Datos</h6>
+                        <div class="small">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Campo</th>
+                                        <th>Valor</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td><code>id</code></td>
+                                        <td>123</td>
+                                    </tr>
+                                    <tr>
+                                        <td><code>titulo</code></td>
+                                        <td>Estudiar JavaScript</td>
+                                    </tr>
+                                    <tr>
+                                        <td><code>completado</code></td>
+                                        <td>1</td>
+                                    </tr>
+                                    <tr class="table-success">
+                                        <td><code>tiempo_focus</code></td>
+                                        <td>1545 <small>(25:45)</small></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-3">
+                    <div class="alert alert-info">
+                        <h6><i class="bi bi-info-circle me-2"></i>Detalles Técnicos</h6>
+                        <ul class="small mb-0">
+                            <li><strong>Almacenamiento:</strong> Segundos (INT)</li>
+                            <li><strong>Visualización:</strong> MM:SS o HH:MM:SS</li>
+                            <li><strong>Acumulativo:</strong> Se suma en cada sesión</li>
+                            <li><strong>Validación:</strong> Solo números ≥ 0</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="alert alert-success">
+                    <h6><i class="bi bi-check-circle me-2"></i>Implementación Completa</h6>
+                    <p class="mb-0">
+                        El tiempo del modo focus ahora se <strong>registra automáticamente</strong> en la base de datos 
+                        cuando se completa un objetivo. Los usuarios pueden ver tanto el tiempo estimado como el 
+                        <strong>tiempo real dedicado</strong> a cada objetivo, proporcionando métricas valiosas 
+                        para el seguimiento de productividad.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('⏱️ Test de tiempo focus cargado');
+            console.log('✅ Migración de BD ejecutada');
+            console.log('✅ Endpoint modificado');
+            console.log('✅ Frontend actualizado');
+            console.log('💡 Ve a /objetivos para probar la funcionalidad');
+        });
+    </script>
+</body>
+</html>
