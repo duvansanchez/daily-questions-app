@@ -2402,7 +2402,7 @@ document.getElementById('btn-deseleccionar-recurrentes')?.addEventListener('clic
 });
 
 // Variable global para controlar la visibilidad de objetivos saltados
-let mostrarObjetivosSaltados = true;
+let mostrarObjetivosSaltados = false;
 
 // Botón para ocultar/mostrar objetivos saltados
 document.getElementById('btn-toggle-saltados')?.addEventListener('click', function() {

@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Objetivos Saltados Ocultos</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+</head>
+<body>
+    <div class="container mt-4">
+        <div class="alert alert-info">
+            <h4><i class="bi bi-eye-slash me-2"></i>Test: Objetivos Saltados Ocultos por Defecto</h4>
+            <p class="mb-0">Verificación de que los objetivos saltados están ocultos por defecto y solo se muestran al hacer clic en el botón.</p>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-8">
+                <h5>📋 Cambios Implementados</h5>
+                <div class="card">
+                    <div class="card-body">
+                        <h6 class="card-title">✅ Modificaciones realizadas:</h6>
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item">
+                                <strong>JavaScript:</strong> Cambiado <code>mostrarObjetivosSaltados = true</code> → <code>false</code>
+                            </li>
+                            <li class="list-group-item">
+                                <strong>HTML:</strong> Botón inicial cambiado de "Ocultar saltados" → "Mostrar saltados"
+                            </li>
+                            <li class="list-group-item">
+                                <strong>Estilo:</strong> Botón inicial cambiado de <code>btn-outline-info</code> → <code>btn-outline-warning</code>
+                            </li>
+                            <li class="list-group-item">
+                                <strong>Icono:</strong> Botón inicial cambiado de <code>bi-eye-slash</code> → <code>bi-eye</code>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="mt-4">
+                    <h5>🧪 Cómo Probar</h5>
+                    <ol class="list-group list-group-numbered">
+                        <li class="list-group-item">Ve a la página de objetivos: <a href="/objetivos" target="_blank" class="btn btn-sm btn-primary ms-2">Ir a Objetivos</a></li>
+                        <li class="list-group-item">Busca objetivos que tengan el estado "saltado" (deberían estar ocultos)</li>
+                        <li class="list-group-item">Verifica que el botón muestre <span class="badge bg-warning">👁️ Mostrar saltados</span></li>
+                        <li class="list-group-item">Haz clic en el botón para mostrar los objetivos saltados</li>
+                        <li class="list-group-item">El botón debería cambiar a <span class="badge bg-info">🙈 Ocultar saltados</span></li>
+                        <li class="list-group-item">Los objetivos saltados deberían aparecer con estilo diferente</li>
+                    </ol>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <h5>🎯 Comportamiento Esperado</h5>
+                <div class="card">
+                    <div class="card-body">
+                        <h6 class="text-success">✅ Estado Inicial (Por Defecto)</h6>
+                        <ul class="small">
+                            <li>Objetivos saltados: <strong>OCULTOS</strong></li>
+                            <li>Botón: <span class="badge bg-warning">👁️ Mostrar saltados</span></li>
+                            <li>Solo se ven objetivos activos y completados</li>
+                        </ul>
+                        
+                        <hr>
+                        
+                        <h6 class="text-info">ℹ️ Al Hacer Clic en el Botón</h6>
+                        <ul class="small">
+                            <li>Objetivos saltados: <strong>VISIBLES</strong></li>
+                            <li>Botón: <span class="badge bg-info">🙈 Ocultar saltados</span></li>
+                            <li>Se muestran todos los objetivos</li>
+                        </ul>
+                        
+                        <hr>
+                        
+                        <h6 class="text-secondary">🔄 Funcionalidad Toggle</h6>
+                        <ul class="small">
+                            <li>El botón alterna entre mostrar/ocultar</li>
+                            <li>El estado se mantiene durante la sesión</li>
+                            <li>Animaciones suaves al mostrar/ocultar</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="mt-3">
+                    <h6>🔍 Identificar Objetivos Saltados</h6>
+                    <div class="alert alert-light">
+                        <small>Los objetivos saltados suelen tener:</small>
+                        <ul class="small mb-0">
+                            <li>Clase CSS: <code>objetivo-inactivo-hoy</code></li>
+                            <li>Estilo visual diferente (más opaco)</li>
+                            <li>Indicador de "saltado" en la interfaz</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="alert alert-success">
+                    <h6><i class="bi bi-check-circle me-2"></i>Resultado Esperado</h6>
+                    <p class="mb-0">
+                        Ahora los objetivos saltados estarán <strong>ocultos por defecto</strong>, 
+                        proporcionando una vista más limpia de los objetivos activos. 
+                        Los usuarios pueden mostrarlos cuando necesiten revisarlos haciendo clic en el botón 
+                        <span class="badge bg-warning">👁️ Mostrar saltados</span>.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Verificar que los cambios se aplicaron correctamente
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🧪 Test de objetivos saltados ocultos por defecto');
+            console.log('✅ Página de prueba cargada');
+            console.log('💡 Ve a /objetivos para probar la funcionalidad');
+        });
+    </script>
+</body>
+</html>

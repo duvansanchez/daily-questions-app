@@ -162,12 +162,12 @@ endblock %} {% block content %}
           </div>
           <div class="d-flex justify-content-end mb-2 gap-2">
             <button
-              class="btn btn-outline-info btn-sm"
+              class="btn btn-outline-warning btn-sm"
               id="btn-toggle-saltados"
               type="button"
-              title="Ocultar/Mostrar objetivos saltados"
+              title="Mostrar objetivos saltados"
             >
-              <i class="bi bi-eye-slash"></i> Ocultar saltados
+              <i class="bi bi-eye"></i> Mostrar saltados
             </button>
             <button
               class="btn btn-outline-secondary btn-sm"
@@ -1500,8 +1500,7 @@ endblock %} {% block content %}
 <!-- Masonry.js CDN -->
 <script src="https://unpkg.com/masonry-layout@4/dist/masonry.pkgd.min.js"></script>
 
-<!-- Main JS para funcionalidad de frases -->
-<script src="{{ url_for('static', filename='js/main.js') }}?v=20241031-5"></script>
+<!-- Main JS ya se carga en base.html -->
 
 <!-- Toggle de activar/desactivar ahora gestionado por main.js -->
 
@@ -3016,6 +3015,108 @@ endblock %} {% block content %}
           <button type="submit" class="btn btn-primary">Guardar Cambios</button>
         </div>
       </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Detalle del Día -->
+<div
+  class="modal fade"
+  id="modalDetalleDia"
+  tabindex="-1"
+  aria-labelledby="modalDetalleDiaLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="modalDetalleDiaLabel">
+          <i class="bi bi-calendar-day me-2"></i>Detalle del día:
+          <span id="modalDetalleDiaFecha" class="text-primary"></span>
+        </h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        ></button>
+      </div>
+      <div class="modal-body">
+        <!-- Resumen del día -->
+        <div class="row mb-4">
+          <div class="col-md-6">
+            <div class="card bg-light">
+              <div class="card-body text-center">
+                <h3 class="text-primary mb-1" id="detalle-total-creados">0</h3>
+                <small class="text-muted">Objetivos Creados</small>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="card bg-light">
+              <div class="card-body text-center">
+                <h3 class="text-success mb-1" id="detalle-total-completados">
+                  0
+                </h3>
+                <small class="text-muted">Objetivos Completados</small>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tabs para objetivos -->
+        <ul class="nav nav-tabs" id="detalleTab" role="tablist">
+          <li class="nav-item" role="presentation">
+            <button
+              class="nav-link active"
+              id="creados-tab"
+              data-bs-toggle="tab"
+              data-bs-target="#creados"
+              type="button"
+              role="tab"
+            >
+              <i class="bi bi-plus-circle me-1"></i>Objetivos Creados
+              <span class="badge bg-primary ms-1" id="badge-creados">0</span>
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button
+              class="nav-link"
+              id="completados-tab"
+              data-bs-toggle="tab"
+              data-bs-target="#completados"
+              type="button"
+              role="tab"
+            >
+              <i class="bi bi-check-circle me-1"></i>Objetivos Completados
+              <span class="badge bg-success ms-1" id="badge-completados"
+                >0</span
+              >
+            </button>
+          </li>
+        </ul>
+
+        <div class="tab-content mt-3" id="detalleTabContent">
+          <!-- Tab Objetivos Creados -->
+          <div class="tab-pane fade show active" id="creados" role="tabpanel">
+            <div id="lista-objetivos-creados">
+              <!-- Se carga dinámicamente -->
+            </div>
+          </div>
+
+          <!-- Tab Objetivos Completados -->
+          <div class="tab-pane fade" id="completados" role="tabpanel">
+            <div id="lista-objetivos-completados">
+              <!-- Se carga dinámicamente -->
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          Cerrar
+        </button>
+      </div>
     </div>
   </div>
 </div>
