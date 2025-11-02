@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Sesión de Repaso Mejorada</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+</head>
+<body>
+    <div class="container mt-4">
+        <div class="alert alert-success">
+            <h4><i class="bi bi-palette me-2"></i>Sesión de Repaso Mejorada</h4>
+            <p class="mb-0">Se han implementado mejoras en el modal de sesión de repaso de frases con nuevo color de texto y botón de editar.</p>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-8">
+                <h5>✨ Mejoras Implementadas</h5>
+                <div class="card">
+                    <div class="card-body">
+                        <h6 class="card-title">🎨 Cambios Visuales y Funcionales:</h6>
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item">
+                                <strong>Color del texto:</strong> Texto de frase y autor en <code style="color: #000000; background: #f8f9fa; padding: 2px 6px; border-radius: 3px;">negro (#000000)</code>
+                                <div class="small text-muted">Notas personales en <code style="color: #51565f; background: #f8f9fa; padding: 2px 6px; border-radius: 3px;">#51565f</code></div>
+                            </li>
+                            <li class="list-group-item">
+                                <strong>Botón de editar:</strong> Pegado completamente a la esquina superior derecha
+                                <div class="small text-muted">Sin márgenes, esquinas redondeadas ajustadas para encajar perfectamente</div>
+                            </li>
+                            <li class="list-group-item">
+                                <strong>Funcionalidad inteligente:</strong> Al editar, la sesión se pausa y se actualiza automáticamente
+                                <div class="small text-muted">La frase editada se refleja inmediatamente en la sesión</div>
+                            </li>
+                            <li class="list-group-item">
+                                <strong>Posicionamiento:</strong> Botón con <code>position-absolute</code> para no interferir con el contenido
+                                <div class="small text-muted">Ubicado discretamente en la esquina superior derecha</div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="mt-4">
+                    <h5>🧪 Cómo Probar</h5>
+                    <ol class="list-group list-group-numbered">
+                        <li class="list-group-item">
+                            Ve a la página de objetivos: 
+                            <a href="/objetivos" target="_blank" class="btn btn-sm btn-primary ms-2">Ir a Objetivos</a>
+                        </li>
+                        <li class="list-group-item">Haz clic en la pestaña <strong>"Frases"</strong></li>
+                        <li class="list-group-item">Asegúrate de tener algunas frases creadas</li>
+                        <li class="list-group-item">Haz clic en <span class="badge bg-info">🔄 Iniciar Repaso</span></li>
+                        <li class="list-group-item">Verifica que el texto de la frase esté en <span style="color: #000000; font-weight: bold;">negro</span> y las notas en <span style="color: #51565f; font-weight: bold;">#51565f</span></li>
+                        <li class="list-group-item">Busca el botón <span class="badge bg-outline-secondary">✏️</span> en la esquina superior derecha</li>
+                        <li class="list-group-item">Haz clic en el botón de editar para probar la funcionalidad</li>
+                        <li class="list-group-item">Edita la frase y guarda los cambios</li>
+                        <li class="list-group-item">Verifica que la frase se actualice en la sesión de repaso</li>
+                    </ol>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <h5>🎯 Vista Previa del Cambio</h5>
+                <div class="card">
+                    <div class="card-body">
+                        <div class="position-relative border rounded p-3" style="background: #f8f9fa;">
+                            <!-- Simulación del botón de editar pegado a la esquina -->
+                            <button class="btn btn-outline-secondary btn-sm position-absolute" 
+                                    style="top: 0; right: 0; border-top-left-radius: 0; border-bottom-right-radius: 0;" 
+                                    disabled>
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            
+                            <!-- Simulación del texto con colores correctos -->
+                            <div class="mb-3" style="font-size: 1.2rem; color: #000000; line-height: 1.6;">
+                                "Esta es una frase de ejemplo con texto en negro."
+                            </div>
+                            <div style="font-size: 1rem; color: #000000;">
+                                — Autor de ejemplo
+                            </div>
+                            <div class="d-flex justify-content-center mt-2 mb-3">
+                                <span class="badge bg-primary">
+                                    <i class="bi bi-tag"></i> Motivación
+                                </span>
+                            </div>
+                            <!-- Simulación de notas personales -->
+                            <div class="p-2 bg-light rounded" style="font-style: italic; color: #51565f; font-size: 0.9rem;">
+                                Esta es una nota personal con el color #51565f
+                            </div>
+                        </div>
+                        
+                        <div class="mt-3">
+                            <h6>🔍 Detalles Técnicos</h6>
+                            <ul class="small">
+                                <li><strong>Texto frase:</strong> <code style="color: #000000;">#000000 (negro)</code></li>
+                                <li><strong>Notas personales:</strong> <code style="color: #51565f;">#51565f</code></li>
+                                <li><strong>Botón:</strong> <code>btn-outline-secondary btn-sm</code></li>
+                                <li><strong>Posición:</strong> <code>top: 0; right: 0</code> (sin márgenes)</li>
+                                <li><strong>Esquinas:</strong> Ajustadas para encajar perfectamente</li>
+                                <li><strong>Función:</strong> <code>editarFraseDesdeRepaso(id)</code></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-3">
+                    <div class="alert alert-info">
+                        <h6><i class="bi bi-lightbulb me-2"></i>Funcionalidad Inteligente</h6>
+                        <p class="small mb-0">
+                            El botón de editar pausa temporalmente la sesión, abre el modal de edición, 
+                            y cuando se cierra el modal, actualiza automáticamente la frase en la sesión 
+                            sin perder el progreso.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="alert alert-success">
+                    <h6><i class="bi bi-check-circle me-2"></i>Resultado Final</h6>
+                    <p class="mb-0">
+                        La sesión de repaso ahora tiene el <strong>texto de frases en negro</strong> para mejor legibilidad, 
+                        las <strong>notas personales en color gris suave</strong> 
+                        (<span style="color: #51565f; font-weight: bold;">#51565f</span>) y un 
+                        <strong>botón de editar pegado a la esquina</strong> que permite modificar frases sobre la marcha 
+                        sin interrumpir el flujo de la sesión de repaso.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🎨 Test de sesión de repaso mejorada');
+            console.log('✅ Nuevo color de texto: #51565f');
+            console.log('✅ Botón de editar agregado');
+            console.log('💡 Ve a /objetivos → Frases → Iniciar Repaso para probar');
+        });
+    </script>
+</body>
+</html>

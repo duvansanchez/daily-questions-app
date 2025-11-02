@@ -3449,7 +3449,7 @@ function mostrarInterfazRepaso() {
             </div>
             
             <!-- Barra de progreso -->
-            <div class="progress-container mb-4">
+            <div class="progress-container mb-3">
                 <div class="d-flex justify-content-between align-items-center mb-2">
                     <span class="fw-semibold">Progreso</span>
                     <span id="progreso-repaso">1 de ${sesionRepaso.frases.length}</span>
@@ -3460,6 +3460,14 @@ function mostrarInterfazRepaso() {
                          aria-valuenow="1" aria-valuemin="0" aria-valuemax="${sesionRepaso.frases.length}">
                     </div>
                 </div>
+            </div>
+            
+            <!-- Botón de editar frase actual -->
+            <div class="d-flex justify-content-end mb-4">
+                <button class="btn btn-outline-primary btn-sm" id="btn-editar-frase-repaso" 
+                        title="Editar esta frase">
+                    <i class="bi bi-pencil-square me-1"></i>Editar frase
+                </button>
             </div>
             
             <!-- Contenedor de frase -->
@@ -3517,19 +3525,25 @@ function mostrarFraseRepaso() {
     
     contenedor.innerHTML = `
         <div class="frase-repaso-card">
-            <div class="frase-texto-repaso mb-4" style="font-size: 1.5rem; color: #1f2937; line-height: 1.6;">
+            <div class="frase-texto-repaso mb-4" style="font-size: 1.5rem; color: #000000; line-height: 1.6;">
                 "${frase.texto}"
             </div>
-            ${frase.autor ? `<div class="frase-autor-repaso mb-3" style="font-size: 1.1rem; color: #6b7280;">— ${frase.autor}</div>` : ''}
+            ${frase.autor ? `<div class="frase-autor-repaso mb-3" style="font-size: 1.1rem; color: #000000;">— ${frase.autor}</div>` : ''}
             <div class="d-flex justify-content-center gap-2 mb-3">
                 <span class="frase-categoria ${frase.subcategoria || frase.categoria}" style="font-size: 0.9rem;">
                     <i class="bi bi-tag"></i>
                     ${capitalizarPrimeraLetra((frase.subcategoria && frase.subcategoria.trim()) ? frase.subcategoria : frase.categoria)}
                 </span>
             </div>
-            ${frase.notas ? `<div class="frase-notas-repaso mt-3 p-3 bg-light rounded" style="font-style: italic; color: #6b7280;">${frase.notas}</div>` : ''}
+            ${frase.notas ? `<div class="frase-notas-repaso mt-3 p-3 bg-light rounded" style="font-style: italic; color: #51565f;">${frase.notas}</div>` : ''}
         </div>
     `;
+    
+    // Actualizar el evento del botón de editar
+    const btnEditar = document.getElementById('btn-editar-frase-repaso');
+    if (btnEditar) {
+        btnEditar.onclick = () => editarFraseDesdeRepaso(frase.id);
+    }
     
     // Actualizar controles
     actualizarControlesRepaso();
@@ -3718,11 +3732,52 @@ function terminarSesionRepaso() {
     cargarFrases();
 }
 
+// Función para editar frase desde la sesión de repaso
+function editarFraseDesdeRepaso(fraseId) {
+    // Buscar la frase en el array de frases
+    const frase = frases.find(f => f.id === fraseId);
+    
+    if (!frase) {
+        console.error('Frase no encontrada:', fraseId);
+        return;
+    }
+    
+    // Pausar la sesión de repaso temporalmente
+    const sesionPausada = {
+        activa: sesionRepaso.activa,
+        indiceActual: sesionRepaso.indiceActual,
+        frasesRepasadas: sesionRepaso.frasesRepasadas
+    };
+    
+    // Abrir el modal de edición
+    abrirModalEditarFrase(frase);
+    
+    // Agregar evento para cuando se cierre el modal
+    const modalElement = document.getElementById('modalEditarFrase');
+    const handleModalClose = () => {
+        // Recargar la frase actual en la sesión de repaso
+        if (sesionPausada.activa) {
+            // Actualizar la frase en el array de sesión
+            const fraseActualizada = frases.find(f => f.id === fraseId);
+            if (fraseActualizada) {
+                sesionRepaso.frases[sesionRepaso.indiceActual] = fraseActualizada;
+                mostrarFraseRepaso();
+            }
+        }
+        
+        // Remover el event listener para evitar múltiples registros
+        modalElement.removeEventListener('hidden.bs.modal', handleModalClose);
+    };
+    
+    modalElement.addEventListener('hidden.bs.modal', handleModalClose);
+}
+
 // Hacer funciones globales para los controles
 window.marcarRepasadaYSiguiente = marcarRepasadaYSiguiente;
 window.siguienteFrase = siguienteFrase;
 window.fraseAnterior = fraseAnterior;
 window.terminarSesionRepaso = terminarSesionRepaso;
+window.editarFraseDesdeRepaso = editarFraseDesdeRepaso;
 
 // =====================
 // Atajos de teclado repaso
