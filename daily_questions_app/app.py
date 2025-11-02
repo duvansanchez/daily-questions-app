@@ -288,6 +288,104 @@ def objetivos_stats_summary():
         logger.error(f"Error en objetivos_stats_summary: {str(e)}")
         return jsonify({'status': 'error', 'message': 'No se pudieron calcular las estadísticas de objetivos'}), 500
 
+@app.route('/api/objetivos/dia/<fecha>', methods=['GET'])
+@login_required
+def objetivos_detalle_dia(fecha):
+    """Obtiene el detalle completo de objetivos para un día específico."""
+    try:
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            
+            # Obtener objetivos creados en esta fecha
+            query_creados = """
+                SELECT o.id, o.titulo, o.descripcion, o.categoria, o.prioridad, 
+                       o.recurrente, o.parte_dia, o.horas_estimadas,
+                       CONVERT(varchar, o.fecha_creacion, 120) as fecha_creacion
+                FROM objetivos o
+                WHERE o.user_id = ? AND CAST(o.fecha_creacion AS DATE) = ?
+                ORDER BY o.fecha_creacion DESC
+            """
+            
+            cursor.execute(query_creados, (current_user.id, fecha))
+            objetivos_creados = []
+            for row in cursor.fetchall():
+                objetivos_creados.append({
+                    'id': row.id,
+                    'titulo': row.titulo,
+                    'descripcion': row.descripcion,
+                    'categoria': row.categoria,
+                    'prioridad': row.prioridad,
+                    'recurrente': bool(row.recurrente),
+                    'parte_dia': row.parte_dia,
+                    'horas_estimadas': float(row.horas_estimadas) if row.horas_estimadas else None,
+                    'fecha_creacion': row.fecha_creacion
+                })
+            
+            # Obtener objetivos completados en esta fecha
+            # Consulta simplificada y robusta para evitar errores de conversión
+            query_completados = """
+                SELECT o.id, o.titulo, o.descripcion, o.categoria, o.prioridad,
+                       o.parte_dia, o.horas_estimadas,
+                       'normal' as tipo,
+                       ISNULL(FORMAT(o.fecha_completado, 'HH:mm:ss'), 'N/A') as hora_completado,
+                       ISNULL(FORMAT(o.fecha_completado, 'yyyy-MM-dd HH:mm:ss'), 'N/A') as fecha_completado
+                FROM objetivos o
+                WHERE o.user_id = ? 
+                AND (o.recurrente = 0 OR o.recurrente IS NULL)
+                AND o.fecha_completado IS NOT NULL
+                AND TRY_CAST(o.fecha_completado AS DATE) = TRY_CAST(? AS DATE)
+                AND o.completado = 1
+                
+                UNION ALL
+                
+                SELECT o.id, o.titulo, o.descripcion, o.categoria, o.prioridad,
+                       o.parte_dia, o.horas_estimadas,
+                       'recurrente' as tipo,
+                       ISNULL(FORMAT(ocl.fecha_completado, 'HH:mm:ss'), 'N/A') as hora_completado,
+                       ISNULL(FORMAT(ocl.fecha_completado, 'yyyy-MM-dd HH:mm:ss'), 'N/A') as fecha_completado
+                FROM objetivos o
+                INNER JOIN objetivos_completados_log ocl ON o.id = ocl.objetivo_id
+                WHERE o.user_id = ? 
+                AND o.recurrente = 1
+                AND ocl.fecha_completado IS NOT NULL
+                AND TRY_CAST(ocl.fecha_completado AS DATE) = TRY_CAST(? AS DATE)
+                
+                ORDER BY fecha_completado DESC
+            """
+            
+            cursor.execute(query_completados, (current_user.id, fecha, current_user.id, fecha))
+            objetivos_completados = []
+            for row in cursor.fetchall():
+                objetivos_completados.append({
+                    'id': row.id,
+                    'titulo': row.titulo,
+                    'descripcion': row.descripcion,
+                    'categoria': row.categoria,
+                    'prioridad': row.prioridad,
+                    'parte_dia': row.parte_dia,
+                    'horas_estimadas': float(row.horas_estimadas) if row.horas_estimadas else None,
+                    'tipo': row.tipo,
+                    'hora_completado': row.hora_completado,
+                    'fecha_completado': row.fecha_completado
+                })
+            
+            resumen = {
+                'total_creados': len(objetivos_creados),
+                'total_completados': len(objetivos_completados)
+            }
+            
+            return jsonify({
+                'status': 'success',
+                'fecha': fecha,
+                'resumen': resumen,
+                'objetivos_creados': objetivos_creados,
+                'objetivos_completados': objetivos_completados
+            })
+            
+    except Exception as e:
+        logger.error(f"Error en objetivos_detalle_dia: {str(e)}")
+        return jsonify({'status': 'error', 'error': str(e)}), 500
+
 @app.route('/api/objetivos/calendario', methods=['GET'])
 @login_required
 def objetivos_calendario():
