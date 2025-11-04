@@ -20,6 +20,13 @@ async function cargarTiempoAcumuladoObjetivo() {
         } else {
             console.log('⏱️ OBJ: No hay tiempo acumulado previo');
         }
+        
+        // Cargar notas existentes
+        const notasTextarea = document.getElementById('focus-notas-texto');
+        if (notasTextarea && objetivo) {
+            notasTextarea.value = objetivo.notas_adicionales || '';
+            console.log(`📝 OBJ: Notas cargadas: ${objetivo.notas_adicionales ? objetivo.notas_adicionales.length + ' caracteres' : 'vacías'}`);
+        }
     } catch (error) {
         console.error('💥 OBJ: Error cargando tiempo acumulado:', error);
     }
@@ -71,12 +78,49 @@ async function guardarTiempoObjetivo(forzar = false) {
     }
 }
 
-// Funciones de debug removidas - funcionalidad limpia
+// Función para guardar notas del objetivo principal
+async function guardarNotasObjetivo() {
+    if (!objetivoEnFocus) {
+        console.log('❌ OBJ: No hay objetivo en focus para guardar notas');
+        return false;
+    }
+    
+    const notasTextarea = document.getElementById('focus-notas-texto');
+    if (!notasTextarea) {
+        console.log('❌ OBJ: Textarea de notas no encontrado');
+        return false;
+    }
+    
+    const notas = notasTextarea.value.trim();
+    console.log(`📝 OBJ: Guardando notas del objetivo: ${notas.length} caracteres`);
+    
+    try {
+        const response = await fetch(`/api/objetivos/${objetivoEnFocus.id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ notas_adicionales: notas })
+        });
 
-// Guardar tiempo cada 30 segundos mientras el timer esté corriendo
+        if (response.ok) {
+            console.log('✅ OBJ: Notas del objetivo guardadas exitosamente');
+            return true;
+        } else {
+            console.error('❌ OBJ: Error al guardar notas del objetivo');
+            return false;
+        }
+    } catch (error) {
+        console.error('💥 OBJ: Error guardando notas del objetivo:', error);
+        return false;
+    }
+}
+
+// Guardar tiempo y notas cada 30 segundos mientras el timer esté corriendo
 setInterval(async () => {
-    if (timerRunning && objetivoEnFocus) {
-        await guardarTiempoObjetivo();
+    if (objetivoEnFocus) {
+        if (timerRunning) {
+            await guardarTiempoObjetivo();
+        }
+        await guardarNotasObjetivo();
     }
 }, 30000);
 
@@ -88,14 +132,17 @@ document.addEventListener('DOMContentLoaded', function() {
             const pausarTimerOriginal = window.pausarTimer;
             
             window.pausarTimer = function() {
-                console.log('⏸️ OBJ: Timer pausado, guardando tiempo...');
+                console.log('⏸️ OBJ: Timer pausado, guardando tiempo y notas...');
                 
                 // Ejecutar función original
                 pausarTimerOriginal();
                 
-                // Guardar tiempo inmediatamente al pausar
-                if (objetivoEnFocus && timerSeconds > 0) {
-                    guardarTiempoObjetivo();
+                // Guardar tiempo y notas inmediatamente al pausar
+                if (objetivoEnFocus) {
+                    if (timerSeconds > 0) {
+                        guardarTiempoObjetivo();
+                    }
+                    guardarNotasObjetivo();
                 }
             };
             
@@ -115,10 +162,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (startBtn) startBtn.style.display = 'inline-block';
                     if (pauseBtn) pauseBtn.style.display = 'none';
                     
-                    // Guardar tiempo inmediatamente al pausar
-                    if (objetivoEnFocus && timerSeconds > 0) {
-                        console.log('⏸️ OBJ: Timer pausado, guardando tiempo...');
-                        guardarTiempoObjetivo();
+                    // Guardar tiempo y notas inmediatamente al pausar
+                    if (objetivoEnFocus) {
+                        if (timerSeconds > 0) {
+                            console.log('⏸️ OBJ: Timer pausado, guardando tiempo...');
+                            guardarTiempoObjetivo();
+                        }
+                        console.log('⏸️ OBJ: Timer pausado, guardando notas...');
+                        guardarNotasObjetivo();
                     }
                 }
             };
@@ -142,12 +193,16 @@ document.addEventListener('DOMContentLoaded', function() {
             }, 500);
         });
         
-        // Cuando se cierra el modal, guardar tiempo
+        // Cuando se cierra el modal, guardar tiempo y notas
         modalFocus.addEventListener('hidden.bs.modal', async function() {
-            // Guardar tiempo antes de cerrar
-            if (objetivoEnFocus && timerSeconds > 0) {
-                console.log('🚪 OBJ: Cerrando modal, guardando tiempo...');
-                await guardarTiempoObjetivo();
+            // Guardar tiempo y notas antes de cerrar
+            if (objetivoEnFocus) {
+                if (timerSeconds > 0) {
+                    console.log('🚪 OBJ: Cerrando modal, guardando tiempo...');
+                    await guardarTiempoObjetivo();
+                }
+                console.log('🚪 OBJ: Cerrando modal, guardando notas...');
+                await guardarNotasObjetivo();
             }
             
             if (typeof pausarTimer === 'function') {
@@ -171,10 +226,15 @@ document.addEventListener('DOMContentLoaded', function() {
         newBtn.addEventListener('click', async function() {
             if (objetivoEnFocus) {
                 try {
-                    // Preparar datos para enviar incluyendo tiempo final
+                    // Obtener notas del textarea
+                    const notasTextarea = document.getElementById('focus-notas-texto');
+                    const notas = notasTextarea ? notasTextarea.value.trim() : '';
+                    
+                    // Preparar datos para enviar incluyendo tiempo final y notas
                     const datosActualizacion = {
                         completado: true,
-                        tiempo_focus: timerSeconds
+                        tiempo_focus: timerSeconds,
+                        notas_adicionales: notas
                     };
 
                     const response = await fetch(`/api/objetivos/${objetivoEnFocus.id}`, {

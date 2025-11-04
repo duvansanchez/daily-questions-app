@@ -60,8 +60,12 @@ async function abrirModoFocusSubobjetivo(subobjetivoId, subobjetivoTitulo) {
             console.log('⏱️ No hay tiempo acumulado previo');
         }
         
-        // Limpiar notas
-        document.getElementById('focus-sub-notas-texto').value = '';
+        // Cargar notas existentes
+        const notasTextarea = document.getElementById('focus-sub-notas-texto');
+        if (notasTextarea) {
+            notasTextarea.value = subobjetivo.notas || '';
+            console.log(`📝 Notas cargadas: ${subobjetivo.notas ? subobjetivo.notas.length + ' caracteres' : 'vacías'}`);
+        }
         
         // Mostrar modal del sub-objetivo
         const modalElement = document.getElementById('modalFocusSubobjetivo');
@@ -82,7 +86,41 @@ async function abrirModoFocusSubobjetivo(subobjetivoId, subobjetivoTitulo) {
     }
 }
 
-// Funciones de debug removidas - funcionalidad limpia
+// Función para guardar notas del sub-objetivo
+async function guardarNotasSubobjetivo() {
+    if (!subobjetivoEnFocus) {
+        console.log('❌ No hay sub-objetivo en focus para guardar notas');
+        return false;
+    }
+    
+    const notasTextarea = document.getElementById('focus-sub-notas-texto');
+    if (!notasTextarea) {
+        console.log('❌ Textarea de notas no encontrado');
+        return false;
+    }
+    
+    const notas = notasTextarea.value.trim();
+    console.log(`📝 Guardando notas del sub-objetivo: ${notas.length} caracteres`);
+    
+    try {
+        const response = await fetch(`/api/subobjetivos/${subobjetivoEnFocus.id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ notas: notas })
+        });
+
+        if (response.ok) {
+            console.log('✅ Notas del sub-objetivo guardadas exitosamente');
+            return true;
+        } else {
+            console.error('❌ Error al guardar notas del sub-objetivo');
+            return false;
+        }
+    } catch (error) {
+        console.error('💥 Error guardando notas del sub-objetivo:', error);
+        return false;
+    }
+}
 
 // Event listeners para botones de focus de sub-objetivos
 document.addEventListener('click', function(e) {
@@ -125,10 +163,14 @@ function pausarTimerSubobjetivo() {
         document.getElementById('timer-sub-start').style.display = 'inline-block';
         document.getElementById('timer-sub-pause').style.display = 'none';
         
-        // Guardar tiempo inmediatamente al pausar
-        if (subobjetivoEnFocus && timerSubobjetivoSeconds > 0) {
-            console.log('⏸️ Timer pausado, guardando tiempo inmediatamente...');
-            guardarTiempoSubobjetivo();
+        // Guardar tiempo y notas inmediatamente al pausar
+        if (subobjetivoEnFocus) {
+            if (timerSubobjetivoSeconds > 0) {
+                console.log('⏸️ Timer pausado, guardando tiempo inmediatamente...');
+                guardarTiempoSubobjetivo();
+            }
+            console.log('⏸️ Timer pausado, guardando notas...');
+            guardarNotasSubobjetivo();
         }
     }
 }
@@ -177,10 +219,15 @@ document.addEventListener('click', async function(e) {
     if (e.target.closest('#focus-sub-completar')) {
         if (subobjetivoEnFocus) {
             try {
-                // Preparar datos para completar incluyendo tiempo final
+                // Obtener notas del textarea
+                const notasTextarea = document.getElementById('focus-sub-notas-texto');
+                const notas = notasTextarea ? notasTextarea.value.trim() : '';
+                
+                // Preparar datos para completar incluyendo tiempo final y notas
                 const datosCompletar = { 
                     completado: true,
-                    tiempo_focus: timerSubobjetivoSeconds
+                    tiempo_focus: timerSubobjetivoSeconds,
+                    notas: notas
                 };
 
                 const response = await fetch(`/api/subobjetivos/${subobjetivoEnFocus.id}`, {
@@ -263,10 +310,13 @@ async function guardarTiempoSubobjetivo(forzar = false) {
     }
 }
 
-// Guardar tiempo cada 30 segundos mientras el timer esté corriendo
+// Guardar tiempo y notas cada 30 segundos mientras el timer esté corriendo
 setInterval(async () => {
-    if (timerSubobjetivoRunning && subobjetivoEnFocus) {
-        await guardarTiempoSubobjetivo();
+    if (subobjetivoEnFocus) {
+        if (timerSubobjetivoRunning) {
+            await guardarTiempoSubobjetivo();
+        }
+        await guardarNotasSubobjetivo();
     }
 }, 30000);
 
@@ -275,9 +325,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const modalSubobjetivo = document.getElementById('modalFocusSubobjetivo');
     if (modalSubobjetivo) {
         modalSubobjetivo.addEventListener('hidden.bs.modal', async function() {
-            // Guardar tiempo antes de cerrar
-            if (subobjetivoEnFocus && timerSubobjetivoSeconds > 0) {
-                await guardarTiempoSubobjetivo();
+            // Guardar tiempo y notas antes de cerrar
+            if (subobjetivoEnFocus) {
+                if (timerSubobjetivoSeconds > 0) {
+                    await guardarTiempoSubobjetivo();
+                }
+                await guardarNotasSubobjetivo();
             }
             
             pausarTimerSubobjetivo();

@@ -3697,7 +3697,7 @@ def api_get_objetivo(objetivo_id):
                 SELECT o.id, o.titulo, o.descripcion, o.prioridad, o.categoria, o.completado, 
                        o.fecha_creacion, o.fecha_completado, o.objetivo_padre_id, o.es_padre, 
                        o.estado, o.fecha_inicio, o.fecha_fin, o.horas_estimadas, o.recompensa, 
-                       o.parte_dia, o.recurrente, o.frecuencia, o.orden, o.fecha_programada, o.programado_para, o.tiempo_focus
+                       o.parte_dia, o.recurrente, o.frecuencia, o.orden, o.fecha_programada, o.programado_para, o.tiempo_focus, o.notas_adicionales
                 FROM objetivos o
                 WHERE o.id = ? AND o.user_id = ?
             ''', (objetivo_id, current_user.id))
@@ -3728,7 +3728,8 @@ def api_get_objetivo(objetivo_id):
                 'orden': row[18],
                 'fecha_programada': row[19].strftime('%Y-%m-%d') if row[19] else None,
                 'programado_para': row[20],
-                'tiempo_focus': row[21] if row[21] else 0
+                'tiempo_focus': row[21] if row[21] else 0,
+                'notas_adicionales': row[22] if row[22] else ''
             }
             
             return jsonify(objetivo)
@@ -3751,7 +3752,7 @@ def api_update_objetivo(objetivo_id):
     #     return restaurar_objetivo_completo(objetivo_id)
     
     campos = {}
-    for campo in ['titulo', 'descripcion', 'prioridad', 'categoria', 'objetivo_padre_id', 'es_padre', 'estado', 'fecha_inicio', 'fecha_fin', 'horas_estimadas', 'recompensa', 'parte_dia', 'recurrente', 'frecuencia', 'tiempo_focus', 'programado_para', 'fecha_programada']:
+    for campo in ['titulo', 'descripcion', 'prioridad', 'categoria', 'objetivo_padre_id', 'es_padre', 'estado', 'fecha_inicio', 'fecha_fin', 'horas_estimadas', 'recompensa', 'parte_dia', 'recurrente', 'frecuencia', 'tiempo_focus', 'programado_para', 'fecha_programada', 'notas_adicionales']:
         if campo in data:
             if campo in ['fecha_inicio', 'fecha_fin', 'fecha_programada']:
                 campos[campo] = parse_fecha(data[campo])
@@ -3767,6 +3768,11 @@ def api_update_objetivo(objetivo_id):
                         logger.warning(f"Tiempo focus negativo ignorado: {tiempo}")
                 except (ValueError, TypeError):
                     logger.warning(f"Tiempo focus inválido ignorado: {data[campo]}")
+            elif campo == 'notas_adicionales':
+                # Limpiar y validar notas
+                notas = data[campo].strip() if data[campo] else ''
+                campos[campo] = notas
+                print(f"📝 OBJ: Actualizando notas_adicionales: {len(notas)} caracteres")
             else:
                 campos[campo] = data[campo]
     if 'completado' in data:
@@ -4109,7 +4115,7 @@ def api_reactivar_objetivo_hoy(objetivo_id):
 def api_list_subobjetivos(objetivo_id):
     with get_db_connection() as conn:
         cursor = conn.cursor()
-        cursor.execute('''SELECT id, titulo, completado, fecha_creacion, orden, tiempo_focus FROM subobjetivos WHERE objetivo_id = ? ORDER BY orden ASC, id ASC''', (objetivo_id,))
+        cursor.execute('''SELECT id, titulo, completado, fecha_creacion, orden, tiempo_focus, notas FROM subobjetivos WHERE objetivo_id = ? ORDER BY orden ASC, id ASC''', (objetivo_id,))
         rows = cursor.fetchall()
         subobjetivos = [
             {
@@ -4118,7 +4124,8 @@ def api_list_subobjetivos(objetivo_id):
                 'completado': bool(row[2]),
                 'fecha_creacion': row[3].strftime('%Y-%m-%d %H:%M') if row[3] else None,
                 'orden': row[4],
-                'tiempo_focus': row[5] if row[5] else 0
+                'tiempo_focus': row[5] if row[5] else 0,
+                'notas': row[6] if row[6] else ''
             }
             for row in rows
         ]
@@ -4177,6 +4184,10 @@ def api_update_subobjetivo(subobjetivo_id):
         campos.append('tiempo_focus = ?')
         valores.append(int(data['tiempo_focus']))
         print(f"💾 Actualizando tiempo_focus a: {data['tiempo_focus']} segundos")
+    if 'notas' in data:
+        campos.append('notas = ?')
+        valores.append(data['notas'].strip() if data['notas'] else '')
+        print(f"📝 Actualizando notas: {len(data['notas'])} caracteres")
     
     if not campos:
         return jsonify({'error': 'Nada para actualizar'}), 400
