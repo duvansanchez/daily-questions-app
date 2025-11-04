@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test - Calendario con Objetivos Recurrentes</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+</head>
+<body>
+    <div class="container mt-4">
+        <h2>📅 Test - Calendario con Objetivos Recurrentes</h2>
+        <p class="text-muted">Verificación del calendario actualizado que incluye el log de objetivos recurrentes</p>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="bi bi-calendar-check me-2"></i>Calendario Original</h5>
+                    </div>
+                    <div class="card-body">
+                        <button class="btn btn-primary mb-3" onclick="cargarCalendarioOriginal()">
+                            Cargar Calendario Original
+                        </button>
+                        <div id="calendario-original"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="bi bi-calendar-plus me-2"></i>Calendario Detallado</h5>
+                    </div>
+                    <div class="card-body">
+                        <button class="btn btn-success mb-3" onclick="cargarCalendarioDetallado()">
+                            Cargar Calendario Detallado
+                        </button>
+                        <div id="calendario-detallado"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="alert alert-info">
+                    <h6><i class="bi bi-info-circle me-2"></i>Diferencias esperadas:</h6>
+                    <ul>
+                        <li><strong>Calendario Original:</strong> Solo cuenta la primera vez que se completa un objetivo recurrente</li>
+                        <li><strong>Calendario Actualizado:</strong> Cuenta CADA vez que se completa un objetivo recurrente (del log)</li>
+                        <li><strong>Calendario Detallado:</strong> Desglose completo de normales vs recurrentes</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="bi bi-bar-chart me-2"></i>Comparación de Resultados</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="comparacion-resultados">
+                            <p class="text-muted">Carga ambos calendarios para ver la comparación</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let calendarioOriginalData = null;
+        let calendarioDetalladoData = null;
+
+        async function cargarCalendarioOriginal() {
+            try {
+                const response = await fetch('/api/calendario/objetivos');
+                const data = await response.json();
+                
+                calendarioOriginalData = data;
+                
+                if (data.status === 'success') {
+                    document.getElementById('calendario-original').innerHTML = `
+                        <div class="alert alert-success">
+                            <h6>✅ Calendario Original Cargado</h6>
+                            <p><strong>Total Creados:</strong> ${data.data.total_creados}</p>
+                            <p><strong>Total Completados:</strong> ${data.data.total_completados}</p>
+                            <p><strong>Días con actividad:</strong> ${Object.keys(data.data.completados_por_dia).length}</p>
+                        </div>
+                        <details>
+                            <summary>Ver datos completos</summary>
+                            <pre>${JSON.stringify(data.data, null, 2)}</pre>
+                        </details>
+                    `;
+                } else {
+                    document.getElementById('calendario-original').innerHTML = `
+                        <div class="alert alert-danger">❌ Error: ${data.message}</div>
+                    `;
+                }
+                
+                actualizarComparacion();
+                
+            } catch (error) {
+                document.getElementById('calendario-original').innerHTML = `
+                    <div class="alert alert-danger">❌ Error de conexión: ${error.message}</div>
+                `;
+            }
+        }
+
+        async function cargarCalendarioDetallado() {
+            try {
+                const response = await fetch('/api/calendario/objetivos-detallado');
+                const data = await response.json();
+                
+                calendarioDetalladoData = data;
+                
+                if (data.status === 'success') {
+                    const totales = data.data.totales;
+                    document.getElementById('calendario-detallado').innerHTML = `
+                        <div class="alert alert-success">
+                            <h6>✅ Calendario Detallado Cargado</h6>
+                            <p><strong>Creados Normales:</strong> ${totales.creados_normales}</p>
+                            <p><strong>Creados Recurrentes:</strong> ${totales.creados_recurrentes}</p>
+                            <p><strong>Completados Normales:</strong> ${totales.completados_normales}</p>
+                            <p><strong>Completados Recurrentes:</strong> ${totales.completados_recurrentes}</p>
+                            <hr>
+                            <p><strong>Total Creados:</strong> ${totales.total_creados}</p>
+                            <p><strong>Total Completados:</strong> ${totales.total_completados}</p>
+                        </div>
+                        <details>
+                            <summary>Ver datos completos</summary>
+                            <pre>${JSON.stringify(data.data, null, 2)}</pre>
+                        </details>
+                    `;
+                } else {
+                    document.getElementById('calendario-detallado').innerHTML = `
+                        <div class="alert alert-danger">❌ Error: ${data.message}</div>
+                    `;
+                }
+                
+                actualizarComparacion();
+                
+            } catch (error) {
+                document.getElementById('calendario-detallado').innerHTML = `
+                    <div class="alert alert-danger">❌ Error de conexión: ${error.message}</div>
+                `;
+            }
+        }
+
+        function actualizarComparacion() {
+            if (!calendarioOriginalData || !calendarioDetalladoData) return;
+            
+            const original = calendarioOriginalData.data;
+            const detallado = calendarioDetalladoData.data.totales;
+            
+            const diferencia = detallado.total_completados - original.total_completados;
+            
+            document.getElementById('comparacion-resultados').innerHTML = `
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>📊 Calendario Original</h6>
+                        <p>Completados: <span class="badge bg-primary">${original.total_completados}</span></p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>📈 Calendario Actualizado</h6>
+                        <p>Completados: <span class="badge bg-success">${detallado.total_completados}</span></p>
+                        <small class="text-muted">
+                            (${detallado.completados_normales} normales + ${detallado.completados_recurrentes} recurrentes)
+                        </small>
+                    </div>
+                </div>
+                <hr>
+                <div class="alert ${diferencia > 0 ? 'alert-success' : 'alert-warning'}">
+                    <h6><i class="bi bi-calculator me-2"></i>Diferencia encontrada:</h6>
+                    <p class="mb-0">
+                        ${diferencia > 0 ? 
+                            `✅ El calendario actualizado cuenta <strong>${diferencia} completados adicionales</strong> de objetivos recurrentes` :
+                            `⚠️ No hay diferencia - puede que no tengas objetivos recurrentes completados múltiples veces`
+                        }
+                    </p>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>

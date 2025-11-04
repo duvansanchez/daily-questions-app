@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test - Log de Objetivos Completados</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+</head>
+<body>
+    <div class="container mt-4">
+        <h2>📊 Test - Log de Objetivos Completados</h2>
+        <p class="text-muted">Verificación del sistema de logging para objetivos recurrentes completados</p>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="bi bi-check-circle me-2"></i>Funcionalidades Implementadas</h5>
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item">
+                                <i class="bi bi-database text-success me-2"></i>
+                                <strong>Tabla objetivos_completados_log</strong>
+                                <br><small class="text-muted">Registra cada completado de objetivo recurrente</small>
+                            </li>
+                            <li class="list-group-item">
+                                <i class="bi bi-gear text-primary me-2"></i>
+                                <strong>Logging automático</strong>
+                                <br><small class="text-muted">Se activa al marcar objetivo recurrente como completado</small>
+                            </li>
+                            <li class="list-group-item">
+                                <i class="bi bi-graph-up text-info me-2"></i>
+                                <strong>Endpoints de consulta</strong>
+                                <br><small class="text-muted">APIs para historial y estadísticas</small>
+                            </li>
+                            <li class="list-group-item">
+                                <i class="bi bi-shield-check text-warning me-2"></i>
+                                <strong>Validaciones</strong>
+                                <br><small class="text-muted">Evita duplicados y maneja errores</small>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="bi bi-list-check me-2"></i>Campos de la Tabla</h5>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Campo</th>
+                                    <th>Tipo</th>
+                                    <th>Descripción</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><code>id</code></td>
+                                    <td>INTEGER</td>
+                                    <td>Clave primaria</td>
+                                </tr>
+                                <tr>
+                                    <td><code>objetivo_id</code></td>
+                                    <td>INTEGER</td>
+                                    <td>ID del objetivo</td>
+                                </tr>
+                                <tr>
+                                    <td><code>user_id</code></td>
+                                    <td>INTEGER</td>
+                                    <td>ID del usuario</td>
+                                </tr>
+                                <tr>
+                                    <td><code>fecha_completado</code></td>
+                                    <td>DATE</td>
+                                    <td>Fecha de completado</td>
+                                </tr>
+                                <tr>
+                                    <td><code>fecha_creacion</code></td>
+                                    <td>DATETIME</td>
+                                    <td>Timestamp del registro</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="bi bi-api me-2"></i>Endpoints Disponibles</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6><i class="bi bi-clock-history text-primary me-2"></i>Historial por Objetivo</h6>
+                                <code>GET /api/objetivos/{id}/historial-completados</code>
+                                <p class="small text-muted mt-2">
+                                    Obtiene el historial de completados de un objetivo específico.
+                                    Incluye fechas y estadísticas básicas.
+                                </p>
+                            </div>
+                            <div class="col-md-6">
+                                <h6><i class="bi bi-bar-chart text-success me-2"></i>Estadísticas Generales</h6>
+                                <code>GET /api/estadisticas/objetivos-completados</code>
+                                <p class="small text-muted mt-2">
+                                    Estadísticas por período, objetivos más completados,
+                                    y resumen por días.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="alert alert-info">
+                    <h6><i class="bi bi-info-circle me-2"></i>Cómo probar:</h6>
+                    <ol>
+                        <li><strong>Crear un objetivo recurrente</strong> (diario, semanal, etc.)</li>
+                        <li><strong>Marcarlo como completado</strong> usando el checkbox</li>
+                        <li><strong>Verificar en logs del servidor</strong> que aparece el mensaje de registro</li>
+                        <li><strong>Consultar el historial</strong> usando los endpoints API</li>
+                        <li><strong>Repetir el proceso</strong> en diferentes días para ver el historial</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="alert alert-success">
+                    <h6><i class="bi bi-check-circle me-2"></i>Beneficios del Sistema:</h6>
+                    <ul class="mb-0">
+                        <li><strong>Historial completo:</strong> Registro de cada vez que se completa un objetivo</li>
+                        <li><strong>Estadísticas detalladas:</strong> Análisis de patrones y frecuencias</li>
+                        <li><strong>Motivación:</strong> Ver el progreso y consistencia a lo largo del tiempo</li>
+                        <li><strong>Análisis de hábitos:</strong> Identificar qué objetivos se cumplen más</li>
+                        <li><strong>Complemento perfecto:</strong> Junto con el log de saltados, vista completa</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

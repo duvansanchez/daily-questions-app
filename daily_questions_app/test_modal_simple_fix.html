@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Modal Simple</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+</head>
+<body>
+    <div class="container mt-5">
+        <h2>Test Modal Simple</h2>
+        <p>Prueba básica del modal sin llamadas a API.</p>
+        
+        <div class="mb-3">
+            <button class="btn btn-primary" onclick="testModalSimple()">
+                Abrir Modal Simple
+            </button>
+        </div>
+        
+        <div class="mb-3">
+            <button class="btn btn-success" onclick="testFuncionExiste()">
+                Verificar Función
+            </button>
+        </div>
+        
+        <div id="debug-info" class="mt-4">
+            <h5>Debug Info:</h5>
+            <div id="debug-output"></div>
+        </div>
+    </div>
+
+    <!-- Modal Detalle del Día -->
+    <div class="modal fade" id="modalDetalleDia" tabindex="-1" aria-labelledby="modalDetalleDiaLabel" aria-hidden="true">
+      <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="modalDetalleDiaLabel">
+              <i class="bi bi-calendar-day me-2"></i>Detalle del día: 
+              <span id="modalDetalleDiaFecha" class="text-primary">Test</span>
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div class="alert alert-success">
+                <h4>✅ Modal funcionando correctamente!</h4>
+                <p>Si puedes ver este modal, significa que la función abrirDetalleDia está funcionando.</p>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function log(message) {
+            const output = document.getElementById('debug-output');
+            output.innerHTML += '<div class="alert alert-info">' + message + '</div>';
+        }
+
+        // Función simplificada para test
+        window.abrirDetalleDia = function(fecha) {
+            log('🗓️ Abriendo modal para: ' + fecha);
+            try {
+                const modal = new bootstrap.Modal(document.getElementById('modalDetalleDia'));
+                document.getElementById('modalDetalleDiaFecha').textContent = fecha;
+                modal.show();
+                log('✅ Modal abierto correctamente');
+            } catch (error) {
+                log('❌ Error: ' + error.message);
+            }
+        };
+
+        function testModalSimple() {
+            log('🧪 Probando modal simple...');
+            abrirDetalleDia('2024-11-01 (Test)');
+        }
+
+        function testFuncionExiste() {
+            log('🔍 Verificando función...');
+            log('Función abrirDetalleDia existe: ' + (typeof window.abrirDetalleDia === 'function'));
+            log('Modal existe: ' + (document.getElementById('modalDetalleDia') !== null));
+            log('Bootstrap Modal disponible: ' + (typeof bootstrap !== 'undefined' && typeof bootstrap.Modal === 'function'));
+        }
+
+        // Verificar que todo esté cargado
+        document.addEventListener('DOMContentLoaded', function() {
+            log('✅ Página cargada');
+            testFuncionExiste();
+        });
+    </script>
+</body>
+</html>

@@ -1599,6 +1599,7 @@ function renderObjetivos() {
                 <button class=\"btn-focus\" title=\"Modo Focus\" data-id=\"${obj.id}\"><i class=\"bi bi-bullseye\"></i></button>
                 <button class=\"btn-editar\" title=\"Editar\" data-id=\"${obj.id}\"><i class=\"bi bi-pencil\"></i></button>
                 <button class=\"btn-eliminar\" title=\"Eliminar\" data-id=\"${obj.id}\"><i class=\"bi bi-trash\"></i></button>
+                ${!obj.completado ? `<button class=\"btn-programar-mañana\" title=\"Programar para mañana\" data-id=\"${obj.id}\"><i class=\"bi bi-calendar-plus\"></i></button>` : ''}
                 ${obj.recurrente && !obj.saltado_hoy && !obj.completado ? `<button class=\"btn-saltar-hoy\" title=\"Saltar hoy\" data-id=\"${obj.id}\"><i class=\"bi bi-arrow-bar-right\"></i> Saltar hoy</button>` : ''}
                 ${obj.recurrente && obj.saltado_hoy && !obj.completado ? `<button class=\"btn-reactivar-hoy\" title=\"Reactivar hoy\" data-id=\"${obj.id}\"><i class=\"bi bi-arrow-repeat\"></i> Reactivar hoy</button>` : ''}
                 ${(ordenActual === 'orden') ? ordenFlechasHtml + ordenNumHtml : ''}
@@ -3802,6 +3803,15 @@ window.editarFraseDesdeRepaso = editarFraseDesdeRepaso;
 // Variable para almacenar objetivos programados
 let objetivosProgramadosMañana = [];
 
+// Event listener para botón de programar para mañana
+document.addEventListener('click', async function(e) {
+    if (e.target.closest('.btn-programar-mañana')) {
+        e.preventDefault();
+        const button = e.target.closest('[data-id]');
+        const objetivoId = button.getAttribute('data-id');
+        await programarObjetivoParaMañana(objetivoId);
+    }
+});
 
 // Event listener para botón "Objetivos Programados"
 document.addEventListener('click', function(e) {

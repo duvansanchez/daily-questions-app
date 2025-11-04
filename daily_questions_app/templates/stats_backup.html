@@ -1,0 +1,2958 @@
+{% extends "base.html" %}
+
+{% block title %}Estadísticas y Análisis{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <h2 class="fw-bold mb-1">Estadísticas y Análisis</h2>
+    <p class="text-muted mb-4">Analiza tu progreso con diferentes niveles de detalle y obtén insights sobre tus hábitos diarios.</p>
+
+    <!-- Tabs de nivel de detalle -->
+    <ul class="nav nav-tabs mb-4" id="statsTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="basicas-tab" data-bs-toggle="tab" data-bs-target="#basicas" type="button" role="tab">Básicas</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="intermedias-tab" data-bs-toggle="tab" data-bs-target="#intermedias" type="button" role="tab">Intermedias</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="avanzadas-tab" data-bs-toggle="tab" data-bs-target="#avanzadas" type="button" role="tab">Avanzadas</button>
+        </li>
+    </ul>
+
+    <div class="tab-content" id="statsTabsContent">
+        <!-- Tab Básicas -->
+        <div class="tab-pane fade show active" id="basicas" role="tabpanel">
+            <!-- Objetivos: Completados por período -->
+            <h5 class="fw-bold mb-3">Objetivos por período</h5>
+            <div class="row g-3 mb-4">
+                <div class="col-md-3">
+                    <div class="card shadow-sm border-0 h-100">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center mb-2">
+                                <span class="badge bg-success me-2"><i class="bi bi-check2-circle"></i></span>
+                                <span class="fw-bold">Hoy</span>
+                            </div>
+                            <h2 class="fw-bold text-success mb-1" id="obj-hoy-c">0</h2>
+                            <small class="text-muted d-block">Cumplidos</small>
+                            <small class="text-muted">No cumplidos: <span id="obj-hoy-nc">0</span></small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card shadow-sm border-0 h-100">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center mb-2">
+                                <span class="badge bg-primary me-2"><i class="bi bi-calendar-week"></i></span>
+                                <span class="fw-bold">Esta semana</span>
+                            </div>
+                            <h2 class="fw-bold text-primary mb-1" id="obj-semana-c">0</h2>
+                            <small class="text-muted d-block">Cumplidos</small>
+                            <small class="text-muted">No cumplidos: <span id="obj-semana-nc">0</span></small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card shadow-sm border-0 h-100">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center mb-2">
+                                <span class="badge bg-warning text-dark me-2"><i class="bi bi-calendar-month"></i></span>
+                                <span class="fw-bold">Este mes</span>
+                            </div>
+                            <h2 class="fw-bold text-warning mb-1" id="obj-mes-c">0</h2>
+                            <small class="text-muted d-block">Cumplidos</small>
+                            <small class="text-muted">No cumplidos: <span id="obj-mes-nc">0</span></small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card shadow-sm border-0 h-100">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center mb-2">
+                                <span class="badge bg-info text-dark me-2"><i class="bi bi-calendar3"></i></span>
+                                <span class="fw-bold">Este año</span>
+                            </div>
+                            <h2 class="fw-bold text-info mb-1" id="obj-anio-c">0</h2>
+                            <small class="text-muted d-block">Cumplidos</small>
+                            <small class="text-muted">No cumplidos: <span id="obj-anio-nc">0</span></small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Estadísticas por Frecuencia -->
+            <h5 class="fw-bold mb-3">Preguntas por Frecuencia</h5>
+            <div class="row g-3 mb-4">
+                <div class="col-md-4">
+                    <div class="card shadow-sm border-0 h-100">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center mb-2">
+                                <span class="badge bg-primary me-2"><i class="bi bi-sun"></i></span>
+                                <span class="fw-bold">Diarias</span>
+                            </div>
+                            <h2 class="fw-bold text-primary mb-1">{{ stats_diarias.respondidas_hoy }}/{{ stats_diarias.total_preguntas }}</h2>
+                            <small class="text-muted d-block">Completitud: {{ stats_diarias.completitud }}%</small>
+                            <div class="progress mt-2" style="height: 6px;">
+                                <div class="progress-bar bg-primary" role="progressbar" style="width: {{ stats_diarias.completitud }}%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card shadow-sm border-0 h-100">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center mb-2">
+                                <span class="badge bg-success me-2"><i class="bi bi-calendar-week"></i></span>
+                                <span class="fw-bold">Semanales</span>
+                            </div>
+                            <h2 class="fw-bold text-success mb-1">{{ stats_semanales.respondidas_hoy }}/{{ stats_semanales.total_preguntas }}</h2>
+                            <small class="text-muted d-block">Completitud: {{ stats_semanales.completitud }}%</small>
+                            <div class="progress mt-2" style="height: 6px;">
+                                <div class="progress-bar bg-success" role="progressbar" style="width: {{ stats_semanales.completitud }}%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card shadow-sm border-0 h-100">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center mb-2">
+                                <span class="badge bg-warning text-dark me-2"><i class="bi bi-calendar-month"></i></span>
+                                <span class="fw-bold">Mensuales</span>
+                            </div>
+                            <h2 class="fw-bold text-warning mb-1">{{ stats_mensuales.respondidas_hoy }}/{{ stats_mensuales.total_preguntas }}</h2>
+                            <small class="text-muted d-block">Completitud: {{ stats_mensuales.completitud }}%</small>
+                            <div class="progress mt-2" style="height: 6px;">
+                                <div class="progress-bar bg-warning" role="progressbar" style="width: {{ stats_mensuales.completitud }}%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Resumen Diario -->
+            <h5 class="fw-bold mb-3">Resumen Diario</h5>
+            <div class="row g-3 mb-4">
+                <div class="col-md-3">
+                    <div class="card shadow-sm border-0 h-100">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center mb-2">
+                                <span class="badge bg-success me-2"><i class="bi bi-check-circle"></i></span>
+                                <span class="fw-bold">Respondidas Hoy</span>
+                            </div>
+                            <h2 class="fw-bold text-success mb-0">{{ resumen_diario.respondidas_hoy or 0 }}</h2>
+                            <small class="text-muted">preguntas completadas</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card shadow-sm border-0 h-100">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center mb-2">
+                                <span class="badge bg-warning text-dark me-2"><i class="bi bi-exclamation-circle"></i></span>
+                                <span class="fw-bold">Pendientes Hoy</span>
+                            </div>
+                            <h2 class="fw-bold text-warning mb-0">{{ resumen_diario.pendientes_hoy or 0 }}</h2>
+                            <small class="text-muted">por responder</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card shadow-sm border-0 h-100">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center mb-2">
+                                <span class="badge bg-primary me-2"><i class="bi bi-bar-chart"></i></span>
+                                <span class="fw-bold">Completitud Diaria</span>
+                            </div>
+                            <h2 class="fw-bold text-primary mb-0">{{ resumen_diario.completitud_diaria or 0 }}%</h2>
+                            <div class="progress mt-1" style="height: 6px;">
+                                <div class="progress-bar bg-primary" role="progressbar" style="width: {{ resumen_diario.completitud_diaria or 0 }}%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card shadow-sm border-0 h-100">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center mb-2">
+                                <span class="badge bg-info text-dark me-2"><i class="bi bi-clock-history"></i></span>
+                                <span class="fw-bold">Última Respuesta</span>
+                            </div>
+                            <div class="mb-0">
+                                <span class="text-info fw-bold">{{ resumen_diario.ultima_respuesta.fecha or '-' }}</span>
+                            </div>
+                            <small class="text-muted">{{ resumen_diario.ultima_respuesta.relativo or '' }}</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Resumen General -->
+            <h5 class="fw-bold mb-3">Resumen General</h5>
+            <div class="row g-3 mb-4">
+                <div class="col-md-6">
+                    <div class="card shadow-sm border-0 h-100">
+                        <div class="card-body">
+                            <span class="mb-2 d-block">Preguntas y Respuestas</span>
+                            <div class="d-flex align-items-center">
+                                <span class="badge bg-primary me-2"><i class="bi bi-list-check"></i></span>
+                                <span class="fw-bold">Total Asignadas</span>
+                                <span class="ms-auto fw-bold text-primary">{{ resumen_general.total_asignadas or 0 }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card shadow-sm border-0 h-100">
+                        <div class="card-body">
+                            <span class="mb-2 d-block">Consistencia</span>
+                            <div class="d-flex align-items-center mb-2">
+                                <span class="badge bg-warning text-dark me-2"><i class="bi bi-fire"></i></span>
+                                <span class="fw-bold">Días Consecutivos</span>
+                                <span class="ms-auto fw-bold text-warning">{{ resumen_general.dias_consecutivos or 0 }} días</span>
+                            </div>
+                            <div class="d-flex align-items-center">
+                                <span class="badge bg-info text-dark me-2"><i class="bi bi-calendar-check"></i></span>
+                                <span class="fw-bold">Total Días Activos</span>
+                                <span class="ms-auto fw-bold text-info">{{ resumen_general.total_dias_activos or 0 }} días</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Indicadores de Rendimiento -->
+            <h5 class="fw-bold mb-3">Indicadores de Rendimiento</h5>
+            <div class="row g-3 mb-4">
+                <div class="col-md-3">
+                    <div class="card shadow-sm border-0 h-100">
+                        <div class="card-body text-center">
+                            <h2 class="fw-bold text-success mb-0">{{ indicadores.eficiencia or 0 }}%</h2>
+                            <div class="text-muted">Eficiencia Hoy</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card shadow-sm border-0 h-100">
+                        <div class="card-body text-center">
+                            <h2 class="fw-bold text-primary mb-0">{{ indicadores.promedio_diario or 0 }}</h2>
+                            <div class="text-muted">Promedio Diario</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Tab Avanzadas (RECOLOCADA) -->
+        <div class="tab-pane fade" id="avanzadas" role="tabpanel">
+            <div class="container-fluid px-0">
+                <h5 class="fw-bold mb-3">Cumplimiento de Hábitos</h5>
+                <div class="text-muted mb-3" style="font-size:1rem;">Visualiza tu progreso, tendencias y el rendimiento de tus respuestas diarias.</div>
+
+                <!-- Calendario de Objetivos: Creados vs Completados (Avanzadas) -->
+                <div class="card shadow-sm border-0 w-100 mb-4">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+                            <div>
+                                <h6 class="fw-bold mb-1">Calendario de Objetivos (Creados vs Completados)</h6>
+                                <small class="text-muted">Explora mes a mes cuántos objetivos creaste y cuántos completaste.</small>
+                            </div>
+                            <div class="d-flex flex-wrap align-items-center gap-2">
+                                <select class="form-select form-select-sm" id="obj-cal-mes" style="width:auto; min-width:140px;"></select>
+                                <select class="form-select form-select-sm" id="obj-cal-anio" style="width:auto; min-width:100px;"></select>
+                                <button class="btn btn-sm btn-outline-primary" id="obj-cal-desplegar"><i class="bi bi-list-ul me-1"></i>Desplegar Objetivos</button>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-center gap-4 mb-3 flex-wrap">
+                            <div class="text-center">
+                                <div class="h4 fw-bold text-primary mb-0" id="obj-total-creados">0</div>
+                                <small class="text-muted">Creados en el mes</small>
+                            </div>
+                            <div class="text-center">
+                                <div class="h4 fw-bold text-success mb-0" id="obj-total-completados">0</div>
+                                <small class="text-muted">Completados en el mes</small>
+                            </div>
+                        </div>
+
+                        <div id="objetivos-calendario" class="calendario-container">
+                            <div class="text-center py-5 text-muted">
+                                <i class="bi bi-calendar3" style="font-size: 3rem; opacity: 0.3;"></i>
+                                <div class="mt-2">Selecciona un mes y año para ver el calendario</div>
+                            </div>
+                        </div>
+
+                        <div class="calendario-leyenda d-flex justify-content-center gap-4 mt-3 flex-wrap">
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="calendario-leyenda-item" style="background-color:#3b82f6;"></span>
+                                <small class="text-muted">Creados</small>
+                            </div>
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="calendario-leyenda-item" style="background-color:#22c55e;"></span>
+                                <small class="text-muted">Completados</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Modal para objetivos detallados -->
+                <div class="modal fade" id="modalObjetivosDetallados" tabindex="-1" aria-labelledby="modalObjetivosDetalladosLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="modalObjetivosDetalladosLabel">
+                                    <i class="bi bi-list-check me-2"></i>
+                                    Objetivos del Mes
+                                </h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <!-- Filtros para el calendario de objetivos -->
+                                <div class="mb-3 p-3 bg-light rounded">
+                                    <div class="row g-2 align-items-end">
+                                        <div class="col-md-3">
+                                            <label for="filtro-frecuencia-objetivos" class="form-label fw-semibold mb-1">
+                                                <i class="bi bi-funnel me-1"></i>Filtrar por tipo
+                                            </label>
+                                            <select class="form-select form-select-sm" id="filtro-frecuencia-objetivos">
+                                                <option value="">Todas las frecuencias</option>
+                                                <option value="diario">Solo Diarios</option>
+                                                <option value="semanal">Solo Semanales</option>
+                                                <option value="mensual">Solo Mensuales</option>
+                                                <option value="anual">Solo Anuales</option>
+                                                <option value="general">Solo Generales</option>
+                                                <option value="recurrente">Solo Recurrentes</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label for="filtro-estado-objetivos" class="form-label fw-semibold mb-1">
+                                                <i class="bi bi-check-circle me-1"></i>Filtrar por estado
+                                            </label>
+                                            <select class="form-select form-select-sm" id="filtro-estado-objetivos">
+                                                <option value="">Todos los estados</option>
+                                                <option value="completado">Solo Completados</option>
+                                                <option value="pendiente">Solo Pendientes</option>
+                                                <option value="en_progreso">En Progreso</option>
+                                                <option value="cancelado">Cancelados</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label for="filtro-fecha-desde" class="form-label fw-semibold mb-1">
+                                                <i class="bi bi-calendar-range me-1"></i>Desde
+                                            </label>
+                                            <input type="date" class="form-control form-control-sm" id="filtro-fecha-desde">
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label for="filtro-fecha-hasta" class="form-label fw-semibold mb-1">
+                                                <i class="bi bi-calendar-range me-1"></i>Hasta
+                                            </label>
+                                            <input type="date" class="form-control form-control-sm" id="filtro-fecha-hasta">
+                                        </div>
+                                        <div class="col-md-2 d-flex align-items-end">
+                                            <div class="d-flex gap-1 w-100">
+                                                <button class="btn btn-outline-info btn-sm flex-fill" id="btn-mes-actual-objetivos" title="Establecer rango del mes actual">
+                                                    <i class="bi bi-calendar-month"></i>
+                                                </button>
+                                                <button class="btn btn-outline-secondary btn-sm flex-fill" id="btn-limpiar-filtros-objetivos" title="Limpiar todos los filtros">
+                                                    <i class="bi bi-arrow-counterclockwise"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="mt-2 d-flex justify-content-between align-items-center">
+                                        <small class="text-muted">
+                                            <i class="bi bi-magic me-1"></i>
+                                            Los filtros se aplican automáticamente. Use <i class="bi bi-calendar-month"></i> para el rango del mes actual.
+                                        </small>
+                                        <div id="indicador-filtros-activos" class="d-none">
+                                            <small class="badge bg-primary">
+                                                <i class="bi bi-funnel-fill me-1"></i>
+                                                <span id="contador-filtros">0</span> filtros activos
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div id="objetivos-detallados-lista" class="objetivos-detallados-lista">
+                                    <!-- Aquí se cargarán los objetivos -->
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                    <i class="bi bi-x-circle me-1"></i>Cerrar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tabs internos: Cumplimientos / Frecuencia de Respuesta -->
+                <ul class="nav nav-tabs mb-4" id="cumplimientosTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="cumplimientos-tab" data-bs-toggle="tab" data-bs-target="#cumplimientos" type="button" role="tab">Cumplimientos</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="frecuencia-tab" data-bs-toggle="tab" data-bs-target="#frecuencia" type="button" role="tab">Frecuencia de Respuesta</button>
+                    </li>
+                </ul>
+                <div class="tab-content" id="cumplimientosTabsContent">
+                    <!-- Tab Cumplimientos -->
+                    <div class="tab-pane fade show active" id="cumplimientos" role="tabpanel">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div>
+                                <h6 class="fw-bold mb-1">Cumplimiento de Hábitos - Vista Calendario</h6>
+                                <div class="text-muted" style="font-size:1rem;">Visualiza tu progreso diario en formato calendario para cada pregunta</div>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <select class="form-select form-select-sm" id="pregunta-calendario-select" style="min-width:200px;">
+                                    <option value="">Selecciona una pregunta</option>
+                                    {% for pregunta in preguntas %}
+                                        <option value="{{ pregunta.id }}">{{ pregunta.texto }}</option>
+                                    {% endfor %}
+                                </select>
+                                <select class="form-select form-select-sm" id="mes-calendario-select" style="min-width:120px;">
+                                    <!-- Se llena dinámicamente con JavaScript -->
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Calendario de cumplimiento -->
+                        <div class="card shadow-sm border-0">
+                            <div class="card-body">
+                                <div id="calendario-cumplimiento">
+                                    <div class="text-center py-5 text-muted">
+                                        <i class="bi bi-calendar3" style="font-size: 3rem; opacity: 0.3;"></i>
+                                        <div class="mt-2">Selecciona una pregunta para ver el calendario de cumplimiento</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Leyenda del calendario -->
+                        <div class="card mt-3 shadow-sm border-0">
+                            <div class="card-body py-3">
+                                <div class="d-flex justify-content-center align-items-center gap-4 flex-wrap">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="calendario-leyenda-item" style="background-color: #22c55e;"></div>
+                                        <span class="small">Respondida</span>
+                                    </div>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="calendario-leyenda-item" style="background-color: #ef4444;"></div>
+                                        <span class="small">No respondida</span>
+                                    </div>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="calendario-leyenda-item" style="background-color: #e5e7eb;"></div>
+                                        <span class="small">Sin datos</span>
+                                    </div>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="calendario-leyenda-item calendario-hoy"></div>
+                                        <span class="small">Hoy</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Tab Frecuencia de Respuesta -->
+                    <div class="tab-pane fade" id="frecuencia" role="tabpanel">
+                        <div class="container-fluid px-0">
+                            <div class="d-flex justify-content-between align-items-center mb-4">
+                                <div>
+                                    <h6 class="fw-bold mb-1">Análisis de Frecuencia de Respuestas</h6>
+                                    <div class="text-muted" style="font-size:1rem;">Analiza qué respuestas das más frecuentemente para cada pregunta</div>
+                                </div>
+                            </div>
+                            
+                            <!-- Panel de selección mejorado -->
+                            <div class="row g-4 mb-4">
+                                <!-- Selección de pregunta -->
+                                <div class="col-lg-6">
+                                    <div class="card h-100 border-0 shadow-sm">
+                                        <div class="card-body">
+                                            <div class="d-flex align-items-center mb-3">
+                                                <div class="bg-primary bg-opacity-10 rounded-circle p-2 me-3">
+                                                    <i class="bi bi-question-circle text-primary" style="font-size: 1.2rem;"></i>
+                                                </div>
+                                                <div>
+                                                    <h6 class="mb-0 fw-semibold">Selecciona una Pregunta</h6>
+                                                    <small class="text-muted">Elige qué pregunta quieres analizar</small>
+                                                </div>
+                                            </div>
+                                            <select id="preguntaSelector" class="form-select">
+                                                <option value="">-- Selecciona una pregunta --</option>
+                                                {% for pregunta in preguntas %}
+                                                    <option value="{{ pregunta.id }}" data-tipo="{{ pregunta.tipo }}">{{ pregunta.texto }}</option>
+                                                {% endfor %}
+                                            </select>
+                                            <div class="mt-2">
+                                                <small class="text-muted" id="tipoPreguntaInfo">
+                                                    <i class="bi bi-info-circle me-1"></i>
+                                                    Selecciona una pregunta para ver su tipo
+                                                </small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Configuración del análisis -->
+                                <div class="col-lg-6">
+                                    <div class="card h-100 border-0 shadow-sm">
+                                        <div class="card-body">
+                                            <div class="d-flex align-items-center mb-3">
+                                                <div class="bg-success bg-opacity-10 rounded-circle p-2 me-3">
+                                                    <i class="bi bi-gear text-success" style="font-size: 1.2rem;"></i>
+                                                </div>
+                                                <div>
+                                                    <h6 class="mb-0 fw-semibold">Configuración del Análisis</h6>
+                                                    <small class="text-muted">Personaliza cómo ver los datos</small>
+                                                </div>
+                                            </div>
+                                            
+                                                                                        <!-- Período de análisis -->
+                                            <div class="mb-3">
+                                                <label class="form-label fw-semibold mb-2">Período de análisis:</label>
+                                                <div class="row g-2">
+                                                    <div class="col-6">
+                                                        <label class="form-label text-muted small">Fecha desde:</label>
+                                                        <input type="date" class="form-control" id="fecha-desde" value="">
+                                                    </div>
+                                                    <div class="col-6">
+                                                        <label class="form-label text-muted small">Fecha hasta:</label>
+                                                        <input type="date" class="form-control" id="fecha-hasta" value="">
+                                                    </div>
+                                                </div>
+                                                <div class="mt-2">
+                                                    <div class="btn-group w-100" role="group">
+                                                        <button type="button" class="btn btn-outline-secondary btn-sm" id="btn-ultimos-7dias">
+                                                            <i class="bi bi-calendar-week me-1"></i>Últimos 7 días
+                                                        </button>
+                                                        <button type="button" class="btn btn-outline-secondary btn-sm" id="btn-ultimo-mes">
+                                                            <i class="bi bi-calendar-month me-1"></i>Último mes
+                                                        </button>
+                                                        <button type="button" class="btn btn-outline-secondary btn-sm" id="btn-ultimos-3meses">
+                                                            <i class="bi bi-calendar3 me-1"></i>Últimos 3 meses
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                                <small class="text-muted mt-1 d-block">
+                                                    <i class="bi bi-info-circle me-1"></i>
+                                                    Selecciona un rango personalizado o usa los botones de acceso rápido
+                                                </small>
+                                            </div>
+                                            
+                                            <!-- Tipo de gráfico -->
+                                            <div>
+                                                <label class="form-label fw-semibold mb-2">Tipo de visualización:</label>
+                                                <div class="btn-group w-100" role="group">
+                                                    <input type="radio" class="btn-check grafico-radio" name="grafico" id="grafico-barras" value="barras" checked>
+                                                    <label class="btn btn-outline-secondary" for="grafico-barras">
+                                                        <i class="bi bi-bar-chart me-1"></i>Barras
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Área del gráfico -->
+                            <div class="card border-0 shadow-sm">
+                                <div class="card-body p-4">
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <div>
+                                            <h5 class="mb-1" id="tituloGrafico">Análisis de Frecuencia</h5>
+                                            <small class="text-muted" id="subtituloGrafico">Selecciona una pregunta para comenzar el análisis</small>
+                                        </div>
+                                    </div>
+                                    
+                                    <div id="graficoFrecuencia" style="min-height: 400px; width: 100%;">
+                                        <div class="d-flex align-items-center justify-content-center h-100 text-muted" style="min-height: 400px;">
+                                            <div class="text-center">
+                                                <i class="bi bi-bar-chart" style="font-size: 4rem; opacity: 0.3;"></i>
+                                                <div class="mt-3">
+                                                    <h6>¡Comienza tu análisis!</h6>
+                                                    <p class="mb-0">Selecciona una pregunta arriba para ver el gráfico de frecuencia de respuestas</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Mensajes informativos -->
+                                    <div id="mensajeExclusion" class="alert alert-warning mt-3 d-none">
+                                        <div class="d-flex align-items-center">
+                                            <i class="bi bi-exclamation-triangle me-2"></i>
+                                            <div>
+                                                <strong>Pregunta de texto abierto</strong><br>
+                                                Las preguntas de texto libre no pueden analizarse cuantitativamente. Prueba con preguntas de opción múltiple o sí/no.
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div id="mensajeSinDatos" class="alert alert-info mt-3 d-none">
+                                        <div class="d-flex align-items-center">
+                                            <i class="bi bi-info-circle me-2"></i>
+                                            <div>
+                                                <strong>Sin datos suficientes</strong><br>
+                                                No hay suficientes respuestas para esta pregunta en el período seleccionado.
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Información adicional -->
+                            <div class="row g-3 mt-2">
+                                <div class="col-md-4">
+                                    <div class="card border-0 bg-light">
+                                        <div class="card-body text-center py-3">
+                                            <i class="bi bi-check-circle text-success mb-2" style="font-size: 1.5rem;"></i>
+                                            <h6 class="mb-1">Preguntas Sí/No</h6>
+                                            <small class="text-muted">Muestra distribución de respuestas afirmativas vs negativas</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="card border-0 bg-light">
+                                        <div class="card-body text-center py-3">
+                                            <i class="bi bi-list-ul text-primary mb-2" style="font-size: 1.5rem;"></i>
+                                            <h6 class="mb-1">Opción Múltiple</h6>
+                                            <small class="text-muted">Frecuencia de cada opción seleccionada</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="card border-0 bg-light">
+                                        <div class="card-body text-center py-3">
+                                            <i class="bi bi-pencil text-warning mb-2" style="font-size: 1.5rem;"></i>
+                                            <h6 class="mb-1">Texto Abierto</h6>
+                                            <small class="text-muted">No disponible para análisis cuantitativo</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Tab Intermedias -->
+        <div class="tab-pane fade" id="intermedias" role="tabpanel">
+            <div class="container-fluid px-0">
+                <h5 class="fw-bold mb-3">Tendencias Temporales</h5>
+                
+                <!-- Fila superior: Productividad por Día alineada a la izquierda -->
+                <div class="row g-3 mb-2">
+                    <div class="col-lg-8">
+                        <div class="card shadow-sm border-0 w-100 mb-4" style="max-width:900px;">
+                            <div class="card-body p-0">
+                                <h6 class="fw-bold mb-3 px-4 pt-4">Productividad por Día</h6>
+                                <table class="table mb-0 table-borderless" style="font-size:1.08rem;">
+                                    <tbody>
+                                        {% for dia in productividad_dias %}
+                                        <tr class="align-middle" style="background-color: {% if loop.index0 % 2 == 0 %}#fcfcfc{% else %}#f7f7f7{% endif %};">
+                                            <td class="ps-4" style="width:20%;">{{ dia.nombre }}</td>
+                                            <td class="text-end" style="width:30%;">{{ dia.respuestas }} resp.</td>
+                                            <td class="text-end fw-bold pe-4" style="width:20%;">{{ dia.porcentaje }}%</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                                <div class="alert alert-success py-1 px-4 mb-0" style="font-size: 0.97em; border-radius:0 0 0.5rem 0.5rem;">
+                                    <i class="bi bi-calendar-check me-1"></i> Mejor día: {{ mejor_dia.nombre }} ({{ mejor_dia.porcentaje }}% productividad)
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-4"></div>
+                </div>
+                <!-- Fila inferior: Eficiencia Actual y Comparación -->
+                <div class="row g-3 mb-2 justify-content-center">
+                    <div class="col-lg-6 d-flex">
+                        <div class="card shadow-sm border-0 w-100 mb-0" style="background: #fff; border-radius: 1.2rem;">
+                            <div class="card-body py-4 px-4">
+                                <h6 class="fw-bold mb-2">Eficiencia Actual</h6>
+                                <div class="row g-4">
+                                    <div class="col-12 col-md-6">
+                                        <div class="mb-2 d-flex justify-content-between align-items-center">
+                                            <span class="fw-semibold" style="font-size:1.08rem;">Semanal</span>
+                                            <span class="fw-bold text-primary" style="font-size:1.5rem;">{{ eficiencia_semanal }}%</span>
+                                        </div>
+                                        <div class="progress mb-2" style="height: 12px; background:#e3eafc; border-radius:8px;">
+                                            <div class="progress-bar bg-primary" role="progressbar" style="width: {{ eficiencia_semanal }}%; border-radius:8px;"></div>
+                                        </div>
+                                    </div>
+                                    <div class="col-12 col-md-6">
+                                        <div class="mb-2 d-flex justify-content-between align-items-center">
+                                            <span class="fw-semibold" style="font-size:1.08rem;">Mensual</span>
+                                            <span class="fw-bold text-success" style="font-size:1.5rem;">{{ eficiencia_mensual }}%</span>
+                                        </div>
+                                        <div class="progress mb-2" style="height: 12px; background:#d6f5e6; border-radius:8px;">
+                                            <div class="progress-bar bg-success" role="progressbar" style="width: {{ eficiencia_mensual }}%; border-radius:8px;"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-6 d-flex">
+                        <div class="card shadow-sm border-0 flex-fill mb-0">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <h6 class="fw-bold mb-0">Comparación</h6>
+                                    <select class="form-select form-select-sm w-auto ms-2" style="min-width:100px;" id="select-comparacion-periodo">
+                                        <option value="semana">Semana</option>
+                                        <option value="mes">Mes</option>
+                                    </select>
+                                </div>
+                                <div class="rounded-3 mb-3 px-3 py-2 text-center" style="background: linear-gradient(90deg, #eafaf1 0%, #f3fafd 100%);">
+                                    <span class="fw-bold" style="color:#1db954; font-size:1.5rem;"><i class="bi bi-graph-up-arrow me-1"></i>+{{ comparacion_porcentaje }}%</span>
+                                    <div class="text-muted" style="font-size:1.05rem;">vs. período anterior</div>
+                                </div>
+                                <div class="row text-center">
+                                    <div class="col-6">
+                                        <div class="fw-bold" style="font-size:1.3rem;">{{ eficiencia_actual }}%</div>
+                                        <div class="text-muted" style="font-size:0.98rem;">Actual</div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="fw-bold" style="font-size:1.3rem;">{{ eficiencia_anterior }}%</div>
+                                        <div class="text-muted" style="font-size:0.98rem;">Anterior</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Fila inferior: Tiempo de Respuesta y Racha de Días Consecutivos -->
+                <div class="row g-3 mt-4 justify-content-center align-items-stretch">
+                    <div class="col-lg-6 d-flex">
+                        <div class="card shadow-sm border-0 flex-fill mb-4">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center mb-3">
+                                    <span class="me-2"><i class="bi bi-clock-history"></i></span>
+                                    <h6 class="fw-bold mb-0">Tiempo de Respuesta</h6>
+                                </div>
+                                
+                                <!-- Tiempo promedio principal -->
+                                <div class="bg-primary bg-opacity-10 rounded-3 py-3 mb-3 text-center">
+                                    <div class="display-5 fw-bold text-primary mb-0">{{ tiempo_respuesta_promedio }}</div>
+                                    <div class="text-muted" style="font-size:1.1rem;">minutos promedio</div>
+                                </div>
+                                
+                                <!-- Estadísticas adicionales de tiempo -->
+                                <div class="row text-center mb-3">
+                                    <div class="col-6">
+                                        <div class="fw-bold text-success" style="font-size:1.2rem;">{{ tiempo_respuesta_rapido or '0.0' }}</div>
+                                        <div class="text-muted" style="font-size:0.9rem;">Más rápido</div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="fw-bold text-warning" style="font-size:1.2rem;">{{ tiempo_respuesta_lento or '0.0' }}</div>
+                                        <div class="text-muted" style="font-size:0.9rem;">Más lento</div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Preguntas que requieren más reflexión -->
+                                <div class="fw-semibold mb-2" style="color:#222;">Preguntas que requieren más reflexión:</div>
+                                <div class="list-group list-group-flush">
+                                    {% for pregunta in preguntas_reflexion %}
+                                    <div class="list-group-item d-flex justify-content-between align-items-center px-0 py-2" style="background-color:#f8f9fa; border:none; color:#888;">
+                                        <span class="ps-2">{{ pregunta.texto }}</span>
+                                        <span class="badge rounded-pill bg-light text-dark fw-semibold me-2" style="font-size:1em;">{{ pregunta.tiempo }} min</span>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                
+                                <!-- Información adicional -->
+                                <div class="mt-3 p-2 bg-light rounded">
+                                    <small class="text-muted">
+                                        <i class="bi bi-info-circle me-1"></i>
+                                        Basado en {{ total_respuestas_tiempo or 0 }} respuestas con tiempo registrado
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-6 d-flex">
+                        <div class="card shadow-sm border-0 flex-fill mb-4">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center mb-2">
+                                    <span class="me-2"><i class="bi bi-fire" style="color:#ff6600;"></i></span>
+                                    <h6 class="fw-bold mb-0">Racha de Días Consecutivos</h6>
+                                </div>
+                                <div class="bg-warning bg-opacity-10 rounded-3 py-3 mb-3 text-center">
+                                    <div class="display-5 fw-bold mb-0" style="color:#ff6600;">{{ racha_actual }}</div>
+                                    <div class="text-muted" style="font-size:1.1rem;">días consecutivos</div>
+                                </div>
+                                <div class="row text-center mb-3">
+                                    <div class="col-6">
+                                        <div class="fw-bold" style="font-size:1.3rem;">{{ mejor_racha }}</div>
+                                        <div class="text-muted" style="font-size:0.98rem;">Mejor racha</div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="fw-bold" style="font-size:1.3rem;">{{ total_dias }}</div>
+                                        <div class="text-muted" style="font-size:0.98rem;">Días totales</div>
+                                    </div>
+                                </div>
+                                <div class="text-center mb-1" style="font-size:0.98rem; color:#888;">Últimos 7 días</div>
+                                <div class="d-flex justify-content-center align-items-center gap-2 mb-2">
+                                    {% for dia, letra in racha_zip %}
+                                    <div class="d-flex flex-column align-items-center">
+                                        <div class="rounded-2" style="width:28px; height:28px; background: {% if dia %}#ff6600{% else %}#f7c59f{% endif %}; opacity: {% if dia %}1{% else %}0.5{% endif %};"></div>
+                                        <div style="font-size:0.95em; color:#888;">{{ letra }}</div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                </div>
+            </div>
+        </div>
+        <!-- Tab Avanzadas (ANTIGUA) eliminada: contenido migrado al pane principal -->
+        <div class="tab-pane fade" id="avanzadas_old" role="tabpanel" style="display:none;">
+            <div class="container-fluid px-0">
+                <div class="alert alert-warning">Contenido migrado al pane Avanzadas principal.</div>
+            </div>
+        </div>
+        <!-- Tab Avanzadas (DUPLICADA) desactivada para evitar IDs repetidos -->
+        <div class="tab-pane fade" id="avanzadas_unused" role="tabpanel" style="display:none;">
+            <div class="container-fluid px-0">
+                <h5 class="fw-bold mb-3">Cumplimiento de Hábitos</h5>
+                <div class="text-muted mb-3" style="font-size:1rem;">Visualiza tu progreso, tendencias y el rendimiento de tus respuestas diarias.</div>
+                <!-- Calendario de Objetivos: Creados vs Completados (Avanzadas) -->
+                <div class="card shadow-sm border-0 w-100 mb-4">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+                            <div>
+                                <h6 class="fw-bold mb-1">Calendario de Objetivos (Creados vs Completados)</h6>
+                                <small class="text-muted">Explora mes a mes cuántos objetivos creaste y cuántos completaste.</small>
+                            </div>
+                            <div class="d-flex flex-wrap align-items-center gap-2">
+                                <select class="form-select form-select-sm" id="obj-cal-mes" style="width:auto; min-width:140px;"></select>
+                                <select class="form-select form-select-sm" id="obj-cal-anio" style="width:auto; min-width:100px;"></select>
+                                <button class="btn btn-sm btn-outline-primary" id="obj-cal-desplegar"><i class="bi bi-list-ul me-1"></i>Desplegar Objetivos</button>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-center gap-4 mb-3 flex-wrap">
+                            <div class="text-center">
+                                <div class="h4 fw-bold text-primary mb-0" id="obj-total-creados">0</div>
+                                <small class="text-muted">Creados en el mes</small>
+                            </div>
+                            <div class="text-center">
+                                <div class="h4 fw-bold text-success mb-0" id="obj-total-completados">0</div>
+                                <small class="text-muted">Completados en el mes</small>
+                            </div>
+                        </div>
+
+                        <div id="objetivos-calendario" class="calendario-container">
+                            <div class="text-center py-5 text-muted">
+                                <i class="bi bi-calendar3" style="font-size: 3rem; opacity: 0.3;"></i>
+                                <div class="mt-2">Selecciona un mes y año para ver el calendario</div>
+                            </div>
+                        </div>
+
+                        <div class="calendario-leyenda d-flex justify-content-center gap-4 mt-3 flex-wrap">
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="calendario-leyenda-item" style="background-color:#3b82f6;"></span>
+                                <small class="text-muted">Creados</small>
+                            </div>
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="calendario-leyenda-item" style="background-color:#22c55e;"></span>
+                                <small class="text-muted">Completados</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <ul class="nav nav-tabs mb-4" id="cumplimientosTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="cumplimientos-tab" data-bs-toggle="tab" data-bs-target="#cumplimientos" type="button" role="tab">Cumplimientos</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="frecuencia-tab" data-bs-toggle="tab" data-bs-target="#frecuencia" type="button" role="tab">Frecuencia de Respuesta</button>
+                    </li>
+                </ul>
+                <div class="tab-content" id="cumplimientosTabsContent">
+                    <!-- Tab Cumplimientos -->
+                    <div class="tab-pane fade show active" id="cumplimientos" role="tabpanel">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div>
+                                <h6 class="fw-bold mb-1">Cumplimiento de Hábitos - Vista Calendario</h6>
+                                <div class="text-muted" style="font-size:1rem;">Visualiza tu progreso diario en formato calendario para cada pregunta</div>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <select class="form-select form-select-sm" id="pregunta-calendario-select" style="min-width:200px;">
+                                    <option value="">Selecciona una pregunta</option>
+                                    {% for pregunta in preguntas %}
+                                        <option value="{{ pregunta.id }}">{{ pregunta.texto }}</option>
+                                    {% endfor %}
+                                </select>
+                                <select class="form-select form-select-sm" id="mes-calendario-select" style="min-width:120px;">
+                                    <!-- Se llena dinámicamente con JavaScript -->
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <!-- Calendario de cumplimiento -->
+                        <div class="card shadow-sm border-0">
+                            <div class="card-body">
+                                <div id="calendario-cumplimiento">
+                                    <div class="text-center py-5 text-muted">
+                                        <i class="bi bi-calendar3" style="font-size: 3rem; opacity: 0.3;"></i>
+                                        <div class="mt-2">Selecciona una pregunta para ver el calendario de cumplimiento</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Leyenda del calendario -->
+                        <div class="card mt-3 shadow-sm border-0">
+                            <div class="card-body py-3">
+                                <div class="d-flex justify-content-center align-items-center gap-4 flex-wrap">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="calendario-leyenda-item" style="background-color: #22c55e;"></div>
+                                        <span class="small">Respondida</span>
+                                    </div>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="calendario-leyenda-item" style="background-color: #ef4444;"></div>
+                                        <span class="small">No respondida</span>
+                                    </div>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="calendario-leyenda-item" style="background-color: #e5e7eb;"></div>
+                                        <span class="small">Sin datos</span>
+                                    </div>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="calendario-leyenda-item calendario-hoy"></div>
+                                        <span class="small">Hoy</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Tab Frecuencia de Respuesta -->
+                    <div class="tab-pane fade" id="frecuencia" role="tabpanel">
+                        <div class="container-fluid px-0">
+                            <div class="d-flex justify-content-between align-items-center mb-4">
+                                <div>
+                                    <h6 class="fw-bold mb-1">Análisis de Frecuencia de Respuestas</h6>
+                                    <div class="text-muted" style="font-size:1rem;">Analiza qué respuestas das más frecuentemente para cada pregunta</div>
+                                </div>
+                            </div>
+                            
+                            <!-- Panel de selección mejorado -->
+                            <div class="row g-4 mb-4">
+                                <!-- Selección de pregunta -->
+                                <div class="col-lg-6">
+                                    <div class="card h-100 border-0 shadow-sm">
+                                        <div class="card-body">
+                                            <div class="d-flex align-items-center mb-3">
+                                                <div class="bg-primary bg-opacity-10 rounded-circle p-2 me-3">
+                                                    <i class="bi bi-question-circle text-primary" style="font-size: 1.2rem;"></i>
+                                                </div>
+                                                <div>
+                                                    <h6 class="mb-0 fw-semibold">Selecciona una Pregunta</h6>
+                                                    <small class="text-muted">Elige qué pregunta quieres analizar</small>
+                                                </div>
+                                            </div>
+                                            <select id="preguntaSelector" class="form-select">
+                                                <option value="">-- Selecciona una pregunta --</option>
+                                                {% for pregunta in preguntas %}
+                                                    <option value="{{ pregunta.id }}" data-tipo="{{ pregunta.tipo }}">{{ pregunta.texto }}</option>
+                                                {% endfor %}
+                                            </select>
+                                            <div class="mt-2">
+                                                <small class="text-muted" id="tipoPreguntaInfo">
+                                                    <i class="bi bi-info-circle me-1"></i>
+                                                    Selecciona una pregunta para ver su tipo
+                                                </small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Configuración del análisis -->
+                                <div class="col-lg-6">
+                                    <div class="card h-100 border-0 shadow-sm">
+                                        <div class="card-body">
+                                            <div class="d-flex align-items-center mb-3">
+                                                <div class="bg-success bg-opacity-10 rounded-circle p-2 me-3">
+                                                    <i class="bi bi-gear text-success" style="font-size: 1.2rem;"></i>
+                                                </div>
+                                                <div>
+                                                    <h6 class="mb-0 fw-semibold">Configuración del Análisis</h6>
+                                                    <small class="text-muted">Personaliza cómo ver los datos</small>
+                                                </div>
+                                            </div>
+                                            
+                                                                                        <!-- Período de análisis -->
+                                            <div class="mb-3">
+                                                <label class="form-label fw-semibold mb-2">Período de análisis:</label>
+                                                <div class="row g-2">
+                                                    <div class="col-6">
+                                                        <label class="form-label text-muted small">Fecha desde:</label>
+                                                        <input type="date" class="form-control" id="fecha-desde-2" value="">
+                                                    </div>
+                                                    <div class="col-6">
+                                                        <label class="form-label text-muted small">Fecha hasta:</label>
+                                                        <input type="date" class="form-control" id="fecha-hasta-2" value="">
+                                                    </div>
+                                                </div>
+                                                <div class="mt-2">
+                                                    <div class="btn-group w-100" role="group">
+                                                        <button type="button" class="btn btn-outline-secondary btn-sm" id="btn-ultimos-7dias-2">
+                                                            <i class="bi bi-calendar-week me-1"></i>Últimos 7 días
+                                                        </button>
+                                                        <button type="button" class="btn btn-outline-secondary btn-sm" id="btn-ultimo-mes-2">
+                                                            <i class="bi bi-calendar-month me-1"></i>Último mes
+                                                        </button>
+                                                        <button type="button" class="btn btn-outline-secondary btn-sm" id="btn-ultimos-3meses-2">
+                                                            <i class="bi bi-calendar3 me-1"></i>Últimos 3 meses
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                                <small class="text-muted mt-1 d-block">
+                                                    <i class="bi bi-info-circle me-1"></i>
+                                                    Selecciona un rango personalizado o usa los botones de acceso rápido
+                                                </small>
+                                            </div>
+                                            
+                                            <!-- Tipo de gráfico -->
+                                            <div>
+                                                <label class="form-label fw-semibold mb-2">Tipo de visualización:</label>
+                                                <div class="btn-group w-100" role="group">
+                                                    <input type="radio" class="btn-check grafico-radio" name="grafico" id="grafico-barras" value="barras" checked>
+                                                    <label class="btn btn-outline-secondary" for="grafico-barras">
+                                                        <i class="bi bi-bar-chart me-1"></i>Barras
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Área del gráfico -->
+                            <div class="card border-0 shadow-sm">
+                                <div class="card-body p-4">
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <div>
+                                            <h5 class="mb-1" id="tituloGrafico">Análisis de Frecuencia</h5>
+                                            <small class="text-muted" id="subtituloGrafico">Selecciona una pregunta para comenzar el análisis</small>
+                                        </div>
+                                    </div>
+                                    
+                                    <div id="graficoFrecuencia" style="min-height: 400px; width: 100%;">
+                                        <div class="d-flex align-items-center justify-content-center h-100 text-muted" style="min-height: 400px;">
+                                            <div class="text-center">
+                                                <i class="bi bi-bar-chart" style="font-size: 4rem; opacity: 0.3;"></i>
+                                                <div class="mt-3">
+                                                    <h6>¡Comienza tu análisis!</h6>
+                                                    <p class="mb-0">Selecciona una pregunta arriba para ver el gráfico de frecuencia de respuestas</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Mensajes informativos -->
+                                    <div id="mensajeExclusion" class="alert alert-warning mt-3 d-none">
+                                        <div class="d-flex align-items-center">
+                                            <i class="bi bi-exclamation-triangle me-2"></i>
+                                            <div>
+                                                <strong>Pregunta de texto abierto</strong><br>
+                                                Las preguntas de texto libre no pueden analizarse cuantitativamente. Prueba con preguntas de opción múltiple o sí/no.
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div id="mensajeSinDatos" class="alert alert-info mt-3 d-none">
+                                        <div class="d-flex align-items-center">
+                                            <i class="bi bi-info-circle me-2"></i>
+                                            <div>
+                                                <strong>Sin datos suficientes</strong><br>
+                                                No hay suficientes respuestas para esta pregunta en el período seleccionado.
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Información adicional -->
+                            <div class="row g-3 mt-2">
+                                <div class="col-md-4">
+                                    <div class="card border-0 bg-light">
+                                        <div class="card-body text-center py-3">
+                                            <i class="bi bi-check-circle text-success mb-2" style="font-size: 1.5rem;"></i>
+                                            <h6 class="mb-1">Preguntas Sí/No</h6>
+                                            <small class="text-muted">Muestra distribución de respuestas afirmativas vs negativas</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="card border-0 bg-light">
+                                        <div class="card-body text-center py-3">
+                                            <i class="bi bi-list-ul text-primary mb-2" style="font-size: 1.5rem;"></i>
+                                            <h6 class="mb-1">Opción Múltiple</h6>
+                                            <small class="text-muted">Frecuencia de cada opción seleccionada</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="card border-0 bg-light">
+                                        <div class="card-body text-center py-3">
+                                            <i class="bi bi-pencil text-warning mb-2" style="font-size: 1.5rem;"></i>
+                                            <h6 class="mb-1">Texto Abierto</h6>
+                                            <small class="text-muted">No disponible para análisis cuantitativo</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <style>
+            :root {
+                --color-success: #22c55e;
+                --color-warning: #f59e42;
+                --color-danger: #ef4444;
+            }
+            .progress-circle-success svg circle[stroke^="var(--color-success)"] { stroke: var(--color-success); }
+            .progress-circle-warning svg circle[stroke^="var(--color-warning)"] { stroke: var(--color-warning); }
+            .progress-circle-danger svg circle[stroke^="var(--color-danger)"] { stroke: var(--color-danger); }
+            
+            /* Estilos del calendario de cumplimiento */
+            .calendario-container {
+                max-width: 100%;
+                overflow-x: auto;
+            }
+            
+            .calendario-grid {
+                display: grid;
+                grid-template-columns: repeat(7, 1fr);
+                gap: 3px;
+                min-width: 350px;
+                max-width: 500px;
+                margin: 0 auto;
+            }
+            
+            .calendario-header {
+                display: grid;
+                grid-template-columns: repeat(7, 1fr);
+                gap: 3px;
+                margin-bottom: 8px;
+                min-width: 350px;
+                max-width: 500px;
+                margin: 0 auto 8px auto;
+            }
+            
+            .calendario-dia-semana {
+                text-align: center;
+                font-weight: 600;
+                font-size: 0.85rem;
+                color: #6b7280;
+                padding: 8px 4px;
+            }
+            
+            .calendario-dia {
+                aspect-ratio: 1;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                border-radius: 4px;
+                font-size: 0.85rem;
+                font-weight: 500;
+                cursor: pointer;
+                transition: all 0.2s ease;
+                position: relative;
+                min-height: 40px;
+                padding: 2px;
+                text-align: center;
+            }
+            
+            .calendario-dia-numero {
+                font-weight: 600;
+                font-size: 0.9rem;
+                line-height: 1;
+            }
+            
+            .calendario-dia-respuesta {
+                font-size: 0.65rem;
+                line-height: 1;
+                margin-top: 1px;
+                opacity: 0.9;
+                word-break: break-word;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                max-height: 20px;
+            }
+            
+            .calendario-dia:hover {
+                transform: scale(1.05);
+                z-index: 2;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            }
+            
+            .calendario-dia.respondida:hover .calendario-dia-respuesta {
+                opacity: 1;
+            }
+            
+            .calendario-dia.respondida {
+                background-color: #22c55e;
+                color: white;
+            }
+            
+            .calendario-dia.no-respondida {
+                background-color: #ef4444;
+                color: white;
+            }
+            
+            .calendario-dia.sin-datos {
+                background-color: #e5e7eb;
+                color: #9ca3af;
+            }
+            
+            .calendario-dia.otro-mes {
+                opacity: 0.3;
+            }
+            
+            .calendario-dia.hoy {
+                border: 2px solid #3b82f6;
+                font-weight: 700;
+            }
+            
+            .calendario-leyenda-item {
+                width: 16px;
+                height: 16px;
+                border-radius: 3px;
+                display: inline-block;
+            }
+            
+            .calendario-leyenda-item.calendario-hoy {
+                background-color: #e5e7eb;
+                border: 2px solid #3b82f6;
+            }
+            
+            .calendario-titulo {
+                text-align: center;
+                font-size: 1.25rem;
+                font-weight: 600;
+                margin-bottom: 1rem;
+                color: #374151;
+            }
+            
+            .calendario-navegacion {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 1rem;
+            }
+            
+            .calendario-nav-btn {
+                background: none;
+                border: 1px solid #d1d5db;
+                border-radius: 6px;
+                padding: 6px 12px;
+                cursor: pointer;
+                transition: all 0.2s ease;
+                color: #374151;
+            }
+            
+            .calendario-nav-btn:hover {
+                background-color: #f3f4f6;
+                border-color: #9ca3af;
+            }
+            
+            .calendario-nav-btn:disabled {
+                opacity: 0.5;
+                cursor: not-allowed;
+            }
+            
+            .calendario-estadisticas {
+                display: flex;
+                justify-content: center;
+                gap: 2rem;
+                margin-top: 1rem;
+                padding: 1rem;
+                background-color: #f8fafc;
+                border-radius: 8px;
+            }
+            
+            .calendario-stat {
+                text-align: center;
+            }
+            
+            .calendario-stat-numero {
+                font-size: 1.5rem;
+                font-weight: 700;
+                margin-bottom: 0.25rem;
+            }
+            
+            .calendario-stat-label {
+                font-size: 0.85rem;
+                color: #6b7280;
+            }
+            
+            @media (max-width: 768px) {
+                .calendario-grid,
+                .calendario-header {
+                    min-width: 300px;
+                    max-width: 350px;
+                }
+                
+                .calendario-dia {
+                    min-height: 35px;
+                    font-size: 0.8rem;
+                }
+                
+                .calendario-dia-respuesta {
+                    font-size: 0.6rem;
+                }
+                
+                .calendario-estadisticas {
+                    gap: 1rem;
+                }
+            }
+            </style>
+        </div>
+    </div>
+</div>
+
+<script>
+// Cargar resumen de objetivos completados
+document.addEventListener('DOMContentLoaded', async () => {
+    try {
+        const resp = await fetch('/api/objetivos/stats_summary');
+        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+        const data = await resp.json();
+        if (data.status !== 'success') throw new Error('API error');
+        const s = data.data || {};
+        const setText = (id, val) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = (val ?? 0);
+        };
+        // Cumplidos
+        setText('obj-hoy-c', s.hoy?.cumplidos);
+        setText('obj-semana-c', s.semana?.cumplidos);
+        setText('obj-mes-c', s.mes?.cumplidos);
+        setText('obj-anio-c', s.anio?.cumplidos);
+        // No cumplidos
+        setText('obj-hoy-nc', s.hoy?.no_cumplidos);
+        setText('obj-semana-nc', s.semana?.no_cumplidos);
+        setText('obj-mes-nc', s.mes?.no_cumplidos);
+        setText('obj-anio-nc', s.anio?.no_cumplidos);
+    } catch (e) {
+        console.error('Error cargando stats de objetivos:', e);
+    }
+});
+</script>
+<script>
+// ==============================
+// Calendario de Objetivos (Avanzadas)
+// ==============================
+const MESES_NOMBRES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+function poblarSelectsObjetivosCalendario() {
+    const selMes = document.getElementById('obj-cal-mes');
+    const selAnio = document.getElementById('obj-cal-anio');
+    if (!selMes || !selAnio) return;
+    selMes.innerHTML = '';
+    MESES_NOMBRES.forEach((n, i) => {
+        const opt = document.createElement('option');
+        opt.value = i;
+        opt.textContent = n;
+        selMes.appendChild(opt);
+    });
+    const ahora = new Date();
+    const anioActual = ahora.getFullYear();
+    selAnio.innerHTML = '';
+    for (let a = anioActual - 3; a <= anioActual + 1; a++) {
+        const opt = document.createElement('option');
+        opt.value = a;
+        opt.textContent = a;
+        selAnio.appendChild(opt);
+    }
+    selMes.value = String(ahora.getMonth());
+    selAnio.value = String(anioActual);
+}
+
+async function cargarCalendarioObjetivos() {
+    const selMes = document.getElementById('obj-cal-mes');
+    const selAnio = document.getElementById('obj-cal-anio');
+    
+    if (!selMes || !selAnio) {
+        console.error('No se encontraron los selectores de mes y año');
+        return;
+    }
+    
+    const mes = parseInt(selMes.value, 10);
+    const anio = parseInt(selAnio.value, 10);
+    
+    console.log(`Cargando calendario para mes ${mes} (0-11), año ${anio}`);
+    
+    // Mostrar indicador de carga
+    const cont = document.getElementById('objetivos-calendario');
+    if (cont) {
+        cont.innerHTML = `
+            <div class="text-center py-4">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Cargando...</span>
+                </div>
+                <div class="mt-2 text-muted">Cargando calendario...</div>
+            </div>
+        `;
+    }
+    
+    try {
+        const resp = await fetch(`/api/objetivos/calendario?mes=${mes}&anio=${anio}`);
+        console.log('Respuesta del servidor:', resp.status, resp.statusText);
+        
+        if (!resp.ok) {
+            throw new Error(`Error HTTP ${resp.status}: ${resp.statusText}`);
+        }
+        
+        const json = await resp.json();
+        console.log('Datos recibidos:', json);
+        
+        if (json.status !== 'success') {
+            throw new Error(`Error de API: ${json.message || 'Error desconocido'}`);
+        }
+        
+        renderObjetivosCalendario(json.data);
+        
+    } catch (e) {
+        console.error('Error cargando calendario objetivos:', e);
+        
+        // Mostrar error en el contenedor
+        if (cont) {
+            cont.innerHTML = `
+                <div class="text-center py-4 text-danger">
+                    <i class="bi bi-exclamation-triangle" style="font-size: 2rem;"></i>
+                    <div class="mt-2">Error al cargar el calendario</div>
+                    <div class="small text-muted">${e.message}</div>
+                    <button class="btn btn-sm btn-outline-primary mt-2" onclick="cargarCalendarioObjetivos()">
+                        <i class="bi bi-arrow-clockwise"></i> Reintentar
+                    </button>
+                </div>
+            `;
+        }
+    }
+}
+
+function renderObjetivosCalendario(data) {
+    const cont = document.getElementById('objetivos-calendario');
+    if (!cont || !data) {
+        console.error('No se encontró el contenedor del calendario o no hay datos');
+        return;
+    }
+    
+    console.log('Renderizando calendario con datos:', data);
+    
+    const { anio, mes, dias_en_mes, creados_por_dia = {}, completados_por_dia = {} } = data;
+    
+    // Encabezado de días de la semana
+    const diasSemana = ['L','M','X','J','V','S','D'];
+    const primerDia = new Date(anio, mes, 1);
+    const offset = (primerDia.getDay() + 6) % 7; // convertir a semana empezando lunes
+
+    let header = '<div class="calendario-header">' + diasSemana.map(d => `<div class="calendario-dia-semana">${d}</div>`).join('') + '</div>';
+    let grid = '<div class="calendario-grid">';
+    
+    // Días vacíos al inicio del mes
+    for (let i = 0; i < offset; i++) {
+        grid += '<div class="calendario-dia sin-datos otro-mes"></div>';
+    }
+    
+    // Días del mes
+    for (let dia = 1; dia <= dias_en_mes; dia++) {
+        const creados = creados_por_dia[String(dia)] || 0;
+        const completados = completados_por_dia[String(dia)] || 0;
+        
+        // Determinar el color de fondo basado en la actividad
+        let claseExtra = '';
+        let colorFondo = '#f8f9fa';
+        
+        if (creados > 0 || completados > 0) {
+            claseExtra = 'con-actividad';
+            if (completados > creados) {
+                colorFondo = '#d4edda'; // Verde claro si hay más completados
+            } else if (creados > completados) {
+                colorFondo = '#cce5ff'; // Azul claro si hay más creados
+            } else {
+                colorFondo = '#fff3cd'; // Amarillo claro si están equilibrados
+            }
+        }
+        
+        const fechaCompleta = `${anio}-${String(mes + 1).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
+        
+        grid += `
+        <div class="calendario-dia ${claseExtra} calendario-dia-clickeable" 
+             style="background-color: ${colorFondo}; cursor: pointer;" 
+             title="${dia} ${MESES_NOMBRES[mes]} ${anio}\nCreados: ${creados}\nCompletados: ${completados}\n\nHaz clic para ver detalles"
+             data-fecha="${fechaCompleta}">
+            <div class="calendario-dia-numero">${dia}</div>
+            <div class="calendario-dia-respuesta" style="color:#3b82f6; font-weight: 500;">📝 ${creados}</div>
+            <div class="calendario-dia-respuesta" style="color:#22c55e; font-weight: 500;">✅ ${completados}</div>
+        </div>`;
+    }
+    grid += '</div>';
+    
+    cont.innerHTML = header + grid;
+
+    // Totales
+    const totalCreados = Object.values(creados_por_dia).reduce((a,b)=>a+Number(b),0);
+    const totalCompletados = Object.values(completados_por_dia).reduce((a,b)=>a+Number(b),0);
+    const elCreados = document.getElementById('obj-total-creados');
+    const elCompletados = document.getElementById('obj-total-completados');
+    
+    if (elCreados) elCreados.textContent = totalCreados;
+    if (elCompletados) elCompletados.textContent = totalCompletados;
+    
+    console.log(`Calendario renderizado: ${totalCreados} creados, ${totalCompletados} completados`);
+    
+    // Agregar event listeners a los días clickeables
+    setTimeout(() => {
+        const diasClickeables = document.querySelectorAll('.calendario-dia-clickeable');
+        diasClickeables.forEach(dia => {
+            dia.addEventListener('click', function() {
+                const fecha = this.getAttribute('data-fecha');
+                if (fecha && typeof window.abrirDetalleDia === 'function') {
+                    window.abrirDetalleDia(fecha);
+                } else {
+                    console.error('No se puede abrir el modal: función no disponible o fecha inválida');
+                }
+            });
+        });
+        console.log(`✅ Event listeners agregados a ${diasClickeables.length} días`);
+    }, 100);
+}
+
+function establecerFechasPorDefecto(mes, anio) {
+    const filtroFechaDesde = document.getElementById('filtro-fecha-desde');
+    const filtroFechaHasta = document.getElementById('filtro-fecha-hasta');
+    
+    if (filtroFechaDesde && filtroFechaHasta) {
+        // Establecer el primer día del mes como fecha desde
+        const primerDia = new Date(anio, mes, 1);
+        const fechaDesde = primerDia.toISOString().split('T')[0];
+        
+        // Establecer el último día del mes como fecha hasta
+        const ultimoDia = new Date(anio, mes + 1, 0);
+        const fechaHasta = ultimoDia.toISOString().split('T')[0];
+        
+        filtroFechaDesde.value = fechaDesde;
+        filtroFechaHasta.value = fechaHasta;
+    }
+}
+
+function establecerRangoMesActual() {
+    const selMes = document.getElementById('obj-cal-mes');
+    const selAnio = document.getElementById('obj-cal-anio');
+    
+    if (selMes && selAnio) {
+        const mes = parseInt(selMes.value, 10);
+        const anio = parseInt(selAnio.value, 10);
+        establecerFechasPorDefecto(mes, anio);
+        
+        // Aplicar filtros automáticamente
+        aplicarFiltrosYRenderizar();
+        
+        if (typeof showInfo === 'function') {
+            const mesNombre = MESES_NOMBRES[mes];
+            showInfo(`Rango establecido: ${mesNombre} ${anio}`);
+        }
+    }
+}
+
+async function desplegarObjetivosDetallados() {
+    const selMes = document.getElementById('obj-cal-mes');
+    const selAnio = document.getElementById('obj-cal-anio');
+    
+    if (!selMes || !selAnio) {
+        console.error('No se encontraron los selectores de mes y año');
+        return;
+    }
+    
+    const mes = parseInt(selMes.value, 10);
+    const anio = parseInt(selAnio.value, 10);
+    const mesNombre = MESES_NOMBRES[mes];
+    
+    console.log(`Desplegando objetivos detallados para mes ${mes} (0-11), año ${anio}`);
+    
+    // Actualizar título del modal
+    const modalTitle = document.getElementById('modalObjetivosDetalladosLabel');
+    if (modalTitle) {
+        modalTitle.innerHTML = `
+            <i class="bi bi-list-check me-2"></i>
+            Objetivos de ${mesNombre} ${anio}
+        `;
+    }
+    
+    // Establecer valores por defecto en los filtros de fecha
+    establecerFechasPorDefecto(mes, anio);
+    
+    // Mostrar modal con indicador de carga
+    const modal = new bootstrap.Modal(document.getElementById('modalObjetivosDetallados'));
+    const lista = document.getElementById('objetivos-detallados-lista');
+    
+    if (lista) {
+        lista.innerHTML = `
+            <div class="text-center py-5">
+                <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+                    <span class="visually-hidden">Cargando...</span>
+                </div>
+                <div class="mt-3 text-muted">
+                    <h6>Cargando objetivos de ${mesNombre} ${anio}...</h6>
+                    <p class="mb-0">Por favor espera un momento</p>
+                </div>
+            </div>
+        `;
+    }
+    
+    modal.show();
+    
+    try {
+        const resp = await fetch(`/api/objetivos/mes-detallado?mes=${mes}&anio=${anio}`);
+        console.log('Respuesta del servidor:', resp.status, resp.statusText);
+        
+        if (!resp.ok) {
+            throw new Error(`Error HTTP ${resp.status}: ${resp.statusText}`);
+        }
+        
+        const json = await resp.json();
+        console.log('Datos recibidos:', json);
+        
+        if (json.status !== 'success') {
+            throw new Error(`Error de API: ${json.message || 'Error desconocido'}`);
+        }
+        
+        renderObjetivosDetallados(json.data);
+        
+    } catch (e) {
+        console.error('Error cargando objetivos detallados:', e);
+        
+        // Mostrar error en el modal
+        if (lista) {
+            lista.innerHTML = `
+                <div class="text-center py-5 text-danger">
+                    <i class="bi bi-exclamation-triangle" style="font-size: 3rem; opacity: 0.7;"></i>
+                    <div class="mt-3">
+                        <h6>Error al cargar los objetivos</h6>
+                        <p class="text-muted">${e.message}</p>
+                        <button class="btn btn-outline-primary mt-2" onclick="desplegarObjetivosDetallados()">
+                            <i class="bi bi-arrow-clockwise me-1"></i> Reintentar
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+    }
+}
+
+// Variable global para almacenar los datos originales
+let datosObjetivosOriginales = null;
+
+function renderObjetivosDetallados(data) {
+    const lista = document.getElementById('objetivos-detallados-lista');
+    if (!lista || !data) {
+        console.error('No se encontró el contenedor de la lista o no hay datos');
+        return;
+    }
+    
+    // Guardar datos originales para filtros
+    datosObjetivosOriginales = data;
+    
+    // Aplicar filtros
+    const objetivosFiltrados = aplicarFiltrosObjetivos(data.objetivos);
+    const dataFiltrada = { ...data, objetivos: objetivosFiltrados };
+    
+    renderObjetivosDetalladosInterno(dataFiltrada);
+}
+
+function aplicarFiltrosObjetivos(objetivos) {
+    const filtroFrecuencia = document.getElementById('filtro-frecuencia-objetivos')?.value || '';
+    const filtroEstado = document.getElementById('filtro-estado-objetivos')?.value || '';
+    const fechaDesde = document.getElementById('filtro-fecha-desde')?.value || '';
+    const fechaHasta = document.getElementById('filtro-fecha-hasta')?.value || '';
+    
+    let objetivosFiltrados = [...objetivos];
+    
+    // Filtrar por frecuencia
+    if (filtroFrecuencia) {
+        if (filtroFrecuencia === 'recurrente') {
+            // Filtrar solo objetivos recurrentes
+            objetivosFiltrados = objetivosFiltrados.filter(obj => obj.recurrente === true || obj.recurrente === 1);
+        } else {
+            // Filtrar por categoría específica
+            objetivosFiltrados = objetivosFiltrados.filter(obj => 
+                (obj.categoria || 'diario').toLowerCase() === filtroFrecuencia.toLowerCase()
+            );
+        }
+    }
+    
+    // Filtrar por estado
+    if (filtroEstado) {
+        if (filtroEstado === 'completado') {
+            objetivosFiltrados = objetivosFiltrados.filter(obj => obj.completado);
+        } else if (filtroEstado === 'pendiente') {
+            objetivosFiltrados = objetivosFiltrados.filter(obj => !obj.completado && obj.estado !== 'histórico');
+        } else {
+            objetivosFiltrados = objetivosFiltrados.filter(obj => 
+                (obj.estado || 'pendiente').toLowerCase() === filtroEstado.toLowerCase()
+            );
+        }
+    }
+    
+    // Filtrar por rango de fechas
+    if (fechaDesde || fechaHasta) {
+        objetivosFiltrados = objetivosFiltrados.filter(obj => {
+            // Usar fecha de creación como referencia principal
+            const fechaObjetivo = obj.fecha_creacion;
+            if (!fechaObjetivo) return false;
+            
+            // Convertir fecha del objetivo a formato comparable
+            const fechaObj = new Date(fechaObjetivo + 'T00:00:00');
+            
+            // Verificar rango desde
+            if (fechaDesde) {
+                const desde = new Date(fechaDesde + 'T00:00:00');
+                if (fechaObj < desde) return false;
+            }
+            
+            // Verificar rango hasta
+            if (fechaHasta) {
+                const hasta = new Date(fechaHasta + 'T23:59:59');
+                if (fechaObj > hasta) return false;
+            }
+            
+            return true;
+        });
+    }
+    
+    return objetivosFiltrados;
+}
+
+function aplicarFiltrosYRenderizar() {
+    if (!datosObjetivosOriginales) {
+        console.warn('No hay datos originales para filtrar');
+        return;
+    }
+    
+    const lista = document.getElementById('objetivos-detallados-lista');
+    
+    // Efecto visual de filtrado
+    if (lista) {
+        lista.style.opacity = '0.6';
+        lista.style.transition = 'opacity 0.2s ease';
+    }
+    
+    // Aplicar filtros y renderizar con un pequeño delay para el efecto visual
+    setTimeout(() => {
+        const objetivosFiltrados = aplicarFiltrosObjetivos(datosObjetivosOriginales.objetivos);
+        const dataFiltrada = { ...datosObjetivosOriginales, objetivos: objetivosFiltrados };
+        
+        renderObjetivosDetalladosInterno(dataFiltrada);
+        
+        // Actualizar indicador de filtros activos
+        actualizarIndicadorFiltros();
+        
+        // Restaurar opacidad
+        if (lista) {
+            lista.style.opacity = '1';
+        }
+    }, 100);
+}
+
+function limpiarFiltrosObjetivos() {
+    // Limpiar los selectores
+    const filtroFrecuencia = document.getElementById('filtro-frecuencia-objetivos');
+    const filtroEstado = document.getElementById('filtro-estado-objetivos');
+    const filtroFechaDesde = document.getElementById('filtro-fecha-desde');
+    const filtroFechaHasta = document.getElementById('filtro-fecha-hasta');
+    
+    if (filtroFrecuencia) filtroFrecuencia.value = '';
+    if (filtroEstado) filtroEstado.value = '';
+    if (filtroFechaDesde) filtroFechaDesde.value = '';
+    if (filtroFechaHasta) filtroFechaHasta.value = '';
+    
+    // Renderizar con datos originales
+    if (datosObjetivosOriginales) {
+        renderObjetivosDetalladosInterno(datosObjetivosOriginales);
+        
+        // Actualizar indicador de filtros
+        actualizarIndicadorFiltros();
+        
+        // Mostrar mensaje solo al limpiar manualmente
+        if (typeof showInfo === 'function') {
+            showInfo('Filtros limpiados');
+        }
+    }
+}
+
+function actualizarIndicadorFiltros() {
+    const indicador = document.getElementById('indicador-filtros-activos');
+    const contador = document.getElementById('contador-filtros');
+    const filtroFrecuencia = document.getElementById('filtro-frecuencia-objetivos')?.value || '';
+    const filtroEstado = document.getElementById('filtro-estado-objetivos')?.value || '';
+    const fechaDesde = document.getElementById('filtro-fecha-desde')?.value || '';
+    const fechaHasta = document.getElementById('filtro-fecha-hasta')?.value || '';
+    
+    // Contar filtros activos
+    let filtrosActivos = 0;
+    if (filtroFrecuencia) filtrosActivos++;
+    if (filtroEstado) filtrosActivos++;
+    if (fechaDesde) filtrosActivos++;
+    if (fechaHasta) filtrosActivos++;
+    
+    if (indicador && contador) {
+        if (filtrosActivos > 0) {
+            indicador.classList.remove('d-none');
+            contador.textContent = filtrosActivos;
+        } else {
+            indicador.classList.add('d-none');
+        }
+    }
+}
+
+function renderObjetivosDetalladosInterno(data) {
+    const lista = document.getElementById('objetivos-detallados-lista');
+    const { objetivos, mes, anio } = data;
+    const mesNombre = MESES_NOMBRES[mes];
+    
+    console.log(`Renderizando ${objetivos.length} objetivos para ${mesNombre} ${anio}`);
+    
+    if (objetivos.length === 0) {
+        lista.innerHTML = `
+            <div class="text-center py-5 text-muted">
+                <i class="bi bi-inbox" style="font-size: 3rem; opacity: 0.5;"></i>
+                <div class="mt-3">
+                    <h6>No hay objetivos para ${mesNombre} ${anio}</h6>
+                    <p class="mb-0">Aún no has creado objetivos para este mes</p>
+                </div>
+            </div>
+        `;
+        return;
+    }
+    
+    // Agrupar objetivos por estado
+    const completados = objetivos.filter(obj => obj.completado);
+    const pendientes = objetivos.filter(obj => !obj.completado && obj.estado !== 'histórico');
+    const historicos = objetivos.filter(obj => !obj.completado && obj.estado === 'histórico');
+    
+    // Calcular estadísticas de objetivos saltados
+    const objetivosSaltados = objetivos.filter(obj => obj.veces_saltado > 0);
+    const totalSaltos = objetivos.reduce((sum, obj) => sum + (obj.veces_saltado || 0), 0);
+    
+    let html = `
+        <div class="mb-4">
+            <div class="d-flex justify-content-between align-items-center p-3 bg-white rounded border">
+                <div>
+                    <h6 class="mb-1 text-primary">${mesNombre} ${anio}</h6>
+                    <small class="text-muted">Total de objetivos: ${objetivos.length}</small>
+                </div>
+                <div class="d-flex gap-2 flex-wrap">
+                    <span class="badge bg-success fs-6 px-3 py-2">
+                        <i class="bi bi-check-circle me-1"></i>
+                        ${completados.length} Completados
+                    </span>
+                    <span class="badge bg-warning fs-6 px-3 py-2">
+                        <i class="bi bi-clock me-1"></i>
+                        ${pendientes.length} Pendientes
+                    </span>
+                    ${historicos.length > 0 ? `
+                    <span class="badge bg-secondary fs-6 px-3 py-2">
+                        <i class="bi bi-archive me-1"></i>
+                        ${historicos.length} Históricos
+                    </span>
+                    ` : ''}
+                    ${totalSaltos > 0 ? `
+                    <span class="badge bg-danger fs-6 px-3 py-2" title="${objetivosSaltados.length} objetivos saltados un total de ${totalSaltos} veces">
+                        <i class="bi bi-skip-forward-fill me-1"></i>
+                        ${totalSaltos} Saltos
+                    </span>
+                    ` : ''}
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Mostrar objetivos completados primero
+    if (completados.length > 0) {
+        html += `
+            <div class="mb-4">
+                <h6 class="text-success mb-3">
+                    <i class="bi bi-check-circle-fill me-2"></i>
+                    Objetivos Completados (${completados.length})
+                </h6>
+                <div class="objetivos-grupo">
+        `;
+        
+        completados.forEach(obj => {
+            html += renderObjetivoItem(obj, true);
+        });
+        
+        html += `</div></div>`;
+    }
+    
+    // Mostrar objetivos pendientes
+    if (pendientes.length > 0) {
+        html += `
+            <div class="mb-4">
+                <h6 class="text-warning mb-3">
+                    <i class="bi bi-clock-fill me-2"></i>
+                    Objetivos Pendientes (${pendientes.length})
+                </h6>
+                <div class="objetivos-grupo">
+        `;
+        
+        pendientes.forEach(obj => {
+            html += renderObjetivoItem(obj, false);
+        });
+        
+        html += `</div></div>`;
+    }
+    
+    // Mostrar objetivos históricos
+    if (historicos.length > 0) {
+        html += `
+            <div class="mb-4">
+                <h6 class="text-secondary mb-3">
+                    <i class="bi bi-archive-fill me-2"></i>
+                    Objetivos Históricos (${historicos.length})
+                </h6>
+                <div class="objetivos-grupo">
+        `;
+        
+        historicos.forEach(obj => {
+            html += renderObjetivoItem(obj, false, true); // true para indicar que es histórico
+        });
+        
+        html += `</div></div>`;
+    }
+    
+    // Mostrar sección de objetivos más saltados si hay datos relevantes
+    const objetivosMasSaltados = objetivos
+        .filter(obj => obj.veces_saltado > 0)
+        .sort((a, b) => b.veces_saltado - a.veces_saltado)
+        .slice(0, 3);
+    
+    if (objetivosMasSaltados.length > 0) {
+        html += `
+            <div class="mb-4">
+                <h6 class="text-danger mb-3">
+                    <i class="bi bi-skip-forward-fill me-2"></i>
+                    Objetivos Más Saltados
+                </h6>
+                <div class="alert alert-warning">
+                    <small class="text-muted mb-2 d-block">
+                        <i class="bi bi-info-circle me-1"></i>
+                        Estos objetivos fueron saltados con más frecuencia. Considera revisar si son realistas o necesitan ajustes.
+                    </small>
+                    <div class="d-flex flex-wrap gap-2">
+        `;
+        
+        objetivosMasSaltados.forEach(obj => {
+            html += `
+                <span class="badge bg-danger fs-6 px-3 py-2">
+                    ${obj.titulo} 
+                    <span class="badge bg-light text-dark ms-1">${obj.veces_saltado}</span>
+                </span>
+            `;
+        });
+        
+        html += `
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    
+    lista.innerHTML = html;
+}
+
+function renderObjetivoItem(objetivo, esCompletado, esHistorico = false) {
+    const fechaCreacion = objetivo.fecha_creacion ? new Date(objetivo.fecha_creacion).toLocaleDateString('es-ES') : 'Sin fecha';
+    const fechaCompletado = objetivo.fecha_completado ? new Date(objetivo.fecha_completado).toLocaleDateString('es-ES') : '';
+    
+    const prioridadClass = {
+        'alta': 'danger',
+        'media': 'warning', 
+        'baja': 'success'
+    }[objetivo.prioridad] || 'secondary';
+    
+    const categoriaColor = {
+        'diario': '#3b82f6',
+        'semanal': '#10b981', 
+        'mensual': '#f59e0b',
+        'anual': '#8b5cf6'
+    }[objetivo.categoria?.toLowerCase()] || '#6b7280';
+    
+    let claseItem = 'pendiente';
+    let icono = 'bi-circle text-muted';
+    
+    if (esCompletado) {
+        claseItem = 'completado';
+        icono = 'bi-check-circle-fill text-success';
+    } else if (esHistorico) {
+        claseItem = 'historico';
+        icono = 'bi-archive-fill text-secondary';
+    }
+    
+    return `
+        <div class="objetivo-detalle-item ${claseItem}">
+            <div class="d-flex align-items-start">
+                <div class="objetivo-icono me-3">
+                    <i class="bi ${icono}"></i>
+                </div>
+                <div class="flex-grow-1">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <h6 class="objetivo-titulo mb-1 ${esCompletado ? 'text-decoration-line-through text-muted' : ''}">${objetivo.titulo}</h6>
+                        <div class="objetivo-badges">
+                            <span class="badge bg-${prioridadClass} me-1">${objetivo.prioridad}</span>
+                            <span class="badge me-1" style="background-color: ${categoriaColor}; color: white;">${objetivo.categoria}</span>
+                            ${objetivo.recurrente ? '<span class="badge bg-info">Recurrente</span>' : ''}
+                            ${esHistorico ? '<span class="badge bg-secondary">Histórico</span>' : ''}
+                            ${objetivo.veces_saltado > 0 ? `<span class="badge bg-danger" title="Veces que se saltó este objetivo"><i class="bi bi-skip-forward-fill me-1"></i>${objetivo.veces_saltado} saltado${objetivo.veces_saltado > 1 ? 's' : ''}</span>` : ''}
+                        </div>
+                    </div>
+                    ${objetivo.descripcion ? `<p class="objetivo-descripcion text-muted mb-2">${objetivo.descripcion}</p>` : ''}
+                    <div class="objetivo-fechas">
+                        <small class="text-muted">
+                            <i class="bi bi-calendar-plus me-1"></i>
+                            Creado: ${fechaCreacion}
+                            ${fechaCompletado ? `<span class="ms-3"><i class="bi bi-calendar-check me-1"></i>Completado: ${fechaCompletado}</span>` : ''}
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// Inicialización del calendario de objetivos
+document.addEventListener('DOMContentLoaded', () => {
+    const initObjCal = () => {
+        const selMes = document.getElementById('obj-cal-mes');
+        const selAnio = document.getElementById('obj-cal-anio');
+        if (!selMes || !selAnio) return false;
+        // Poblar selects una sola vez
+        if (!selMes.options.length || !selAnio.options.length) {
+            poblarSelectsObjetivosCalendario();
+        }
+        // Eventos (idempotentes)
+        const btnDesplegar = document.getElementById('obj-cal-desplegar');
+        const btnLimpiarFiltros = document.getElementById('btn-limpiar-filtros-objetivos');
+        const btnMesActual = document.getElementById('btn-mes-actual-objetivos');
+        const filtroFrecuencia = document.getElementById('filtro-frecuencia-objetivos');
+        const filtroEstado = document.getElementById('filtro-estado-objetivos');
+        
+        if (btnDesplegar && !btnDesplegar.__bound) { 
+            btnDesplegar.addEventListener('click', desplegarObjetivosDetallados); 
+            btnDesplegar.__bound = true; 
+        }
+        
+        if (btnLimpiarFiltros && !btnLimpiarFiltros.__bound) {
+            btnLimpiarFiltros.addEventListener('click', limpiarFiltrosObjetivos);
+            btnLimpiarFiltros.__bound = true;
+        }
+        
+        if (btnMesActual && !btnMesActual.__bound) {
+            btnMesActual.addEventListener('click', establecerRangoMesActual);
+            btnMesActual.__bound = true;
+        }
+        
+        // Event listeners para filtros dinámicos
+        if (filtroFrecuencia && !filtroFrecuencia.__bound) {
+            filtroFrecuencia.addEventListener('change', aplicarFiltrosYRenderizar);
+            filtroFrecuencia.__bound = true;
+        }
+        
+        if (filtroEstado && !filtroEstado.__bound) {
+            filtroEstado.addEventListener('change', aplicarFiltrosYRenderizar);
+            filtroEstado.__bound = true;
+        }
+        
+        // Event listeners para filtros de fecha
+        const filtroFechaDesde = document.getElementById('filtro-fecha-desde');
+        const filtroFechaHasta = document.getElementById('filtro-fecha-hasta');
+        
+        if (filtroFechaDesde && !filtroFechaDesde.__bound) {
+            filtroFechaDesde.addEventListener('change', aplicarFiltrosYRenderizar);
+            filtroFechaDesde.__bound = true;
+        }
+        
+        if (filtroFechaHasta && !filtroFechaHasta.__bound) {
+            filtroFechaHasta.addEventListener('change', aplicarFiltrosYRenderizar);
+            filtroFechaHasta.__bound = true;
+        }
+        
+        if (!selMes.__bound) { selMes.addEventListener('change', cargarCalendarioObjetivos); selMes.__bound = true; }
+        if (!selAnio.__bound) { selAnio.addEventListener('change', cargarCalendarioObjetivos); selAnio.__bound = true; }
+        // Carga inicial segura del calendario
+        cargarCalendarioObjetivos();
+        return true;
+    };
+
+    // Intentar inicializar si los elementos ya están en el DOM
+    initObjCal();
+
+    // Inicializar al activar la pestaña Avanzadas (por si el DOM se carga perezoso)
+    const tabAvanzadas = document.getElementById('avanzadas-tab');
+    if (tabAvanzadas) {
+        tabAvanzadas.addEventListener('shown.bs.tab', () => {
+            setTimeout(initObjCal, 0);
+        });
+    }
+});
+</script>
+<script>
+    // Funcionalidad del calendario de cumplimiento
+                let calendarioData = {};
+                let mesActual = new Date().getMonth();
+                let anioActual = new Date().getFullYear();
+                
+                // Inicializar selectores de mes
+                function inicializarSelectoresMes() {
+                    const mesSelect = document.getElementById('mes-calendario-select');
+                    const meses = [
+                        'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+                        'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+                    ];
+                    
+                    mesSelect.innerHTML = '';
+                    meses.forEach((mes, index) => {
+                        const option = document.createElement('option');
+                        option.value = index;
+                        option.textContent = `${mes} ${anioActual}`;
+                        if (index === mesActual) option.selected = true;
+                        mesSelect.appendChild(option);
+                    });
+                }
+                
+                // Cargar datos del calendario para una pregunta específica
+                async function cargarDatosCalendario(preguntaId, mes, anio) {
+                    try {
+                        const url = `/api/stats/calendario/${preguntaId}?mes=${mes}&anio=${anio}`;
+                        console.log('Haciendo petición a:', url);
+                        const response = await fetch(url);
+                        console.log('Respuesta del servidor:', response.status, response.statusText);
+                        
+                        if (!response.ok) {
+                            const errorText = await response.text();
+                            console.error('Error del servidor:', errorText);
+                            throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
+                        }
+                        
+                        const data = await response.json();
+                        console.log('Datos del calendario recibidos:', data);
+                        
+                        // Verificar si hay datos válidos
+                        if (!data.dias) {
+                            console.warn('No se recibieron datos de días');
+                            data.dias = {};
+                        }
+                        if (!data.estadisticas) {
+                            console.warn('No se recibieron estadísticas');
+                            data.estadisticas = { respondidas: 0, no_respondidas: 0, total: 0 };
+                        }
+                        
+                        return data;
+                    } catch (error) {
+                        console.error('Error cargando datos del calendario:', error);
+                        // Mostrar error en la interfaz
+                        document.getElementById('calendario-cumplimiento').innerHTML = `
+                            <div class="text-center py-5 text-danger">
+                                <i class="bi bi-exclamation-triangle" style="font-size: 3rem; opacity: 0.3;"></i>
+                                <div class="mt-2">Error al cargar los datos del calendario</div>
+                                <small class="text-muted">${error.message}</small>
+                            </div>
+                        `;
+                        return { dias: {}, estadisticas: { respondidas: 0, no_respondidas: 0, total: 0 } };
+                    }
+                }
+                
+                // Renderizar calendario
+                function renderizarCalendario(preguntaId, mes, anio, datos) {
+                    console.log('Renderizando calendario con datos:', datos);
+                    const container = document.getElementById('calendario-cumplimiento');
+                    const primerDia = new Date(anio, mes, 1);
+                    const ultimoDia = new Date(anio, mes + 1, 0);
+                    const diasEnMes = ultimoDia.getDate();
+                    const primerDiaSemana = primerDia.getDay();
+                    const hoy = new Date();
+                    
+                    console.log(`Renderizando mes ${mes + 1}/${anio}, días: ${diasEnMes}`);
+                    
+                    // Crear estructura del calendario
+                    let html = `
+                        <div class="calendario-navegacion">
+                            <button class="calendario-nav-btn" onclick="cambiarMes(-1)">
+                                <i class="bi bi-chevron-left"></i> Anterior
+                            </button>
+                            <div class="calendario-titulo">
+                                ${primerDia.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}
+                            </div>
+                            <button class="calendario-nav-btn" onclick="cambiarMes(1)">
+                                Siguiente <i class="bi bi-chevron-right"></i>
+                            </button>
+                        </div>
+                        
+                        <div class="calendario-container">
+                            <div class="calendario-header">
+                                <div class="calendario-dia-semana">Dom</div>
+                                <div class="calendario-dia-semana">Lun</div>
+                                <div class="calendario-dia-semana">Mar</div>
+                                <div class="calendario-dia-semana">Mié</div>
+                                <div class="calendario-dia-semana">Jue</div>
+                                <div class="calendario-dia-semana">Vie</div>
+                                <div class="calendario-dia-semana">Sáb</div>
+                            </div>
+                            <div class="calendario-grid">
+                    `;
+                    
+                    // Días vacíos al inicio
+                    for (let i = 0; i < primerDiaSemana; i++) {
+                        const diaAnterior = new Date(anio, mes, -primerDiaSemana + i + 1);
+                        html += `<div class="calendario-dia sin-datos otro-mes">${diaAnterior.getDate()}</div>`;
+                    }
+                    
+                    // Días del mes
+                    for (let dia = 1; dia <= diasEnMes; dia++) {
+                        const fechaStr = `${anio}-${String(mes + 1).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
+                        const esHoy = hoy.getFullYear() === anio && hoy.getMonth() === mes && hoy.getDate() === dia;
+                        
+                        let clases = 'calendario-dia';
+                        let titulo = '';
+                        
+                        // Debug para el primer día
+                        if (dia === 1) {
+                            console.log(`Primer día del mes: ${fechaStr}`);
+                            console.log('Datos disponibles para este día:', datos.dias ? datos.dias[fechaStr] : 'No hay datos.dias');
+                        }
+                        
+                        if (datos.dias && datos.dias[fechaStr]) {
+                            console.log(`Día ${fechaStr} tiene datos:`, datos.dias[fechaStr]);
+                            if (datos.dias[fechaStr].respondida === true) {
+                                clases += ' respondida';
+                                const respuestas = datos.dias[fechaStr].respuestas || [];
+                                if (respuestas.length > 0) {
+                                    // Mostrar la primera respuesta o concatenar si hay múltiples
+                                    const textoRespuesta = respuestas.length === 1 
+                                        ? respuestas[0] 
+                                        : respuestas.join(', ');
+                                    titulo = `Respuesta: ${textoRespuesta}`;
+                                } else {
+                                    titulo = 'Pregunta respondida este día';
+                                }
+                            } else if (datos.dias[fechaStr].respondida === false) {
+                                clases += ' no-respondida';
+                                titulo = 'Pregunta no respondida este día';
+                            }
+                        } else {
+                            clases += ' sin-datos';
+                            titulo = 'Sin datos para este día';
+                        }
+                        
+                        if (esHoy) {
+                            clases += ' hoy';
+                        }
+                        
+                        // Contenido del día
+                        let contenidoDia = dia;
+                        if (datos.dias && datos.dias[fechaStr] && datos.dias[fechaStr].respondida === true) {
+                            const respuestas = datos.dias[fechaStr].respuestas || [];
+                            if (respuestas.length > 0) {
+                                // Mostrar respuesta truncada si es muy larga
+                                let respuestaTexto = respuestas[0];
+                                if (respuestaTexto.length > 15) {
+                                    respuestaTexto = respuestaTexto.substring(0, 12) + '...';
+                                }
+                                contenidoDia = `<div class="calendario-dia-numero">${dia}</div><div class="calendario-dia-respuesta">${respuestaTexto}</div>`;
+                            }
+                        }
+                        
+                        html += `<div class="${clases}" title="${titulo}">${contenidoDia}</div>`;
+                    }
+                    
+                    // Días vacíos al final
+                    const diasRestantes = 42 - (primerDiaSemana + diasEnMes);
+                    for (let i = 1; i <= diasRestantes && i <= 7; i++) {
+                        html += `<div class="calendario-dia sin-datos otro-mes">${i}</div>`;
+                    }
+                    
+                    html += `
+                            </div>
+                        </div>
+                        
+                        <div class="calendario-estadisticas">
+                            <div class="calendario-stat">
+                                <div class="calendario-stat-numero" style="color: #22c55e;">${datos.estadisticas ? datos.estadisticas.respondidas || 0 : 0}</div>
+                                <div class="calendario-stat-label">Respondidas</div>
+                            </div>
+                            <div class="calendario-stat">
+                                <div class="calendario-stat-numero" style="color: #ef4444;">${datos.estadisticas ? datos.estadisticas.no_respondidas || 0 : 0}</div>
+                                <div class="calendario-stat-label">No respondidas</div>
+                            </div>
+                            <div class="calendario-stat">
+                                <div class="calendario-stat-numero" style="color: #3b82f6;">${datos.estadisticas ? Math.round(((datos.estadisticas.respondidas || 0) / ((datos.estadisticas.respondidas || 0) + (datos.estadisticas.no_respondidas || 0)) * 100) || 0) : 0}%</div>
+                                <div class="calendario-stat-label">Cumplimiento</div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    container.innerHTML = html;
+                }
+                
+                // Cambiar mes
+                async function cambiarMes(direccion) {
+                    mesActual += direccion;
+                    if (mesActual < 0) {
+                        mesActual = 11;
+                        anioActual--;
+                    } else if (mesActual > 11) {
+                        mesActual = 0;
+                        anioActual++;
+                    }
+                    
+                    inicializarSelectoresMes();
+                    
+                    const preguntaId = document.getElementById('pregunta-calendario-select').value;
+                    if (preguntaId) {
+                        const datos = await cargarDatosCalendario(preguntaId, mesActual, anioActual);
+                        renderizarCalendario(preguntaId, mesActual, anioActual, datos);
+                    }
+                }
+                
+                // Event listeners
+                document.addEventListener('DOMContentLoaded', function() {
+                    console.log('Inicializando calendario...');
+                    inicializarSelectoresMes();
+                    
+                    // Selector de pregunta
+                    const preguntaSelect = document.getElementById('pregunta-calendario-select');
+                    if (preguntaSelect) {
+                        preguntaSelect.addEventListener('change', async function() {
+                            console.log('Pregunta seleccionada:', this.value);
+                            const preguntaId = this.value;
+                            if (preguntaId) {
+                                console.log('Cargando datos para pregunta:', preguntaId, 'mes:', mesActual, 'año:', anioActual);
+                                const datos = await cargarDatosCalendario(preguntaId, mesActual, anioActual);
+                                console.log('Datos recibidos:', datos);
+                                renderizarCalendario(preguntaId, mesActual, anioActual, datos);
+                            } else {
+                                document.getElementById('calendario-cumplimiento').innerHTML = `
+                                    <div class="text-center py-5 text-muted">
+                                        <i class="bi bi-calendar3" style="font-size: 3rem; opacity: 0.3;"></i>
+                                        <div class="mt-2">Selecciona una pregunta para ver el calendario de cumplimiento</div>
+                                    </div>
+                                `;
+                            }
+                        });
+                    }
+                    
+                    // Selector de mes
+                    const mesSelect = document.getElementById('mes-calendario-select');
+                    if (mesSelect) {
+                        mesSelect.addEventListener('change', async function() {
+                            mesActual = parseInt(this.value);
+                            console.log('Mes cambiado a:', mesActual);
+                            const preguntaId = document.getElementById('pregunta-calendario-select').value;
+                            if (preguntaId) {
+                                const datos = await cargarDatosCalendario(preguntaId, mesActual, anioActual);
+                                renderizarCalendario(preguntaId, mesActual, anioActual, datos);
+                            }
+                        });
+                    }
+                });
+                
+                // Hacer función global para los botones de navegación
+                window.cambiarMes = cambiarMes;
+</script>
+        </div>
+    </div>
+</div>
+
+<!-- Script para actualización dinámica del gráfico de frecuencia -->
+<script>
+// Variables para detectar cambios
+let ultimaFechaDesde = '';
+let ultimaFechaHasta = '';
+let ultimaPregunta = '';
+
+// Función de actualización
+function actualizarGrafico() {
+    if (typeof window.actualizarFrecuenciaGlobal === 'function') {
+        window.actualizarFrecuenciaGlobal();
+    }
+}
+
+// Verificar cambios cada 300ms
+function verificarCambios() {
+    const fechaDesde = document.getElementById('fecha-desde');
+    const fechaHasta = document.getElementById('fecha-hasta');
+    const preguntaSelector = document.getElementById('preguntaSelector');
+    
+    if (fechaDesde && fechaHasta && preguntaSelector) {
+        const nuevaFechaDesde = fechaDesde.value;
+        const nuevaFechaHasta = fechaHasta.value;
+        const nuevaPregunta = preguntaSelector.value;
+        
+        if (nuevaFechaDesde !== ultimaFechaDesde || 
+            nuevaFechaHasta !== ultimaFechaHasta || 
+            nuevaPregunta !== ultimaPregunta) {
+            
+            ultimaFechaDesde = nuevaFechaDesde;
+            ultimaFechaHasta = nuevaFechaHasta;
+            ultimaPregunta = nuevaPregunta;
+            
+            if (nuevaPregunta && nuevaFechaDesde && nuevaFechaHasta) {
+                actualizarGrafico();
+            }
+        }
+    }
+}
+
+// Iniciar verificación
+setInterval(verificarCambios, 300);
+
+// Event listeners de respaldo
+setTimeout(() => {
+    const fechaDesde = document.getElementById('fecha-desde');
+    const fechaHasta = document.getElementById('fecha-hasta');
+    
+    if (fechaDesde && fechaHasta) {
+        fechaDesde.onchange = actualizarGrafico;
+        fechaHasta.onchange = actualizarGrafico;
+        fechaDesde.oninput = actualizarGrafico;
+        fechaHasta.oninput = actualizarGrafico;
+    }
+    
+    // Agregar botón de descarga de Excel
+    const frecuenciaSection = document.getElementById('frecuencia');
+    if (frecuenciaSection && !document.getElementById('btn-descargar-excel-respuestas')) {
+        const headerDiv = frecuenciaSection.querySelector('.d-flex.justify-content-between.align-items-center.mb-4');
+        if (headerDiv) {
+            // Crear el botón
+            const buttonContainer = document.createElement('div');
+            buttonContainer.innerHTML = `
+                <button class="btn btn-success btn-sm" id="btn-descargar-excel-respuestas" title="Descargar Excel con todas las respuestas organizadas por tipo">
+                    <i class="bi bi-file-earmark-excel me-1"></i>
+                    Descargar Excel
+                </button>
+            `;
+            headerDiv.appendChild(buttonContainer);
+            
+            // Configurar evento del botón
+            const btnDescargarExcel = document.getElementById('btn-descargar-excel-respuestas');
+            if (btnDescargarExcel) {
+                btnDescargarExcel.addEventListener('click', async function() {
+                    const btn = this;
+                    const originalText = btn.innerHTML;
+                    
+                    try {
+                        btn.disabled = true;
+                        btn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Generando Excel...';
+                        
+                        // Obtener fechas del filtro actual
+                        const fechaDesde = document.getElementById('fecha-desde').value;
+                        const fechaHasta = document.getElementById('fecha-hasta').value;
+                        
+                        const response = await fetch(`/api/export/respuestas-excel?fecha_desde=${fechaDesde}&fecha_hasta=${fechaHasta}`);
+                        
+                        if (!response.ok) {
+                            const errorData = await response.json();
+                            throw new Error(errorData.message || 'Error al generar el archivo');
+                        }
+                        
+                        const blob = await response.blob();
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        
+                        // Obtener nombre del archivo desde headers o usar uno por defecto
+                        const contentDisposition = response.headers.get('content-disposition');
+                        let filename = 'respuestas_analisis.xlsx';
+                        if (contentDisposition) {
+                            const filenameMatch = contentDisposition.match(/filename="(.+)"/);
+                            if (filenameMatch) {
+                                filename = filenameMatch[1];
+                            }
+                        }
+                        
+                        a.download = filename;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        window.URL.revokeObjectURL(url);
+                        
+                    } catch (error) {
+                        console.error('Error descargando Excel:', error);
+                        alert('Error al descargar Excel: ' + error.message);
+                    } finally {
+                        btn.disabled = false;
+                        btn.innerHTML = originalText;
+                    }
+                });
+            }
+        }
+    }
+}, 500);
+
+function renderizarObjetivosCreados(objetivos) {
+    const container = document.getElementById('lista-objetivos-creados');
+    
+    if (objetivos.length === 0) {
+        container.innerHTML = `
+            <div class="text-center text-muted py-4">
+                <i class="bi bi-plus-circle fs-1 mb-2 d-block"></i>
+                <p>No se crearon objetivos este día</p>
+            </div>
+        `;
+        return;
+    }
+    
+    let html = '';
+    objetivos.forEach(obj => {
+        const iconoCategoria = obj.categoria ? getCategoriaIcon(obj.categoria) : '📋';
+        const badgeRecurrente = obj.recurrente ? '<span class="badge bg-info ms-2">Recurrente</span>' : '';
+        const badgeParteDia = obj.parte_dia ? `<span class="badge bg-light text-dark ms-1">${getParteDiaIcon(obj.parte_dia)} ${obj.parte_dia}</span>` : '';
+        const tiempoEstimado = obj.horas_estimadas ? `<small class="text-muted"><i class="bi bi-clock me-1"></i>${formatearHorasMinutos(obj.horas_estimadas)}</small>` : '';
+        
+        html += `
+            <div class="detalle-objetivo-item mb-3 p-3 border rounded">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div class="flex-grow-1">
+                        <h6 class="mb-1">
+                            ${iconoCategoria} ${obj.titulo}
+                            ${badgeRecurrente}
+                            ${badgeParteDia}
+                        </h6>
+                        ${obj.descripcion ? `<p class="text-muted small mb-2">${obj.descripcion}</p>` : ''}
+                        <div class="d-flex gap-3 small text-muted">
+                            <span><i class="bi bi-clock me-1"></i>${obj.fecha_creacion}</span>
+                            ${tiempoEstimado}
+                        </div>
+                    </div>
+                    <span class="badge bg-${getPrioridadColor(obj.prioridad)}">${obj.prioridad || 'media'}</span>
+                </div>
+            </div>
+        `;
+    });
+    
+    container.innerHTML = html;
+}
+
+function renderizarObjetivosCompletados(objetivos) {
+    const container = document.getElementById('lista-objetivos-completados');
+    
+    if (objetivos.length === 0) {
+        container.innerHTML = `
+            <div class="text-center text-muted py-4">
+                <i class="bi bi-check-circle fs-1 mb-2 d-block"></i>
+                <p>No se completaron objetivos este día</p>
+            </div>
+        `;
+        return;
+    }
+    
+    let html = '';
+    objetivos.forEach(obj => {
+        const iconoCategoria = obj.categoria ? getCategoriaIcon(obj.categoria) : '📋';
+        const badgeTipo = obj.tipo === 'recurrente' ? 
+            '<span class="badge bg-success ms-2">Recurrente</span>' : 
+            '<span class="badge bg-primary ms-2">Normal</span>';
+        const badgeParteDia = obj.parte_dia ? `<span class="badge bg-light text-dark ms-1">${getParteDiaIcon(obj.parte_dia)} ${obj.parte_dia}</span>` : '';
+        const horaCompletado = obj.fecha_completado || obj.hora_completado || 'N/A';
+        const tiempoEstimado = obj.horas_estimadas ? `<small class="text-muted"><i class="bi bi-clock me-1"></i>${formatearHorasMinutos(obj.horas_estimadas)}</small>` : '';
+        
+        html += `
+            <div class="detalle-objetivo-item mb-3 p-3 border rounded bg-light">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div class="flex-grow-1">
+                        <h6 class="mb-1">
+                            ${iconoCategoria} ${obj.titulo}
+                            ${badgeTipo}
+                            ${badgeParteDia}
+                        </h6>
+                        ${obj.descripcion ? `<p class="text-muted small mb-2">${obj.descripcion}</p>` : ''}
+                        <div class="d-flex gap-3 small text-muted">
+                            <span><i class="bi bi-check-circle me-1 text-success"></i>Completado a las ${horaCompletado}</span>
+                            ${tiempoEstimado}
+                        </div>
+                    </div>
+                    <span class="badge bg-${getPrioridadColor(obj.prioridad)}">${obj.prioridad || 'media'}</span>
+                </div>
+            </div>
+        `;
+    });
+    
+    container.innerHTML = html;
+}
+
+// Funciones auxiliares
+function formatearFechaLegible(fecha) {
+    const fechaObj = new Date(fecha + 'T00:00:00');
+    const opciones = { 
+        weekday: 'long', 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+    };
+    return fechaObj.toLocaleDateString('es-ES', opciones);
+}
+
+function getCategoriaIcon(categoria) {
+    const iconos = {
+        'diario': '📅',
+        'semanal': '📆',
+        'mensual': '🗓️',
+        'anual': '📋',
+        'proyecto': '🚀',
+        'personal': '👤',
+        'trabajo': '💼',
+        'salud': '🏥',
+        'estudio': '📚'
+    };
+    return iconos[categoria.toLowerCase()] || '📋';
+}
+
+function getParteDiaIcon(parteDia) {
+    const iconos = {
+        'mañana': '🌅',
+        'tarde': '🌞',
+        'noche': '🌙'
+    };
+    return iconos[parteDia] || '';
+}
+
+function getPrioridadColor(prioridad) {
+    const colores = {
+        'alta': 'danger',
+        'media': 'warning',
+        'baja': 'secondary'
+    };
+    return colores[prioridad] || 'warning';
+}
+
+function formatearHorasMinutos(valor) {
+    if (!valor) return '';
+    const horas = Math.floor(valor);
+    const minutos = Math.round((valor - horas) * 60);
+    let res = '';
+    if (horas > 0) res += `${horas}h`;
+    if (minutos > 0) res += (horas > 0 ? ' ' : '') + `${minutos}m`;
+    if (!res) res = '0h';
+    return res;
+}
+
+// Debug: Verificar que la función esté disponible
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🔍 Función abrirDetalleDia definida localmente');
+    console.log('✅ Modal de detalle del día listo para usar');
+    
+    // Agregar un botón de prueba temporal
+    const testBtn = document.createElement('button');
+    testBtn.className = 'btn btn-sm btn-outline-info position-fixed';
+    testBtn.style.top = '10px';
+    testBtn.style.right = '10px';
+    testBtn.style.zIndex = '9999';
+    testBtn.innerHTML = '🧪 Test Modal';
+    testBtn.onclick = () => window.abrirDetalleDia('2024-10-31');
+    document.body.appendChild(testBtn);
+});
+</script>
+
+{% endblock %}
+
+<!-- Modal Detalle del Día -->
+<div class="modal fade" id="modalDetalleDia" tabindex="-1" aria-labelledby="modalDetalleDiaLabel" aria-hidden="true">
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="modalDetalleDiaLabel">
+          <i class="bi bi-calendar-day me-2"></i>Detalle del día: 
+          <span id="modalDetalleDiaFecha" class="text-primary"></span>
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <!-- Resumen del día -->
+        <div class="row mb-4">
+          <div class="col-md-6">
+            <div class="card bg-light">
+              <div class="card-body text-center">
+                <h3 class="text-primary mb-1" id="detalle-total-creados">0</h3>
+                <small class="text-muted">Objetivos Creados</small>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="card bg-light">
+              <div class="card-body text-center">
+                <h3 class="text-success mb-1" id="detalle-total-completados">0</h3>
+                <small class="text-muted">Objetivos Completados</small>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tabs para objetivos -->
+        <ul class="nav nav-tabs" id="detalleTab" role="tablist">
+          <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="creados-tab" data-bs-toggle="tab" data-bs-target="#creados" type="button" role="tab">
+              <i class="bi bi-plus-circle me-1"></i>Objetivos Creados 
+              <span class="badge bg-primary ms-1" id="badge-creados">0</span>
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="completados-tab" data-bs-toggle="tab" data-bs-target="#completados" type="button" role="tab">
+              <i class="bi bi-check-circle me-1"></i>Objetivos Completados 
+              <span class="badge bg-success ms-1" id="badge-completados">0</span>
+            </button>
+          </li>
+        </ul>
+
+        <div class="tab-content mt-3" id="detalleTabContent">
+          <!-- Tab Objetivos Creados -->
+          <div class="tab-pane fade show active" id="creados" role="tabpanel">
+            <div id="lista-objetivos-creados">
+              <!-- Se carga dinámicamente -->
+            </div>
+          </div>
+
+          <!-- Tab Objetivos Completados -->
+          <div class="tab-pane fade" id="completados" role="tabpanel">
+            <div id="lista-objetivos-completados">
+              <!-- Se carga dinámicamente -->
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% block scripts %}
+<!-- Bootstrap Icons -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<!-- Chart.js Datalabels -->
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+
+<script>
+// Función para abrir el modal de detalle del día
+window.abrirDetalleDia = async function(fecha) {
+    try {
+        console.log('🗓️ Abriendo detalle del día:', fecha);
+        
+        // Mostrar loading en el modal
+        const modal = new bootstrap.Modal(document.getElementById('modalDetalleDia'));
+        document.getElementById('modalDetalleDiaFecha').textContent = formatearFechaLegible(fecha);
+        document.getElementById('lista-objetivos-creados').innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary" role="status"></div></div>';
+        document.getElementById('lista-objetivos-completados').innerHTML = '<div class="text-center py-4"><div class="spinner-border text-success" role="status"></div></div>';
+        modal.show();
+        
+        // Obtener datos del día
+        const response = await fetch(`/api/objetivos/dia/${fecha}`);
+        if (!response.ok) {
+            throw new Error(`Error HTTP: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        if (data.status !== 'success') {
+            throw new Error(data.error || 'Error desconocido');
+        }
+        
+        // Actualizar resumen
+        document.getElementById('detalle-total-creados').textContent = data.resumen.total_creados;
+        document.getElementById('detalle-total-completados').textContent = data.resumen.total_completados;
+        document.getElementById('badge-creados').textContent = data.resumen.total_creados;
+        document.getElementById('badge-completados').textContent = data.resumen.total_completados;
+        
+        // Renderizar objetivos creados
+        renderizarObjetivosCreados(data.objetivos_creados);
+        
+        // Renderizar objetivos completados
+        renderizarObjetivosCompletados(data.objetivos_completados);
+        
+    } catch (error) {
+        console.error('❌ Error al cargar detalle del día:', error);
+        document.getElementById('lista-objetivos-creados').innerHTML = `
+            <div class="alert alert-danger">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                Error al cargar objetivos: ${error.message}
+            </div>
+        `;
+        document.getElementById('lista-objetivos-completados').innerHTML = `
+            <div class="alert alert-danger">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                Error al cargar objetivos: ${error.message}
+            </div>
+        `;
+    }
+};
+
+function renderizarObjetivosCreados(objetivos) {
+    const container = document.getElementById('lista-objetivos-creados');
+    
+    if (objetivos.length === 0) {
+        container.innerHTML = `
+            <div class="text-center text-muted py-4">
+                <i class="bi bi-plus-circle fs-1 mb-2 d-block"></i>
+                <p>No se crearon objetivos este día</p>
+            </div>
+        `;
+        return;
+    }
+    
+    let html = '';
+    objetivos.forEach(obj => {
+        const iconoCategoria = obj.categoria ? getCategoriaIcon(obj.categoria) : '📋';
+        const badgeRecurrente = obj.recurrente ? '<span class="badge bg-info ms-2">Recurrente</span>' : '';
+        const badgeParteDia = obj.parte_dia ? `<span class="badge bg-light text-dark ms-1">${getParteDiaIcon(obj.parte_dia)} ${obj.parte_dia}</span>` : '';
+        const tiempoEstimado = obj.horas_estimadas ? `<small class="text-muted"><i class="bi bi-clock me-1"></i>${formatearHorasMinutos(obj.horas_estimadas)}</small>` : '';
+        
+        html += `
+            <div class="detalle-objetivo-item mb-3 p-3 border rounded">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div class="flex-grow-1">
+                        <h6 class="mb-1">
+                            ${iconoCategoria} ${obj.titulo}
+                            ${badgeRecurrente}
+                            ${badgeParteDia}
+                        </h6>
+                        ${obj.descripcion ? `<p class="text-muted small mb-2">${obj.descripcion}</p>` : ''}
+                        <div class="d-flex gap-3 small text-muted">
+                            <span><i class="bi bi-clock me-1"></i>${obj.fecha_creacion}</span>
+                            ${tiempoEstimado}
+                        </div>
+                    </div>
+                    <span class="badge bg-${getPrioridadColor(obj.prioridad)}">${obj.prioridad || 'media'}</span>
+                </div>
+            </div>
+        `;
+    });
+    
+    container.innerHTML = html;
+}
+
+function renderizarObjetivosCompletados(objetivos) {
+    const container = document.getElementById('lista-objetivos-completados');
+    
+    if (objetivos.length === 0) {
+        container.innerHTML = `
+            <div class="text-center text-muted py-4">
+                <i class="bi bi-check-circle fs-1 mb-2 d-block"></i>
+                <p>No se completaron objetivos este día</p>
+            </div>
+        `;
+        return;
+    }
+    
+    let html = '';
+    objetivos.forEach(obj => {
+        const iconoCategoria = obj.categoria ? getCategoriaIcon(obj.categoria) : '📋';
+        const badgeTipo = obj.tipo === 'recurrente' ? 
+            '<span class="badge bg-success ms-2">Recurrente</span>' : 
+            '<span class="badge bg-primary ms-2">Normal</span>';
+        const badgeParteDia = obj.parte_dia ? `<span class="badge bg-light text-dark ms-1">${getParteDiaIcon(obj.parte_dia)} ${obj.parte_dia}</span>` : '';
+        const horaCompletado = obj.fecha_completado || obj.hora_completado || 'N/A';
+        const tiempoEstimado = obj.horas_estimadas ? `<small class="text-muted"><i class="bi bi-clock me-1"></i>${formatearHorasMinutos(obj.horas_estimadas)}</small>` : '';
+        
+        html += `
+            <div class="detalle-objetivo-item mb-3 p-3 border rounded bg-light">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div class="flex-grow-1">
+                        <h6 class="mb-1">
+                            ${iconoCategoria} ${obj.titulo}
+                            ${badgeTipo}
+                            ${badgeParteDia}
+                        </h6>
+                        ${obj.descripcion ? `<p class="text-muted small mb-2">${obj.descripcion}</p>` : ''}
+                        <div class="d-flex gap-3 small text-muted">
+                            <span><i class="bi bi-check-circle me-1 text-success"></i>Completado a las ${horaCompletado}</span>
+                            ${tiempoEstimado}
+                        </div>
+                    </div>
+                    <span class="badge bg-${getPrioridadColor(obj.prioridad)}">${obj.prioridad || 'media'}</span>
+                </div>
+            </div>
+        `;
+    });
+    
+    container.innerHTML = html;
+}
+
+// Funciones auxiliares
+function formatearFechaLegible(fecha) {
+    const fechaObj = new Date(fecha + 'T00:00:00');
+    const opciones = { 
+        weekday: 'long', 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+    };
+    return fechaObj.toLocaleDateString('es-ES', opciones);
+}
+
+function getCategoriaIcon(categoria) {
+    const iconos = {
+        'diario': '📅',
+        'semanal': '📆',
+        'mensual': '🗓️',
+        'anual': '📋',
+        'proyecto': '🚀',
+        'personal': '👤',
+        'trabajo': '💼',
+        'salud': '🏥',
+        'estudio': '📚'
+    };
+    return iconos[categoria.toLowerCase()] || '📋';
+}
+
+function getParteDiaIcon(parteDia) {
+    const iconos = {
+        'mañana': '🌅',
+        'tarde': '🌞',
+        'noche': '🌙'
+    };
+    return iconos[parteDia] || '';
+}
+
+function getPrioridadColor(prioridad) {
+    const colores = {
+        'alta': 'danger',
+        'media': 'warning',
+        'baja': 'secondary'
+    };
+    return colores[prioridad] || 'warning';
+}
+
+function formatearHorasMinutos(valor) {
+    if (!valor) return '';
+    const horas = Math.floor(valor);
+    const minutos = Math.round((valor - horas) * 60);
+    let res = '';
+    if (horas > 0) res += `${horas}h`;
+    if (minutos > 0) res += (horas > 0 ? ' ' : '') + `${minutos}m`;
+    if (!res) res = '0h';
+    return res;
+}
+
+// Debug y botón de prueba
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🔍 Función abrirDetalleDia definida');
+    
+    // Agregar un botón de prueba
+    const testBtn = document.createElement('button');
+    testBtn.className = 'btn btn-sm btn-outline-info position-fixed';
+    testBtn.style.top = '10px';
+    testBtn.style.right = '10px';
+    testBtn.style.zIndex = '9999';
+    testBtn.innerHTML = '🧪 Test Modal';
+    testBtn.onclick = () => window.abrirDetalleDia('2024-10-31');
+    document.body.appendChild(testBtn);
+});
+</script>
+
+{% endblock %}

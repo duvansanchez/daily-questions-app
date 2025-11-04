@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Modal Final - Con Datos Reales</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <style>
+        .calendario-dia {
+            width: 50px;
+            height: 70px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin: 3px;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+        .calendario-dia:hover {
+            background-color: #f8f9fa;
+            border-color: #007bff;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .calendario-dia-numero {
+            font-weight: bold;
+            font-size: 16px;
+            margin-bottom: 2px;
+        }
+        .calendario-dia-respuesta {
+            font-size: 10px;
+            margin-top: 1px;
+            line-height: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-4">
+        <h2>🧪 Test Modal Final - Con Datos Reales</h2>
+        <p class="text-muted">Esta página prueba el modal con datos reales del endpoint.</p>
+        
+        <div class="row">
+            <div class="col-md-8">
+                <h5>📅 Calendario de Prueba</h5>
+                <div class="d-flex flex-wrap border rounded p-3 bg-light">
+                    <!-- Día 1 de noviembre -->
+                    <div class="calendario-dia" 
+                         style="background-color: #e3f2fd; cursor: pointer;" 
+                         title="1 noviembre 2025\nCreados: 3\nCompletados: 1\nHaz clic para ver detalles"
+                         onclick="abrirDetalleDia('2025-11-01')">
+                        <div class="calendario-dia-numero">1</div>
+                        <div class="calendario-dia-respuesta" style="color:#3b82f6; font-weight: 500;">📝 3</div>
+                        <div class="calendario-dia-respuesta" style="color:#22c55e; font-weight: 500;">✅ 1</div>
+                    </div>
+                    
+                    <!-- Día 31 de octubre -->
+                    <div class="calendario-dia" 
+                         style="background-color: #f3e5f5; cursor: pointer;" 
+                         title="31 octubre 2025\nCreados: 4\nCompletados: 2\nHaz clic para ver detalles"
+                         onclick="abrirDetalleDia('2025-10-31')">
+                        <div class="calendario-dia-numero">31</div>
+                        <div class="calendario-dia-respuesta" style="color:#3b82f6; font-weight: 500;">📝 4</div>
+                        <div class="calendario-dia-respuesta" style="color:#22c55e; font-weight: 500;">✅ 2</div>
+                    </div>
+                    
+                    <!-- Día 30 de octubre -->
+                    <div class="calendario-dia" 
+                         style="background-color: #e8f5e8; cursor: pointer;" 
+                         title="30 octubre 2025\nCreados: 3\nCompletados: 2\nHaz clic para ver detalles"
+                         onclick="abrirDetalleDia('2025-10-30')">
+                        <div class="calendario-dia-numero">30</div>
+                        <div class="calendario-dia-respuesta" style="color:#3b82f6; font-weight: 500;">📝 3</div>
+                        <div class="calendario-dia-respuesta" style="color:#22c55e; font-weight: 500;">✅ 2</div>
+                    </div>
+                    
+                    <!-- Día sin datos -->
+                    <div class="calendario-dia" 
+                         style="background-color: #f8f9fa; cursor: pointer;" 
+                         title="29 octubre 2025\nCreados: 0\nCompletados: 0\nHaz clic para ver detalles"
+                         onclick="abrirDetalleDia('2025-10-29')">
+                        <div class="calendario-dia-numero">29</div>
+                        <div class="calendario-dia-respuesta" style="color:#6c757d; font-weight: 400;">📝 0</div>
+                        <div class="calendario-dia-respuesta" style="color:#6c757d; font-weight: 400;">✅ 0</div>
+                    </div>
+                </div>
+                
+                <div class="mt-3">
+                    <small class="text-muted">
+                        <i class="bi bi-info-circle me-1"></i>
+                        Haz clic en cualquier día para ver el detalle de objetivos. Los datos se cargan desde el endpoint real.
+                    </small>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <h5>🔍 Debug Panel</h5>
+                <div class="card">
+                    <div class="card-body">
+                        <button class="btn btn-info btn-sm mb-2 w-100" onclick="verificarFuncion()">
+                            🔍 Verificar Función
+                        </button>
+                        <button class="btn btn-warning btn-sm mb-2 w-100" onclick="limpiarLog()">
+                            🧹 Limpiar Log
+                        </button>
+                        <button class="btn btn-success btn-sm mb-2 w-100" onclick="testConexion()">
+                            🌐 Test Conexión API
+                        </button>
+                        
+                        <div id="debug-output" style="max-height: 200px; overflow-y: auto; font-size: 12px;">
+                            <!-- Debug info aquí -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Detalle del Día - Versión Final -->
+    <div class="modal fade" id="modalDetalleDia" tabindex="-1" aria-labelledby="modalDetalleDiaLabel" aria-hidden="true">
+      <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="modalDetalleDiaLabel">
+              <i class="bi bi-calendar-day me-2"></i>Detalle del día: 
+              <span id="modalDetalleDiaFecha" class="text-primary"></span>
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div class="row mb-4">
+              <div class="col-md-6">
+                <div class="card bg-light">
+                  <div class="card-body text-center">
+                    <h3 class="text-primary mb-1" id="detalle-total-creados">0</h3>
+                    <small class="text-muted">Objetivos Creados</small>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="card bg-light">
+                  <div class="card-body text-center">
+                    <h3 class="text-success mb-1" id="detalle-total-completados">0</h3>
+                    <small class="text-muted">Objetivos Completados</small>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <ul class="nav nav-tabs" id="detalleTab" role="tablist">
+              <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="creados-tab" data-bs-toggle="tab" data-bs-target="#creados" type="button" role="tab">
+                  <i class="bi bi-plus-circle me-1"></i>Objetivos Creados 
+                  <span class="badge bg-primary ms-1" id="badge-creados">0</span>
+                </button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button class="nav-link" id="completados-tab" data-bs-toggle="tab" data-bs-target="#completados" type="button" role="tab">
+                  <i class="bi bi-check-circle me-1"></i>Objetivos Completados 
+                  <span class="badge bg-success ms-1" id="badge-completados">0</span>
+                </button>
+              </li>
+            </ul>
+            <div class="tab-content mt-3" id="detalleTabContent">
+              <div class="tab-pane fade show active" id="creados" role="tabpanel">
+                <div id="lista-objetivos-creados"></div>
+              </div>
+              <div class="tab-pane fade" id="completados" role="tabpanel">
+                <div id="lista-objetivos-completados"></div>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+              <i class="bi bi-x-circle me-1"></i>Cerrar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function log(message, type = 'info') {
+            const output = document.getElementById('debug-output');
+            const timestamp = new Date().toLocaleTimeString();
+            const alertClass = type === 'error' ? 'text-danger' : type === 'success' ? 'text-success' : 'text-info';
+            output.innerHTML += `<div class="${alertClass}"><small>[${timestamp}]</small> ${message}</div>`;
+            output.scrollTop = output.scrollHeight;
+        }
+
+        function limpiarLog() {
+            document.getElementById('debug-output').innerHTML = '';
+        }
+
+        // Modal detalle del día - Versión Final con datos reales
+        console.log('🔧 Función abrirDetalleDia cargándose...');
+        window.abrirDetalleDia = async function(fecha) {
+            console.log('🗓️ abrirDetalleDia llamada con fecha:', fecha);
+            log('🗓️ Abriendo detalle para: ' + fecha);
+            
+            try {
+                const modal = new bootstrap.Modal(document.getElementById('modalDetalleDia'));
+                document.getElementById('modalDetalleDiaFecha').textContent = new Date(fecha + 'T00:00:00').toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                document.getElementById('lista-objetivos-creados').innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary"></div><div class="mt-2">Cargando objetivos creados...</div></div>';
+                document.getElementById('lista-objetivos-completados').innerHTML = '<div class="text-center py-4"><div class="spinner-border text-success"></div><div class="mt-2">Cargando objetivos completados...</div></div>';
+                modal.show();
+                log('✅ Modal mostrado');
+                
+                log('📡 Haciendo petición a API...');
+                const response = await fetch(`/api/objetivos/dia/${fecha}`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                log('📊 Respuesta recibida: ' + JSON.stringify(data.resumen));
+                
+                // Verificar si la respuesta es exitosa
+                if (data.status !== 'success') {
+                    throw new Error(data.error || 'Error en la respuesta del servidor');
+                }
+                
+                document.getElementById('detalle-total-creados').textContent = data.resumen.total_creados;
+                document.getElementById('detalle-total-completados').textContent = data.resumen.total_completados;
+                document.getElementById('badge-creados').textContent = data.resumen.total_creados;
+                document.getElementById('badge-completados').textContent = data.resumen.total_completados;
+                
+                // Renderizar objetivos creados
+                let htmlCreados = '';
+                if (data.objetivos_creados && data.objetivos_creados.length > 0) {
+                    data.objetivos_creados.forEach(obj => {
+                        const prioridadColor = obj.prioridad === 'alta' ? 'danger' : obj.prioridad === 'media' ? 'warning' : 'secondary';
+                        htmlCreados += `
+                            <div class="border rounded p-3 mb-3">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <h6 class="mb-1">${obj.titulo}</h6>
+                                    <span class="badge bg-${prioridadColor}">${obj.prioridad}</span>
+                                </div>
+                                <p class="text-muted small mb-2">${obj.descripcion || 'Sin descripción'}</p>
+                                <div class="d-flex justify-content-between">
+                                    <small class="text-info">${obj.categoria || 'Sin categoría'}</small>
+                                    <small class="text-muted">${obj.fecha_creacion}</small>
+                                </div>
+                            </div>
+                        `;
+                    });
+                } else {
+                    htmlCreados = '<div class="text-center text-muted py-4"><i class="bi bi-inbox" style="font-size: 2rem;"></i><div class="mt-2">No se crearon objetivos este día</div></div>';
+                }
+                document.getElementById('lista-objetivos-creados').innerHTML = htmlCreados;
+                
+                // Renderizar objetivos completados
+                let htmlCompletados = '';
+                if (data.objetivos_completados && data.objetivos_completados.length > 0) {
+                    data.objetivos_completados.forEach(obj => {
+                        const tipoIcon = obj.tipo === 'recurrente' ? 'arrow-repeat' : 'check-circle';
+                        htmlCompletados += `
+                            <div class="border rounded p-3 mb-3 bg-light">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <h6 class="mb-1">${obj.titulo}</h6>
+                                    <i class="bi bi-${tipoIcon} text-success"></i>
+                                </div>
+                                <p class="text-muted small mb-2">${obj.descripcion || 'Sin descripción'}</p>
+                                <div class="d-flex justify-content-between">
+                                    <small class="text-info">${obj.categoria || 'Sin categoría'}</small>
+                                    <small class="text-success">Completado: ${obj.hora_completado}</small>
+                                </div>
+                            </div>
+                        `;
+                    });
+                } else {
+                    htmlCompletados = '<div class="text-center text-muted py-4"><i class="bi bi-check-circle" style="font-size: 2rem;"></i><div class="mt-2">No se completaron objetivos este día</div></div>';
+                }
+                document.getElementById('lista-objetivos-completados').innerHTML = htmlCompletados;
+                
+                log('✅ Datos cargados correctamente', 'success');
+                
+            } catch (error) {
+                console.error('Error:', error);
+                log('❌ Error: ' + error.message, 'error');
+                document.getElementById('lista-objetivos-creados').innerHTML = '<div class="alert alert-danger"><i class="bi bi-exclamation-triangle me-2"></i>Error al cargar objetivos creados</div>';
+                document.getElementById('lista-objetivos-completados').innerHTML = '<div class="alert alert-danger"><i class="bi bi-exclamation-triangle me-2"></i>Error al cargar objetivos completados</div>';
+            }
+        };
+
+        // Debug: Confirmar que la función está disponible
+        console.log('✅ Función abrirDetalleDia definida:', typeof window.abrirDetalleDia === 'function');
+
+        function verificarFuncion() {
+            log('🔍 === VERIFICACIÓN COMPLETA ===');
+            log('Función abrirDetalleDia: ' + (typeof window.abrirDetalleDia === 'function' ? '✅' : '❌'));
+            log('Modal existe: ' + (document.getElementById('modalDetalleDia') !== null ? '✅' : '❌'));
+            log('Bootstrap Modal: ' + (typeof bootstrap !== 'undefined' && typeof bootstrap.Modal === 'function' ? '✅' : '❌'));
+            log('Elementos del modal:');
+            const elementos = ['modalDetalleDiaFecha', 'detalle-total-creados', 'detalle-total-completados', 'lista-objetivos-creados', 'lista-objetivos-completados'];
+            elementos.forEach(id => {
+                log(`- ${id}: ${document.getElementById(id) !== null ? '✅' : '❌'}`);
+            });
+        }
+
+        async function testConexion() {
+            log('🌐 Probando conexión con API...');
+            try {
+                const response = await fetch('/api/objetivos/dia/2025-11-01');
+                log(`📡 Status: ${response.status} ${response.statusText}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    log(`✅ API funcionando - Status: ${data.status}`, 'success');
+                } else {
+                    log(`❌ Error en API: ${response.status}`, 'error');
+                }
+            } catch (error) {
+                log(`❌ Error de conexión: ${error.message}`, 'error');
+            }
+        }
+
+        // Auto-verificación al cargar
+        document.addEventListener('DOMContentLoaded', function() {
+            log('✅ Página cargada correctamente');
+            verificarFuncion();
+        });
+    </script>
+</body>
+</html>

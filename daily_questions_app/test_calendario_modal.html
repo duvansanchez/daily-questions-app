@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Calendario con Modal</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="static/css/style.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-5">
+        <h1>Test Calendario con Modal de Detalle</h1>
+        
+        <div class="card">
+            <div class="card-body">
+                <h5>Calendario de Prueba</h5>
+                <p>Haz clic en cualquier día para abrir el modal de detalle:</p>
+                
+                <!-- Calendario simulado -->
+                <div class="calendario-container">
+                    <div class="calendario-header">
+                        <div class="calendario-dia-semana">L</div>
+                        <div class="calendario-dia-semana">M</div>
+                        <div class="calendario-dia-semana">X</div>
+                        <div class="calendario-dia-semana">J</div>
+                        <div class="calendario-dia-semana">V</div>
+                        <div class="calendario-dia-semana">S</div>
+                        <div class="calendario-dia-semana">D</div>
+                    </div>
+                    <div class="calendario-grid">
+                        <!-- Días de ejemplo -->
+                        <div class="calendario-dia sin-datos otro-mes"></div>
+                        <div class="calendario-dia sin-datos otro-mes"></div>
+                        <div class="calendario-dia con-actividad" 
+                             style="background-color: #cce5ff; cursor: pointer;" 
+                             title="1 octubre 2024\nCreados: 3\nCompletados: 1\n\nHaz clic para ver detalles"
+                             data-fecha="2024-10-01"
+                             onclick="abrirDetalleDia('2024-10-01')">
+                            <div class="calendario-dia-numero">1</div>
+                            <div class="calendario-dia-respuesta" style="color:#3b82f6; font-weight: 500;">📝 3</div>
+                            <div class="calendario-dia-respuesta" style="color:#22c55e; font-weight: 500;">✅ 1</div>
+                        </div>
+                        <div class="calendario-dia con-actividad" 
+                             style="background-color: #d4edda; cursor: pointer;" 
+                             title="2 octubre 2024\nCreados: 2\nCompletados: 2\n\nHaz clic para ver detalles"
+                             data-fecha="2024-10-02"
+                             onclick="abrirDetalleDia('2024-10-02')">
+                            <div class="calendario-dia-numero">2</div>
+                            <div class="calendario-dia-respuesta" style="color:#3b82f6; font-weight: 500;">📝 2</div>
+                            <div class="calendario-dia-respuesta" style="color:#22c55e; font-weight: 500;">✅ 2</div>
+                        </div>
+                        <div class="calendario-dia" 
+                             style="background-color: #f8f9fa; cursor: pointer;" 
+                             title="3 octubre 2024\nCreados: 0\nCompletados: 0\n\nHaz clic para ver detalles"
+                             data-fecha="2024-10-03"
+                             onclick="abrirDetalleDia('2024-10-03')">
+                            <div class="calendario-dia-numero">3</div>
+                            <div class="calendario-dia-respuesta" style="color:#3b82f6; font-weight: 500;">📝 0</div>
+                            <div class="calendario-dia-respuesta" style="color:#22c55e; font-weight: 500;">✅ 0</div>
+                        </div>
+                        <div class="calendario-dia con-actividad" 
+                             style="background-color: #cce5ff; cursor: pointer;" 
+                             title="4 octubre 2024\nCreados: 5\nCompletados: 3\n\nHaz clic para ver detalles"
+                             data-fecha="2024-10-04"
+                             onclick="abrirDetalleDia('2024-10-04')">
+                            <div class="calendario-dia-numero">4</div>
+                            <div class="calendario-dia-respuesta" style="color:#3b82f6; font-weight: 500;">📝 5</div>
+                            <div class="calendario-dia-respuesta" style="color:#22c55e; font-weight: 500;">✅ 3</div>
+                        </div>
+                        <div class="calendario-dia sin-datos otro-mes"></div>
+                    </div>
+                </div>
+                
+                <div class="mt-3">
+                    <small class="text-muted">
+                        <i class="bi bi-info-circle me-1"></i>
+                        Los días con actividad son clickeables y abrirán el modal de detalle.
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Detalle del Día -->
+    <div class="modal fade" id="modalDetalleDia" tabindex="-1" aria-labelledby="modalDetalleDiaLabel" aria-hidden="true">
+      <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="modalDetalleDiaLabel">
+              <i class="bi bi-calendar-day me-2"></i>Detalle del día: 
+              <span id="modalDetalleDiaFecha" class="text-primary"></span>
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <!-- Resumen del día -->
+            <div class="row mb-4">
+              <div class="col-md-6">
+                <div class="card bg-light">
+                  <div class="card-body text-center">
+                    <h3 class="text-primary mb-1" id="detalle-total-creados">0</h3>
+                    <small class="text-muted">Objetivos Creados</small>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="card bg-light">
+                  <div class="card-body text-center">
+                    <h3 class="text-success mb-1" id="detalle-total-completados">0</h3>
+                    <small class="text-muted">Objetivos Completados</small>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Tabs para objetivos -->
+            <ul class="nav nav-tabs" id="detalleTab" role="tablist">
+              <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="creados-tab" data-bs-toggle="tab" data-bs-target="#creados" type="button" role="tab">
+                  <i class="bi bi-plus-circle me-1"></i>Objetivos Creados 
+                  <span class="badge bg-primary ms-1" id="badge-creados">0</span>
+                </button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button class="nav-link" id="completados-tab" data-bs-toggle="tab" data-bs-target="#completados" type="button" role="tab">
+                  <i class="bi bi-check-circle me-1"></i>Objetivos Completados 
+                  <span class="badge bg-success ms-1" id="badge-completados">0</span>
+                </button>
+              </li>
+            </ul>
+
+            <div class="tab-content mt-3" id="detalleTabContent">
+              <!-- Tab Objetivos Creados -->
+              <div class="tab-pane fade show active" id="creados" role="tabpanel">
+                <div id="lista-objetivos-creados">
+                  <!-- Se carga dinámicamente -->
+                </div>
+              </div>
+
+              <!-- Tab Objetivos Completados -->
+              <div class="tab-pane fade" id="completados" role="tabpanel">
+                <div id="lista-objetivos-completados">
+                  <!-- Se carga dinámicamente -->
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="static/js/main.js"></script>
+</body>
+</html>

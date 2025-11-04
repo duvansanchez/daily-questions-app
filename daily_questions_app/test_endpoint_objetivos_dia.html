@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Endpoint Objetivos Día</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-5">
+        <h2>Test Endpoint /api/objetivos/dia/&lt;fecha&gt;</h2>
+        <p>Prueba del endpoint después de corregir el error de usuario_id.</p>
+        
+        <div class="mb-3">
+            <label for="fecha-input" class="form-label">Fecha a consultar:</label>
+            <input type="date" class="form-control" id="fecha-input" value="2024-11-01">
+        </div>
+        
+        <div class="mb-3">
+            <button class="btn btn-primary" onclick="testEndpoint()">
+                🧪 Probar Endpoint
+            </button>
+            <button class="btn btn-secondary" onclick="limpiarLog()">
+                🧹 Limpiar Log
+            </button>
+        </div>
+        
+        <div id="resultado" class="mt-4">
+            <h5>Resultado:</h5>
+            <div id="resultado-output"></div>
+        </div>
+    </div>
+
+    <script>
+        function log(message, type = 'info') {
+            const output = document.getElementById('resultado-output');
+            const timestamp = new Date().toLocaleTimeString();
+            const alertClass = type === 'error' ? 'alert-danger' : type === 'success' ? 'alert-success' : 'alert-info';
+            output.innerHTML += `<div class="alert ${alertClass} py-2 mb-1"><small>[${timestamp}]</small> ${message}</div>`;
+            output.scrollTop = output.scrollHeight;
+        }
+
+        function limpiarLog() {
+            document.getElementById('resultado-output').innerHTML = '';
+        }
+
+        async function testEndpoint() {
+            const fecha = document.getElementById('fecha-input').value;
+            log(`🧪 Probando endpoint para fecha: ${fecha}`);
+            
+            try {
+                log('📡 Haciendo petición a /api/objetivos/dia/' + fecha);
+                const response = await fetch(`/api/objetivos/dia/${fecha}`);
+                
+                log(`📊 Status: ${response.status} ${response.statusText}`);
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    log(`❌ Error ${response.status}: ${errorText}`, 'error');
+                    return;
+                }
+                
+                const data = await response.json();
+                log('✅ Respuesta recibida correctamente', 'success');
+                log('📋 Estructura de datos:');
+                log(`- Status: ${data.status || 'N/A'}`);
+                log(`- Message: ${data.message || 'N/A'}`);
+                
+                if (data.data) {
+                    const resumen = data.data.resumen || {};
+                    log(`- Total creados: ${resumen.total_creados || 0}`);
+                    log(`- Total completados: ${resumen.total_completados || 0}`);
+                    log(`- Objetivos creados: ${data.data.objetivos_creados?.length || 0} items`);
+                    log(`- Objetivos completados: ${data.data.objetivos_completados?.length || 0} items`);
+                    
+                    // Mostrar algunos objetivos de ejemplo
+                    if (data.data.objetivos_creados && data.data.objetivos_creados.length > 0) {
+                        log('📝 Ejemplos de objetivos creados:');
+                        data.data.objetivos_creados.slice(0, 3).forEach((obj, i) => {
+                            log(`  ${i+1}. ${obj.titulo} (${obj.categoria || 'Sin categoría'})`);
+                        });
+                    }
+                    
+                    if (data.data.objetivos_completados && data.data.objetivos_completados.length > 0) {
+                        log('✅ Ejemplos de objetivos completados:');
+                        data.data.objetivos_completados.slice(0, 3).forEach((obj, i) => {
+                            log(`  ${i+1}. ${obj.titulo} (${obj.categoria || 'Sin categoría'})`);
+                        });
+                    }
+                } else {
+                    log('⚠️ No se encontró la propiedad "data" en la respuesta', 'error');
+                }
+                
+                // Mostrar JSON completo para debug
+                log('🔍 JSON completo:');
+                log('<pre>' + JSON.stringify(data, null, 2) + '</pre>');
+                
+            } catch (error) {
+                log(`❌ Error de red: ${error.message}`, 'error');
+                console.error('Error completo:', error);
+            }
+        }
+
+        // Auto-test al cargar la página
+        document.addEventListener('DOMContentLoaded', function() {
+            log('✅ Página cargada - Lista para probar endpoint');
+        });
+    </script>
+</body>
+</html>

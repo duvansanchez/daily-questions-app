@@ -151,16 +151,22 @@ endblock %} {% block content %}
       </div>
       <div class="card mt-3" id="card-objetivos">
         <div class="card-body">
-          <div class="d-flex justify-content-end mb-3">
+          <div class="d-flex justify-content-end mb-2 gap-2">
             <button
-              class="btn btn-primary"
+              class="btn btn-primary btn-sm"
               type="button"
               id="btn-abrir-modal-objetivo"
             >
               <i class="bi bi-plus"></i> Nuevo Objetivo
             </button>
-          </div>
-          <div class="d-flex justify-content-end mb-2 gap-2">
+            <button
+              class="btn btn-outline-info btn-sm"
+              type="button"
+              id="btn-objetivos-programados"
+              title="Ver objetivos programados"
+            >
+              <i class="bi bi-calendar-check"></i> Objetivos Programados
+            </button>
             <button
               class="btn btn-outline-warning btn-sm"
               id="btn-toggle-saltados"
@@ -224,33 +230,7 @@ endblock %} {% block content %}
             </div>
           </div>
 
-          <!-- Sección de Objetivos Programados para Mañana -->
-          <div id="seccion-objetivos-mañana" class="mb-4" style="display: none;">
-            <div class="card border-info">
-              <div class="card-header bg-info bg-opacity-10 border-info">
-                <div class="d-flex justify-content-between align-items-center">
-                  <h6 class="mb-0 text-info">
-                    <i class="bi bi-calendar-plus me-2"></i>
-                    Objetivos Programados para Mañana
-                    <span class="badge bg-info ms-2" id="contador-objetivos-mañana">0</span>
-                  </h6>
-                  <button class="btn btn-sm btn-outline-info" id="btn-toggle-mañana" title="Mostrar/Ocultar objetivos de mañana">
-                    <i class="bi bi-chevron-up"></i>
-                  </button>
-                </div>
-              </div>
-              <div class="card-body" id="contenido-objetivos-mañana">
-                <div id="lista-objetivos-mañana" class="objetivos-grid">
-                  <!-- Objetivos programados para mañana se renderizan aquí -->
-                </div>
-                <div id="mensaje-sin-objetivos-mañana" class="text-center text-muted py-3" style="display: none;">
-                  <i class="bi bi-calendar-x" style="font-size: 2rem; opacity: 0.5;"></i>
-                  <div class="mt-2">No hay objetivos programados para mañana</div>
-                  <small>Usa el botón "📅 Programar para mañana" en cualquier objetivo</small>
-                </div>
-              </div>
-            </div>
-          </div>
+
 
           <div class="objetivos-grid" id="lista-objetivos">
             <!-- Objetivos se renderizan aquí por JS -->
@@ -1338,6 +1318,50 @@ endblock %} {% block content %}
               id="editar-es-padre-objetivo"
             />
           </div>
+          <hr
+            style="border-top: 1.5px dashed #b6d4fe; margin: 1.2rem 0 1rem 0"
+          />
+          
+          <!-- Sección de Programación -->
+          <div class="mb-3">
+            <label class="form-label fw-semibold">
+              <i class="bi bi-calendar-plus me-2"></i>Programación
+            </label>
+            <div class="card border-info bg-light">
+              <div class="card-body py-3">
+                <div class="row g-2">
+                  <div class="col-md-6">
+                    <label for="editar-programado-para" class="form-label small fw-semibold">
+                      Programar para:
+                    </label>
+                    <select class="form-select" id="editar-programado-para">
+                      <option value="">Hoy (sin programar)</option>
+                      <option value="mañana">📅 Mañana</option>
+                      <option value="fecha_especifica">📆 Fecha específica</option>
+                    </select>
+                  </div>
+                  <div class="col-md-6">
+                    <label for="editar-fecha-programada" class="form-label small fw-semibold">
+                      Fecha específica:
+                    </label>
+                    <input
+                      type="date"
+                      class="form-control"
+                      id="editar-fecha-programada"
+                      disabled
+                    />
+                  </div>
+                </div>
+                <div class="mt-2">
+                  <small class="text-muted">
+                    <i class="bi bi-info-circle me-1"></i>
+                    Los objetivos programados no aparecerán en la lista de hoy hasta la fecha seleccionada.
+                  </small>
+                </div>
+              </div>
+            </div>
+          </div>
+          
           <hr
             style="border-top: 1.5px dashed #b6d4fe; margin: 1.2rem 0 1rem 0"
           />

@@ -1,0 +1,472 @@
+{% extends "base.html" %}
+
+{% block title %}Objetivos Programados{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <div class="row">
+    <div class="col-12">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+          <h2 class="mb-1">
+            <i class="bi bi-calendar-check text-info me-2"></i>
+            Objetivos Programados
+          </h2>
+          <p class="text-muted mb-0">Gestiona tus objetivos programados para fechas futuras</p>
+        </div>
+        <div class="d-flex gap-2">
+          <a href="/objetivos" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Volver a Objetivos
+          </a>
+        </div>
+      </div>
+
+      <!-- Filtros -->
+      <div class="card mb-4">
+        <div class="card-body py-3">
+          <div class="row g-3 align-items-end">
+            <div class="col-md-3">
+              <label for="filtro-fecha" class="form-label small fw-semibold">Filtrar por fecha:</label>
+              <select class="form-select form-select-sm" id="filtro-fecha">
+                <option value="todas">Todas las fechas</option>
+                <option value="mañana">Mañana</option>
+                <option value="esta_semana">Esta semana</option>
+                <option value="proximo_mes">Próximo mes</option>
+              </select>
+            </div>
+            <div class="col-md-3">
+              <label for="filtro-categoria" class="form-label small fw-semibold">Categoría:</label>
+              <select class="form-select form-select-sm" id="filtro-categoria">
+                <option value="todas">Todas las categorías</option>
+              </select>
+            </div>
+            <div class="col-md-3">
+              <label for="filtro-prioridad" class="form-label small fw-semibold">Prioridad:</label>
+              <select class="form-select form-select-sm" id="filtro-prioridad">
+                <option value="todas">Todas las prioridades</option>
+                <option value="alta">Alta</option>
+                <option value="media">Media</option>
+                <option value="baja">Baja</option>
+              </select>
+            </div>
+            <div class="col-md-3">
+              <button class="btn btn-primary btn-sm w-100" id="btn-aplicar-filtros">
+                <i class="bi bi-funnel"></i> Aplicar Filtros
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Lista de objetivos programados -->
+      <div class="card">
+        <div class="card-header bg-light">
+          <div class="d-flex justify-content-between align-items-center">
+            <h6 class="mb-0">
+              <i class="bi bi-list-ul me-2"></i>
+              Objetivos Programados
+              <span class="badge bg-info ms-2" id="contador-total">0</span>
+            </h6>
+            <div class="btn-group btn-group-sm" role="group">
+              <button type="button" class="btn btn-outline-secondary active" id="vista-tarjetas">
+                <i class="bi bi-grid-3x3-gap"></i>
+              </button>
+              <button type="button" class="btn btn-outline-secondary" id="vista-lista">
+                <i class="bi bi-list"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="card-body">
+          <!-- Loading -->
+          <div id="loading-programados" class="text-center py-4" style="display: none;">
+            <div class="spinner-border text-primary" role="status">
+              <span class="visually-hidden">Cargando...</span>
+            </div>
+            <div class="mt-2">Cargando objetivos programados...</div>
+          </div>
+
+          <!-- Sin objetivos -->
+          <div id="sin-objetivos-programados" class="text-center py-5" style="display: none;">
+            <i class="bi bi-calendar-x text-muted" style="font-size: 3rem;"></i>
+            <h5 class="text-muted mt-3">No hay objetivos programados</h5>
+            <p class="text-muted">Los objetivos que programes aparecerán aquí organizados por fecha.</p>
+            <a href="/objetivos" class="btn btn-primary">
+              <i class="bi bi-plus"></i> Ir a Objetivos
+            </a>
+          </div>
+
+          <!-- Lista de objetivos -->
+          <div id="lista-objetivos-programados">
+            <!-- Los objetivos se renderizan aquí por JavaScript -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Estilos específicos -->
+<style>
+.objetivo-programado {
+  border-left: 4px solid #0dcaf0;
+  transition: all 0.3s ease;
+}
+
+.objetivo-programado:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.fecha-programada {
+  background: linear-gradient(135deg, #0dcaf0, #0aa2c0);
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.grupo-fecha {
+  border-bottom: 2px solid #e9ecef;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+}
+
+.grupo-fecha:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+}
+
+.titulo-fecha {
+  color: #0dcaf0;
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+</style>
+
+<script>
+// Variables globales
+let objetivosProgramados = [];
+let categorias = [];
+let vistaActual = 'tarjetas';
+
+// Inicializar página
+document.addEventListener('DOMContentLoaded', function() {
+  console.log('🚀 Inicializando página de objetivos programados...');
+  
+  // Configurar event listeners
+  configurarEventListeners();
+  
+  // Cargar datos iniciales
+  cargarCategorias();
+  cargarObjetivosProgramados();
+});
+
+function configurarEventListeners() {
+  // Botones de vista
+  document.getElementById('vista-tarjetas').addEventListener('click', () => cambiarVista('tarjetas'));
+  document.getElementById('vista-lista').addEventListener('click', () => cambiarVista('lista'));
+  
+  // Filtros
+  document.getElementById('btn-aplicar-filtros').addEventListener('click', aplicarFiltros);
+  
+  // Event listeners para desprogramar objetivos
+  document.addEventListener('click', async function(e) {
+    if (e.target.closest('.btn-desprogramar')) {
+      const button = e.target.closest('.btn-desprogramar');
+      const objetivoId = button.getAttribute('data-id');
+      await desprogramarObjetivo(objetivoId);
+    }
+  });
+}
+
+async function cargarCategorias() {
+  try {
+    const response = await fetch('/api/categorias');
+    if (response.ok) {
+      const data = await response.json();
+      categorias = data.categorias || [];
+      
+      // Llenar select de categorías
+      const select = document.getElementById('filtro-categoria');
+      select.innerHTML = '<option value="todas">Todas las categorías</option>';
+      
+      categorias.forEach(cat => {
+        const option = document.createElement('option');
+        option.value = cat.nombre;
+        option.textContent = cat.nombre.charAt(0).toUpperCase() + cat.nombre.slice(1);
+        select.appendChild(option);
+      });
+    }
+  } catch (error) {
+    console.error('Error al cargar categorías:', error);
+  }
+}
+
+async function cargarObjetivosProgramados() {
+  const loading = document.getElementById('loading-programados');
+  const sinObjetivos = document.getElementById('sin-objetivos-programados');
+  const lista = document.getElementById('lista-objetivos-programados');
+  
+  loading.style.display = 'block';
+  sinObjetivos.style.display = 'none';
+  lista.style.display = 'none';
+  
+  try {
+    const response = await fetch('/api/objetivos/programados/todos');
+    
+    if (response.ok) {
+      const data = await response.json();
+      objetivosProgramados = data.objetivos || [];
+      
+      loading.style.display = 'none';
+      
+      if (objetivosProgramados.length === 0) {
+        sinObjetivos.style.display = 'block';
+      } else {
+        lista.style.display = 'block';
+        renderizarObjetivosProgramados();
+      }
+      
+      // Actualizar contador
+      document.getElementById('contador-total').textContent = objetivosProgramados.length;
+    } else {
+      throw new Error('Error al cargar objetivos programados');
+    }
+  } catch (error) {
+    console.error('Error:', error);
+    loading.style.display = 'none';
+    sinObjetivos.style.display = 'block';
+  }
+}
+
+function renderizarObjetivosProgramados() {
+  const lista = document.getElementById('lista-objetivos-programados');
+  
+  if (objetivosProgramados.length === 0) {
+    lista.innerHTML = '';
+    return;
+  }
+  
+  // Agrupar por fecha
+  const objetivosPorFecha = {};
+  objetivosProgramados.forEach(obj => {
+    const fecha = obj.fecha_programada || 'Sin fecha';
+    if (!objetivosPorFecha[fecha]) {
+      objetivosPorFecha[fecha] = [];
+    }
+    objetivosPorFecha[fecha].push(obj);
+  });
+  
+  // Renderizar grupos
+  let html = '';
+  Object.keys(objetivosPorFecha).sort().forEach(fecha => {
+    const objetivos = objetivosPorFecha[fecha];
+    const fechaFormateada = formatearFecha(fecha);
+    
+    html += `
+      <div class="grupo-fecha">
+        <h5 class="titulo-fecha mb-3">
+          <i class="bi bi-calendar3 me-2"></i>
+          ${fechaFormateada}
+          <span class="badge bg-info ms-2">${objetivos.length}</span>
+        </h5>
+        <div class="row g-3">
+    `;
+    
+    objetivos.forEach(obj => {
+      if (vistaActual === 'tarjetas') {
+        html += renderizarTarjetaObjetivo(obj);
+      } else {
+        html += renderizarFilaObjetivo(obj);
+      }
+    });
+    
+    html += `
+        </div>
+      </div>
+    `;
+  });
+  
+  lista.innerHTML = html;
+}
+
+function renderizarTarjetaObjetivo(obj) {
+  const prioridadColor = {
+    'alta': 'danger',
+    'media': 'warning', 
+    'baja': 'success'
+  };
+  
+  return `
+    <div class="col-md-6 col-lg-4">
+      <div class="card objetivo-programado h-100">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-start mb-2">
+            <span class="badge bg-${prioridadColor[obj.prioridad] || 'secondary'}">${obj.prioridad || 'Media'}</span>
+            <span class="fecha-programada">${formatearFechaCorta(obj.fecha_programada)}</span>
+          </div>
+          
+          <h6 class="card-title">${obj.titulo}</h6>
+          
+          ${obj.descripcion ? `<p class="card-text text-muted small">${obj.descripcion}</p>` : ''}
+          
+          <div class="d-flex justify-content-between align-items-center mt-3">
+            <small class="text-muted">
+              <i class="bi bi-tag me-1"></i>${obj.categoria || 'Sin categoría'}
+            </small>
+            <div class="btn-group btn-group-sm">
+              <button class="btn btn-outline-warning btn-desprogramar" data-id="${obj.id}" title="Desprogramar (volver a hoy)">
+                <i class="bi bi-arrow-left"></i>
+              </button>
+              <button class="btn btn-outline-primary" onclick="editarObjetivo(${obj.id})" title="Editar">
+                <i class="bi bi-pencil"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderizarFilaObjetivo(obj) {
+  const prioridadColor = {
+    'alta': 'danger',
+    'media': 'warning', 
+    'baja': 'success'
+  };
+  
+  return `
+    <div class="col-12">
+      <div class="card objetivo-programado">
+        <div class="card-body py-3">
+          <div class="row align-items-center">
+            <div class="col-md-6">
+              <h6 class="mb-1">${obj.titulo}</h6>
+              ${obj.descripcion ? `<small class="text-muted">${obj.descripcion}</small>` : ''}
+            </div>
+            <div class="col-md-2 text-center">
+              <span class="badge bg-${prioridadColor[obj.prioridad] || 'secondary'}">${obj.prioridad || 'Media'}</span>
+            </div>
+            <div class="col-md-2 text-center">
+              <small class="text-muted">${obj.categoria || 'Sin categoría'}</small>
+            </div>
+            <div class="col-md-2 text-end">
+              <div class="btn-group btn-group-sm">
+                <button class="btn btn-outline-warning btn-desprogramar" data-id="${obj.id}" title="Desprogramar">
+                  <i class="bi bi-arrow-left"></i>
+                </button>
+                <button class="btn btn-outline-primary" onclick="editarObjetivo(${obj.id})" title="Editar">
+                  <i class="bi bi-pencil"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function cambiarVista(vista) {
+  vistaActual = vista;
+  
+  // Actualizar botones
+  document.querySelectorAll('[id^="vista-"]').forEach(btn => btn.classList.remove('active'));
+  document.getElementById(`vista-${vista}`).classList.add('active');
+  
+  // Re-renderizar
+  renderizarObjetivosProgramados();
+}
+
+function aplicarFiltros() {
+  // Implementar filtros aquí
+  console.log('Aplicando filtros...');
+  // Por ahora solo recargar
+  cargarObjetivosProgramados();
+}
+
+async function desprogramarObjetivo(objetivoId) {
+  try {
+    const response = await fetch(`/api/objetivos/${objetivoId}/desprogramar`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    
+    if (response.ok) {
+      const data = await response.json();
+      
+      // Mostrar mensaje de éxito
+      showSuccess(`✅ ${data.message}`);
+      
+      // Recargar lista
+      await cargarObjetivosProgramados();
+    } else {
+      const error = await response.json();
+      showError(`Error: ${error.message}`);
+    }
+  } catch (error) {
+    console.error('Error al desprogramar objetivo:', error);
+    showError('Error al desprogramar objetivo');
+  }
+}
+
+function formatearFecha(fecha) {
+  if (!fecha || fecha === 'Sin fecha') return 'Sin fecha específica';
+  
+  const fechaObj = new Date(fecha + 'T00:00:00');
+  const hoy = new Date();
+  const mañana = new Date(hoy);
+  mañana.setDate(hoy.getDate() + 1);
+  
+  if (fechaObj.toDateString() === mañana.toDateString()) {
+    return 'Mañana';
+  }
+  
+  const opciones = { 
+    weekday: 'long', 
+    year: 'numeric', 
+    month: 'long', 
+    day: 'numeric' 
+  };
+  
+  return fechaObj.toLocaleDateString('es-ES', opciones);
+}
+
+function formatearFechaCorta(fecha) {
+  if (!fecha) return 'Sin fecha';
+  
+  const fechaObj = new Date(fecha + 'T00:00:00');
+  const hoy = new Date();
+  const mañana = new Date(hoy);
+  mañana.setDate(hoy.getDate() + 1);
+  
+  if (fechaObj.toDateString() === mañana.toDateString()) {
+    return 'Mañana';
+  }
+  
+  return fechaObj.toLocaleDateString('es-ES', { 
+    day: '2-digit', 
+    month: '2-digit' 
+  });
+}
+
+function editarObjetivo(objetivoId) {
+  // Redirigir a la página de objetivos con el modal de edición
+  window.location.href = `/objetivos?editar=${objetivoId}`;
+}
+
+// Funciones de utilidad para mostrar mensajes
+function showSuccess(message) {
+  // Implementar notificación de éxito
+  console.log('SUCCESS:', message);
+}
+
+function showError(message) {
+  // Implementar notificación de error
+  console.log('ERROR:', message);
+}
+</script>
+{% endblock %}

@@ -2757,6 +2757,11 @@ def handle_exception(e):
 def objetivos():
     return render_template('objetivos.html')
 
+@app.route('/objetivos-programados')
+@login_required
+def objetivos_programados():
+    return render_template('objetivos_programados.html')
+
 @app.route('/test-calendario')
 @login_required
 def test_calendario():
@@ -3308,12 +3313,14 @@ def api_list_objetivos():
                    o.objetivo_padre_id, o.es_padre, o.estado, o.fecha_inicio, o.fecha_fin, 
                    o.horas_estimadas, o.recompensa, o.recurrente, o.frecuencia, o.orden, o.parte_dia,
                    CASE WHEN os.objetivo_id IS NOT NULL THEN 1 ELSE 0 END as saltado_hoy,
-                   o.fecha_programada, o.programado_para
+                   o.fecha_programada, o.programado_para, o.tiempo_focus
             FROM objetivos o
             LEFT JOIN objetivos_saltados os ON o.id = os.objetivo_id AND os.user_id = o.user_id AND os.fecha_saltada = ?
             WHERE o.user_id = ? 
-            AND (o.fecha_programada IS NULL OR o.fecha_programada <= ?)
-            AND (o.programado_para IS NULL OR o.programado_para != 'mañana' OR o.fecha_programada <= ?)
+            AND (
+                (o.fecha_programada IS NULL AND o.programado_para IS NULL) OR
+                (o.fecha_programada IS NOT NULL AND o.fecha_programada <= ?)
+            )
             ORDER BY 
                 CASE 
                     WHEN o.completado = 1 THEN 2
@@ -3328,7 +3335,7 @@ def api_list_objetivos():
                 END ASC,
                 o.orden ASC, 
                 o.fecha_creacion DESC
-        ''', (hoy, current_user.id, hoy, hoy))
+        ''', (hoy, current_user.id, hoy))
         rows = cursor.fetchall()
         objetivos = []
         for row in rows:
@@ -3354,7 +3361,8 @@ def api_list_objetivos():
                 'parte_dia': row[18] if len(row) > 18 else None,
                 'saltado_hoy': bool(row[19]) if len(row) > 19 else False,
                 'fecha_programada': row[20].isoformat() if len(row) > 20 and row[20] else None,
-                'programado_para': row[21] if len(row) > 21 else None
+                'programado_para': row[21] if len(row) > 21 else None,
+                'tiempo_focus': row[22] if len(row) > 22 else None
             }
             # Verificar si el objetivo está vencido
             vencido = es_objetivo_vencido(obj, hoy)
@@ -3734,9 +3742,9 @@ def api_update_objetivo(objetivo_id):
     #     return restaurar_objetivo_completo(objetivo_id)
     
     campos = {}
-    for campo in ['titulo', 'descripcion', 'prioridad', 'categoria', 'objetivo_padre_id', 'es_padre', 'estado', 'fecha_inicio', 'fecha_fin', 'horas_estimadas', 'recompensa', 'parte_dia', 'recurrente', 'frecuencia', 'tiempo_focus']:
+    for campo in ['titulo', 'descripcion', 'prioridad', 'categoria', 'objetivo_padre_id', 'es_padre', 'estado', 'fecha_inicio', 'fecha_fin', 'horas_estimadas', 'recompensa', 'parte_dia', 'recurrente', 'frecuencia', 'tiempo_focus', 'programado_para', 'fecha_programada']:
         if campo in data:
-            if campo in ['fecha_inicio', 'fecha_fin']:
+            if campo in ['fecha_inicio', 'fecha_fin', 'fecha_programada']:
                 campos[campo] = parse_fecha(data[campo])
             elif campo == 'categoria':
                 campos[campo] = data[campo].strip().lower()
@@ -4230,6 +4238,60 @@ def api_objetivos_programados_mañana():
         logger.error(f"Error al obtener objetivos programados para mañana: {str(e)}")
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
+@app.route('/api/objetivos/programados/todos', methods=['GET'])
+@login_required
+def api_objetivos_programados_todos():
+    """Obtener todos los objetivos programados"""
+    try:
+        from datetime import datetime
+        
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            
+            cursor.execute("""
+                SELECT id, titulo, descripcion, categoria, prioridad, parte_dia, 
+                       horas_estimadas, fecha_programada, programado_para,
+                       CONVERT(varchar, fecha_creacion, 120) as fecha_creacion
+                FROM objetivos 
+                WHERE user_id = ? 
+                AND (fecha_programada IS NOT NULL OR programado_para IS NOT NULL)
+                AND completado = 0
+                ORDER BY 
+                    fecha_programada ASC,
+                    CASE prioridad 
+                        WHEN 'alta' THEN 1 
+                        WHEN 'media' THEN 2 
+                        WHEN 'baja' THEN 3 
+                        ELSE 4 
+                    END,
+                    fecha_creacion DESC
+            """, (current_user.id,))
+            
+            objetivos = []
+            for row in cursor.fetchall():
+                objetivos.append({
+                    'id': row.id,
+                    'titulo': row.titulo,
+                    'descripcion': row.descripcion,
+                    'categoria': row.categoria,
+                    'prioridad': row.prioridad,
+                    'parte_dia': row.parte_dia,
+                    'horas_estimadas': float(row.horas_estimadas) if row.horas_estimadas else None,
+                    'fecha_programada': row.fecha_programada.isoformat() if row.fecha_programada else None,
+                    'programado_para': row.programado_para,
+                    'fecha_creacion': row.fecha_creacion
+                })
+            
+            return jsonify({
+                'status': 'success',
+                'objetivos': objetivos,
+                'total': len(objetivos)
+            })
+            
+    except Exception as e:
+        logger.error(f"Error al obtener objetivos programados: {str(e)}")
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
 @app.route('/api/objetivos/<int:objetivo_id>/programar', methods=['POST'])
 @login_required
 def api_programar_objetivo(objetivo_id):
@@ -4238,6 +4300,9 @@ def api_programar_objetivo(objetivo_id):
         data = request.get_json()
         programar_para = data.get('programar_para', 'mañana')  # 'mañana' o 'fecha_especifica'
         fecha_especifica = data.get('fecha_especifica')  # Solo si programar_para es 'fecha_especifica'
+        
+        print(f"🚀 INICIO - Programando objetivo {objetivo_id} para {programar_para}")
+        logger.info(f"📅 Programando objetivo {objetivo_id} para {programar_para}")
         
         from datetime import datetime, timedelta
         
@@ -4252,6 +4317,9 @@ def api_programar_objetivo(objetivo_id):
         else:
             return jsonify({'status': 'error', 'message': 'Parámetros de programación inválidos'}), 400
         
+        print(f"📅 FECHA CALCULADA: {fecha_programada}")
+        logger.info(f"📅 Fecha programada calculada: {fecha_programada}")
+        
         with get_db_connection() as conn:
             cursor = conn.cursor()
             
@@ -4263,7 +4331,10 @@ def api_programar_objetivo(objetivo_id):
             
             objetivo = cursor.fetchone()
             if not objetivo:
+                logger.warning(f"❌ Objetivo {objetivo_id} no encontrado para usuario {current_user.id}")
                 return jsonify({'status': 'error', 'message': 'Objetivo no encontrado'}), 404
+            
+            logger.info(f"✅ Objetivo encontrado: {objetivo.titulo}")
             
             # Actualizar el objetivo con la programación
             cursor.execute("""
@@ -4272,7 +4343,20 @@ def api_programar_objetivo(objetivo_id):
                 WHERE id = ? AND user_id = ?
             """, (fecha_programada, programar_para, objetivo_id, current_user.id))
             
+            rows_affected = cursor.rowcount
+            print(f"📝 FILAS ACTUALIZADAS: {rows_affected}")
+            logger.info(f"📝 Filas actualizadas: {rows_affected}")
+            
             conn.commit()
+            
+            # Verificar que se actualizó correctamente
+            cursor.execute("""
+                SELECT fecha_programada, programado_para FROM objetivos 
+                WHERE id = ? AND user_id = ?
+            """, (objetivo_id, current_user.id))
+            
+            verificacion = cursor.fetchone()
+            logger.info(f"🔍 Verificación - Fecha: {verificacion.fecha_programada}, Programado para: {verificacion.programado_para}")
             
             return jsonify({
                 'status': 'success',
@@ -4282,7 +4366,7 @@ def api_programar_objetivo(objetivo_id):
             })
             
     except Exception as e:
-        logger.error(f"Error al programar objetivo: {str(e)}")
+        logger.error(f"❌ Error al programar objetivo: {str(e)}")
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
 @app.route('/api/objetivos/<int:objetivo_id>/desprogramar', methods=['POST'])

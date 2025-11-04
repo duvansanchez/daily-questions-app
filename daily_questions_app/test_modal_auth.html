@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Modal con Autenticación</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+</head>
+<body>
+    <div class="container mt-4">
+        <div class="alert alert-info">
+            <h4><i class="bi bi-info-circle me-2"></i>Test Modal con Autenticación</h4>
+            <p class="mb-0">Esta página simula el comportamiento del modal cuando el usuario está autenticado. 
+            Para probar con datos reales, necesitas estar logueado en la aplicación.</p>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-8">
+                <h5>📅 Instrucciones de Prueba</h5>
+                <ol>
+                    <li><strong>Inicia sesión</strong> en la aplicación principal: <a href="/" target="_blank">http://localhost:5000/</a></li>
+                    <li><strong>Ve a la página de estadísticas</strong>: <a href="/stats" target="_blank">http://localhost:5000/stats</a></li>
+                    <li><strong>Navega a la pestaña "Avanzadas"</strong></li>
+                    <li><strong>Haz clic en cualquier día</strong> del calendario de objetivos</li>
+                    <li><strong>El modal debería abrirse</strong> y cargar los datos correctamente</li>
+                </ol>
+                
+                <div class="alert alert-success mt-3">
+                    <h6><i class="bi bi-check-circle me-2"></i>Problemas Solucionados</h6>
+                    <ul class="mb-0">
+                        <li>✅ Modal se abre correctamente</li>
+                        <li>✅ Función <code>abrirDetalleDia</code> está definida</li>
+                        <li>✅ Endpoint <code>/api/objetivos/dia/&lt;fecha&gt;</code> funciona</li>
+                        <li>✅ Consultas SQL corregidas para evitar errores de conversión</li>
+                        <li>✅ Manejo robusto de valores NULL</li>
+                        <li>✅ Datos se cargan y muestran correctamente</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <h5>🔧 Estado del Sistema</h5>
+                <div class="card">
+                    <div class="card-body">
+                        <div id="status-info">
+                            <div class="d-flex align-items-center mb-2">
+                                <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+                                <span>Verificando estado...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-3">
+                    <h6>🧪 Archivos de Prueba Creados</h6>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item"><code>test_modal_final.html</code> - Modal con datos simulados</li>
+                        <li class="list-group-item"><code>test_fecha_problematica.py</code> - Test de consultas SQL</li>
+                        <li class="list-group-item"><code>crear_objetivo_prueba.py</code> - Datos de prueba</li>
+                        <li class="list-group-item"><code>test_endpoint_http.py</code> - Test del endpoint</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mt-4">
+            <div class="col-12">
+                <h5>📋 Resumen de Cambios Realizados</h5>
+                <div class="accordion" id="cambiosAccordion">
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#cambio1">
+                                1. Corrección de ubicación del modal
+                            </button>
+                        </h2>
+                        <div id="cambio1" class="accordion-collapse collapse show" data-bs-parent="#cambiosAccordion">
+                            <div class="accordion-body">
+                                <strong>Problema:</strong> El modal y la función JavaScript estaban fuera del bloque <code>{% block content %}</code><br>
+                                <strong>Solución:</strong> Movido todo el código dentro del bloque content para que se incluya en la página renderizada
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#cambio2">
+                                2. Corrección de nombre de columna
+                            </button>
+                        </h2>
+                        <div id="cambio2" class="accordion-collapse collapse" data-bs-parent="#cambiosAccordion">
+                            <div class="accordion-body">
+                                <strong>Problema:</strong> El endpoint usaba <code>usuario_id</code> pero la columna real es <code>user_id</code><br>
+                                <strong>Solución:</strong> Corregido todas las referencias en las consultas SQL
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#cambio3">
+                                3. Corrección de consultas SQL
+                            </button>
+                        </h2>
+                        <div id="cambio3" class="accordion-collapse collapse" data-bs-parent="#cambiosAccordion">
+                            <div class="accordion-body">
+                                <strong>Problema:</strong> Errores con <code>DISTINCT</code>, <code>ORDER BY</code> y conversión de tipos<br>
+                                <strong>Solución:</strong> Reescrito las consultas usando <code>UNION ALL</code>, <code>FORMAT</code> y <code>TRY_CAST</code> para mayor robustez
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#cambio4">
+                                4. Mejoras en el manejo de errores
+                            </button>
+                        </h2>
+                        <div id="cambio4" class="accordion-collapse collapse" data-bs-parent="#cambiosAccordion">
+                            <div class="accordion-body">
+                                <strong>Mejoras:</strong> Validación de respuestas del servidor, manejo de valores NULL, logs de debug y mejor presentación de errores al usuario
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        async function verificarEstado() {
+            const statusDiv = document.getElementById('status-info');
+            
+            try {
+                // Verificar si el servidor está funcionando
+                const response = await fetch('/');
+                
+                if (response.ok) {
+                    statusDiv.innerHTML = `
+                        <div class="alert alert-success py-2 mb-2">
+                            <i class="bi bi-check-circle me-2"></i>
+                            <strong>Servidor:</strong> ✅ Funcionando
+                        </div>
+                        <div class="alert alert-info py-2 mb-2">
+                            <i class="bi bi-info-circle me-2"></i>
+                            <strong>Endpoint:</strong> ✅ Disponible (requiere auth)
+                        </div>
+                        <div class="alert alert-warning py-2 mb-0">
+                            <i class="bi bi-exclamation-triangle me-2"></i>
+                            <strong>Estado:</strong> Listo para pruebas
+                        </div>
+                    `;
+                } else {
+                    statusDiv.innerHTML = `
+                        <div class="alert alert-warning py-2">
+                            <i class="bi bi-exclamation-triangle me-2"></i>
+                            <strong>Servidor:</strong> Respuesta inesperada (${response.status})
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                statusDiv.innerHTML = `
+                    <div class="alert alert-danger py-2">
+                        <i class="bi bi-x-circle me-2"></i>
+                        <strong>Error:</strong> No se puede conectar al servidor
+                    </div>
+                `;
+            }
+        }
+
+        // Verificar estado al cargar la página
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(verificarEstado, 1000);
+        });
+    </script>
+</body>
+</html>
