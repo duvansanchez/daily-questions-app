@@ -3031,4 +3031,323 @@ os para ocultar/mostrar objetivos saltados */
 #btn-toggle-saltados:hover {
     transform: translateY(-1px);
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}/* Estilo
+s para badge de completado hoy */
+.badge.bg-success {
+    background-color: #198754 !important;
+    color: white;
+    font-weight: 500;
+}
+
+/* Animación sutil para el badge de completado */
+.badge.bg-success {
+    animation: completadoHoy 0.5s ease-in-out;
+}
+
+@keyframes completadoHoy {
+    0% {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+    50% {
+        transform: scale(1.1);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* Asegurar que los badges estén bien espaciados */
+.badge + .badge {
+    margin-left: 0.25rem;
+}/* ====
+= MODAL DETALLE DEL DÍA ===== */
+
+.modal-detalle-dia .modal-dialog {
+    max-width: 900px;
+}
+
+.modal-detalle-dia .modal-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-bottom: none;
+}
+
+.modal-detalle-dia .modal-header .btn-close {
+    filter: invert(1);
+}
+
+.detalle-resumen-cards {
+    margin-bottom: 1.5rem;
+}
+
+.detalle-resumen-card {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    color: white;
+    border: none;
+    border-radius: 15px;
+    padding: 1.5rem;
+    text-align: center;
+    transition: transform 0.3s ease;
+}
+
+.detalle-resumen-card:hover {
+    transform: translateY(-5px);
+}
+
+.detalle-resumen-card.creados {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
+.detalle-resumen-card.completados {
+    background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+}
+
+.detalle-resumen-numero {
+    font-size: 2.5rem;
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+}
+
+.detalle-resumen-texto {
+    font-size: 0.9rem;
+    opacity: 0.9;
+}
+
+.detalle-tabs {
+    border-bottom: 2px solid #e9ecef;
+    margin-bottom: 1.5rem;
+}
+
+.detalle-tabs .nav-link {
+    border: none;
+    color: #6c757d;
+    font-weight: 500;
+    padding: 1rem 1.5rem;
+    border-radius: 0;
+    position: relative;
+}
+
+.detalle-tabs .nav-link.active {
+    color: #495057;
+    background: none;
+    border-bottom: 3px solid #007bff;
+}
+
+.detalle-tabs .nav-link:hover {
+    color: #007bff;
+    background: rgba(0, 123, 255, 0.1);
+}
+
+.detalle-objetivo-item {
+    background: white;
+    border: 1px solid #e9ecef !important;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.detalle-objetivo-item:hover {
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+}
+
+.detalle-objetivo-item::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.detalle-objetivo-item.completado {
+    background: #f8f9fa;
+}
+
+.detalle-objetivo-item.completado::before {
+    background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+}
+
+.detalle-objetivo-item h6 {
+    color: #2c3e50;
+    font-weight: 600;
+}
+
+.detalle-objetivo-item .badge {
+    font-size: 0.75rem;
+}
+
+.detalle-contenido-vacio {
+    padding: 3rem 1rem;
+    text-align: center;
+    color: #6c757d;
+}
+
+.detalle-contenido-vacio i {
+    opacity: 0.5;
+}
+
+.tab-content {
+    min-height: 300px;
+}
+
+.tab-pane {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Responsive para el modal */
+@media (max-width: 768px) {
+    .modal-detalle-dia .modal-dialog {
+        margin: 0.5rem;
+        max-width: calc(100% - 1rem);
+    }
+    
+    .detalle-resumen-cards {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .detalle-resumen-numero {
+        font-size: 2rem;
+    }
+    
+    .detalle-tabs .nav-link {
+        padding: 0.75rem 1rem;
+        font-size: 0.9rem;
+    }
+}/* Esti
+los para días clickeables del calendario */
+.calendario-dia[onclick] {
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.calendario-dia[onclick]:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    border-color: #3b82f6;
+}
+
+.calendario-dia[onclick].con-actividad:hover {
+    transform: scale(1.08);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.2);
+}
+
+.calendario-dia[onclick]:active {
+    transform: scale(0.98);
+}/
+* =============================
+   OBJETIVOS PROGRAMADOS PARA MAÑANA
+   ============================= */
+
+.objetivo-programado-mañana {
+    border-left: 4px solid #0dcaf0 !important;
+    background: linear-gradient(135deg, #e7f3ff 0%, #f8fdff 100%);
+    transition: all 0.3s ease;
+}
+
+.objetivo-programado-mañana:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(13, 202, 240, 0.15);
+    border-left-color: #0aa2c0 !important;
+}
+
+.objetivo-programado-mañana .objetivo-titulo {
+    color: #0aa2c0;
+    font-weight: 600;
+}
+
+.btn-programar-mañana {
+    background: linear-gradient(135deg, #0dcaf0, #0aa2c0);
+    color: white;
+    border: none;
+    padding: 0.4rem 0.6rem;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(13, 202, 240, 0.3);
+}
+
+.btn-programar-mañana:hover {
+    background: linear-gradient(135deg, #0aa2c0, #088a9b);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(13, 202, 240, 0.4);
+    color: white;
+}
+
+.btn-desprogramar {
+    background: linear-gradient(135deg, #6c757d, #5a6268);
+    color: white;
+    border: none;
+    padding: 0.4rem 0.6rem;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    transition: all 0.3s ease;
+}
+
+.btn-desprogramar:hover {
+    background: linear-gradient(135deg, #5a6268, #495057);
+    transform: translateY(-1px);
+    color: white;
+}
+
+#seccion-objetivos-mañana .card-header {
+    border-bottom: 2px solid rgba(13, 202, 240, 0.2);
+}
+
+#seccion-objetivos-mañana .card {
+    border: 2px solid rgba(13, 202, 240, 0.3);
+    box-shadow: 0 4px 12px rgba(13, 202, 240, 0.1);
+}
+
+#contador-objetivos-mañana {
+    background: linear-gradient(135deg, #0dcaf0, #0aa2c0) !important;
+    color: white;
+    font-weight: 600;
+    padding: 0.25rem 0.5rem;
+    border-radius: 1rem;
+}
+
+/* Animación para nuevos objetivos programados */
+@keyframes slideInFromTop {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.objetivo-programado-mañana.nuevo {
+    animation: slideInFromTop 0.5s ease-out;
+}
+
+/* Responsive para objetivos programados */
+@media (max-width: 768px) {
+    .objetivo-programado-mañana {
+        margin-bottom: 0.75rem;
+    }
+    
+    .btn-programar-mañana,
+    .btn-desprogramar {
+        padding: 0.3rem 0.5rem;
+        font-size: 0.8rem;
+    }
 }

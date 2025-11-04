@@ -224,6 +224,34 @@ endblock %} {% block content %}
             </div>
           </div>
 
+          <!-- Sección de Objetivos Programados para Mañana -->
+          <div id="seccion-objetivos-mañana" class="mb-4" style="display: none;">
+            <div class="card border-info">
+              <div class="card-header bg-info bg-opacity-10 border-info">
+                <div class="d-flex justify-content-between align-items-center">
+                  <h6 class="mb-0 text-info">
+                    <i class="bi bi-calendar-plus me-2"></i>
+                    Objetivos Programados para Mañana
+                    <span class="badge bg-info ms-2" id="contador-objetivos-mañana">0</span>
+                  </h6>
+                  <button class="btn btn-sm btn-outline-info" id="btn-toggle-mañana" title="Mostrar/Ocultar objetivos de mañana">
+                    <i class="bi bi-chevron-up"></i>
+                  </button>
+                </div>
+              </div>
+              <div class="card-body" id="contenido-objetivos-mañana">
+                <div id="lista-objetivos-mañana" class="objetivos-grid">
+                  <!-- Objetivos programados para mañana se renderizan aquí -->
+                </div>
+                <div id="mensaje-sin-objetivos-mañana" class="text-center text-muted py-3" style="display: none;">
+                  <i class="bi bi-calendar-x" style="font-size: 2rem; opacity: 0.5;"></i>
+                  <div class="mt-2">No hay objetivos programados para mañana</div>
+                  <small>Usa el botón "📅 Programar para mañana" en cualquier objetivo</small>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div class="objetivos-grid" id="lista-objetivos">
             <!-- Objetivos se renderizan aquí por JS -->
           </div>

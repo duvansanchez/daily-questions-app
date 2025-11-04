@@ -3307,10 +3307,13 @@ def api_list_objetivos():
             SELECT o.id, o.titulo, o.descripcion, o.prioridad, o.categoria, o.completado, o.fecha_creacion, o.fecha_completado, 
                    o.objetivo_padre_id, o.es_padre, o.estado, o.fecha_inicio, o.fecha_fin, 
                    o.horas_estimadas, o.recompensa, o.recurrente, o.frecuencia, o.orden, o.parte_dia,
-                   CASE WHEN os.objetivo_id IS NOT NULL THEN 1 ELSE 0 END as saltado_hoy
+                   CASE WHEN os.objetivo_id IS NOT NULL THEN 1 ELSE 0 END as saltado_hoy,
+                   o.fecha_programada, o.programado_para
             FROM objetivos o
             LEFT JOIN objetivos_saltados os ON o.id = os.objetivo_id AND os.user_id = o.user_id AND os.fecha_saltada = ?
             WHERE o.user_id = ? 
+            AND (o.fecha_programada IS NULL OR o.fecha_programada <= ?)
+            AND (o.programado_para IS NULL OR o.programado_para != 'mañana' OR o.fecha_programada <= ?)
             ORDER BY 
                 CASE 
                     WHEN o.completado = 1 THEN 2
@@ -3325,7 +3328,7 @@ def api_list_objetivos():
                 END ASC,
                 o.orden ASC, 
                 o.fecha_creacion DESC
-        ''', (hoy, current_user.id))
+        ''', (hoy, current_user.id, hoy, hoy))
         rows = cursor.fetchall()
         objetivos = []
         for row in rows:
@@ -3349,7 +3352,9 @@ def api_list_objetivos():
                 'frecuencia': row[16] if len(row) > 16 else None,
                 'orden': row[17] if len(row) > 17 else 0,
                 'parte_dia': row[18] if len(row) > 18 else None,
-                'saltado_hoy': bool(row[19]) if len(row) > 19 else False
+                'saltado_hoy': bool(row[19]) if len(row) > 19 else False,
+                'fecha_programada': row[20].isoformat() if len(row) > 20 and row[20] else None,
+                'programado_para': row[21] if len(row) > 21 else None
             }
             # Verificar si el objetivo está vencido
             vencido = es_objetivo_vencido(obj, hoy)
@@ -4165,6 +4170,156 @@ def api_delete_subobjetivo(subobjetivo_id):
         cursor.execute('''DELETE FROM subobjetivos WHERE id = ?''', (subobjetivo_id,))
         conn.commit()
         return jsonify({'status': 'success'})
+
+# =============================
+# Endpoints para Objetivos Programados
+# =============================
+
+@app.route('/api/objetivos/programados/mañana', methods=['GET'])
+@login_required
+def api_objetivos_programados_mañana():
+    """Obtener objetivos programados para mañana"""
+    try:
+        from datetime import datetime, timedelta
+        mañana = (datetime.now() + timedelta(days=1)).date()
+        
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            
+            cursor.execute("""
+                SELECT id, titulo, descripcion, categoria, prioridad, parte_dia, 
+                       horas_estimadas, fecha_programada, programado_para,
+                       CONVERT(varchar, fecha_creacion, 120) as fecha_creacion
+                FROM objetivos 
+                WHERE user_id = ? 
+                AND (fecha_programada = ? OR programado_para = 'mañana')
+                AND completado = 0
+                ORDER BY 
+                    CASE prioridad 
+                        WHEN 'alta' THEN 1 
+                        WHEN 'media' THEN 2 
+                        WHEN 'baja' THEN 3 
+                        ELSE 4 
+                    END,
+                    fecha_creacion DESC
+            """, (current_user.id, mañana))
+            
+            objetivos = []
+            for row in cursor.fetchall():
+                objetivos.append({
+                    'id': row.id,
+                    'titulo': row.titulo,
+                    'descripcion': row.descripcion,
+                    'categoria': row.categoria,
+                    'prioridad': row.prioridad,
+                    'parte_dia': row.parte_dia,
+                    'horas_estimadas': float(row.horas_estimadas) if row.horas_estimadas else None,
+                    'fecha_programada': row.fecha_programada.isoformat() if row.fecha_programada else None,
+                    'programado_para': row.programado_para,
+                    'fecha_creacion': row.fecha_creacion
+                })
+            
+            return jsonify({
+                'status': 'success',
+                'objetivos': objetivos,
+                'fecha_mañana': mañana.isoformat(),
+                'total': len(objetivos)
+            })
+            
+    except Exception as e:
+        logger.error(f"Error al obtener objetivos programados para mañana: {str(e)}")
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+@app.route('/api/objetivos/<int:objetivo_id>/programar', methods=['POST'])
+@login_required
+def api_programar_objetivo(objetivo_id):
+    """Programar un objetivo para mañana"""
+    try:
+        data = request.get_json()
+        programar_para = data.get('programar_para', 'mañana')  # 'mañana' o 'fecha_especifica'
+        fecha_especifica = data.get('fecha_especifica')  # Solo si programar_para es 'fecha_especifica'
+        
+        from datetime import datetime, timedelta
+        
+        # Determinar la fecha programada
+        if programar_para == 'mañana':
+            fecha_programada = (datetime.now() + timedelta(days=1)).date()
+        elif programar_para == 'fecha_especifica' and fecha_especifica:
+            try:
+                fecha_programada = datetime.strptime(fecha_especifica, '%Y-%m-%d').date()
+            except ValueError:
+                return jsonify({'status': 'error', 'message': 'Formato de fecha inválido'}), 400
+        else:
+            return jsonify({'status': 'error', 'message': 'Parámetros de programación inválidos'}), 400
+        
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            
+            # Verificar que el objetivo existe y pertenece al usuario
+            cursor.execute("""
+                SELECT id, titulo FROM objetivos 
+                WHERE id = ? AND user_id = ?
+            """, (objetivo_id, current_user.id))
+            
+            objetivo = cursor.fetchone()
+            if not objetivo:
+                return jsonify({'status': 'error', 'message': 'Objetivo no encontrado'}), 404
+            
+            # Actualizar el objetivo con la programación
+            cursor.execute("""
+                UPDATE objetivos 
+                SET fecha_programada = ?, programado_para = ?
+                WHERE id = ? AND user_id = ?
+            """, (fecha_programada, programar_para, objetivo_id, current_user.id))
+            
+            conn.commit()
+            
+            return jsonify({
+                'status': 'success',
+                'message': f'Objetivo "{objetivo.titulo}" programado para {fecha_programada.isoformat()}',
+                'fecha_programada': fecha_programada.isoformat(),
+                'programado_para': programar_para
+            })
+            
+    except Exception as e:
+        logger.error(f"Error al programar objetivo: {str(e)}")
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+@app.route('/api/objetivos/<int:objetivo_id>/desprogramar', methods=['POST'])
+@login_required
+def api_desprogramar_objetivo(objetivo_id):
+    """Quitar la programación de un objetivo (volver a hoy)"""
+    try:
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            
+            # Verificar que el objetivo existe y pertenece al usuario
+            cursor.execute("""
+                SELECT id, titulo FROM objetivos 
+                WHERE id = ? AND user_id = ?
+            """, (objetivo_id, current_user.id))
+            
+            objetivo = cursor.fetchone()
+            if not objetivo:
+                return jsonify({'status': 'error', 'message': 'Objetivo no encontrado'}), 404
+            
+            # Quitar la programación
+            cursor.execute("""
+                UPDATE objetivos 
+                SET fecha_programada = NULL, programado_para = NULL
+                WHERE id = ? AND user_id = ?
+            """, (objetivo_id, current_user.id))
+            
+            conn.commit()
+            
+            return jsonify({
+                'status': 'success',
+                'message': f'Objetivo "{objetivo.titulo}" desprogramado (vuelve a hoy)'
+            })
+            
+    except Exception as e:
+        logger.error(f"Error al desprogramar objetivo: {str(e)}")
+        return jsonify({'status': 'error', 'message': str(e)}), 500
 
 # Configuración de la aplicación
 # === RUTA PARA GESTIÓN DE CATEGORÍAS ===

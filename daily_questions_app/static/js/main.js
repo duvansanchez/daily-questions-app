@@ -1598,6 +1598,7 @@ function renderObjetivos() {
                 <button class=\"btn-focus\" title=\"Modo Focus\" data-id=\"${obj.id}\"><i class=\"bi bi-bullseye\"></i></button>
                 <button class=\"btn-editar\" title=\"Editar\" data-id=\"${obj.id}\"><i class=\"bi bi-pencil\"></i></button>
                 <button class=\"btn-eliminar\" title=\"Eliminar\" data-id=\"${obj.id}\"><i class=\"bi bi-trash\"></i></button>
+                ${!obj.completado ? `<button class=\"btn-programar-mañana\" title=\"Programar para mañana\" data-id=\"${obj.id}\"><i class=\"bi bi-calendar-plus\"></i></button>` : ''}
                 ${obj.recurrente && !obj.saltado_hoy && !obj.completado ? `<button class=\"btn-saltar-hoy\" title=\"Saltar hoy\" data-id=\"${obj.id}\"><i class=\"bi bi-arrow-bar-right\"></i> Saltar hoy</button>` : ''}
                 ${obj.recurrente && obj.saltado_hoy && !obj.completado ? `<button class=\"btn-reactivar-hoy\" title=\"Reactivar hoy\" data-id=\"${obj.id}\"><i class=\"bi bi-arrow-repeat\"></i> Reactivar hoy</button>` : ''}
                 ${(ordenActual === 'orden') ? ordenFlechasHtml + ordenNumHtml : ''}
@@ -3778,6 +3779,172 @@ window.siguienteFrase = siguienteFrase;
 window.fraseAnterior = fraseAnterior;
 window.terminarSesionRepaso = terminarSesionRepaso;
 window.editarFraseDesdeRepaso = editarFraseDesdeRepaso;
+
+// =============================
+// OBJETIVOS PROGRAMADOS PARA MAÑANA
+// =============================
+
+// Variable para almacenar objetivos programados
+let objetivosProgramadosMañana = [];
+
+// Event listener para botón de programar para mañana
+document.addEventListener('click', async function(e) {
+    if (e.target.closest('.btn-programar-mañana')) {
+        e.preventDefault();
+        const button = e.target.closest('[data-id]');
+        const objetivoId = button.getAttribute('data-id');
+        await programarObjetivoParaMañana(objetivoId);
+    }
+});
+
+// Event listener para toggle de sección de mañana
+document.getElementById('btn-toggle-mañana')?.addEventListener('click', function() {
+    const contenido = document.getElementById('contenido-objetivos-mañana');
+    const icono = this.querySelector('i');
+    
+    if (contenido.style.display === 'none') {
+        contenido.style.display = 'block';
+        icono.className = 'bi bi-chevron-up';
+    } else {
+        contenido.style.display = 'none';
+        icono.className = 'bi bi-chevron-down';
+    }
+});
+
+async function programarObjetivoParaMañana(objetivoId) {
+    try {
+        const response = await fetch(`/api/objetivos/${objetivoId}/programar`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ programar_para: 'mañana' })
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            showSuccess(`✅ ${data.message}`);
+            
+            // Recargar objetivos para actualizar la vista
+            await cargarObjetivos();
+            await cargarObjetivosProgramadosMañana();
+        } else {
+            const error = await response.json();
+            showError(`Error: ${error.message}`);
+        }
+    } catch (error) {
+        console.error('Error al programar objetivo:', error);
+        showError('Error al programar objetivo para mañana');
+    }
+}
+
+async function desprogramarObjetivo(objetivoId) {
+    try {
+        const response = await fetch(`/api/objetivos/${objetivoId}/desprogramar`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            showSuccess(`✅ ${data.message}`);
+            
+            // Recargar objetivos para actualizar la vista
+            await cargarObjetivos();
+            await cargarObjetivosProgramadosMañana();
+        } else {
+            const error = await response.json();
+            showError(`Error: ${error.message}`);
+        }
+    } catch (error) {
+        console.error('Error al desprogramar objetivo:', error);
+        showError('Error al desprogramar objetivo');
+    }
+}
+
+async function cargarObjetivosProgramadosMañana() {
+    try {
+        const response = await fetch('/api/objetivos/programados/mañana');
+        
+        if (response.ok) {
+            const data = await response.json();
+            objetivosProgramadosMañana = data.objetivos;
+            renderizarObjetivosProgramadosMañana();
+        } else {
+            console.error('Error al cargar objetivos programados para mañana');
+        }
+    } catch (error) {
+        console.error('Error al cargar objetivos programados:', error);
+    }
+}
+
+function renderizarObjetivosProgramadosMañana() {
+    const seccion = document.getElementById('seccion-objetivos-mañana');
+    const lista = document.getElementById('lista-objetivos-mañana');
+    const contador = document.getElementById('contador-objetivos-mañana');
+    const mensajeSin = document.getElementById('mensaje-sin-objetivos-mañana');
+    
+    if (!seccion || !lista || !contador) return;
+    
+    // Actualizar contador
+    contador.textContent = objetivosProgramadosMañana.length;
+    
+    // Mostrar/ocultar sección
+    if (objetivosProgramadosMañana.length > 0) {
+        seccion.style.display = 'block';
+        mensajeSin.style.display = 'none';
+        
+        // Renderizar objetivos
+        lista.innerHTML = '';
+        objetivosProgramadosMañana.forEach(obj => {
+            const elemento = document.createElement('div');
+            elemento.className = 'objetivo-card objetivo-programado-mañana';
+            elemento.innerHTML = `
+                <div class="objetivo-contenido">
+                    <div class="objetivo-header">
+                        <h6 class="objetivo-titulo">${obj.titulo}</h6>
+                        <div class="objetivo-badges">
+                            <span class="badge bg-info">📅 Mañana</span>
+                            <span class="badge bg-${obj.prioridad === 'alta' ? 'danger' : obj.prioridad === 'media' ? 'warning' : 'secondary'}">${obj.prioridad}</span>
+                        </div>
+                    </div>
+                    ${obj.descripcion ? `<p class="objetivo-descripcion">${obj.descripcion}</p>` : ''}
+                    <div class="objetivo-meta">
+                        <span class="objetivo-categoria">${obj.categoria || 'Sin categoría'}</span>
+                        ${obj.parte_dia ? `<span class="objetivo-parte-dia">${obj.parte_dia}</span>` : ''}
+                    </div>
+                </div>
+                <div class="acciones-objetivo">
+                    <button class="btn-desprogramar" title="Volver a hoy" data-id="${obj.id}">
+                        <i class="bi bi-arrow-left"></i>
+                    </button>
+                    <button class="btn-editar" title="Editar" data-id="${obj.id}">
+                        <i class="bi bi-pencil"></i>
+                    </button>
+                </div>
+            `;
+            lista.appendChild(elemento);
+        });
+        
+        // Agregar event listeners para desprogramar
+        lista.querySelectorAll('.btn-desprogramar').forEach(btn => {
+            btn.addEventListener('click', async function() {
+                const objetivoId = this.getAttribute('data-id');
+                await desprogramarObjetivo(objetivoId);
+            });
+        });
+        
+    } else {
+        if (objetivosProgramadosMañana.length === 0) {
+            seccion.style.display = 'none';
+        } else {
+            mensajeSin.style.display = 'block';
+        }
+    }
+}
+
+// Cargar objetivos programados al inicializar
+document.addEventListener('DOMContentLoaded', function() {
+    cargarObjetivosProgramadosMañana();
+});
 
 // =====================
 // Atajos de teclado repaso
