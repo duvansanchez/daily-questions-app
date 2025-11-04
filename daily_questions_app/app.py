@@ -2768,6 +2768,12 @@ def test_calendario():
     """Página de prueba para el calendario de objetivos"""
     return render_template('test_calendario.html')
 
+@app.route('/test-focus')
+@login_required
+def test_focus():
+    """Página de prueba para el focus de subobjetivos"""
+    return render_template('test_focus.html')
+
 @app.route('/api/export/respuestas-excel')
 @login_required
 def export_respuestas_excel():
@@ -3691,7 +3697,7 @@ def api_get_objetivo(objetivo_id):
                 SELECT o.id, o.titulo, o.descripcion, o.prioridad, o.categoria, o.completado, 
                        o.fecha_creacion, o.fecha_completado, o.objetivo_padre_id, o.es_padre, 
                        o.estado, o.fecha_inicio, o.fecha_fin, o.horas_estimadas, o.recompensa, 
-                       o.parte_dia, o.recurrente, o.frecuencia, o.orden, o.fecha_programada, o.programado_para
+                       o.parte_dia, o.recurrente, o.frecuencia, o.orden, o.fecha_programada, o.programado_para, o.tiempo_focus
                 FROM objetivos o
                 WHERE o.id = ? AND o.user_id = ?
             ''', (objetivo_id, current_user.id))
@@ -3721,7 +3727,8 @@ def api_get_objetivo(objetivo_id):
                 'frecuencia': row[17],
                 'orden': row[18],
                 'fecha_programada': row[19].strftime('%Y-%m-%d') if row[19] else None,
-                'programado_para': row[20]
+                'programado_para': row[20],
+                'tiempo_focus': row[21] if row[21] else 0
             }
             
             return jsonify(objetivo)
@@ -4102,7 +4109,7 @@ def api_reactivar_objetivo_hoy(objetivo_id):
 def api_list_subobjetivos(objetivo_id):
     with get_db_connection() as conn:
         cursor = conn.cursor()
-        cursor.execute('''SELECT id, titulo, completado, fecha_creacion, orden FROM subobjetivos WHERE objetivo_id = ? ORDER BY orden ASC, id ASC''', (objetivo_id,))
+        cursor.execute('''SELECT id, titulo, completado, fecha_creacion, orden, tiempo_focus FROM subobjetivos WHERE objetivo_id = ? ORDER BY orden ASC, id ASC''', (objetivo_id,))
         rows = cursor.fetchall()
         subobjetivos = [
             {
@@ -4110,7 +4117,8 @@ def api_list_subobjetivos(objetivo_id):
                 'titulo': row[1],
                 'completado': bool(row[2]),
                 'fecha_creacion': row[3].strftime('%Y-%m-%d %H:%M') if row[3] else None,
-                'orden': row[4]
+                'orden': row[4],
+                'tiempo_focus': row[5] if row[5] else 0
             }
             for row in rows
         ]
@@ -4155,6 +4163,8 @@ def api_reordenar_subobjetivos(objetivo_id):
 @login_required
 def api_update_subobjetivo(subobjetivo_id):
     data = request.get_json()
+    print(f"🔍 PATCH subobjetivo {subobjetivo_id} - Data recibida: {data}")
+    
     campos = []
     valores = []
     if 'titulo' in data:
@@ -4163,13 +4173,23 @@ def api_update_subobjetivo(subobjetivo_id):
     if 'completado' in data:
         campos.append('completado = ?')
         valores.append(int(bool(data['completado'])))
+    if 'tiempo_focus' in data:
+        campos.append('tiempo_focus = ?')
+        valores.append(int(data['tiempo_focus']))
+        print(f"💾 Actualizando tiempo_focus a: {data['tiempo_focus']} segundos")
+    
     if not campos:
         return jsonify({'error': 'Nada para actualizar'}), 400
+    
     valores.append(subobjetivo_id)
+    print(f"🔧 Query: UPDATE subobjetivos SET {', '.join(campos)} WHERE id = ?")
+    print(f"🔧 Valores: {tuple(valores)}")
+    
     with get_db_connection() as conn:
         cursor = conn.cursor()
         cursor.execute(f'''UPDATE subobjetivos SET {', '.join(campos)} WHERE id = ?''', tuple(valores))
         conn.commit()
+        print(f"✅ Subobjetivo {subobjetivo_id} actualizado exitosamente")
         return jsonify({'status': 'success'})
 
 @app.route('/api/subobjetivos/<int:subobjetivo_id>', methods=['DELETE'])

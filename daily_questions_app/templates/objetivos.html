@@ -1,5 +1,12 @@
-{% extends 'base.html' %} {% block title %}Objetivos | Desarrollo Personal{%
-endblock %} {% block content %}
+{% extends 'base.html' %} 
+
+{% block title %}Objetivos | Desarrollo Personal{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/focus-subobjetivos.css') }}">
+{% endblock %}
+
+{% block content %}
 <div class="container py-4">
   <div class="mb-4">
     <h2 class="mb-1">Desarrollo Personal</h2>
@@ -1549,8 +1556,117 @@ endblock %} {% block content %}
   </div>
 </div>
 
+<!-- Modal Modo Focus Sub-objetivo -->
+<div
+  class="modal fade"
+  id="modalFocusSubobjetivo"
+  tabindex="-1"
+  aria-labelledby="modalFocusSubobjetivoLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header border-0 pb-0">
+        <div class="d-flex align-items-center gap-3">
+          <span class="modal-icon fs-2"
+            ><i class="bi bi-bullseye text-success"></i
+          ></span>
+          <div>
+            <h4 class="modal-title mb-0" id="modalFocusSubobjetivoLabel">
+              Focus Sub-objetivo
+            </h4>
+            <small class="text-muted">Concéntrate en esta tarea específica</small>
+          </div>
+        </div>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        ></button>
+      </div>
+
+      <div class="modal-body p-4">
+        <!-- Información del sub-objetivo -->
+        <div class="focus-subobjetivo-info mb-4">
+          <h3 class="focus-sub-titulo mb-2" id="focus-sub-titulo"></h3>
+          <p class="text-muted mb-3">
+            <i class="bi bi-arrow-up-right me-1"></i>
+            Parte del objetivo: <span id="focus-sub-objetivo-padre" class="fw-semibold"></span>
+          </p>
+        </div>
+
+        <!-- Timer/Cronómetro para sub-objetivo -->
+        <div class="focus-timer mb-4 text-center">
+          <div class="timer-display mb-3">
+            <span
+              class="timer-time fs-1 fw-bold text-success"
+              id="timer-sub-display"
+              >00:00:00</span
+            >
+          </div>
+          <div class="timer-controls">
+            <button class="btn btn-success me-2" id="timer-sub-start">
+              <i class="bi bi-play-fill"></i> Iniciar
+            </button>
+            <button
+              class="btn btn-warning me-2"
+              id="timer-sub-pause"
+              style="display: none"
+            >
+              <i class="bi bi-pause-fill"></i> Pausar
+            </button>
+            <button class="btn btn-secondary" id="timer-sub-reset">
+              <i class="bi bi-arrow-clockwise"></i> Reiniciar
+            </button>
+          </div>
+        </div>
+
+        <!-- Notas de sesión para sub-objetivo -->
+        <div class="focus-notas mb-4">
+          <h5 class="mb-3">
+            <i class="bi bi-journal-text me-2"></i>Notas de esta tarea
+          </h5>
+          <textarea
+            class="form-control"
+            id="focus-sub-notas-texto"
+            rows="4"
+            placeholder="Anota tu progreso, ideas o reflexiones sobre esta tarea específica..."
+          >
+          </textarea>
+        </div>
+      </div>
+
+      <div class="modal-footer border-0 pt-0">
+        <div class="d-flex justify-content-between w-100">
+          <div>
+            <button
+              type="button"
+              class="btn btn-outline-secondary"
+              data-bs-dismiss="modal"
+            >
+              <i class="bi bi-x-lg me-1"></i>Volver al objetivo
+            </button>
+          </div>
+          <div>
+            <button type="button" class="btn btn-success" id="focus-sub-completar">
+              <i class="bi bi-check-lg me-1"></i>Completar Tarea
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Masonry.js CDN -->
 <script src="https://unpkg.com/masonry-layout@4/dist/masonry.pkgd.min.js"></script>
+
+<!-- Focus Sub-objetivos JS -->
+<script src="{{ url_for('static', filename='js/focus-subobjetivos.js') }}"></script>
+<script src="{{ url_for('static', filename='js/focus-subobjetivos-patch.js') }}"></script>
+<script src="{{ url_for('static', filename='js/timer-persistence.js') }}"></script>
+<script src="{{ url_for('static', filename='js/focus-subobjetivos-simple.js') }}"></script>
 
 <!-- Main JS ya se carga en base.html -->
 

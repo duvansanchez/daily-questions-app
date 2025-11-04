@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Focus Subobjetivos</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+</head>
+<body>
+    <div class="container mt-5">
+        <h1>Test Focus Subobjetivos</h1>
+        
+        <div class="card">
+            <div class="card-body">
+                <h5>Pruebas de API</h5>
+                
+                <div class="mb-3">
+                    <label for="subobjetivo-id" class="form-label">ID del Subobjetivo:</label>
+                    <input type="number" class="form-control" id="subobjetivo-id" value="2018">
+                </div>
+                
+                <div class="mb-3">
+                    <label for="tiempo-segundos" class="form-label">Tiempo en segundos:</label>
+                    <input type="number" class="form-control" id="tiempo-segundos" value="120">
+                </div>
+                
+                <button class="btn btn-primary" onclick="testGuardar()">Test Guardar</button>
+                <button class="btn btn-info" onclick="testLeer()">Test Leer</button>
+                <button class="btn btn-success" onclick="testCompleto()">Test Completo</button>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-body">
+                <h5>Resultados</h5>
+                <pre id="resultados" style="background: #f8f9fa; padding: 1rem; border-radius: 4px;"></pre>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function log(message) {
+            const resultados = document.getElementById('resultados');
+            resultados.textContent += new Date().toLocaleTimeString() + ': ' + message + '\n';
+            console.log(message);
+        }
+
+        async function testGuardar() {
+            const subobjetivoId = document.getElementById('subobjetivo-id').value;
+            const tiempoSegundos = document.getElementById('tiempo-segundos').value;
+            
+            log(`🧪 Iniciando test de guardado para subobjetivo ${subobjetivoId} con ${tiempoSegundos} segundos`);
+            
+            try {
+                const response = await fetch(`/api/subobjetivos/${subobjetivoId}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ tiempo_focus: parseInt(tiempoSegundos) })
+                });
+
+                const result = await response.json();
+                log(`📥 Response: ${response.status} - ${JSON.stringify(result)}`);
+                
+                if (response.ok) {
+                    log('✅ Guardado exitoso');
+                } else {
+                    log('❌ Error en guardado');
+                }
+            } catch (error) {
+                log('💥 Error de red: ' + error.message);
+            }
+        }
+
+        async function testLeer() {
+            log('🧪 Iniciando test de lectura de subobjetivos');
+            
+            try {
+                // Necesitamos un objetivo ID para leer subobjetivos
+                // Vamos a obtener el primer objetivo disponible
+                const objetivosResponse = await fetch('/api/objetivos');
+                const objetivos = await objetivosResponse.json();
+                
+                if (objetivos.length === 0) {
+                    log('❌ No hay objetivos disponibles');
+                    return;
+                }
+                
+                const objetivoId = objetivos[0].id;
+                log(`📡 Leyendo subobjetivos del objetivo ${objetivoId}`);
+                
+                const response = await fetch(`/api/objetivos/${objetivoId}/subobjetivos`);
+                const subobjetivos = await response.json();
+                
+                log(`📊 Subobjetivos recibidos: ${JSON.stringify(subobjetivos, null, 2)}`);
+                
+                // Buscar el subobjetivo que estamos probando
+                const subobjetivoId = document.getElementById('subobjetivo-id').value;
+                const subobjetivo = subobjetivos.find(s => s.id == subobjetivoId);
+                
+                if (subobjetivo) {
+                    log(`🔍 Subobjetivo ${subobjetivoId} encontrado: tiempo_focus = ${subobjetivo.tiempo_focus}`);
+                } else {
+                    log(`❌ Subobjetivo ${subobjetivoId} no encontrado en este objetivo`);
+                }
+                
+            } catch (error) {
+                log('💥 Error de red: ' + error.message);
+            }
+        }
+
+        async function testCompleto() {
+            log('🧪 Iniciando test completo (Guardar -> Leer -> Verificar)');
+            
+            await testGuardar();
+            await new Promise(resolve => setTimeout(resolve, 1000)); // Esperar 1 segundo
+            await testLeer();
+        }
+
+        // Limpiar resultados al cargar
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('resultados').textContent = 'Listo para pruebas...\n';
+        });
+    </script>
+</body>
+</html>
