@@ -3691,7 +3691,7 @@ def api_get_objetivo(objetivo_id):
                 SELECT o.id, o.titulo, o.descripcion, o.prioridad, o.categoria, o.completado, 
                        o.fecha_creacion, o.fecha_completado, o.objetivo_padre_id, o.es_padre, 
                        o.estado, o.fecha_inicio, o.fecha_fin, o.horas_estimadas, o.recompensa, 
-                       o.parte_dia, o.recurrente, o.frecuencia, o.orden
+                       o.parte_dia, o.recurrente, o.frecuencia, o.orden, o.fecha_programada, o.programado_para
                 FROM objetivos o
                 WHERE o.id = ? AND o.user_id = ?
             ''', (objetivo_id, current_user.id))
@@ -3719,7 +3719,9 @@ def api_get_objetivo(objetivo_id):
                 'parte_dia': row[15],
                 'recurrente': bool(row[16]),
                 'frecuencia': row[17],
-                'orden': row[18]
+                'orden': row[18],
+                'fecha_programada': row[19].strftime('%Y-%m-%d') if row[19] else None,
+                'programado_para': row[20]
             }
             
             return jsonify(objetivo)

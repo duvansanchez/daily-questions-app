@@ -143,6 +143,21 @@
   font-weight: 600;
   font-size: 1.1rem;
 }
+
+.subobjetivos-container {
+  max-height: 100px;
+  overflow-y: auto;
+}
+
+.subobjetivo-item {
+  padding: 1px 0;
+}
+
+.subobjetivo-item:hover {
+  background-color: rgba(0,0,0,0.05);
+  border-radius: 3px;
+  padding: 1px 3px;
+}
 </style>
 
 <script>
@@ -290,6 +305,65 @@ function renderizarObjetivosProgramados() {
   });
   
   lista.innerHTML = html;
+  
+  // Cargar subobjetivos para cada objetivo
+  objetivosProgramados.forEach(obj => {
+    cargarSubobjetivos(obj.id);
+  });
+}
+
+async function cargarSubobjetivos(objetivoId) {
+  try {
+    const response = await fetch(`/api/objetivos/${objetivoId}/subobjetivos`);
+    
+    if (response.ok) {
+      const data = await response.json();
+      
+      // El endpoint puede devolver los datos de diferentes formas
+      let subobjetivos = [];
+      if (Array.isArray(data)) {
+        // Si data es directamente un array
+        subobjetivos = data;
+      } else if (data.subobjetivos) {
+        // Si data tiene una propiedad subobjetivos
+        subobjetivos = data.subobjetivos;
+      } else if (data.data) {
+        // Si data tiene una propiedad data
+        subobjetivos = data.data;
+      }
+      
+      renderizarSubobjetivos(objetivoId, subobjetivos);
+    }
+  } catch (error) {
+    console.error('Error al cargar subobjetivos:', error);
+  }
+}
+
+function renderizarSubobjetivos(objetivoId, subobjetivos) {
+  const container = document.getElementById(`subobjetivos-${objetivoId}`);
+  
+  if (!container || subobjetivos.length === 0) {
+    return;
+  }
+  
+  let html = '<div class="subobjetivos-list mt-1">';
+  
+  subobjetivos.forEach(sub => {
+    const completadoClass = sub.completado ? 'text-success' : 'text-muted';
+    const completadoIcon = sub.completado ? 'bi-check-circle-fill' : 'bi-circle';
+    
+    html += `
+      <div class="subobjetivo-item d-flex align-items-center gap-1 mb-1">
+        <i class="bi ${completadoIcon} ${completadoClass}" style="font-size: 0.8rem;"></i>
+        <small class="${completadoClass}" style="font-size: 0.75rem;">
+          ${sub.completado ? '<s>' + sub.titulo + '</s>' : sub.titulo}
+        </small>
+      </div>
+    `;
+  });
+  
+  html += '</div>';
+  container.innerHTML = html;
 }
 
 function renderizarTarjetaObjetivo(obj) {
@@ -299,30 +373,74 @@ function renderizarTarjetaObjetivo(obj) {
     'baja': 'success'
   };
   
+  // Colores para parte del día
+  const parteDiaColor = {
+    'mañana': '#ffeaa7',
+    'tarde': '#fab1a0', 
+    'noche': '#a29bfe'
+  };
+  
+  const parteDiaIcon = {
+    'mañana': '🌅',
+    'tarde': '🌞',
+    'noche': '🌙'
+  };
+  
+  const borderColor = obj.parte_dia ? parteDiaColor[obj.parte_dia] : '#dee2e6';
+  
   return `
-    <div class="col-md-6 col-lg-4">
-      <div class="card objetivo-programado h-100">
-        <div class="card-body">
-          <div class="d-flex justify-content-between align-items-start mb-2">
-            <span class="badge bg-${prioridadColor[obj.prioridad] || 'secondary'}">${obj.prioridad || 'Media'}</span>
-            <span class="fecha-programada">${formatearFechaCorta(obj.fecha_programada)}</span>
-          </div>
-          
-          <h6 class="card-title">${obj.titulo}</h6>
-          
-          ${obj.descripcion ? `<p class="card-text text-muted small">${obj.descripcion}</p>` : ''}
-          
-          <div class="d-flex justify-content-between align-items-center mt-3">
-            <small class="text-muted">
-              <i class="bi bi-tag me-1"></i>${obj.categoria || 'Sin categoría'}
-            </small>
-            <div class="btn-group btn-group-sm">
-              <button class="btn btn-outline-warning btn-desprogramar" data-id="${obj.id}" title="Desprogramar (volver a hoy)">
-                <i class="bi bi-arrow-left"></i>
-              </button>
-              <button class="btn btn-outline-primary" onclick="editarObjetivo(${obj.id})" title="Editar">
-                <i class="bi bi-pencil"></i>
-              </button>
+    <div class="col-12">
+      <div class="card objetivo-programado mb-3" style="border-left: 4px solid ${borderColor};">
+        <div class="card-body py-3">
+          <div class="row align-items-center">
+            <!-- Columna 1: Título y descripción -->
+            <div class="col-md-5">
+              <div class="d-flex align-items-center gap-2 mb-1">
+                ${obj.parte_dia ? `<span class="badge" style="background-color: ${parteDiaColor[obj.parte_dia]}; color: #333;">${parteDiaIcon[obj.parte_dia]} ${obj.parte_dia.charAt(0).toUpperCase() + obj.parte_dia.slice(1)}</span>` : ''}
+                <span class="badge bg-${prioridadColor[obj.prioridad] || 'secondary'}">${obj.prioridad || 'Media'}</span>
+              </div>
+              <h6 class="card-title mb-1">${obj.titulo}</h6>
+              ${obj.descripcion ? `<p class="card-text text-muted small mb-1">${obj.descripcion.length > 80 ? obj.descripcion.substring(0, 80) + '...' : obj.descripcion}</p>` : ''}
+              
+              <!-- Subobjetivos -->
+              <div id="subobjetivos-${obj.id}" class="subobjetivos-container mt-2">
+                <!-- Los subobjetivos se cargan aquí -->
+              </div>
+            </div>
+            
+            <!-- Columna 2: Categoría y fecha -->
+            <div class="col-md-3 text-center">
+              <div class="mb-1">
+                <span class="badge bg-light text-dark">
+                  <i class="bi bi-tag me-1"></i>${obj.categoria || 'Sin categoría'}
+                </span>
+              </div>
+              <div>
+                <span class="fecha-programada small">${formatearFechaCorta(obj.fecha_programada)}</span>
+              </div>
+            </div>
+            
+            <!-- Columna 3: Información adicional -->
+            <div class="col-md-2 text-center">
+              ${obj.horas_estimadas ? `
+                <div class="text-muted small">
+                  <i class="bi bi-clock me-1"></i>
+                  ${Math.floor(obj.horas_estimadas)}h ${Math.round((obj.horas_estimadas - Math.floor(obj.horas_estimadas)) * 60)}m
+                </div>
+              ` : ''}
+              ${obj.recurrente ? `<div class="text-info small"><i class="bi bi-repeat"></i> Recurrente</div>` : ''}
+            </div>
+            
+            <!-- Columna 4: Acciones -->
+            <div class="col-md-2 text-end">
+              <div class="btn-group btn-group-sm">
+                <button class="btn btn-outline-warning btn-desprogramar" data-id="${obj.id}" title="Desprogramar (volver a hoy)">
+                  <i class="bi bi-arrow-left"></i>
+                </button>
+                <button class="btn btn-outline-primary" onclick="editarObjetivo(${obj.id})" title="Editar">
+                  <i class="bi bi-pencil"></i>
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -338,20 +456,49 @@ function renderizarFilaObjetivo(obj) {
     'baja': 'success'
   };
   
+  // Colores para parte del día
+  const parteDiaColor = {
+    'mañana': '#ffeaa7',
+    'tarde': '#fab1a0', 
+    'noche': '#a29bfe'
+  };
+  
+  const parteDiaIcon = {
+    'mañana': '🌅',
+    'tarde': '🌞',
+    'noche': '🌙'
+  };
+  
+  const borderColor = obj.parte_dia ? parteDiaColor[obj.parte_dia] : '#dee2e6';
+  
   return `
     <div class="col-12">
-      <div class="card objetivo-programado">
-        <div class="card-body py-3">
+      <div class="card objetivo-programado mb-2" style="border-left: 3px solid ${borderColor};">
+        <div class="card-body py-2">
           <div class="row align-items-center">
-            <div class="col-md-6">
-              <h6 class="mb-1">${obj.titulo}</h6>
-              ${obj.descripcion ? `<small class="text-muted">${obj.descripcion}</small>` : ''}
+            <div class="col-md-5">
+              <div class="d-flex align-items-center gap-1 mb-1">
+                ${obj.parte_dia ? `<span class="badge badge-sm" style="background-color: ${parteDiaColor[obj.parte_dia]}; color: #333; font-size: 0.7rem;">${parteDiaIcon[obj.parte_dia]} ${obj.parte_dia}</span>` : ''}
+                <span class="badge bg-${prioridadColor[obj.prioridad] || 'secondary'} badge-sm" style="font-size: 0.7rem;">${obj.prioridad || 'Media'}</span>
+              </div>
+              <h6 class="mb-0 small">${obj.titulo}</h6>
+              ${obj.descripcion ? `<small class="text-muted">${obj.descripcion.length > 60 ? obj.descripcion.substring(0, 60) + '...' : obj.descripcion}</small>` : ''}
+              
+              <!-- Subobjetivos en vista lista -->
+              <div id="subobjetivos-${obj.id}" class="subobjetivos-container mt-1">
+                <!-- Los subobjetivos se cargan aquí -->
+              </div>
             </div>
             <div class="col-md-2 text-center">
-              <span class="badge bg-${prioridadColor[obj.prioridad] || 'secondary'}">${obj.prioridad || 'Media'}</span>
+              <small class="text-muted">
+                <i class="bi bi-tag me-1"></i>${obj.categoria || 'Sin categoría'}
+              </small>
             </div>
             <div class="col-md-2 text-center">
-              <small class="text-muted">${obj.categoria || 'Sin categoría'}</small>
+              <small class="fecha-programada">${formatearFechaCorta(obj.fecha_programada)}</small>
+            </div>
+            <div class="col-md-1 text-center">
+              ${obj.horas_estimadas ? `<small class="text-muted"><i class="bi bi-clock"></i> ${Math.floor(obj.horas_estimadas)}h</small>` : ''}
             </div>
             <div class="col-md-2 text-end">
               <div class="btn-group btn-group-sm">
@@ -453,20 +600,522 @@ function formatearFechaCorta(fecha) {
   });
 }
 
-function editarObjetivo(objetivoId) {
-  // Redirigir a la página de objetivos con el modal de edición
-  window.location.href = `/objetivos?editar=${objetivoId}`;
+async function editarObjetivo(objetivoId) {
+  try {
+    // Obtener los datos del objetivo
+    const response = await fetch(`/api/objetivos/${objetivoId}`);
+    if (response.ok) {
+      const objetivo = await response.json();
+      abrirModalEditarObjetivo(objetivo);
+    } else {
+      showError('Error al cargar el objetivo');
+    }
+  } catch (error) {
+    console.error('Error al cargar objetivo:', error);
+    showError('Error al cargar el objetivo');
+  }
+}
+
+function abrirModalEditarObjetivo(objetivo) {
+  // Llenar TODOS los campos del modal con los datos del objetivo
+  document.getElementById('editar-id-objetivo').value = objetivo.id;
+  document.getElementById('editar-titulo-objetivo').value = objetivo.titulo || '';
+  document.getElementById('editar-desc-objetivo').value = objetivo.descripcion || '';
+  document.getElementById('editar-prioridad-objetivo').value = objetivo.prioridad || 'media';
+  document.getElementById('editar-categoria-objetivo').value = objetivo.categoria || '';
+  document.getElementById('editar-padre-objetivo').value = objetivo.objetivo_padre_id || '';
+  
+  // Fechas
+  document.getElementById('editar-fecha-inicio-objetivo').value = formatFechaInput(objetivo.fecha_inicio) || '';
+  document.getElementById('editar-fecha-fin-objetivo').value = formatFechaInput(objetivo.fecha_fin) || '';
+  
+  // Duración estimada
+  if (objetivo.horas_estimadas) {
+    document.getElementById('editar-horas-estimadas-objetivo').value = Math.floor(objetivo.horas_estimadas);
+    document.getElementById('editar-minutos-estimados-objetivo').value = Math.round((objetivo.horas_estimadas - Math.floor(objetivo.horas_estimadas)) * 60);
+  } else {
+    document.getElementById('editar-horas-estimadas-objetivo').value = '';
+    document.getElementById('editar-minutos-estimados-objetivo').value = '';
+  }
+  
+  // Otros campos
+  document.getElementById('editar-recompensa-objetivo').value = objetivo.recompensa || '';
+  document.getElementById('editar-parte-dia-objetivo').value = objetivo.parte_dia || '';
+  
+  // Checkboxes
+  document.getElementById('editar-recurrente-objetivo').checked = !!objetivo.recurrente;
+  document.getElementById('editar-es-padre-objetivo').checked = !!objetivo.es_padre;
+  
+  // Configurar campos de programación
+  // Determinar el valor correcto para "Programar para"
+  let programadoParaValue = '';
+  if (objetivo.programado_para === 'mañana') {
+    programadoParaValue = 'mañana';
+  } else if (objetivo.fecha_programada) {
+    programadoParaValue = 'fecha_especifica';
+  }
+  
+  document.getElementById('editar-programado-para').value = programadoParaValue;
+  document.getElementById('editar-fecha-programada').value = formatFechaInput(objetivo.fecha_programada) || '';
+  
+  // Habilitar/deshabilitar fecha específica según la selección
+  const programadoPara = document.getElementById('editar-programado-para');
+  const fechaProgramada = document.getElementById('editar-fecha-programada');
+  fechaProgramada.disabled = programadoPara.value !== 'fecha_especifica';
+  
+  // Mostrar el modal
+  const modal = new bootstrap.Modal(document.getElementById('modalEditarObjetivo'));
+  modal.show();
+}
+
+function formatFechaInput(fecha) {
+  if (!fecha) return '';
+  // Si ya es string tipo 'YYYY-MM-DD', úsalo directo
+  if (/^\d{4}-\d{2}-\d{2}$/.test(fecha)) return fecha;
+  // Si es string tipo 'YYYY-MM-DDTHH:MM:SS', tomar solo la parte de la fecha
+  if (typeof fecha === 'string' && fecha.includes('T')) return fecha.split('T')[0];
+  // Si es Date o string parseable, formatear a YYYY-MM-DD
+  const d = new Date(fecha);
+  if (isNaN(d.getTime())) return '';
+  return d.toISOString().split('T')[0];
 }
 
 // Funciones de utilidad para mostrar mensajes
 function showSuccess(message) {
-  // Implementar notificación de éxito
-  console.log('SUCCESS:', message);
+  // Crear notificación de éxito
+  const alert = document.createElement('div');
+  alert.className = 'alert alert-success alert-dismissible fade show position-fixed';
+  alert.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+  alert.innerHTML = `
+    ${message}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  `;
+  document.body.appendChild(alert);
+  
+  // Auto-remover después de 5 segundos
+  setTimeout(() => {
+    if (alert.parentNode) {
+      alert.remove();
+    }
+  }, 5000);
 }
 
 function showError(message) {
-  // Implementar notificación de error
-  console.log('ERROR:', message);
+  // Crear notificación de error
+  const alert = document.createElement('div');
+  alert.className = 'alert alert-danger alert-dismissible fade show position-fixed';
+  alert.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+  alert.innerHTML = `
+    ${message}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  `;
+  document.body.appendChild(alert);
+  
+  // Auto-remover después de 5 segundos
+  setTimeout(() => {
+    if (alert.parentNode) {
+      alert.remove();
+    }
+  }, 5000);
 }
 </script>
+
+<!-- Modal Editar Objetivo - Copiado exactamente de objetivos.html -->
+<div
+  class="modal fade"
+  id="modalEditarObjetivo"
+  tabindex="-1"
+  aria-labelledby="modalEditarObjetivoLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form id="form-modal-editar-objetivo">
+        <div class="modal-header pt-1">
+          <div class="d-flex align-items-center gap-2">
+            <span class="modal-icon"><i class="bi bi-pencil-square"></i></span>
+            <h5 class="modal-title mb-0" id="modalEditarObjetivoLabel">
+              Editar Objetivo
+            </h5>
+          </div>
+          <button
+            type="button"
+            class="btn-close position-absolute end-0 me-3"
+            data-bs-dismiss="modal"
+            aria-label="Close"
+          ></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-2 text-muted text-center" style="font-size: 1rem">
+            Modifica los campos que desees y guarda los cambios.
+          </div>
+          <input type="hidden" id="editar-id-objetivo" />
+          <div class="mb-3">
+            <label for="editar-titulo-objetivo" class="form-label fw-semibold"
+              >Título</label
+            >
+            <input
+              type="text"
+              class="form-control"
+              id="editar-titulo-objetivo"
+              required
+            />
+          </div>
+          <div class="mb-3">
+            <label for="editar-desc-objetivo" class="form-label fw-semibold"
+              >Descripción</label
+            >
+            <textarea
+              class="form-control"
+              id="editar-desc-objetivo"
+              rows="2"
+            ></textarea>
+          </div>
+          <div class="row">
+            <div class="col mb-3">
+              <label
+                for="editar-prioridad-objetivo"
+                class="form-label fw-semibold"
+                >Prioridad</label
+              >
+              <select class="form-select" id="editar-prioridad-objetivo">
+                <option value="alta">Alta</option>
+                <option value="media">Media</option>
+                <option value="baja">Baja</option>
+              </select>
+            </div>
+            <div class="col mb-3">
+              <label
+                for="editar-categoria-objetivo"
+                class="form-label fw-semibold"
+                >Categoría <span style="color: red">*</span></label
+              >
+              <select
+                class="form-select"
+                id="editar-categoria-objetivo"
+                required
+              >
+                <option value="" disabled selected>
+                  Selecciona una categoría
+                </option>
+                <option value="diario">Diarios</option>
+                <option value="semanal">Semanales</option>
+                <option value="mensual">Mensuales</option>
+                <option value="anual">Anuales</option>
+                <option value="general">Generales</option>
+              </select>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label for="editar-padre-objetivo" class="form-label fw-semibold"
+              >Objetivo Padre (Opcional)</label
+            >
+            <select class="form-select" id="editar-padre-objetivo">
+              <option value="">Seleccionar objetivo padre</option>
+              <!-- Opciones dinámicas por JS -->
+            </select>
+          </div>
+
+          <div class="row">
+            <div class="col mb-3">
+              <label
+                for="editar-fecha-inicio-objetivo"
+                class="form-label fw-semibold"
+                >Fecha inicio</label
+              >
+              <input
+                type="date"
+                class="form-control"
+                id="editar-fecha-inicio-objetivo"
+              />
+            </div>
+            <div class="col mb-3">
+              <label
+                for="editar-fecha-fin-objetivo"
+                class="form-label fw-semibold"
+                >Fecha fin</label
+              >
+              <input
+                type="date"
+                class="form-control"
+                id="editar-fecha-fin-objetivo"
+              />
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label
+              for="editar-horas-estimadas-objetivo"
+              class="form-label fw-semibold"
+              >Duración estimada</label
+            >
+            <div class="row g-2">
+              <div class="col">
+                <input
+                  type="number"
+                  class="form-control"
+                  id="editar-horas-estimadas-objetivo"
+                  min="0"
+                  placeholder="Horas"
+                />
+              </div>
+              <div class="col">
+                <input
+                  type="number"
+                  class="form-control"
+                  id="editar-minutos-estimados-objetivo"
+                  min="0"
+                  max="59"
+                  placeholder="Minutos"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label
+              for="editar-recompensa-objetivo"
+              class="form-label fw-semibold"
+              >Recompensa</label
+            >
+            <input
+              type="text"
+              class="form-control"
+              id="editar-recompensa-objetivo"
+              placeholder="¿Qué te darás si lo logras?"
+            />
+          </div>
+
+          <div class="mb-3">
+            <label
+              for="editar-parte-dia-objetivo"
+              class="form-label fw-semibold"
+              >Parte del día (Opcional)</label
+            >
+            <select class="form-select" id="editar-parte-dia-objetivo">
+              <option value="">Sin especificar</option>
+              <option value="mañana">🌅 Mañana</option>
+              <option value="tarde">🌞 Tarde</option>
+              <option value="noche">🌙 Noche</option>
+            </select>
+          </div>
+
+          <hr
+            style="border-top: 1.5px dashed #b6d4fe; margin: 1.2rem 0 1rem 0"
+          />
+          <div class="mb-3 d-flex align-items-center gap-2">
+            <label
+              class="form-label fw-semibold mb-0"
+              for="editar-recurrente-objetivo"
+              ><i class="bi bi-repeat"></i> Hacer este objetivo
+              recurrente</label
+            >
+            <input
+              type="checkbox"
+              class="form-check-input"
+              id="editar-recurrente-objetivo"
+            />
+          </div>
+          <div class="mb-3 d-flex align-items-center gap-2">
+            <label
+              class="form-label fw-semibold mb-0"
+              for="editar-es-padre-objetivo"
+              >¿Este objetivo es padre?</label
+            >
+            <input
+              type="checkbox"
+              class="form-check-input"
+              id="editar-es-padre-objetivo"
+            />
+          </div>
+          <hr
+            style="border-top: 1.5px dashed #b6d4fe; margin: 1.2rem 0 1rem 0"
+          />
+          
+          <!-- Sección de Programación -->
+          <div class="mb-3">
+            <label class="form-label fw-semibold">
+              <i class="bi bi-calendar-plus me-2"></i>Programación
+            </label>
+            <div class="card border-info bg-light">
+              <div class="card-body py-3">
+                <div class="row g-2">
+                  <div class="col-md-6">
+                    <label for="editar-programado-para" class="form-label small fw-semibold">
+                      Programar para:
+                    </label>
+                    <select class="form-select" id="editar-programado-para">
+                      <option value="">Hoy (sin programar)</option>
+                      <option value="mañana">📅 Mañana</option>
+                      <option value="fecha_especifica">📆 Fecha específica</option>
+                    </select>
+                  </div>
+                  <div class="col-md-6">
+                    <label for="editar-fecha-programada" class="form-label small fw-semibold">
+                      Fecha específica:
+                    </label>
+                    <input
+                      type="date"
+                      class="form-control"
+                      id="editar-fecha-programada"
+                      disabled
+                    />
+                  </div>
+                </div>
+                <div class="mt-2">
+                  <small class="text-muted">
+                    <i class="bi bi-info-circle me-1"></i>
+                    Los objetivos programados no aparecerán en la lista de hoy hasta la fecha seleccionada.
+                  </small>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <hr
+            style="border-top: 1.5px dashed #b6d4fe; margin: 1.2rem 0 1rem 0"
+          />
+          <div class="mb-3">
+            <button
+              type="button"
+              class="btn btn-outline-info btn-sm"
+              id="btn-toggle-checklist-editar"
+            >
+              <i class="bi bi-list-check"></i> Editar checklist (subobjetivos)
+            </button>
+          </div>
+          <div
+            class="mb-3"
+            id="checklist-editar-container"
+            style="display: none"
+          >
+            <label class="form-label fw-semibold"
+              >Checklist (subobjetivos)</label
+            >
+            <div id="checklist-editar-list"></div>
+            <div class="d-flex mt-2">
+              <input
+                type="text"
+                class="form-control form-control-sm me-2"
+                id="checklist-editar-input"
+                placeholder="Nuevo subobjetivo..."
+              />
+              <button
+                type="button"
+                class="btn btn-sm btn-primary"
+                id="checklist-editar-add-btn"
+              >
+                Agregar
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button
+            type="button"
+            class="btn btn-outline-secondary"
+            data-bs-dismiss="modal"
+          >
+            Cancelar
+          </button>
+          <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+// Event listener para el formulario de editar objetivo
+document.addEventListener('DOMContentLoaded', function() {
+  const form = document.getElementById('form-modal-editar-objetivo');
+  if (form) {
+    form.addEventListener('submit', async function(e) {
+      e.preventDefault();
+      
+      const id = document.getElementById('editar-id-objetivo').value;
+      const titulo = document.getElementById('editar-titulo-objetivo').value.trim();
+      const descripcion = document.getElementById('editar-desc-objetivo').value.trim();
+      const prioridad = document.getElementById('editar-prioridad-objetivo').value;
+      const categoria = document.getElementById('editar-categoria-objetivo').value.trim();
+      const objetivoPadreId = document.getElementById('editar-padre-objetivo').value || null;
+      const fechaInicio = document.getElementById('editar-fecha-inicio-objetivo').value || null;
+      const fechaFin = document.getElementById('editar-fecha-fin-objetivo').value || null;
+      
+      // Duración estimada
+      const horasEdit = document.getElementById('editar-horas-estimadas-objetivo').value;
+      const minutosEdit = document.getElementById('editar-minutos-estimados-objetivo').value;
+      let horasEstimadas = null;
+      if (horasEdit || minutosEdit) {
+        const h = parseInt(horasEdit) || 0;
+        const m = parseInt(minutosEdit) || 0;
+        horasEstimadas = h + (m / 60);
+      }
+      
+      const recompensa = document.getElementById('editar-recompensa-objetivo').value.trim();
+      const parteDia = document.getElementById('editar-parte-dia-objetivo').value || null;
+      const recurrente = document.getElementById('editar-recurrente-objetivo').checked;
+      const esPadre = document.getElementById('editar-es-padre-objetivo').checked;
+      const programadoPara = document.getElementById('editar-programado-para').value || null;
+      const fechaProgramada = document.getElementById('editar-fecha-programada').value || null;
+      
+      if (!id || !titulo) return;
+      
+      try {
+        const response = await fetch(`/api/objetivos/${id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            titulo,
+            descripcion,
+            prioridad,
+            categoria,
+            objetivo_padre_id: objetivoPadreId,
+            fecha_inicio: fechaInicio,
+            fecha_fin: fechaFin,
+            horas_estimadas: horasEstimadas,
+            recompensa,
+            parte_dia: parteDia,
+            recurrente,
+            es_padre: esPadre,
+            programado_para: programadoPara,
+            fecha_programada: fechaProgramada
+          })
+        });
+        
+        if (response.ok) {
+          showSuccess('✅ Objetivo actualizado correctamente');
+          
+          // Cerrar modal
+          const modal = bootstrap.Modal.getInstance(document.getElementById('modalEditarObjetivo'));
+          modal.hide();
+          
+          // Recargar lista
+          await cargarObjetivosProgramados();
+        } else {
+          const error = await response.json();
+          showError(`Error: ${error.error || 'Error al actualizar objetivo'}`);
+        }
+      } catch (error) {
+        console.error('Error al actualizar objetivo:', error);
+        showError('Error al actualizar objetivo');
+      }
+    });
+  }
+
+  // Event listener para el select de programación
+  const selectProgramacion = document.getElementById('editar-programado-para');
+  if (selectProgramacion) {
+    selectProgramacion.addEventListener('change', function() {
+      const fechaProgramada = document.getElementById('editar-fecha-programada');
+      fechaProgramada.disabled = this.value !== 'fecha_especifica';
+      
+      if (this.value !== 'fecha_especifica') {
+        fechaProgramada.value = '';
+      }
+    });
+  }
+});
+</script>
+
 {% endblock %}
