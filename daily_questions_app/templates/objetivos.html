@@ -75,6 +75,7 @@
             <small class="text-muted">Objetivos Generales</small>
           </div>
         </div>
+
       </div>
       <ul class="nav nav-pills justify-content-center mb-3">
         <li class="nav-item">
@@ -156,6 +157,42 @@
           </select>
         </div>
       </div>
+      
+      <!-- Sección de Objetivos de Mañana -->
+      <div class="card mt-3" id="card-objetivos-manana" style="border-left: 3px solid #28a745;">
+        <!-- Header colapsible -->
+        <div class="card-header bg-light border-0 py-2" id="header-objetivos-manana" 
+             style="cursor: pointer; user-select: none; transition: all 0.2s ease;">
+          <div class="d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center">
+              <i class="bi bi-chevron-right me-2 text-success" id="icono-chevron-manana" 
+                 style="transition: transform 0.2s ease; font-size: 0.9rem;"></i>
+              <h6 class="mb-0 text-success" style="font-size: 1rem;">
+                <i class="bi bi-calendar-plus me-1"></i> Objetivos para Mañana
+              </h6>
+              <small class="text-muted ms-2" id="fecha-manana-header" style="font-size: 0.8rem;"></small>
+            </div>
+            <div>
+              <span class="badge bg-success" id="contador-objetivos-manana" style="font-size: 0.7rem;">0 objetivos</span>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Contenido colapsible -->
+        <div class="collapse" id="contenido-objetivos-manana">
+          <div class="card-body py-3">
+            <div id="lista-objetivos-manana">
+              <!-- Los objetivos de mañana se cargarán aquí -->
+              <div class="text-center text-muted py-2" id="mensaje-sin-objetivos-manana">
+                <i class="bi bi-calendar-check fs-3 mb-1"></i>
+                <p class="mb-0 small">No hay objetivos programados para mañana</p>
+                <small class="text-muted" style="font-size: 0.75rem;">Los objetivos programados aparecerán aquí</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
       <div class="card mt-3" id="card-objetivos">
         <div class="card-body">
           <div class="d-flex justify-content-end mb-2 gap-2">
@@ -3288,5 +3325,277 @@
     </div>
   </div>
 </div>
+
+<!-- Script para Objetivos de Mañana -->
+<script>
+// ===== OBJETIVOS DE MAÑANA =====
+
+// Función para cargar objetivos de mañana
+async function cargarObjetivosManana() {
+    try {
+        console.log('📅 Cargando objetivos de mañana...');
+        
+        const response = await fetch('/api/objetivos/manana');
+        console.log('📡 Response status:', response.status);
+        console.log('📡 Response headers:', response.headers);
+        
+        const data = await response.json();
+        console.log('📊 Data recibida:', data);
+        
+        if (!response.ok) {
+            console.error('❌ Response no OK:', response.status, data);
+            throw new Error(data.error || `Error ${response.status}: ${response.statusText}`);
+        }
+        
+        console.log('📅 Objetivos de mañana recibidos:', data);
+        renderizarObjetivosManana(data);
+        
+    } catch (error) {
+        console.error('💥 Error completo cargando objetivos de mañana:', error);
+        console.error('💥 Error stack:', error.stack);
+        mostrarErrorObjetivosManana(error.message);
+    }
+}
+
+// Función para renderizar objetivos de mañana
+function renderizarObjetivosManana(data) {
+    const container = document.getElementById('lista-objetivos-manana');
+    const contador = document.getElementById('contador-objetivos-manana');
+    const fechaManana = document.getElementById('fecha-manana');
+    const mensajeSin = document.getElementById('mensaje-sin-objetivos-manana');
+    
+    if (!container) return;
+    
+    // Actualizar fecha de mañana
+    if (fechaManana && data.fecha_manana) {
+        const fecha = new Date(data.fecha_manana + 'T00:00:00');
+        const opciones = { 
+            weekday: 'long', 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric' 
+        };
+        fechaManana.textContent = fecha.toLocaleDateString('es-ES', opciones);
+    }
+    
+    // Actualizar contador
+    if (contador) {
+        contador.textContent = `${data.total} objetivo${data.total !== 1 ? 's' : ''}`;
+    }
+    
+    // Si no hay objetivos, mostrar mensaje
+    if (data.total === 0) {
+        if (mensajeSin) mensajeSin.style.display = 'block';
+        return;
+    }
+    
+    // Ocultar mensaje sin objetivos
+    if (mensajeSin) mensajeSin.style.display = 'none';
+    
+    // Generar HTML para objetivos
+    let html = '<div class="row">';
+    
+    data.objetivos.forEach(objetivo => {
+        const prioridadColor = {
+            'alta': 'danger',
+            'media': 'warning', 
+            'baja': 'info'
+        }[objetivo.prioridad] || 'secondary';
+        
+        const parteDiaIcon = {
+            'mañana': 'bi-sunrise',
+            'tarde': 'bi-sun',
+            'noche': 'bi-moon'
+        }[objetivo.parte_dia] || 'bi-clock';
+        
+        html += `
+            <div class="col-md-6 col-xl-4 mb-2">
+                <div class="card border-start border-${prioridadColor} border-2" style="min-height: auto;">
+                    <div class="card-body p-2">
+                        <div class="d-flex justify-content-between align-items-start mb-1">
+                            <h6 class="card-title mb-0 text-truncate objetivo-titulo-tooltip" 
+                                title="${objetivo.titulo}" 
+                                data-bs-toggle="tooltip" 
+                                data-bs-placement="top"
+                                data-bs-title="${objetivo.titulo}"
+                                style="font-size: 0.9rem; line-height: 1.2; cursor: help;">
+                                ${objetivo.titulo}
+                            </h6>
+                            <span class="badge bg-${prioridadColor}" style="font-size: 0.65rem; padding: 0.2em 0.4em;">
+                                ${objetivo.prioridad}
+                            </span>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-1">
+                            <div class="d-flex gap-2 flex-wrap">
+                                ${objetivo.parte_dia ? `
+                                    <small class="text-muted" style="font-size: 0.75rem;">
+                                        <i class="${parteDiaIcon}"></i> ${objetivo.parte_dia}
+                                    </small>
+                                ` : ''}
+                                ${objetivo.horas_estimadas ? `
+                                    <small class="text-muted" style="font-size: 0.75rem;">
+                                        <i class="bi bi-clock"></i> ${objetivo.horas_estimadas}h
+                                    </small>
+                                ` : ''}
+                                ${objetivo.categoria ? `
+                                    <small class="text-muted" style="font-size: 0.75rem;">
+                                        <i class="bi bi-tag"></i> ${objetivo.categoria.charAt(0).toUpperCase() + objetivo.categoria.slice(1).replace(/_/g, ' ')}
+                                    </small>
+                                ` : ''}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    html += '</div>';
+    container.innerHTML = html;
+    
+    // Inicializar tooltips para los títulos de objetivos
+    inicializarTooltipsObjetivos();
+    
+    console.log(`✅ Renderizados ${data.total} objetivos de mañana`);
+}
+
+// Función para mostrar error
+function mostrarErrorObjetivosManana(errorMessage = '') {
+    const container = document.getElementById('lista-objetivos-manana');
+    if (container) {
+        container.innerHTML = `
+            <div class="text-center text-danger py-3">
+                <i class="bi bi-exclamation-triangle fs-1 mb-2"></i>
+                <p class="mb-0">Error al cargar objetivos de mañana</p>
+                ${errorMessage ? `<small class="text-muted">${errorMessage}</small><br>` : ''}
+                <small class="text-muted">Intenta recargar la página</small>
+                <br>
+                <button class="btn btn-sm btn-outline-primary mt-2" onclick="cargarObjetivosManana()">
+                    <i class="bi bi-arrow-clockwise"></i> Reintentar
+                </button>
+            </div>
+        `;
+    }
+}
+
+// Variables para controlar la visibilidad
+let objetivosMananaVisible = false;
+let objetivosMananaYaCargados = false;
+
+// Función para mostrar/ocultar objetivos de mañana
+function toggleObjetivosManana() {
+    const contenido = document.getElementById('contenido-objetivos-manana');
+    const chevron = document.getElementById('icono-chevron-manana');
+    
+    if (!contenido || !chevron) return;
+    
+    if (objetivosMananaVisible) {
+        // Ocultar
+        contenido.classList.remove('show');
+        chevron.style.transform = 'rotate(0deg)';
+        objetivosMananaVisible = false;
+        console.log('📅 Objetivos de mañana ocultados');
+    } else {
+        // Mostrar
+        contenido.classList.add('show');
+        chevron.style.transform = 'rotate(90deg)';
+        objetivosMananaVisible = true;
+        
+        // Cargar datos solo la primera vez
+        if (!objetivosMananaYaCargados) {
+            cargarObjetivosManana();
+            objetivosMananaYaCargados = true;
+        }
+        
+        console.log('📅 Objetivos de mañana mostrados');
+    }
+}
+
+// Event listener para el header
+document.addEventListener('click', function(e) {
+    if (e.target.closest('#header-objetivos-manana')) {
+        toggleObjetivosManana();
+    }
+});
+
+// Cargar contador inicial cuando se carga la página (sin mostrar la sección)
+document.addEventListener('DOMContentLoaded', function() {
+    const tabObjetivos = document.getElementById('tab-objetivos');
+    if (tabObjetivos && tabObjetivos.classList.contains('active')) {
+        setTimeout(cargarContadorObjetivosManana, 500);
+    }
+});
+
+// También cargar contador cuando se hace clic en la pestaña de objetivos
+document.addEventListener('click', function(e) {
+    if (e.target.id === 'tab-objetivos') {
+        setTimeout(cargarContadorObjetivosManana, 100);
+    }
+});
+
+// Función para inicializar tooltips de objetivos
+function inicializarTooltipsObjetivos() {
+    // Verificar que Bootstrap esté disponible
+    if (typeof bootstrap === 'undefined' || !bootstrap.Tooltip) {
+        console.log('⚠️ Bootstrap Tooltip no disponible');
+        return;
+    }
+    
+    // Destruir tooltips existentes para evitar duplicados
+    const tooltipsExistentes = document.querySelectorAll('.objetivo-titulo-tooltip');
+    tooltipsExistentes.forEach(element => {
+        const tooltip = bootstrap.Tooltip.getInstance(element);
+        if (tooltip) {
+            tooltip.dispose();
+        }
+    });
+    
+    // Inicializar nuevos tooltips
+    const elementosTooltip = document.querySelectorAll('.objetivo-titulo-tooltip');
+    elementosTooltip.forEach(element => {
+        new bootstrap.Tooltip(element, {
+            trigger: 'hover',
+            delay: { show: 300, hide: 100 },
+            customClass: 'objetivo-tooltip'
+        });
+    });
+    
+    console.log(`✅ Inicializados ${elementosTooltip.length} tooltips para objetivos de mañana`);
+}
+
+// Función para cargar solo el contador (sin mostrar la sección completa)
+async function cargarContadorObjetivosManana() {
+    try {
+        const response = await fetch('/api/objetivos/manana');
+        const data = await response.json();
+        
+        if (response.ok) {
+            // Actualizar contador
+            const contador = document.getElementById('contador-objetivos-manana');
+            if (contador) {
+                contador.textContent = `${data.total} objetivo${data.total !== 1 ? 's' : ''}`;
+            }
+            
+            // Actualizar fecha en el header
+            const fechaHeader = document.getElementById('fecha-manana-header');
+            if (fechaHeader && data.fecha_manana) {
+                const fecha = new Date(data.fecha_manana + 'T00:00:00');
+                const opciones = { 
+                    weekday: 'short', 
+                    month: 'short', 
+                    day: 'numeric' 
+                };
+                fechaHeader.textContent = `(${fecha.toLocaleDateString('es-ES', opciones)})`;
+            }
+            
+            console.log(`📅 Contador de mañana: ${data.total} objetivos`);
+        }
+    } catch (error) {
+        console.log('📅 Error cargando contador de mañana (silencioso):', error.message);
+    }
+}
+
+</script>
 
 {% endblock %}

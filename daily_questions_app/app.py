@@ -2774,6 +2774,76 @@ def test_focus():
     """Página de prueba para el focus de subobjetivos"""
     return render_template('test_focus.html')
 
+@app.route('/api/objetivos/manana', methods=['GET'])
+@login_required
+def api_objetivos_manana():
+    """Obtener objetivos programados para mañana"""
+    try:
+        # Calcular la fecha de mañana
+        from datetime import datetime, timedelta
+        manana = datetime.now() + timedelta(days=1)
+        fecha_manana = manana.strftime('%Y-%m-%d')
+        
+        print(f"📅 Buscando objetivos para mañana: {fecha_manana}")
+        
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            
+            # Primero, una consulta más simple para verificar que funciona
+            cursor.execute('''
+                SELECT o.id, o.titulo, o.descripcion, o.prioridad, o.categoria, 
+                       o.horas_estimadas, o.parte_dia, o.fecha_programada, o.programado_para, o.recurrente
+                FROM objetivos o
+                WHERE o.user_id = ? 
+                AND o.completado = 0 
+                AND (
+                    o.fecha_programada = ?
+                    OR (o.recurrente = 1 AND o.programado_para = 'diario')
+                )
+                ORDER BY o.prioridad, o.titulo
+            ''', (current_user.id, fecha_manana))
+            
+            rows = cursor.fetchall()
+            print(f"📊 Encontrados {len(rows)} objetivos para mañana")
+            
+            objetivos = []
+            
+            for row in rows:
+                try:
+                    objetivo = {
+                        'id': row[0],
+                        'titulo': row[1] or '',
+                        'descripcion': row[2] or '',
+                        'prioridad': row[3] or 'media',
+                        'categoria': row[4] or '',
+                        'horas_estimadas': row[5] or 0,
+                        'parte_dia': row[6] or '',
+                        'fecha_programada': row[7].strftime('%Y-%m-%d') if row[7] else None,
+                        'programado_para': row[8] or '',
+                        'recurrente': bool(row[9]) if len(row) > 9 else False,
+                        'fecha_manana': fecha_manana
+                    }
+                    objetivos.append(objetivo)
+                    print(f"✅ Objetivo agregado: {objetivo['titulo']}")
+                except Exception as row_error:
+                    print(f"❌ Error procesando fila: {row_error}")
+                    continue
+            
+            result = {
+                'objetivos': objetivos,
+                'fecha_manana': fecha_manana,
+                'total': len(objetivos)
+            }
+            
+            print(f"📤 Enviando respuesta: {len(objetivos)} objetivos")
+            return jsonify(result)
+            
+    except Exception as e:
+        print(f"💥 Error en api_objetivos_manana: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': f'Error interno del servidor: {str(e)}'}), 500
+
 @app.route('/api/export/respuestas-excel')
 @login_required
 def export_respuestas_excel():

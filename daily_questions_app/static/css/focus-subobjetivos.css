@@ -123,3 +123,169 @@
         justify-content: flex-end;
     }
 }
+
+/* Estilos para Objetivos de Mañana */
+#card-objetivos-manana {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    box-shadow: 0 2px 10px rgba(40, 167, 69, 0.1);
+}
+
+#card-objetivos-manana .card-body {
+    position: relative;
+}
+
+#card-objetivos-manana .card-body::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, #28a745, #20c997);
+}
+
+#card-objetivos-manana h5 {
+    color: #28a745;
+    font-weight: 600;
+}
+
+#card-objetivos-manana .badge {
+    font-size: 0.75rem;
+    padding: 0.5em 0.75em;
+}
+
+/* Estilos para las cards de objetivos de mañana */
+#lista-objetivos-manana .card {
+    transition: all 0.15s ease;
+    border: 1px solid #e9ecef;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+#lista-objetivos-manana .card:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+#lista-objetivos-manana .card-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    line-height: 1.2;
+    margin-bottom: 0;
+}
+
+#lista-objetivos-manana .card-body {
+    padding: 0.75rem;
+}
+
+#lista-objetivos-manana .badge {
+    font-size: 0.65rem;
+    padding: 0.2em 0.4em;
+    font-weight: 500;
+}
+
+#lista-objetivos-manana small {
+    font-size: 0.75rem;
+    color: #6c757d;
+}
+
+#lista-objetivos-manana .col-md-6 {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+}
+
+#lista-objetivos-manana .mb-2 {
+    margin-bottom: 0.5rem !important;
+}
+
+/* Animación de carga */
+#lista-objetivos-manana.loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+#lista-objetivos-manana.loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    margin: -10px 0 0 -10px;
+    border: 2px solid #28a745;
+    border-radius: 50%;
+    border-top-color: transparent;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Estilos para el header colapsible de objetivos de mañana */
+#header-objetivos-manana {
+    transition: all 0.2s ease;
+}
+
+#header-objetivos-manana:hover {
+    background-color: #f8f9fa !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+#header-objetivos-manana:active {
+    background-color: #e9ecef !important;
+}
+
+#icono-chevron-manana {
+    transition: transform 0.2s ease;
+}
+
+/* Animación suave para mostrar/ocultar la sección */
+#contenido-objetivos-manana {
+    transition: all 0.3s ease;
+}
+
+#contenido-objetivos-manana.collapse:not(.show) {
+    display: none;
+}
+
+#contenido-objetivos-manana.collapse.show {
+    display: block;
+    animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Estilos para tooltips de objetivos */
+.objetivo-titulo-tooltip {
+    cursor: help;
+}
+
+.objetivo-tooltip {
+    font-size: 0.85rem;
+    max-width: 300px;
+}
+
+.objetivo-tooltip .tooltip-inner {
+    background-color: #2c3e50;
+    color: white;
+    padding: 8px 12px;
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    text-align: left;
+    line-height: 1.4;
+}
+
+.objetivo-tooltip .tooltip-arrow::before {
+    border-top-color: #2c3e50;
+}
