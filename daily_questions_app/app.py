@@ -3417,7 +3417,8 @@ def api_list_objetivos():
             WHERE o.user_id = ? 
             AND (
                 (o.fecha_programada IS NULL AND o.programado_para IS NULL) OR
-                (o.fecha_programada IS NOT NULL AND o.fecha_programada <= ?)
+                (o.fecha_programada IS NOT NULL AND o.fecha_programada <= ?) OR
+                (o.recurrente = 1 AND o.programado_para = 'diario')
             )
             ORDER BY 
                 CASE 
@@ -3436,6 +3437,7 @@ def api_list_objetivos():
         ''', (hoy, current_user.id, hoy))
         rows = cursor.fetchall()
         objetivos = []
+        
         for row in rows:
             obj = {
                 'id': row[0],
@@ -3458,12 +3460,17 @@ def api_list_objetivos():
                 'orden': row[17] if len(row) > 17 else 0,
                 'parte_dia': row[18] if len(row) > 18 else None,
                 'saltado_hoy': bool(row[19]) if len(row) > 19 else False,
-                'fecha_programada': row[20].isoformat() if len(row) > 20 and row[20] else None,
+                'fecha_programada': row[20].strftime('%Y-%m-%d') if len(row) > 20 and row[20] else None,
                 'programado_para': row[21] if len(row) > 21 else None,
                 'tiempo_focus': row[22] if len(row) > 22 else None
             }
             # Verificar si el objetivo está vencido
             vencido = es_objetivo_vencido(obj, hoy)
+            
+            # DEBUG: Mostrar si el objetivo está siendo filtrado
+            if fecha_programada and fecha_programada == hoy:
+                print(f"🔍 DEBUG: Objetivo programado para hoy - Vencido: {vencido} - {obj['titulo']}")
+            
             if vencido:
                 # Mover a históricos si no está ya en histórico
                 if obj['estado'] != 'histórico':
@@ -3475,6 +3482,10 @@ def api_list_objetivos():
             # Solo mostrar como activo si NO está vencido, aunque esté completado manualmente
             if not vencido:
                 objetivos.append(obj)
+        
+        print(f"✅ DEBUG: Enviando {len(objetivos)} objetivos al frontend")
+        print(f"📅 DEBUG: {objetivos_programados_hoy} objetivos programados para HOY incluidos")
+        
         return jsonify(objetivos)
 
 def parse_fecha(fecha_str):
@@ -3511,6 +3522,15 @@ def es_objetivo_vencido(objetivo, hoy):
     """
     Determina si un objetivo está vencido basado en su fecha de vencimiento calculada.
     """
+    # EXCEPCIÓN: Los objetivos programados para hoy NUNCA están vencidos
+    if objetivo.get('fecha_programada'):
+        try:
+            fecha_prog = datetime.strptime(objetivo['fecha_programada'], '%Y-%m-%d').date()
+            if fecha_prog == hoy:
+                print(f"DEBUG - Objetivo programado para HOY: {objetivo['titulo']} - NO VENCIDO")
+                return False
+        except (ValueError, TypeError):
+            pass
     # Comentamos esta línea para que también se muevan los objetivos completados
     # if objetivo['completado']:
     #     print(f"DEBUG - Objetivo completado: {objetivo['titulo']} - NO VENCIDO (ya está completado)")
