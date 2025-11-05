@@ -3333,22 +3333,32 @@
 // Función para cargar objetivos de mañana
 async function cargarObjetivosManana() {
     try {
-        console.log('📅 Cargando objetivos de mañana...');
+        console.log('📅 Iniciando carga de objetivos de mañana...');
         
         const response = await fetch('/api/objetivos/manana');
         console.log('📡 Response status:', response.status);
-        console.log('📡 Response headers:', response.headers);
-        
-        const data = await response.json();
-        console.log('📊 Data recibida:', data);
+        console.log('📡 Response ok:', response.ok);
         
         if (!response.ok) {
-            console.error('❌ Response no OK:', response.status, data);
-            throw new Error(data.error || `Error ${response.status}: ${response.statusText}`);
+            console.error('❌ Response no OK:', response.status, response.statusText);
+            throw new Error(`Error ${response.status}: ${response.statusText}`);
         }
         
-        console.log('📅 Objetivos de mañana recibidos:', data);
+        const data = await response.json();
+        console.log('📊 Data recibida completa:', data);
+        console.log('📊 Total objetivos:', data.total);
+        console.log('📊 Fecha mañana:', data.fecha_manana);
+        
+        if (data.objetivos && data.objetivos.length > 0) {
+            console.log('📋 Objetivos encontrados:');
+            data.objetivos.forEach((obj, index) => {
+                console.log(`  ${index + 1}. ${obj.titulo} (${obj.total_subobjetivos} subobjetivos)`);
+            });
+        }
+        
+        console.log('📅 Llamando a renderizarObjetivosManana...');
         renderizarObjetivosManana(data);
+        console.log('✅ Renderizado completado');
         
     } catch (error) {
         console.error('💥 Error completo cargando objetivos de mañana:', error);
@@ -3365,6 +3375,9 @@ function renderizarObjetivosManana(data) {
     const mensajeSin = document.getElementById('mensaje-sin-objetivos-manana');
     
     if (!container) return;
+    
+    // Guardar datos globalmente para los tooltips
+    window.objetivosMananaData = data;
     
     // Actualizar fecha de mañana
     if (fechaManana && data.fecha_manana) {
@@ -3413,10 +3426,12 @@ function renderizarObjetivosManana(data) {
                 <div class="card border-start border-${prioridadColor} border-2" style="min-height: auto;">
                     <div class="card-body p-2">
                         <div class="d-flex justify-content-between align-items-start mb-1">
-                            <h6 class="card-title mb-0 text-truncate objetivo-titulo-tooltip" 
+                            <h6 class="card-title mb-0 text-truncate objetivo-titulo-manana-tooltip" 
                                 title="${objetivo.titulo}" 
+                                data-objetivo-id="${objetivo.id}"
                                 data-bs-toggle="tooltip" 
                                 data-bs-placement="top"
+                                data-bs-html="true"
                                 data-bs-title="${objetivo.titulo}"
                                 style="font-size: 0.9rem; line-height: 1.2; cursor: help;">
                                 ${objetivo.titulo}
@@ -3485,27 +3500,44 @@ let objetivosMananaYaCargados = false;
 
 // Función para mostrar/ocultar objetivos de mañana
 function toggleObjetivosManana() {
+    console.log('🔄 toggleObjetivosManana llamada');
+    
     const contenido = document.getElementById('contenido-objetivos-manana');
     const chevron = document.getElementById('icono-chevron-manana');
     
-    if (!contenido || !chevron) return;
+    console.log('📋 Elementos encontrados:', {
+        contenido: !!contenido,
+        chevron: !!chevron,
+        objetivosMananaVisible: objetivosMananaVisible,
+        objetivosMananaYaCargados: objetivosMananaYaCargados
+    });
+    
+    if (!contenido || !chevron) {
+        console.error('❌ No se encontraron elementos del toggle');
+        return;
+    }
     
     if (objetivosMananaVisible) {
         // Ocultar
+        console.log('📅 Ocultando objetivos de mañana...');
         contenido.classList.remove('show');
         chevron.style.transform = 'rotate(0deg)';
         objetivosMananaVisible = false;
         console.log('📅 Objetivos de mañana ocultados');
     } else {
         // Mostrar
+        console.log('📅 Mostrando objetivos de mañana...');
         contenido.classList.add('show');
         chevron.style.transform = 'rotate(90deg)';
         objetivosMananaVisible = true;
         
         // Cargar datos solo la primera vez
         if (!objetivosMananaYaCargados) {
+            console.log('📅 Cargando objetivos por primera vez...');
             cargarObjetivosManana();
             objetivosMananaYaCargados = true;
+        } else {
+            console.log('📅 Objetivos ya cargados previamente');
         }
         
         console.log('📅 Objetivos de mañana mostrados');
@@ -3543,7 +3575,7 @@ function inicializarTooltipsObjetivos() {
     }
     
     // Destruir tooltips existentes para evitar duplicados
-    const tooltipsExistentes = document.querySelectorAll('.objetivo-titulo-tooltip');
+    const tooltipsExistentes = document.querySelectorAll('.objetivo-titulo-tooltip, .objetivo-titulo-manana-tooltip');
     tooltipsExistentes.forEach(element => {
         const tooltip = bootstrap.Tooltip.getInstance(element);
         if (tooltip) {
@@ -3551,7 +3583,7 @@ function inicializarTooltipsObjetivos() {
         }
     });
     
-    // Inicializar nuevos tooltips
+    // Inicializar tooltips normales (solo título)
     const elementosTooltip = document.querySelectorAll('.objetivo-titulo-tooltip');
     elementosTooltip.forEach(element => {
         new bootstrap.Tooltip(element, {
@@ -3561,7 +3593,162 @@ function inicializarTooltipsObjetivos() {
         });
     });
     
-    console.log(`✅ Inicializados ${elementosTooltip.length} tooltips para objetivos de mañana`);
+    // Inicializar tooltips de mañana (con subobjetivos)
+    const elementosTooltipManana = document.querySelectorAll('.objetivo-titulo-manana-tooltip');
+    elementosTooltipManana.forEach(element => {
+        const objetivoId = element.getAttribute('data-objetivo-id');
+        
+        // Crear tooltip personalizado con subobjetivos
+        element.addEventListener('mouseenter', async function(e) {
+            console.log('🖱️ Mouse enter en objetivo:', objetivoId);
+            await mostrarTooltipConSubobjetivos(e.target, objetivoId);
+        });
+        
+        element.addEventListener('mouseleave', function(e) {
+            console.log('🖱️ Mouse leave en objetivo:', objetivoId);
+            ocultarTooltipConSubobjetivos(e.target);
+        });
+    });
+    
+    console.log(`✅ Inicializados ${elementosTooltip.length} tooltips normales y ${elementosTooltipManana.length} tooltips de mañana`);
+    
+    // Agregar evento global para ocultar tooltip si se hace clic en cualquier lugar
+    document.addEventListener('click', function(e) {
+        if (tooltipPersonalizado && !e.target.closest('.tooltip-personalizado') && !e.target.closest('.objetivo-titulo-manana-tooltip')) {
+            console.log('🖱️ Clic fuera del tooltip, ocultando...');
+            ocultarTooltipConSubobjetivos();
+        }
+    });
+}
+
+// Variables globales para el tooltip personalizado
+let tooltipPersonalizado = null;
+let timeoutTooltip = null;
+
+// Función para mostrar tooltip con subobjetivos
+async function mostrarTooltipConSubobjetivos(elemento, objetivoId) {
+    console.log('🔄 Mostrando tooltip para objetivo:', objetivoId);
+    
+    // Cancelar timeout de ocultar si existe
+    if (timeoutTooltip) {
+        clearTimeout(timeoutTooltip);
+        timeoutTooltip = null;
+    }
+    
+    // Si ya hay un tooltip, eliminarlo inmediatamente
+    if (tooltipPersonalizado) {
+        console.log('🔄 Eliminando tooltip anterior...');
+        if (tooltipPersonalizado.parentNode) {
+            tooltipPersonalizado.parentNode.removeChild(tooltipPersonalizado);
+        }
+        tooltipPersonalizado = null;
+    }
+    
+    try {
+        // Obtener datos del objetivo desde la respuesta ya cargada
+        const objetivoData = window.objetivosMananaData?.objetivos?.find(obj => obj.id == objetivoId);
+        
+        if (!objetivoData) {
+            console.log('No se encontraron datos del objetivo');
+            return;
+        }
+        
+        // Crear contenido del tooltip
+        let contenido = `<div class="tooltip-objetivo-manana">
+            <div class="tooltip-titulo">${objetivoData.titulo}</div>`;
+        
+        if (objetivoData.subobjetivos && objetivoData.subobjetivos.length > 0) {
+            contenido += `<div class="tooltip-subobjetivos">
+                <div class="tooltip-subobjetivos-header">Subobjetivos (${objetivoData.subobjetivos_completados}/${objetivoData.total_subobjetivos}):</div>
+                <ul class="tooltip-subobjetivos-lista">`;
+            
+            objetivoData.subobjetivos.forEach(sub => {
+                const iconoEstado = sub.completado ? '✅' : '⭕';
+                const claseEstado = sub.completado ? 'completado' : 'pendiente';
+                contenido += `<li class="tooltip-subobjetivo ${claseEstado}">
+                    ${iconoEstado} ${sub.titulo}
+                </li>`;
+            });
+            
+            contenido += `</ul></div>`;
+        } else {
+            contenido += `<div class="tooltip-sin-subobjetivos">Sin subobjetivos</div>`;
+        }
+        
+        contenido += `</div>`;
+        
+        // Crear elemento tooltip
+        tooltipPersonalizado = document.createElement('div');
+        tooltipPersonalizado.className = 'tooltip-personalizado bs-tooltip-top';
+        tooltipPersonalizado.innerHTML = `
+            <div class="tooltip-arrow"></div>
+            <div class="tooltip-inner">${contenido}</div>
+        `;
+        
+        // Posicionar tooltip
+        document.body.appendChild(tooltipPersonalizado);
+        
+        const rect = elemento.getBoundingClientRect();
+        const tooltipRect = tooltipPersonalizado.getBoundingClientRect();
+        
+        const left = rect.left + (rect.width / 2) - (tooltipRect.width / 2);
+        const top = rect.top - tooltipRect.height - 8;
+        
+        tooltipPersonalizado.style.position = 'fixed';
+        tooltipPersonalizado.style.left = Math.max(10, left) + 'px';
+        tooltipPersonalizado.style.top = Math.max(10, top) + 'px';
+        tooltipPersonalizado.style.zIndex = '1070';
+        tooltipPersonalizado.style.opacity = '0';
+        tooltipPersonalizado.style.transition = 'opacity 0.2s ease';
+        
+        // Mostrar con animación
+        setTimeout(() => {
+            if (tooltipPersonalizado) {
+                tooltipPersonalizado.style.opacity = '1';
+                console.log('✅ Tooltip mostrado');
+            }
+        }, 10);
+        
+        // Agregar evento para ocultar si el mouse entra al tooltip
+        tooltipPersonalizado.addEventListener('mouseenter', function() {
+            console.log('🖱️ Mouse entró al tooltip');
+        });
+        
+        tooltipPersonalizado.addEventListener('mouseleave', function() {
+            console.log('🖱️ Mouse salió del tooltip');
+            ocultarTooltipConSubobjetivos();
+        });
+        
+    } catch (error) {
+        console.error('Error mostrando tooltip con subobjetivos:', error);
+    }
+}
+
+// Función para ocultar tooltip con subobjetivos
+function ocultarTooltipConSubobjetivos(elemento = null) {
+    console.log('🔄 Intentando ocultar tooltip...');
+    
+    // Cancelar timeout anterior si existe
+    if (timeoutTooltip) {
+        clearTimeout(timeoutTooltip);
+        timeoutTooltip = null;
+    }
+    
+    // Ocultar inmediatamente sin timeout
+    if (tooltipPersonalizado) {
+        console.log('👻 Ocultando tooltip inmediatamente');
+        tooltipPersonalizado.style.opacity = '0';
+        
+        setTimeout(() => {
+            if (tooltipPersonalizado && tooltipPersonalizado.parentNode) {
+                tooltipPersonalizado.parentNode.removeChild(tooltipPersonalizado);
+                console.log('🗑️ Tooltip eliminado del DOM');
+            }
+            tooltipPersonalizado = null;
+        }, 200);
+    } else {
+        console.log('⚠️ No hay tooltip para ocultar');
+    }
 }
 
 // Función para cargar solo el contador (sin mostrar la sección completa)

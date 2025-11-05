@@ -2823,8 +2823,30 @@ def api_objetivos_manana():
                         'recurrente': bool(row[9]) if len(row) > 9 else False,
                         'fecha_manana': fecha_manana
                     }
+                    
+                    # Cargar subobjetivos para este objetivo
+                    cursor.execute('''
+                        SELECT id, titulo, completado
+                        FROM subobjetivos 
+                        WHERE objetivo_id = ?
+                        ORDER BY orden, id
+                    ''', (row[0],))
+                    
+                    subobjetivos_rows = cursor.fetchall()
+                    subobjetivos = []
+                    for sub_row in subobjetivos_rows:
+                        subobjetivos.append({
+                            'id': sub_row[0],
+                            'titulo': sub_row[1],
+                            'completado': bool(sub_row[2])
+                        })
+                    
+                    objetivo['subobjetivos'] = subobjetivos
+                    objetivo['total_subobjetivos'] = len(subobjetivos)
+                    objetivo['subobjetivos_completados'] = len([s for s in subobjetivos if s['completado']])
+                    
                     objetivos.append(objetivo)
-                    print(f"✅ Objetivo agregado: {objetivo['titulo']}")
+                    print(f"✅ Objetivo agregado: {objetivo['titulo']} con {len(subobjetivos)} subobjetivos")
                 except Exception as row_error:
                     print(f"❌ Error procesando fila: {row_error}")
                     continue

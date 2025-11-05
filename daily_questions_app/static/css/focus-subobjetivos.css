@@ -289,3 +289,120 @@
 .objetivo-tooltip .tooltip-arrow::before {
     border-top-color: #2c3e50;
 }
+/* 
+Estilos para tooltip personalizado con subobjetivos */
+.tooltip-personalizado {
+    position: fixed;
+    z-index: 1070;
+    display: block;
+    font-family: var(--bs-font-sans-serif);
+    font-style: normal;
+    font-weight: 400;
+    line-height: 1.5;
+    text-align: left;
+    text-decoration: none;
+    text-shadow: none;
+    text-transform: none;
+    letter-spacing: normal;
+    word-break: normal;
+    word-spacing: normal;
+    white-space: normal;
+    line-break: auto;
+    font-size: 0.875rem;
+    word-wrap: break-word;
+    opacity: 0;
+}
+
+.tooltip-personalizado .tooltip-arrow {
+    position: absolute;
+    display: block;
+    width: 0;
+    height: 0;
+    border-color: transparent;
+    border-style: solid;
+}
+
+.tooltip-personalizado.bs-tooltip-top .tooltip-arrow {
+    bottom: -5px;
+    left: 50%;
+    margin-left: -5px;
+    border-width: 5px 5px 0;
+    border-top-color: #000;
+}
+
+.tooltip-personalizado .tooltip-inner {
+    max-width: 300px;
+    padding: 0.5rem 0.75rem;
+    color: #fff;
+    text-align: left;
+    background-color: #000;
+    border-radius: 0.375rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.tooltip-objetivo-manana {
+    font-size: 0.8rem;
+    line-height: 1.4;
+}
+
+.tooltip-titulo {
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: #fff;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    padding-bottom: 0.25rem;
+}
+
+.tooltip-subobjetivos-header {
+    font-weight: 500;
+    margin-bottom: 0.25rem;
+    color: #e9ecef;
+    font-size: 0.75rem;
+}
+
+.tooltip-subobjetivos-lista {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.tooltip-subobjetivo {
+    padding: 0.1rem 0;
+    font-size: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.tooltip-subobjetivo.completado {
+    color: #90ee90;
+    text-decoration: line-through;
+    opacity: 0.8;
+}
+
+.tooltip-subobjetivo.pendiente {
+    color: #ffd700;
+}
+
+.tooltip-sin-subobjetivos {
+    color: #adb5bd;
+    font-style: italic;
+    font-size: 0.75rem;
+    margin-top: 0.25rem;
+}
+
+/* Animación suave para el tooltip */
+.tooltip-personalizado {
+    transition: opacity 0.2s ease-in-out;
+}
+
+/* Mejorar el cursor para indicar interactividad */
+.objetivo-titulo-manana-tooltip {
+    cursor: help;
+    position: relative;
+}
+
+.objetivo-titulo-manana-tooltip:hover {
+    text-decoration: underline;
+    text-decoration-style: dotted;
+}
