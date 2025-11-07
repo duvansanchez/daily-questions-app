@@ -5468,6 +5468,10 @@ async function abrirModoFocus(objetivoId) {
             return;
         }
         
+        // ¡IMPORTANTE! Establecer el ID del objetivo en el modal
+        modalElement.setAttribute('data-objetivo-id', objetivoId);
+        console.log('✅ ID del objetivo establecido en modal:', objetivoId);
+        
         const modal = new bootstrap.Modal(modalElement);
         modal.show();
         

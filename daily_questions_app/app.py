@@ -3467,9 +3467,7 @@ def api_list_objetivos():
             # Verificar si el objetivo está vencido
             vencido = es_objetivo_vencido(obj, hoy)
             
-            # DEBUG: Mostrar si el objetivo está siendo filtrado
-            if fecha_programada and fecha_programada == hoy:
-                print(f"🔍 DEBUG: Objetivo programado para hoy - Vencido: {vencido} - {obj['titulo']}")
+
             
             if vencido:
                 # Mover a históricos si no está ya en histórico
@@ -3483,8 +3481,7 @@ def api_list_objetivos():
             if not vencido:
                 objetivos.append(obj)
         
-        print(f"✅ DEBUG: Enviando {len(objetivos)} objetivos al frontend")
-        print(f"📅 DEBUG: {objetivos_programados_hoy} objetivos programados para HOY incluidos")
+
         
         return jsonify(objetivos)
 

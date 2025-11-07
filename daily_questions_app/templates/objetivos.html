@@ -1,12 +1,10 @@
-{% extends 'base.html' %} 
-
-{% block title %}Objetivos | Desarrollo Personal{% endblock %}
-
-{% block head %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/focus-subobjetivos.css') }}">
-{% endblock %}
-
-{% block content %}
+{% extends 'base.html' %} {% block title %}Objetivos | Desarrollo Personal{%
+endblock %} {% block head %}
+<link
+  rel="stylesheet"
+  href="{{ url_for('static', filename='css/focus-subobjetivos.css') }}"
+/>
+{% endblock %} {% block content %}
 <div class="container py-4">
   <div class="mb-4">
     <h2 class="mb-1">Desarrollo Personal</h2>
@@ -75,7 +73,6 @@
             <small class="text-muted">Objetivos Generales</small>
           </div>
         </div>
-
       </div>
       <ul class="nav nav-pills justify-content-center mb-3">
         <li class="nav-item">
@@ -157,42 +154,68 @@
           </select>
         </div>
       </div>
-      
-      <!-- Sección de Objetivos de Mañana -->
-      <div class="card mt-3" id="card-objetivos-manana" style="border-left: 3px solid #28a745;">
+
+      <!-- Sección de Objetivos de Mañana (solo visible en pestaña objetivos) -->
+      <div
+        class="card mt-3 objetivos-content"
+        id="card-objetivos-manana"
+        style="border-left: 3px solid #28a745; display: block"
+      >
         <!-- Header colapsible -->
-        <div class="card-header bg-light border-0 py-2" id="header-objetivos-manana" 
-             style="cursor: pointer; user-select: none; transition: all 0.2s ease;">
+        <div
+          class="card-header bg-light border-0 py-2"
+          id="header-objetivos-manana"
+          style="cursor: pointer; user-select: none; transition: all 0.2s ease"
+        >
           <div class="d-flex justify-content-between align-items-center">
             <div class="d-flex align-items-center">
-              <i class="bi bi-chevron-right me-2 text-success" id="icono-chevron-manana" 
-                 style="transition: transform 0.2s ease; font-size: 0.9rem;"></i>
-              <h6 class="mb-0 text-success" style="font-size: 1rem;">
+              <i
+                class="bi bi-chevron-right me-2 text-success"
+                id="icono-chevron-manana"
+                style="transition: transform 0.2s ease; font-size: 0.9rem"
+              ></i>
+              <h6 class="mb-0 text-success" style="font-size: 1rem">
                 <i class="bi bi-calendar-plus me-1"></i> Objetivos para Mañana
               </h6>
-              <small class="text-muted ms-2" id="fecha-manana-header" style="font-size: 0.8rem;"></small>
+              <small
+                class="text-muted ms-2"
+                id="fecha-manana-header"
+                style="font-size: 0.8rem"
+              ></small>
             </div>
             <div>
-              <span class="badge bg-success" id="contador-objetivos-manana" style="font-size: 0.7rem;">0 objetivos</span>
+              <span
+                class="badge bg-success"
+                id="contador-objetivos-manana"
+                style="font-size: 0.7rem"
+                >0 objetivos</span
+              >
             </div>
           </div>
         </div>
-        
+
         <!-- Contenido colapsible -->
         <div class="collapse" id="contenido-objetivos-manana">
           <div class="card-body py-3">
             <div id="lista-objetivos-manana">
               <!-- Los objetivos de mañana se cargarán aquí -->
-              <div class="text-center text-muted py-2" id="mensaje-sin-objetivos-manana">
+              <div
+                class="text-center text-muted py-2"
+                id="mensaje-sin-objetivos-manana"
+              >
                 <i class="bi bi-calendar-check fs-3 mb-1"></i>
-                <p class="mb-0 small">No hay objetivos programados para mañana</p>
-                <small class="text-muted" style="font-size: 0.75rem;">Los objetivos programados aparecerán aquí</small>
+                <p class="mb-0 small">
+                  No hay objetivos programados para mañana
+                </p>
+                <small class="text-muted" style="font-size: 0.75rem"
+                  >Los objetivos programados aparecerán aquí</small
+                >
               </div>
             </div>
           </div>
         </div>
       </div>
-      
+
       <div class="card mt-3" id="card-objetivos">
         <div class="card-body">
           <div class="d-flex justify-content-end mb-2 gap-2">
@@ -273,8 +296,6 @@
               </div>
             </div>
           </div>
-
-
 
           <div class="objetivos-grid" id="lista-objetivos">
             <!-- Objetivos se renderizan aquí por JS -->
@@ -1365,7 +1386,7 @@
           <hr
             style="border-top: 1.5px dashed #b6d4fe; margin: 1.2rem 0 1rem 0"
           />
-          
+
           <!-- Sección de Programación -->
           <div class="mb-3">
             <label class="form-label fw-semibold">
@@ -1375,17 +1396,25 @@
               <div class="card-body py-3">
                 <div class="row g-2">
                   <div class="col-md-6">
-                    <label for="editar-programado-para" class="form-label small fw-semibold">
+                    <label
+                      for="editar-programado-para"
+                      class="form-label small fw-semibold"
+                    >
                       Programar para:
                     </label>
                     <select class="form-select" id="editar-programado-para">
                       <option value="">Hoy (sin programar)</option>
                       <option value="mañana">📅 Mañana</option>
-                      <option value="fecha_especifica">📆 Fecha específica</option>
+                      <option value="fecha_especifica">
+                        📆 Fecha específica
+                      </option>
                     </select>
                   </div>
                   <div class="col-md-6">
-                    <label for="editar-fecha-programada" class="form-label small fw-semibold">
+                    <label
+                      for="editar-fecha-programada"
+                      class="form-label small fw-semibold"
+                    >
                       Fecha específica:
                     </label>
                     <input
@@ -1399,13 +1428,14 @@
                 <div class="mt-2">
                   <small class="text-muted">
                     <i class="bi bi-info-circle me-1"></i>
-                    Los objetivos programados no aparecerán en la lista de hoy hasta la fecha seleccionada.
+                    Los objetivos programados no aparecerán en la lista de hoy
+                    hasta la fecha seleccionada.
                   </small>
                 </div>
               </div>
             </div>
           </div>
-          
+
           <hr
             style="border-top: 1.5px dashed #b6d4fe; margin: 1.2rem 0 1rem 0"
           />
@@ -1547,10 +1577,58 @@
 
         <!-- Progreso de subobjetivos -->
         <div class="focus-subobjetivos mb-4">
-          <h5 class="mb-3">
-            <i class="bi bi-list-check me-2"></i>Progreso del objetivo
-            <span class="badge bg-primary ms-2" id="focus-progreso">0/0</span>
-          </h5>
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="mb-0">
+              <i class="bi bi-list-check me-2"></i>Progreso del objetivo
+              <span class="badge bg-primary ms-2" id="focus-progreso">0/0</span>
+            </h5>
+            <button
+              class="btn btn-outline-primary btn-sm"
+              id="btn-agregar-subobjetivo-focus"
+            >
+              <i class="bi bi-plus"></i> Agregar subobjetivo
+            </button>
+          </div>
+
+          <!-- Input para nuevo subobjetivo -->
+          <div class="mb-3" id="nuevo-subobjetivo-focus" style="display: none">
+            <div class="input-group" style="align-items: stretch">
+              <input
+                type="text"
+                class="form-control"
+                id="input-nuevo-subobjetivo-focus"
+                placeholder="Escribe el nuevo subobjetivo..."
+                style="height: 38px"
+              />
+              <button
+                class="btn btn-success"
+                id="btn-guardar-subobjetivo-focus"
+                style="
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  height: 38px;
+                  min-width: 45px;
+                "
+              >
+                <i class="bi bi-check"></i>
+              </button>
+              <button
+                class="btn btn-secondary"
+                id="btn-cancelar-subobjetivo-focus"
+                style="
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  height: 38px;
+                  min-width: 45px;
+                "
+              >
+                <i class="bi bi-x"></i>
+              </button>
+            </div>
+          </div>
+
           <div class="subobjetivos-focus-list" id="focus-subobjetivos-list">
             <!-- Los subobjetivos se cargarán aquí -->
           </div>
@@ -1612,7 +1690,9 @@
             <h4 class="modal-title mb-0" id="modalFocusSubobjetivoLabel">
               Focus Sub-objetivo
             </h4>
-            <small class="text-muted">Concéntrate en esta tarea específica</small>
+            <small class="text-muted"
+              >Concéntrate en esta tarea específica</small
+            >
           </div>
         </div>
         <button
@@ -1629,7 +1709,8 @@
           <h3 class="focus-sub-titulo mb-2" id="focus-sub-titulo"></h3>
           <p class="text-muted mb-3">
             <i class="bi bi-arrow-up-right me-1"></i>
-            Parte del objetivo: <span id="focus-sub-objetivo-padre" class="fw-semibold"></span>
+            Parte del objetivo:
+            <span id="focus-sub-objetivo-padre" class="fw-semibold"></span>
           </p>
         </div>
 
@@ -1686,7 +1767,11 @@
             </button>
           </div>
           <div>
-            <button type="button" class="btn btn-success" id="focus-sub-completar">
+            <button
+              type="button"
+              class="btn btn-success"
+              id="focus-sub-completar"
+            >
               <i class="bi bi-check-lg me-1"></i>Completar Tarea
             </button>
           </div>
@@ -2780,6 +2865,8 @@
 
         // Mostrar/ocultar contenido
         document.getElementById("card-objetivos").style.display = "block";
+        document.getElementById("card-objetivos-manana").style.display =
+          "block";
         document.getElementById("card-historico").style.display = "none";
         document.getElementById("card-frases").style.display = "none";
         document.getElementById("card-audios").style.display = "none";
@@ -2828,6 +2915,7 @@
 
         // Mostrar/ocultar contenido
         document.getElementById("card-objetivos").style.display = "none";
+        document.getElementById("card-objetivos-manana").style.display = "none";
         document.getElementById("card-historico").style.display = "none";
         document.getElementById("card-audios").style.display = "none";
         document.getElementById("card-frases").style.display = "block";
@@ -2889,6 +2977,7 @@
 
         // Mostrar/ocultar contenido
         document.getElementById("card-objetivos").style.display = "none";
+        document.getElementById("card-objetivos-manana").style.display = "none";
         document.getElementById("card-historico").style.display = "none";
         document.getElementById("card-frases").style.display = "none";
         document.getElementById("card-audios").style.display = "block";
@@ -2946,7 +3035,816 @@
   window.actualizarSelectConOpciones = actualizarSelectConOpciones;
 </script>
 
+<!-- Script para subobjetivos en modo focus -->
+<script>
+  console.log("🚀 Script de subobjetivos focus cargado");
 
+  // Usar delegación de eventos para que funcione siempre
+  document.addEventListener("click", function (e) {
+    // Botón agregar subobjetivo
+    if (e.target.id === "btn-agregar-subobjetivo-focus") {
+      console.log("🎯 Click en botón agregar subobjetivo");
+      e.preventDefault();
+
+      const container = document.getElementById("nuevo-subobjetivo-focus");
+      const input = document.getElementById("input-nuevo-subobjetivo-focus");
+
+      console.log("📦 Container encontrado:", !!container);
+      console.log("📝 Input encontrado:", !!input);
+
+      if (container && input) {
+        container.style.display = "block";
+        console.log("📝 Input antes de focus:", input);
+        console.log("📝 Input disabled?", input.disabled);
+        console.log("📝 Input readonly?", input.readOnly);
+        input.focus();
+        e.target.style.display = "none";
+        console.log("✅ Input mostrado correctamente");
+
+        // Verificar si el input realmente tiene el foco
+        setTimeout(() => {
+          console.log("📝 Input tiene foco?", document.activeElement === input);
+          console.log("📝 Elemento activo:", document.activeElement);
+        }, 100);
+      } else {
+        console.error("❌ No se encontraron elementos necesarios");
+      }
+      return;
+    }
+
+    // Botón cancelar subobjetivo
+    if (e.target.id === "btn-cancelar-subobjetivo-focus") {
+      console.log("❌ Click en botón cancelar");
+      e.preventDefault();
+
+      const container = document.getElementById("nuevo-subobjetivo-focus");
+      const input = document.getElementById("input-nuevo-subobjetivo-focus");
+      const btnAgregar = document.getElementById(
+        "btn-agregar-subobjetivo-focus"
+      );
+
+      if (container && input && btnAgregar) {
+        container.style.display = "none";
+        input.value = "";
+        btnAgregar.style.display = "inline-block";
+      }
+      return;
+    }
+
+    // Botón guardar subobjetivo - FUNCIONA SIEMPRE
+    if (
+      e.target.id === "btn-guardar-subobjetivo-focus" ||
+      e.target.closest("#btn-guardar-subobjetivo-focus")
+    ) {
+      console.log("💾 Click en botón guardar - FORZADO");
+      e.preventDefault();
+      e.stopPropagation();
+
+      // Llamar directamente sin depender del foco
+      guardarNuevoSubobjetivo();
+      return;
+    }
+  });
+
+  // Función separada para guardar subobjetivo - INDEPENDIENTE DEL FOCO
+  async function guardarNuevoSubobjetivo() {
+    console.log("💾 FORZANDO guardar subobjetivo...");
+
+    const input = document.getElementById("input-nuevo-subobjetivo-focus");
+    if (!input) {
+      console.error("❌ No se encontró el input");
+      Swal.fire({
+        title: "Error interno",
+        text: "No se encontró el campo de texto",
+        icon: "error",
+      });
+      return;
+    }
+
+    console.log("📝 Input encontrado, valor actual:", input.value);
+
+    const titulo = input.value.trim();
+    console.log("📝 Título del subobjetivo:", titulo);
+
+    if (!titulo) {
+      Swal.fire({
+        title: "Campo requerido",
+        text: "Por favor escribe el título del subobjetivo",
+        icon: "warning",
+      });
+      return;
+    }
+
+    // Obtener el ID del objetivo desde el modal
+    const modalFocus = document.getElementById("modalFocusObjetivo");
+    const objetivoId = modalFocus?.getAttribute("data-objetivo-id");
+
+    console.log("🎯 ID del objetivo:", objetivoId);
+    console.log("🎯 Modal encontrado:", !!modalFocus);
+
+    if (!objetivoId) {
+      Swal.fire({
+        title: "Error de configuración",
+        text: "No se encontró el ID del objetivo. Cierra y vuelve a abrir el modo focus.",
+        icon: "error",
+      });
+      return;
+    }
+
+    try {
+      const url = `/api/objetivos/${objetivoId}/subobjetivos`;
+      const body = { titulo: titulo };
+
+      console.log("📡 Enviando request a:", url);
+      console.log("📡 Body:", body);
+
+      const response = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+
+      console.log("📡 Response status:", response.status);
+      console.log("📡 Response ok:", response.ok);
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log("✅ Subobjetivo creado:", result);
+
+        // Limpiar input
+        input.value = "";
+        document.getElementById("nuevo-subobjetivo-focus").style.display =
+          "none";
+        document.getElementById("btn-agregar-subobjetivo-focus").style.display =
+          "inline-block";
+
+        // Recargar subobjetivos en modo focus DIRECTAMENTE
+        console.log("🔄 Recargando subobjetivos AHORA...");
+
+        try {
+          const response2 = await fetch(
+            `/api/objetivos/${objetivoId}/subobjetivos`
+          );
+          const subobjetivos2 = await response2.json();
+          console.log("🔄 Subobjetivos recargados:", subobjetivos2.length);
+
+          // Renderizar directamente
+          const container = document.getElementById("focus-subobjetivos-list");
+          if (container) {
+            let html = "";
+            subobjetivos2.forEach((sub) => {
+              html += `
+                <div class="focus-subobjetivo-item p-3 mb-2 bg-light rounded">
+                  <input type="checkbox" class="form-check-input focus-subobjetivo-checkbox me-3" 
+                         ${sub.completado ? "checked" : ""} 
+                         data-subobjetivo-id="${sub.id}">
+                  <span class="focus-subobjetivo-titulo ${
+                    sub.completado
+                      ? "text-decoration-line-through text-muted"
+                      : ""
+                  }" 
+                        data-subobjetivo-id="${sub.id}">${sub.titulo}</span>
+                </div>
+              `;
+            });
+            container.innerHTML = html;
+
+            // Actualizar contador
+            const completados = subobjetivos2.filter(
+              (s) => s.completado
+            ).length;
+            document.getElementById(
+              "focus-progreso"
+            ).textContent = `${completados}/${subobjetivos2.length}`;
+
+            // Aplicar patch para selects
+            window.currentSubobjetivos = subobjetivos2;
+            setTimeout(() => {
+              if (typeof agregarBotonesFocusSubobjetivos === "function") {
+                agregarBotonesFocusSubobjetivos();
+              }
+            }, 200);
+
+            console.log("✅ RECARGA COMPLETADA!");
+          }
+        } catch (error) {
+          console.error("❌ Error en recarga manual:", error);
+        }
+      } else {
+        const errorText = await response.text();
+        console.error("❌ Error del servidor:", response.status, errorText);
+
+        // Intentar parsear el JSON del error para mostrar un mensaje más claro
+        try {
+          const errorData = JSON.parse(errorText);
+          if (errorData.error) {
+            Swal.fire({
+              title: "Error",
+              text: errorData.error,
+              icon: "error",
+            });
+          } else {
+            Swal.fire({
+              title: "Error del servidor",
+              text: `Error al crear el subobjetivo: ${response.status}`,
+              icon: "error",
+            });
+          }
+        } catch (e) {
+          Swal.fire({
+            title: "Error del servidor",
+            text: `Error al crear el subobjetivo: ${response.status} - ${errorText}`,
+            icon: "error",
+          });
+        }
+      }
+    } catch (error) {
+      console.error("❌ Error de red:", error);
+      Swal.fire({
+        title: "Error de conexión",
+        text: "No se pudo conectar con el servidor al crear el subobjetivo",
+        icon: "error",
+      });
+    }
+  }
+
+  // Evento para Enter en el input
+  document.addEventListener("keypress", function (e) {
+    if (e.target.id === "input-nuevo-subobjetivo-focus") {
+      console.log("⌨️ Tecla presionada en input:", e.key);
+      if (e.key === "Enter") {
+        console.log("⌨️ Enter presionado en input");
+        guardarNuevoSubobjetivo();
+      }
+    }
+  });
+
+  // Debug para el input - capturar todos los eventos
+  document.addEventListener(
+    "focus",
+    function (e) {
+      if (e.target.id === "input-nuevo-subobjetivo-focus") {
+        console.log("🎯 Input enfocado");
+      }
+    },
+    true
+  );
+
+  document.addEventListener("input", function (e) {
+    if (e.target.id === "input-nuevo-subobjetivo-focus") {
+      console.log("📝 Texto en input:", e.target.value);
+    }
+  });
+
+  document.addEventListener("keydown", function (e) {
+    if (e.target.id === "input-nuevo-subobjetivo-focus") {
+      console.log(
+        "⌨️ Keydown en input:",
+        e.key,
+        "preventDefault?",
+        e.defaultPrevented
+      );
+    }
+  });
+
+  document.addEventListener("blur", function (e) {
+    if (e.target.id === "input-nuevo-subobjetivo-focus") {
+      console.log("😵 Input perdió foco");
+    }
+  });
+
+  // Event listeners para dropdown de acciones (delegación de eventos)
+  document.addEventListener("click", async function (e) {
+    // Focus en subobjetivo
+    if (e.target.closest(".accion-focus-subobjetivo")) {
+      e.preventDefault();
+      const link = e.target.closest(".accion-focus-subobjetivo");
+      const subobjetivoId = link.getAttribute("data-id");
+      console.log("🎯 Focus en subobjetivo:", subobjetivoId);
+
+      // Buscar el título del subobjetivo para pasarlo a la función
+      const container = document.getElementById("focus-subobjetivos-list");
+      const items = container.querySelectorAll(
+        ".focus-subobjetivo-item, .subobjetivo-focus-item"
+      );
+
+      for (let item of items) {
+        const checkbox = item.querySelector('input[type="checkbox"]');
+        if (
+          checkbox &&
+          checkbox.getAttribute("data-subobjetivo-id") === subobjetivoId
+        ) {
+          const titulo = item.querySelector(
+            ".focus-subobjetivo-titulo, .subobjetivo-focus-titulo, span"
+          );
+          if (titulo) {
+            const tituloTexto = titulo.textContent.trim();
+
+            // Usar la función correcta
+            if (typeof abrirModoFocusSubobjetivo === "function") {
+              abrirModoFocusSubobjetivo(subobjetivoId, tituloTexto);
+            } else {
+              alert("Función de focus de subobjetivos no disponible");
+            }
+            break;
+          }
+        }
+      }
+    }
+
+    // Editar subobjetivo
+    if (e.target.closest(".accion-editar-subobjetivo")) {
+      e.preventDefault();
+      const link = e.target.closest(".accion-editar-subobjetivo");
+      const subobjetivoId = link.getAttribute("data-id");
+      console.log("✏️ Editar subobjetivo:", subobjetivoId);
+
+      // Buscar el título del subobjetivo
+      const container = document.getElementById("focus-subobjetivos-list");
+      const items = container.querySelectorAll(
+        ".focus-subobjetivo-item, .subobjetivo-focus-item"
+      );
+
+      for (let item of items) {
+        const checkbox = item.querySelector('input[type="checkbox"]');
+        if (
+          checkbox &&
+          checkbox.getAttribute("data-subobjetivo-id") === subobjetivoId
+        ) {
+          const titulo = item.querySelector(
+            ".focus-subobjetivo-titulo, .subobjetivo-focus-titulo, span"
+          );
+          if (titulo) {
+            editarSubobjetivoInline(subobjetivoId, titulo);
+            break;
+          }
+        }
+      }
+    }
+
+    // Eliminar subobjetivo
+    if (e.target.closest(".accion-eliminar-subobjetivo")) {
+      e.preventDefault();
+      const link = e.target.closest(".accion-eliminar-subobjetivo");
+      const subobjetivoId = link.getAttribute("data-id");
+      console.log("🗑️ Eliminar subobjetivo:", subobjetivoId);
+
+      if (!confirm("¿Estás seguro de que quieres eliminar este subobjetivo?")) {
+        return;
+      }
+
+      try {
+        const response = await fetch(`/api/subobjetivos/${subobjetivoId}`, {
+          method: "DELETE",
+        });
+
+        if (response.ok) {
+          console.log("✅ Subobjetivo eliminado");
+          // Buscar y eliminar el item del DOM
+          const container = document.getElementById("focus-subobjetivos-list");
+          const items = container.querySelectorAll(
+            ".focus-subobjetivo-item, .subobjetivo-focus-item"
+          );
+
+          for (let item of items) {
+            const checkbox = item.querySelector('input[type="checkbox"]');
+            if (
+              checkbox &&
+              checkbox.getAttribute("data-subobjetivo-id") === subobjetivoId
+            ) {
+              item.remove();
+              break;
+            }
+          }
+
+          // Actualizar contador
+          actualizarContadorFocus();
+        } else {
+          alert("Error al eliminar el subobjetivo");
+        }
+      } catch (error) {
+        console.error("Error:", error);
+        alert("Error al eliminar el subobjetivo: " + error.message);
+      }
+    }
+  });
+
+  // Función para actualizar contador
+  function actualizarContadorFocus() {
+    const container = document.getElementById("focus-subobjetivos-list");
+    const items = container.querySelectorAll(
+      ".focus-subobjetivo-item, .subobjetivo-focus-item"
+    );
+    const checkboxes = container.querySelectorAll(
+      'input[type="checkbox"]:checked'
+    );
+
+    const contador = document.getElementById("focus-progreso");
+    if (contador) {
+      contador.textContent = `${checkboxes.length}/${items.length}`;
+    }
+  }
+
+  // Doble clic para editar
+  document.addEventListener("dblclick", function (e) {
+    if (e.target.classList.contains("focus-subobjetivo-titulo")) {
+      const subobjetivoId = e.target.getAttribute("data-subobjetivo-id");
+      editarSubobjetivoInline(subobjetivoId, e.target);
+    }
+  });
+
+  // Función para editar subobjetivo inline
+  function editarSubobjetivoInline(subobjetivoId, elemento) {
+    const textoOriginal = elemento.textContent.trim();
+
+    // Crear input
+    const input = document.createElement("input");
+    input.type = "text";
+    input.value = textoOriginal;
+    input.className = "form-control form-control-sm";
+    input.style.width = "100%";
+
+    // Reemplazar span con input
+    elemento.parentNode.replaceChild(input, elemento);
+    input.focus();
+    input.select();
+
+    // Función para guardar
+    async function guardar() {
+      const nuevoTexto = input.value.trim();
+
+      if (!nuevoTexto) {
+        alert("El título no puede estar vacío");
+        input.focus();
+        return;
+      }
+
+      if (nuevoTexto === textoOriginal) {
+        // Sin cambios, restaurar
+        restaurarSpan();
+        return;
+      }
+
+      try {
+        const response = await fetch(`/api/subobjetivos/${subobjetivoId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ titulo: nuevoTexto }),
+        });
+
+        if (response.ok) {
+          // Actualizar solo el texto sin recargar todo
+          const nuevoSpan = document.createElement("span");
+          nuevoSpan.className = elemento.className;
+          nuevoSpan.setAttribute("data-subobjetivo-id", subobjetivoId);
+          nuevoSpan.style.cursor = "pointer";
+          nuevoSpan.title = "Doble clic para editar";
+          nuevoSpan.textContent = nuevoTexto;
+
+          input.parentNode.replaceChild(nuevoSpan, input);
+        } else {
+          alert("Error al actualizar el subobjetivo");
+          restaurarSpan();
+        }
+      } catch (error) {
+        console.error("Error:", error);
+        alert("Error al actualizar el subobjetivo");
+        restaurarSpan();
+      }
+    }
+
+    // Función para restaurar span
+    function restaurarSpan() {
+      const nuevoSpan = document.createElement("span");
+      nuevoSpan.className = elemento.className;
+      nuevoSpan.setAttribute("data-subobjetivo-id", subobjetivoId);
+      nuevoSpan.style.cursor = "pointer";
+      nuevoSpan.title = "Doble clic para editar";
+      nuevoSpan.textContent = textoOriginal;
+
+      input.parentNode.replaceChild(nuevoSpan, input);
+    }
+
+    // Event listeners del input
+    input.addEventListener("blur", guardar);
+    input.addEventListener("keypress", function (e) {
+      if (e.key === "Enter") {
+        guardar();
+      } else if (e.key === "Escape") {
+        restaurarSpan();
+      }
+    });
+  }
+
+  // Los selects se agregan automáticamente via focus-subobjetivos-patch.js
+
+  // Función dummy para evitar errores
+  document
+    .getElementById("btn-editar-todos-subobjetivos-dummy")
+    ?.addEventListener("click", function (e) {
+      // Funciones globales para los botones
+      window.editarSubobjetivo = function (id, btn) {
+        // Buscar el elemento que contiene el texto del subobjetivo
+        const checkbox = document.querySelector(
+          `input[data-subobjetivo-id="${id}"]`
+        );
+        if (!checkbox) {
+          alert("No se encontró el subobjetivo");
+          return;
+        }
+
+        const item = checkbox.closest("div");
+        const allElements = item.querySelectorAll("*");
+        let titulo = null;
+
+        // Buscar el elemento que contiene texto (no sea botón ni input)
+        for (let el of allElements) {
+          if (
+            el.textContent.trim() &&
+            !el.matches("button") &&
+            !el.matches("input") &&
+            !el.matches("i") &&
+            !el.querySelector("button")
+          ) {
+            titulo = el;
+            break;
+          }
+        }
+
+        if (!titulo) {
+          alert("No se pudo encontrar el título del subobjetivo");
+          console.log("Elementos encontrados:", item.innerHTML);
+          return;
+        }
+
+        let textoOriginal = titulo.textContent.trim();
+
+        // Debug: mostrar el texto original para ver el formato exacto
+        console.log(
+          "Texto original del subobjetivo:",
+          JSON.stringify(textoOriginal)
+        );
+
+        // Limpiar múltiples formatos de tiempo posibles
+        textoOriginal = textoOriginal
+          .replace(/\s*\(\d{1,3}:\d{2}\)\s*$/, "") // (123:45)
+          .replace(/\s*\(\d{1,3}:\d{2}:\d{2}\)\s*$/, "") // (1:23:45)
+          .replace(/\s*-\s*\d{1,3}:\d{2}\s*$/, "") // - 123:45
+          .replace(/\s*\[\d{1,3}:\d{2}\]\s*$/, "") // [123:45]
+          .replace(/\s*\d{1,3}:\d{2}\s*$/, "") // 123:45
+          .replace(/\s*⏱️.*$/, "") // ⏱️ cualquier cosa
+          .replace(/\s*🕐.*$/, "") // 🕐 cualquier cosa
+          .trim();
+
+        console.log("Texto limpio:", JSON.stringify(textoOriginal));
+
+        // Crear input
+        const input = document.createElement("input");
+        input.type = "text";
+        input.value = textoOriginal;
+        input.className = "form-control form-control-sm d-inline";
+        input.style.width = "200px";
+
+        // Reemplazar
+        titulo.parentNode.replaceChild(input, titulo);
+        input.focus();
+        input.select();
+
+        // Guardar con Enter
+        input.addEventListener("keypress", async function (e) {
+          if (e.key === "Enter") {
+            const nuevoTexto = input.value.trim();
+            if (nuevoTexto && nuevoTexto !== textoOriginal) {
+              try {
+                const response = await fetch(`/api/subobjetivos/${id}`, {
+                  method: "PATCH",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ titulo: nuevoTexto }),
+                });
+
+                if (response.ok) {
+                  const nuevoSpan = document.createElement("span");
+                  nuevoSpan.textContent = nuevoTexto;
+                  input.parentNode.replaceChild(nuevoSpan, input);
+                } else {
+                  alert("Error al actualizar");
+                }
+              } catch (error) {
+                alert("Error: " + error.message);
+              }
+            } else {
+              // Restaurar
+              const nuevoSpan = document.createElement("span");
+              nuevoSpan.textContent = textoOriginal;
+              input.parentNode.replaceChild(nuevoSpan, input);
+            }
+          }
+        });
+      };
+
+      // Función para manejar el select de acciones
+      window.ejecutarAccionSubobjetivo = async function (id, select) {
+        const accion = select.value;
+        if (!accion) return;
+
+        // Resetear select
+        select.value = "";
+
+        if (accion === "focus") {
+          // Buscar título para focus
+          const checkbox = document.querySelector(
+            `input[data-subobjetivo-id="${id}"]`
+          );
+          if (checkbox) {
+            const item = checkbox.closest("div");
+            const titulo =
+              item.querySelector("span") ||
+              item.querySelector(".focus-subobjetivo-titulo");
+            if (titulo) {
+              const tituloLimpio = titulo.textContent
+                .trim()
+                .replace(/\s*\(\d{1,3}:\d{2}\)\s*$/, "");
+              abrirModoFocusSubobjetivo(id, tituloLimpio);
+            }
+          }
+        } else if (accion === "editar") {
+          window.editarSubobjetivo(id, select);
+        } else if (accion === "eliminar") {
+          window.eliminarSubobjetivo(id, select);
+        }
+      };
+
+      window.eliminarSubobjetivo = async function (id, element) {
+        if (!confirm("¿Eliminar este subobjetivo?")) return;
+
+        try {
+          const response = await fetch(`/api/subobjetivos/${id}`, {
+            method: "DELETE",
+          });
+          if (response.ok) {
+            // Buscar y eliminar el elemento correcto
+            const checkbox = document.querySelector(
+              `input[data-subobjetivo-id="${id}"]`
+            );
+            if (checkbox) {
+              const itemToRemove = checkbox.closest("div");
+              if (itemToRemove) {
+                itemToRemove.remove();
+              }
+            }
+
+            // Actualizar contador inmediatamente
+            setTimeout(() => {
+              const container = document.getElementById(
+                "focus-subobjetivos-list"
+              );
+              const total = container.querySelectorAll(
+                'input[type="checkbox"]'
+              ).length;
+              const completados = container.querySelectorAll(
+                'input[type="checkbox"]:checked'
+              ).length;
+              document.getElementById(
+                "focus-progreso"
+              ).textContent = `${completados}/${total}`;
+            }, 100);
+
+            alert("Subobjetivo eliminado correctamente");
+          } else {
+            alert("Error al eliminar del servidor");
+          }
+        } catch (error) {
+          alert("Error de conexión: " + error.message);
+        }
+      };
+
+      // Variable global para almacenar el ID del objetivo en focus
+      window.currentFocusObjetivoId = null;
+
+      // Interceptar clics en botones de focus para capturar el ID
+      document.addEventListener("click", function (e) {
+        if (e.target.closest(".btn-focus")) {
+          const button = e.target.closest("[data-id]");
+          if (button) {
+            const objetivoId = button.getAttribute("data-id");
+            window.currentFocusObjetivoId = objetivoId;
+
+            // También establecerlo en el modal
+            const modalFocus = document.getElementById("modalFocusObjetivo");
+            if (modalFocus) {
+              modalFocus.setAttribute("data-objetivo-id", objetivoId);
+            }
+
+            console.log("✅ ID del objetivo capturado para focus:", objetivoId);
+          }
+        }
+      });
+
+      // Función para recargar subobjetivos con funcionalidad completa
+      async function recargarSubobjetivosFocus() {
+        console.log("🔄 RECARGA: Iniciando recarga de subobjetivos...");
+
+        const modalFocus = document.getElementById("modalFocusObjetivo");
+        const objetivoId = modalFocus?.getAttribute("data-objetivo-id");
+
+        console.log("🔄 RECARGA: Modal encontrado:", !!modalFocus);
+        console.log("🔄 RECARGA: Objetivo ID:", objetivoId);
+
+        if (!objetivoId) {
+          console.error("🔄 RECARGA: No hay objetivo ID, abortando");
+          return;
+        }
+
+        try {
+          const url = `/api/objetivos/${objetivoId}/subobjetivos`;
+          console.log("🔄 RECARGA: Fetching desde:", url);
+
+          const response = await fetch(url);
+          console.log("🔄 RECARGA: Response status:", response.status);
+
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+          }
+
+          const subobjetivos = await response.json();
+          console.log(
+            "🔄 RECARGA: Subobjetivos obtenidos:",
+            subobjetivos.length,
+            subobjetivos
+          );
+
+          renderizarSubobjetivosFocusCompleto(subobjetivos);
+          console.log("🔄 RECARGA: Renderizado completado");
+        } catch (error) {
+          console.error("🔄 RECARGA: Error completo:", error);
+        }
+      }
+
+      // Función para renderizar subobjetivos compatible con el sistema de selects
+      function renderizarSubobjetivosFocusCompleto(subobjetivos) {
+        console.log(
+          "🎨 RENDER: Iniciando renderizado con",
+          subobjetivos.length,
+          "subobjetivos"
+        );
+
+        const container = document.getElementById("focus-subobjetivos-list");
+        console.log("🎨 RENDER: Container encontrado:", !!container);
+
+        if (!container) {
+          console.error("🎨 RENDER: No se encontró el container!");
+          return;
+        }
+
+        if (subobjetivos.length === 0) {
+          container.innerHTML = `
+                <div class="text-center text-muted py-4">
+                    <i class="bi bi-list-check fs-1 mb-2 d-block"></i>
+                    <p class="mb-0">No hay subobjetivos para este objetivo</p>
+                    <small class="text-muted">Agrega subobjetivos para dividir tu objetivo en tareas más pequeñas</small>
+                </div>
+            `;
+          document.getElementById("focus-progreso").textContent = "0/0";
+          return;
+        }
+
+        let html = "";
+        subobjetivos.forEach((sub) => {
+          html += `
+                <div class="focus-subobjetivo-item p-3 mb-2 bg-light rounded">
+                    <input type="checkbox" class="form-check-input focus-subobjetivo-checkbox me-3" 
+                           ${sub.completado ? "checked" : ""} 
+                           data-subobjetivo-id="${sub.id}">
+                    <span class="focus-subobjetivo-titulo ${
+                      sub.completado
+                        ? "text-decoration-line-through text-muted"
+                        : ""
+                    }" 
+                          data-subobjetivo-id="${sub.id}">${sub.titulo}</span>
+                </div>
+            `;
+        });
+
+        container.innerHTML = html;
+
+        // Actualizar contador
+        const completados = subobjetivos.filter((s) => s.completado).length;
+        document.getElementById(
+          "focus-progreso"
+        ).textContent = `${completados}/${subobjetivos.length}`;
+
+        // Actualizar datos globales para el patch
+        window.currentSubobjetivos = subobjetivos;
+
+        // Aplicar el patch para agregar los selects
+        setTimeout(() => {
+          if (typeof agregarBotonesFocusSubobjetivos === "function") {
+            agregarBotonesFocusSubobjetivos();
+          }
+        }, 100);
+      }
+    });
+</script>
 
 <!-- Modal Nuevo Audio -->
 <div
@@ -3330,100 +4228,111 @@
 
 <!-- Script para Objetivos de Mañana -->
 <script>
-// ===== OBJETIVOS DE MAÑANA =====
+  // ===== OBJETIVOS DE MAÑANA =====
 
-// Función para cargar objetivos de mañana
-async function cargarObjetivosManana() {
+  // Función para cargar objetivos de mañana
+  async function cargarObjetivosManana() {
     try {
-        console.log('📅 Iniciando carga de objetivos de mañana...');
-        
-        const response = await fetch('/api/objetivos/manana');
-        console.log('📡 Response status:', response.status);
-        console.log('📡 Response ok:', response.ok);
-        
-        if (!response.ok) {
-            console.error('❌ Response no OK:', response.status, response.statusText);
-            throw new Error(`Error ${response.status}: ${response.statusText}`);
-        }
-        
-        const data = await response.json();
-        console.log('📊 Data recibida completa:', data);
-        console.log('📊 Total objetivos:', data.total);
-        console.log('📊 Fecha mañana:', data.fecha_manana);
-        
-        if (data.objetivos && data.objetivos.length > 0) {
-            console.log('📋 Objetivos encontrados:');
-            data.objetivos.forEach((obj, index) => {
-                console.log(`  ${index + 1}. ${obj.titulo} (${obj.total_subobjetivos} subobjetivos)`);
-            });
-        }
-        
-        console.log('📅 Llamando a renderizarObjetivosManana...');
-        renderizarObjetivosManana(data);
-        console.log('✅ Renderizado completado');
-        
-    } catch (error) {
-        console.error('💥 Error completo cargando objetivos de mañana:', error);
-        console.error('💥 Error stack:', error.stack);
-        mostrarErrorObjetivosManana(error.message);
-    }
-}
+      console.log("📅 Iniciando carga de objetivos de mañana...");
 
-// Función para renderizar objetivos de mañana
-function renderizarObjetivosManana(data) {
-    const container = document.getElementById('lista-objetivos-manana');
-    const contador = document.getElementById('contador-objetivos-manana');
-    const fechaManana = document.getElementById('fecha-manana');
-    const mensajeSin = document.getElementById('mensaje-sin-objetivos-manana');
-    
+      const response = await fetch("/api/objetivos/manana");
+      console.log("📡 Response status:", response.status);
+      console.log("📡 Response ok:", response.ok);
+
+      if (!response.ok) {
+        console.error(
+          "❌ Response no OK:",
+          response.status,
+          response.statusText
+        );
+        throw new Error(`Error ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      console.log("📊 Data recibida completa:", data);
+      console.log("📊 Total objetivos:", data.total);
+      console.log("📊 Fecha mañana:", data.fecha_manana);
+
+      if (data.objetivos && data.objetivos.length > 0) {
+        console.log("📋 Objetivos encontrados:");
+        data.objetivos.forEach((obj, index) => {
+          console.log(
+            `  ${index + 1}. ${obj.titulo} (${
+              obj.total_subobjetivos
+            } subobjetivos)`
+          );
+        });
+      }
+
+      console.log("📅 Llamando a renderizarObjetivosManana...");
+      renderizarObjetivosManana(data);
+      console.log("✅ Renderizado completado");
+    } catch (error) {
+      console.error("💥 Error completo cargando objetivos de mañana:", error);
+      console.error("💥 Error stack:", error.stack);
+      mostrarErrorObjetivosManana(error.message);
+    }
+  }
+
+  // Función para renderizar objetivos de mañana
+  function renderizarObjetivosManana(data) {
+    const container = document.getElementById("lista-objetivos-manana");
+    const contador = document.getElementById("contador-objetivos-manana");
+    const fechaManana = document.getElementById("fecha-manana");
+    const mensajeSin = document.getElementById("mensaje-sin-objetivos-manana");
+
     if (!container) return;
-    
+
     // Guardar datos globalmente para los tooltips
     window.objetivosMananaData = data;
-    
+
     // Actualizar fecha de mañana
     if (fechaManana && data.fecha_manana) {
-        const fecha = new Date(data.fecha_manana + 'T00:00:00');
-        const opciones = { 
-            weekday: 'long', 
-            year: 'numeric', 
-            month: 'long', 
-            day: 'numeric' 
-        };
-        fechaManana.textContent = fecha.toLocaleDateString('es-ES', opciones);
+      const fecha = new Date(data.fecha_manana + "T00:00:00");
+      const opciones = {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      };
+      fechaManana.textContent = fecha.toLocaleDateString("es-ES", opciones);
     }
-    
+
     // Actualizar contador
     if (contador) {
-        contador.textContent = `${data.total} objetivo${data.total !== 1 ? 's' : ''}`;
+      contador.textContent = `${data.total} objetivo${
+        data.total !== 1 ? "s" : ""
+      }`;
     }
-    
+
     // Si no hay objetivos, mostrar mensaje
     if (data.total === 0) {
-        if (mensajeSin) mensajeSin.style.display = 'block';
-        return;
+      if (mensajeSin) mensajeSin.style.display = "block";
+      return;
     }
-    
+
     // Ocultar mensaje sin objetivos
-    if (mensajeSin) mensajeSin.style.display = 'none';
-    
+    if (mensajeSin) mensajeSin.style.display = "none";
+
     // Generar HTML para objetivos
     let html = '<div class="row">';
-    
-    data.objetivos.forEach(objetivo => {
-        const prioridadColor = {
-            'alta': 'danger',
-            'media': 'warning', 
-            'baja': 'info'
-        }[objetivo.prioridad] || 'secondary';
-        
-        const parteDiaIcon = {
-            'mañana': 'bi-sunrise',
-            'tarde': 'bi-sun',
-            'noche': 'bi-moon'
-        }[objetivo.parte_dia] || 'bi-clock';
-        
-        html += `
+
+    data.objetivos.forEach((objetivo) => {
+      const prioridadColor =
+        {
+          alta: "danger",
+          media: "warning",
+          baja: "info",
+        }[objetivo.prioridad] || "secondary";
+
+      const parteDiaIcon =
+        {
+          mañana: "bi-sunrise",
+          tarde: "bi-sun",
+          noche: "bi-moon",
+        }[objetivo.parte_dia] || "bi-clock";
+
+      html += `
             <div class="col-md-6 col-xl-4 mb-2">
                 <div class="card border-start border-${prioridadColor} border-2" style="min-height: auto;">
                     <div class="card-body p-2">
@@ -3445,21 +4354,40 @@ function renderizarObjetivosManana(data) {
                         
                         <div class="d-flex justify-content-between align-items-center flex-wrap gap-1">
                             <div class="d-flex gap-2 flex-wrap">
-                                ${objetivo.parte_dia ? `
+                                ${
+                                  objetivo.parte_dia
+                                    ? `
                                     <small class="text-muted" style="font-size: 0.75rem;">
                                         <i class="${parteDiaIcon}"></i> ${objetivo.parte_dia}
                                     </small>
-                                ` : ''}
-                                ${objetivo.horas_estimadas ? `
+                                `
+                                    : ""
+                                }
+                                ${
+                                  objetivo.horas_estimadas
+                                    ? `
                                     <small class="text-muted" style="font-size: 0.75rem;">
                                         <i class="bi bi-clock"></i> ${objetivo.horas_estimadas}h
                                     </small>
-                                ` : ''}
-                                ${objetivo.categoria ? `
+                                `
+                                    : ""
+                                }
+                                ${
+                                  objetivo.categoria
+                                    ? `
                                     <small class="text-muted" style="font-size: 0.75rem;">
-                                        <i class="bi bi-tag"></i> ${objetivo.categoria.charAt(0).toUpperCase() + objetivo.categoria.slice(1).replace(/_/g, ' ')}
+                                        <i class="bi bi-tag"></i> ${
+                                          objetivo.categoria
+                                            .charAt(0)
+                                            .toUpperCase() +
+                                          objetivo.categoria
+                                            .slice(1)
+                                            .replace(/_/g, " ")
+                                        }
                                     </small>
-                                ` : ''}
+                                `
+                                    : ""
+                                }
                             </div>
                         </div>
                     </div>
@@ -3467,25 +4395,29 @@ function renderizarObjetivosManana(data) {
             </div>
         `;
     });
-    
-    html += '</div>';
+
+    html += "</div>";
     container.innerHTML = html;
-    
+
     // Inicializar tooltips para los títulos de objetivos
     inicializarTooltipsObjetivos();
-    
-    console.log(`✅ Renderizados ${data.total} objetivos de mañana`);
-}
 
-// Función para mostrar error
-function mostrarErrorObjetivosManana(errorMessage = '') {
-    const container = document.getElementById('lista-objetivos-manana');
+    console.log(`✅ Renderizados ${data.total} objetivos de mañana`);
+  }
+
+  // Función para mostrar error
+  function mostrarErrorObjetivosManana(errorMessage = "") {
+    const container = document.getElementById("lista-objetivos-manana");
     if (container) {
-        container.innerHTML = `
+      container.innerHTML = `
             <div class="text-center text-danger py-3">
                 <i class="bi bi-exclamation-triangle fs-1 mb-2"></i>
                 <p class="mb-0">Error al cargar objetivos de mañana</p>
-                ${errorMessage ? `<small class="text-muted">${errorMessage}</small><br>` : ''}
+                ${
+                  errorMessage
+                    ? `<small class="text-muted">${errorMessage}</small><br>`
+                    : ""
+                }
                 <small class="text-muted">Intenta recargar la página</small>
                 <br>
                 <button class="btn btn-sm btn-outline-primary mt-2" onclick="cargarObjetivosManana()">
@@ -3494,297 +4426,317 @@ function mostrarErrorObjetivosManana(errorMessage = '') {
             </div>
         `;
     }
-}
+  }
 
-// Variables para controlar la visibilidad
-let objetivosMananaVisible = false;
-let objetivosMananaYaCargados = false;
+  // Variables para controlar la visibilidad
+  let objetivosMananaVisible = false;
+  let objetivosMananaYaCargados = false;
 
-// Función para mostrar/ocultar objetivos de mañana
-function toggleObjetivosManana() {
-    console.log('🔄 toggleObjetivosManana llamada');
-    
-    const contenido = document.getElementById('contenido-objetivos-manana');
-    const chevron = document.getElementById('icono-chevron-manana');
-    
-    console.log('📋 Elementos encontrados:', {
-        contenido: !!contenido,
-        chevron: !!chevron,
-        objetivosMananaVisible: objetivosMananaVisible,
-        objetivosMananaYaCargados: objetivosMananaYaCargados
+  // Función para mostrar/ocultar objetivos de mañana
+  function toggleObjetivosManana() {
+    console.log("🔄 toggleObjetivosManana llamada");
+
+    const contenido = document.getElementById("contenido-objetivos-manana");
+    const chevron = document.getElementById("icono-chevron-manana");
+
+    console.log("📋 Elementos encontrados:", {
+      contenido: !!contenido,
+      chevron: !!chevron,
+      objetivosMananaVisible: objetivosMananaVisible,
+      objetivosMananaYaCargados: objetivosMananaYaCargados,
     });
-    
+
     if (!contenido || !chevron) {
-        console.error('❌ No se encontraron elementos del toggle');
-        return;
+      console.error("❌ No se encontraron elementos del toggle");
+      return;
     }
-    
+
     if (objetivosMananaVisible) {
-        // Ocultar
-        console.log('📅 Ocultando objetivos de mañana...');
-        contenido.classList.remove('show');
-        chevron.style.transform = 'rotate(0deg)';
-        objetivosMananaVisible = false;
-        console.log('📅 Objetivos de mañana ocultados');
+      // Ocultar
+      console.log("📅 Ocultando objetivos de mañana...");
+      contenido.classList.remove("show");
+      chevron.style.transform = "rotate(0deg)";
+      objetivosMananaVisible = false;
+      console.log("📅 Objetivos de mañana ocultados");
     } else {
-        // Mostrar
-        console.log('📅 Mostrando objetivos de mañana...');
-        contenido.classList.add('show');
-        chevron.style.transform = 'rotate(90deg)';
-        objetivosMananaVisible = true;
-        
-        // Cargar datos solo la primera vez
-        if (!objetivosMananaYaCargados) {
-            console.log('📅 Cargando objetivos por primera vez...');
-            cargarObjetivosManana();
-            objetivosMananaYaCargados = true;
-        } else {
-            console.log('📅 Objetivos ya cargados previamente');
-        }
-        
-        console.log('📅 Objetivos de mañana mostrados');
-    }
-}
+      // Mostrar
+      console.log("📅 Mostrando objetivos de mañana...");
+      contenido.classList.add("show");
+      chevron.style.transform = "rotate(90deg)";
+      objetivosMananaVisible = true;
 
-// Event listener para el header
-document.addEventListener('click', function(e) {
-    if (e.target.closest('#header-objetivos-manana')) {
-        toggleObjetivosManana();
-    }
-});
+      // Cargar datos solo la primera vez
+      if (!objetivosMananaYaCargados) {
+        console.log("📅 Cargando objetivos por primera vez...");
+        cargarObjetivosManana();
+        objetivosMananaYaCargados = true;
+      } else {
+        console.log("📅 Objetivos ya cargados previamente");
+      }
 
-// Cargar contador inicial cuando se carga la página (sin mostrar la sección)
-document.addEventListener('DOMContentLoaded', function() {
-    const tabObjetivos = document.getElementById('tab-objetivos');
-    if (tabObjetivos && tabObjetivos.classList.contains('active')) {
-        setTimeout(cargarContadorObjetivosManana, 500);
+      console.log("📅 Objetivos de mañana mostrados");
     }
-});
+  }
 
-// También cargar contador cuando se hace clic en la pestaña de objetivos
-document.addEventListener('click', function(e) {
-    if (e.target.id === 'tab-objetivos') {
-        setTimeout(cargarContadorObjetivosManana, 100);
+  // Event listener para el header
+  document.addEventListener("click", function (e) {
+    if (e.target.closest("#header-objetivos-manana")) {
+      toggleObjetivosManana();
     }
-});
+  });
 
-// Función para inicializar tooltips de objetivos
-function inicializarTooltipsObjetivos() {
+  // Cargar contador inicial cuando se carga la página (sin mostrar la sección)
+  document.addEventListener("DOMContentLoaded", function () {
+    const tabObjetivos = document.getElementById("tab-objetivos");
+    if (tabObjetivos && tabObjetivos.classList.contains("active")) {
+      setTimeout(cargarContadorObjetivosManana, 500);
+    }
+  });
+
+  // También cargar contador cuando se hace clic en la pestaña de objetivos
+  document.addEventListener("click", function (e) {
+    if (e.target.id === "tab-objetivos") {
+      setTimeout(cargarContadorObjetivosManana, 100);
+    }
+  });
+
+  // Función para inicializar tooltips de objetivos
+  function inicializarTooltipsObjetivos() {
     // Verificar que Bootstrap esté disponible
-    if (typeof bootstrap === 'undefined' || !bootstrap.Tooltip) {
-        console.log('⚠️ Bootstrap Tooltip no disponible');
-        return;
+    if (typeof bootstrap === "undefined" || !bootstrap.Tooltip) {
+      console.log("⚠️ Bootstrap Tooltip no disponible");
+      return;
     }
-    
+
     // Destruir tooltips existentes para evitar duplicados
-    const tooltipsExistentes = document.querySelectorAll('.objetivo-titulo-tooltip, .objetivo-titulo-manana-tooltip');
-    tooltipsExistentes.forEach(element => {
-        const tooltip = bootstrap.Tooltip.getInstance(element);
-        if (tooltip) {
-            tooltip.dispose();
-        }
+    const tooltipsExistentes = document.querySelectorAll(
+      ".objetivo-titulo-tooltip, .objetivo-titulo-manana-tooltip"
+    );
+    tooltipsExistentes.forEach((element) => {
+      const tooltip = bootstrap.Tooltip.getInstance(element);
+      if (tooltip) {
+        tooltip.dispose();
+      }
     });
-    
+
     // Inicializar tooltips normales (solo título)
-    const elementosTooltip = document.querySelectorAll('.objetivo-titulo-tooltip');
-    elementosTooltip.forEach(element => {
-        new bootstrap.Tooltip(element, {
-            trigger: 'hover',
-            delay: { show: 300, hide: 100 },
-            customClass: 'objetivo-tooltip'
-        });
+    const elementosTooltip = document.querySelectorAll(
+      ".objetivo-titulo-tooltip"
+    );
+    elementosTooltip.forEach((element) => {
+      new bootstrap.Tooltip(element, {
+        trigger: "hover",
+        delay: { show: 300, hide: 100 },
+        customClass: "objetivo-tooltip",
+      });
     });
-    
+
     // Inicializar tooltips de mañana (con subobjetivos)
-    const elementosTooltipManana = document.querySelectorAll('.objetivo-titulo-manana-tooltip');
-    elementosTooltipManana.forEach(element => {
-        const objetivoId = element.getAttribute('data-objetivo-id');
-        
-        // Crear tooltip personalizado con subobjetivos
-        element.addEventListener('mouseenter', async function(e) {
-            console.log('🖱️ Mouse enter en objetivo:', objetivoId);
-            await mostrarTooltipConSubobjetivos(e.target, objetivoId);
-        });
-        
-        element.addEventListener('mouseleave', function(e) {
-            console.log('🖱️ Mouse leave en objetivo:', objetivoId);
-            ocultarTooltipConSubobjetivos(e.target);
-        });
+    const elementosTooltipManana = document.querySelectorAll(
+      ".objetivo-titulo-manana-tooltip"
+    );
+    elementosTooltipManana.forEach((element) => {
+      const objetivoId = element.getAttribute("data-objetivo-id");
+
+      // Crear tooltip personalizado con subobjetivos
+      element.addEventListener("mouseenter", async function (e) {
+        console.log("🖱️ Mouse enter en objetivo:", objetivoId);
+        await mostrarTooltipConSubobjetivos(e.target, objetivoId);
+      });
+
+      element.addEventListener("mouseleave", function (e) {
+        console.log("🖱️ Mouse leave en objetivo:", objetivoId);
+        ocultarTooltipConSubobjetivos(e.target);
+      });
     });
-    
-    console.log(`✅ Inicializados ${elementosTooltip.length} tooltips normales y ${elementosTooltipManana.length} tooltips de mañana`);
-    
+
+    console.log(
+      `✅ Inicializados ${elementosTooltip.length} tooltips normales y ${elementosTooltipManana.length} tooltips de mañana`
+    );
+
     // Agregar evento global para ocultar tooltip si se hace clic en cualquier lugar
-    document.addEventListener('click', function(e) {
-        if (tooltipPersonalizado && !e.target.closest('.tooltip-personalizado') && !e.target.closest('.objetivo-titulo-manana-tooltip')) {
-            console.log('🖱️ Clic fuera del tooltip, ocultando...');
-            ocultarTooltipConSubobjetivos();
-        }
+    document.addEventListener("click", function (e) {
+      if (
+        tooltipPersonalizado &&
+        !e.target.closest(".tooltip-personalizado") &&
+        !e.target.closest(".objetivo-titulo-manana-tooltip")
+      ) {
+        console.log("🖱️ Clic fuera del tooltip, ocultando...");
+        ocultarTooltipConSubobjetivos();
+      }
     });
-}
+  }
 
-// Variables globales para el tooltip personalizado
-let tooltipPersonalizado = null;
-let timeoutTooltip = null;
+  // Variables globales para el tooltip personalizado
+  let tooltipPersonalizado = null;
+  let timeoutTooltip = null;
 
-// Función para mostrar tooltip con subobjetivos
-async function mostrarTooltipConSubobjetivos(elemento, objetivoId) {
-    console.log('🔄 Mostrando tooltip para objetivo:', objetivoId);
-    
+  // Función para mostrar tooltip con subobjetivos
+  async function mostrarTooltipConSubobjetivos(elemento, objetivoId) {
+    console.log("🔄 Mostrando tooltip para objetivo:", objetivoId);
+
     // Cancelar timeout de ocultar si existe
     if (timeoutTooltip) {
-        clearTimeout(timeoutTooltip);
-        timeoutTooltip = null;
+      clearTimeout(timeoutTooltip);
+      timeoutTooltip = null;
     }
-    
+
     // Si ya hay un tooltip, eliminarlo inmediatamente
     if (tooltipPersonalizado) {
-        console.log('🔄 Eliminando tooltip anterior...');
-        if (tooltipPersonalizado.parentNode) {
-            tooltipPersonalizado.parentNode.removeChild(tooltipPersonalizado);
-        }
-        tooltipPersonalizado = null;
+      console.log("🔄 Eliminando tooltip anterior...");
+      if (tooltipPersonalizado.parentNode) {
+        tooltipPersonalizado.parentNode.removeChild(tooltipPersonalizado);
+      }
+      tooltipPersonalizado = null;
     }
-    
+
     try {
-        // Obtener datos del objetivo desde la respuesta ya cargada
-        const objetivoData = window.objetivosMananaData?.objetivos?.find(obj => obj.id == objetivoId);
-        
-        if (!objetivoData) {
-            console.log('No se encontraron datos del objetivo');
-            return;
-        }
-        
-        // Crear contenido del tooltip
-        let contenido = `<div class="tooltip-objetivo-manana">
+      // Obtener datos del objetivo desde la respuesta ya cargada
+      const objetivoData = window.objetivosMananaData?.objetivos?.find(
+        (obj) => obj.id == objetivoId
+      );
+
+      if (!objetivoData) {
+        console.log("No se encontraron datos del objetivo");
+        return;
+      }
+
+      // Crear contenido del tooltip
+      let contenido = `<div class="tooltip-objetivo-manana">
             <div class="tooltip-titulo">${objetivoData.titulo}</div>`;
-        
-        if (objetivoData.subobjetivos && objetivoData.subobjetivos.length > 0) {
-            contenido += `<div class="tooltip-subobjetivos">
+
+      if (objetivoData.subobjetivos && objetivoData.subobjetivos.length > 0) {
+        contenido += `<div class="tooltip-subobjetivos">
                 <div class="tooltip-subobjetivos-header">Subobjetivos (${objetivoData.subobjetivos_completados}/${objetivoData.total_subobjetivos}):</div>
                 <ul class="tooltip-subobjetivos-lista">`;
-            
-            objetivoData.subobjetivos.forEach(sub => {
-                const iconoEstado = sub.completado ? '✅' : '⭕';
-                const claseEstado = sub.completado ? 'completado' : 'pendiente';
-                contenido += `<li class="tooltip-subobjetivo ${claseEstado}">
+
+        objetivoData.subobjetivos.forEach((sub) => {
+          const iconoEstado = sub.completado ? "✅" : "⭕";
+          const claseEstado = sub.completado ? "completado" : "pendiente";
+          contenido += `<li class="tooltip-subobjetivo ${claseEstado}">
                     ${iconoEstado} ${sub.titulo}
                 </li>`;
-            });
-            
-            contenido += `</ul></div>`;
-        } else {
-            contenido += `<div class="tooltip-sin-subobjetivos">Sin subobjetivos</div>`;
-        }
-        
-        contenido += `</div>`;
-        
-        // Crear elemento tooltip
-        tooltipPersonalizado = document.createElement('div');
-        tooltipPersonalizado.className = 'tooltip-personalizado bs-tooltip-top';
-        tooltipPersonalizado.innerHTML = `
+        });
+
+        contenido += `</ul></div>`;
+      } else {
+        contenido += `<div class="tooltip-sin-subobjetivos">Sin subobjetivos</div>`;
+      }
+
+      contenido += `</div>`;
+
+      // Crear elemento tooltip
+      tooltipPersonalizado = document.createElement("div");
+      tooltipPersonalizado.className = "tooltip-personalizado bs-tooltip-top";
+      tooltipPersonalizado.innerHTML = `
             <div class="tooltip-arrow"></div>
             <div class="tooltip-inner">${contenido}</div>
         `;
-        
-        // Posicionar tooltip
-        document.body.appendChild(tooltipPersonalizado);
-        
-        const rect = elemento.getBoundingClientRect();
-        const tooltipRect = tooltipPersonalizado.getBoundingClientRect();
-        
-        const left = rect.left + (rect.width / 2) - (tooltipRect.width / 2);
-        const top = rect.top - tooltipRect.height - 8;
-        
-        tooltipPersonalizado.style.position = 'fixed';
-        tooltipPersonalizado.style.left = Math.max(10, left) + 'px';
-        tooltipPersonalizado.style.top = Math.max(10, top) + 'px';
-        tooltipPersonalizado.style.zIndex = '1070';
-        tooltipPersonalizado.style.opacity = '0';
-        tooltipPersonalizado.style.transition = 'opacity 0.2s ease';
-        
-        // Mostrar con animación
-        setTimeout(() => {
-            if (tooltipPersonalizado) {
-                tooltipPersonalizado.style.opacity = '1';
-                console.log('✅ Tooltip mostrado');
-            }
-        }, 10);
-        
-        // Agregar evento para ocultar si el mouse entra al tooltip
-        tooltipPersonalizado.addEventListener('mouseenter', function() {
-            console.log('🖱️ Mouse entró al tooltip');
-        });
-        
-        tooltipPersonalizado.addEventListener('mouseleave', function() {
-            console.log('🖱️ Mouse salió del tooltip');
-            ocultarTooltipConSubobjetivos();
-        });
-        
-    } catch (error) {
-        console.error('Error mostrando tooltip con subobjetivos:', error);
-    }
-}
 
-// Función para ocultar tooltip con subobjetivos
-function ocultarTooltipConSubobjetivos(elemento = null) {
-    console.log('🔄 Intentando ocultar tooltip...');
-    
+      // Posicionar tooltip
+      document.body.appendChild(tooltipPersonalizado);
+
+      const rect = elemento.getBoundingClientRect();
+      const tooltipRect = tooltipPersonalizado.getBoundingClientRect();
+
+      const left = rect.left + rect.width / 2 - tooltipRect.width / 2;
+      const top = rect.top - tooltipRect.height - 8;
+
+      tooltipPersonalizado.style.position = "fixed";
+      tooltipPersonalizado.style.left = Math.max(10, left) + "px";
+      tooltipPersonalizado.style.top = Math.max(10, top) + "px";
+      tooltipPersonalizado.style.zIndex = "1070";
+      tooltipPersonalizado.style.opacity = "0";
+      tooltipPersonalizado.style.transition = "opacity 0.2s ease";
+
+      // Mostrar con animación
+      setTimeout(() => {
+        if (tooltipPersonalizado) {
+          tooltipPersonalizado.style.opacity = "1";
+          console.log("✅ Tooltip mostrado");
+        }
+      }, 10);
+
+      // Agregar evento para ocultar si el mouse entra al tooltip
+      tooltipPersonalizado.addEventListener("mouseenter", function () {
+        console.log("🖱️ Mouse entró al tooltip");
+      });
+
+      tooltipPersonalizado.addEventListener("mouseleave", function () {
+        console.log("🖱️ Mouse salió del tooltip");
+        ocultarTooltipConSubobjetivos();
+      });
+    } catch (error) {
+      console.error("Error mostrando tooltip con subobjetivos:", error);
+    }
+  }
+
+  // Función para ocultar tooltip con subobjetivos
+  function ocultarTooltipConSubobjetivos(elemento = null) {
+    console.log("🔄 Intentando ocultar tooltip...");
+
     // Cancelar timeout anterior si existe
     if (timeoutTooltip) {
-        clearTimeout(timeoutTooltip);
-        timeoutTooltip = null;
+      clearTimeout(timeoutTooltip);
+      timeoutTooltip = null;
     }
-    
+
     // Ocultar inmediatamente sin timeout
     if (tooltipPersonalizado) {
-        console.log('👻 Ocultando tooltip inmediatamente');
-        tooltipPersonalizado.style.opacity = '0';
-        
-        setTimeout(() => {
-            if (tooltipPersonalizado && tooltipPersonalizado.parentNode) {
-                tooltipPersonalizado.parentNode.removeChild(tooltipPersonalizado);
-                console.log('🗑️ Tooltip eliminado del DOM');
-            }
-            tooltipPersonalizado = null;
-        }, 200);
-    } else {
-        console.log('⚠️ No hay tooltip para ocultar');
-    }
-}
+      console.log("👻 Ocultando tooltip inmediatamente");
+      tooltipPersonalizado.style.opacity = "0";
 
-// Función para cargar solo el contador (sin mostrar la sección completa)
-async function cargarContadorObjetivosManana() {
-    try {
-        const response = await fetch('/api/objetivos/manana');
-        const data = await response.json();
-        
-        if (response.ok) {
-            // Actualizar contador
-            const contador = document.getElementById('contador-objetivos-manana');
-            if (contador) {
-                contador.textContent = `${data.total} objetivo${data.total !== 1 ? 's' : ''}`;
-            }
-            
-            // Actualizar fecha en el header
-            const fechaHeader = document.getElementById('fecha-manana-header');
-            if (fechaHeader && data.fecha_manana) {
-                const fecha = new Date(data.fecha_manana + 'T00:00:00');
-                const opciones = { 
-                    weekday: 'short', 
-                    month: 'short', 
-                    day: 'numeric' 
-                };
-                fechaHeader.textContent = `(${fecha.toLocaleDateString('es-ES', opciones)})`;
-            }
-            
-            console.log(`📅 Contador de mañana: ${data.total} objetivos`);
+      setTimeout(() => {
+        if (tooltipPersonalizado && tooltipPersonalizado.parentNode) {
+          tooltipPersonalizado.parentNode.removeChild(tooltipPersonalizado);
+          console.log("🗑️ Tooltip eliminado del DOM");
         }
-    } catch (error) {
-        console.log('📅 Error cargando contador de mañana (silencioso):', error.message);
+        tooltipPersonalizado = null;
+      }, 200);
+    } else {
+      console.log("⚠️ No hay tooltip para ocultar");
     }
-}
+  }
 
+  // Función para cargar solo el contador (sin mostrar la sección completa)
+  async function cargarContadorObjetivosManana() {
+    try {
+      const response = await fetch("/api/objetivos/manana");
+      const data = await response.json();
+
+      if (response.ok) {
+        // Actualizar contador
+        const contador = document.getElementById("contador-objetivos-manana");
+        if (contador) {
+          contador.textContent = `${data.total} objetivo${
+            data.total !== 1 ? "s" : ""
+          }`;
+        }
+
+        // Actualizar fecha en el header
+        const fechaHeader = document.getElementById("fecha-manana-header");
+        if (fechaHeader && data.fecha_manana) {
+          const fecha = new Date(data.fecha_manana + "T00:00:00");
+          const opciones = {
+            weekday: "short",
+            month: "short",
+            day: "numeric",
+          };
+          fechaHeader.textContent = `(${fecha.toLocaleDateString(
+            "es-ES",
+            opciones
+          )})`;
+        }
+
+        console.log(`📅 Contador de mañana: ${data.total} objetivos`);
+      }
+    } catch (error) {
+      console.log(
+        "📅 Error cargando contador de mañana (silencioso):",
+        error.message
+      );
+    }
+  }
 </script>
 
 {% endblock %}
