@@ -87,9 +87,8 @@ function agregarBotonesFocusSubobjetivos() {
         opcionEliminar.textContent = '🗑️ Eliminar';
         selectAcciones.appendChild(opcionEliminar);
         
-        if (isCompleted) {
-            selectAcciones.disabled = true;
-        }
+        // NO deshabilitar el select aunque esté completado
+        // Los usuarios deben poder editar/eliminar subobjetivos completados
         
         // Agregar evento al select
         selectAcciones.onchange = function() {

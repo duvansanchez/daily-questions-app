@@ -1246,6 +1246,22 @@ async function cargarObjetivos() {
     try {
         const res = await fetch('/api/objetivos');
         objetivos = await res.json();
+        
+        // FILTRAR objetivos programados para fechas futuras
+        const hoy = new Date();
+        hoy.setHours(0, 0, 0, 0);
+        
+        objetivos = objetivos.filter(obj => {
+            // Si no tiene fecha_programada, mostrarlo (es para hoy)
+            if (!obj.fecha_programada) {
+                return true;
+            }
+            
+            // Si tiene fecha_programada, solo mostrarlo si es hoy o antes
+            const fechaProgramada = new Date(obj.fecha_programada + 'T00:00:00');
+            return fechaProgramada <= hoy;
+        });
+        
         // Obtener mapa de objetivos padre
         try {
             const resPadre = await fetch('/api/objetivos_padre');
@@ -1937,6 +1953,10 @@ if (formNuevo) {
       return;
     }
     try {
+      // Obtener campos de programación
+      const programadoPara = document.getElementById('modal-programado-para').value;
+      const fechaProgramada = document.getElementById('modal-fecha-programada').value || null;
+      
       const res = await fetch('/api/objetivos', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1953,7 +1973,9 @@ if (formNuevo) {
           recompensa,
           parte_dia: parteDia,
           recurrente,
-          frecuencia
+          frecuencia,
+          programado_para: programadoPara || null,
+          fecha_programada: fechaProgramada
         })
       });
       const result = await res.json();
@@ -1973,6 +1995,32 @@ if (formNuevo) {
         await cargarObjetivos();
         const modal = bootstrap.Modal.getInstance(document.getElementById('modalNuevoObjetivo'));
         if (modal) modal.hide();
+        
+        // Mostrar alerta según si está programado o no
+        if (programadoPara && programadoPara !== '') {
+          let fechaTexto = '';
+          if (programadoPara === 'mañana') {
+            fechaTexto = 'mañana';
+          } else if (programadoPara === 'fecha_especifica' && fechaProgramada) {
+            const fecha = new Date(fechaProgramada + 'T00:00:00');
+            fechaTexto = fecha.toLocaleDateString('es-ES', { 
+              weekday: 'long', 
+              year: 'numeric', 
+              month: 'long', 
+              day: 'numeric' 
+            });
+          }
+          
+          Swal.fire({
+            title: '¡Objetivo programado!',
+            html: `El objetivo "<strong>${titulo}</strong>" ha sido programado para <strong>${fechaTexto}</strong>.<br><br>Aparecerá en tu lista ese día.`,
+            icon: 'success',
+            confirmButtonText: 'Entendido'
+          });
+        } else {
+          showSuccess('Objetivo creado exitosamente');
+        }
+        
         // Cambiar a la pestaña de la categoría si aplica
         const categorias = ['diario', 'semanal', 'mensual', 'anual', 'general'];
         if (categorias.includes(categoria)) {
@@ -2384,13 +2432,36 @@ document.getElementById('btn-deseleccionar-recurrentes')?.addEventListener('clic
     });
     
     try {
-        // Desmarcar todos los objetivos
+        // Desmarcar todos los objetivos Y sus subobjetivos
         for (const obj of recurrentesMarcados) {
+            // Desmarcar el objetivo
             await fetch(`/api/objetivos/${obj.id}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ completado: false })
             });
+            
+            // Obtener y desmarcar todos los subobjetivos del objetivo
+            try {
+                const subResponse = await fetch(`/api/objetivos/${obj.id}/subobjetivos`);
+                if (subResponse.ok) {
+                    const subobjetivos = await subResponse.json();
+                    
+                    // Desmarcar cada subobjetivo que esté completado
+                    for (const sub of subobjetivos) {
+                        if (sub.completado) {
+                            await fetch(`/api/subobjetivos/${sub.id}`, {
+                                method: 'PATCH',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ completado: false })
+                            });
+                        }
+                    }
+                }
+            } catch (subError) {
+                console.error(`Error al desmarcar subobjetivos del objetivo ${obj.id}:`, subError);
+                // Continuar con el siguiente objetivo aunque falle
+            }
         }
         
         // Recargar objetivos
@@ -3963,6 +4034,34 @@ function renderizarObjetivosProgramadosMañana() {
 // Event listener para el select de programación en modal de editar
 document.getElementById('editar-programado-para')?.addEventListener('change', function() {
     const fechaProgramada = document.getElementById('editar-fecha-programada');
+    
+    if (this.value === 'fecha_especifica') {
+        fechaProgramada.disabled = false;
+        fechaProgramada.focus();
+        
+        // Si no hay fecha, sugerir mañana
+        if (!fechaProgramada.value) {
+            const mañana = new Date();
+            mañana.setDate(mañana.getDate() + 1);
+            fechaProgramada.value = mañana.toISOString().split('T')[0];
+        }
+    } else {
+        fechaProgramada.disabled = true;
+        if (this.value === 'mañana') {
+            // Establecer fecha de mañana automáticamente
+            const mañana = new Date();
+            mañana.setDate(mañana.getDate() + 1);
+            fechaProgramada.value = mañana.toISOString().split('T')[0];
+        } else {
+            // Limpiar fecha si no está programado
+            fechaProgramada.value = '';
+        }
+    }
+});
+
+// Event listener para el select de programación en modal de NUEVO objetivo
+document.getElementById('modal-programado-para')?.addEventListener('change', function() {
+    const fechaProgramada = document.getElementById('modal-fecha-programada');
     
     if (this.value === 'fecha_especifica') {
         fechaProgramada.disabled = false;

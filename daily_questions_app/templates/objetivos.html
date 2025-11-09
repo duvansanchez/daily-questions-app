@@ -1130,6 +1130,59 @@ endblock %} {% block head %}
           <hr
             style="border-top: 1.5px dashed #b6d4fe; margin: 1.2rem 0 1rem 0"
           />
+
+          <!-- Sección de Programación -->
+          <div class="mb-3">
+            <label class="form-label fw-semibold">
+              <i class="bi bi-calendar-plus me-2"></i>Programación
+            </label>
+            <div class="card border-info bg-light">
+              <div class="card-body py-3">
+                <div class="row g-2">
+                  <div class="col-md-6">
+                    <label
+                      for="modal-programado-para"
+                      class="form-label small fw-semibold"
+                    >
+                      Programar para:
+                    </label>
+                    <select class="form-select" id="modal-programado-para">
+                      <option value="">Hoy (sin programar)</option>
+                      <option value="mañana">📅 Mañana</option>
+                      <option value="fecha_especifica">
+                        📆 Fecha específica
+                      </option>
+                    </select>
+                  </div>
+                  <div class="col-md-6">
+                    <label
+                      for="modal-fecha-programada"
+                      class="form-label small fw-semibold"
+                    >
+                      Fecha específica:
+                    </label>
+                    <input
+                      type="date"
+                      class="form-control"
+                      id="modal-fecha-programada"
+                      disabled
+                    />
+                  </div>
+                </div>
+                <div class="mt-2">
+                  <small class="text-muted">
+                    <i class="bi bi-info-circle me-1"></i>
+                    Los objetivos programados no aparecerán en la lista de hoy
+                    hasta la fecha seleccionada.
+                  </small>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <hr
+            style="border-top: 1.5px dashed #b6d4fe; margin: 1.2rem 0 1rem 0"
+          />
           <div class="mb-3">
             <button
               type="button"
