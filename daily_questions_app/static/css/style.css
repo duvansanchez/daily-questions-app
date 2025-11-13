@@ -1107,9 +1107,22 @@ h1 {
     border: none;
     border-radius: 0;
     min-height: 1.8rem;
-    padding: 0;
-    margin-bottom: 0.15rem;
+    padding: 0 0 0.3rem 0;
+    margin-bottom: 0.3rem;
     box-sizing: border-box;
+}
+
+/* Línea divisora solo entre subobjetivos existentes (no en el input de agregar) */
+.subobjetivos-list .subobjetivo-item {
+    border-bottom: 1px solid #2563eb;
+    padding-bottom: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.subobjetivos-list .subobjetivo-item:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
 }
 
 .subobjetivo-item input[type="text"] {
@@ -1587,6 +1600,11 @@ h1 {
     align-items: center;
     padding: 6px 16px 6px 48px;
     transition: background 0.2s ease;
+    border-bottom: 1px solid #2563eb;
+}
+
+.subobjetivo-lista-item:last-child {
+    border-bottom: none;
 }
 
 .subobjetivo-lista-item:hover {
