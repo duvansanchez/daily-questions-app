@@ -1262,6 +1262,26 @@ async function cargarObjetivos() {
             return fechaProgramada <= hoy;
         });
         
+        // Cargar subobjetivos para cada objetivo EN PARALELO para calcular tiempo total
+        console.log('📊 Cargando subobjetivos en paralelo...');
+        const promesasSubobjetivos = objetivos.map(async (obj) => {
+            try {
+                const resSub = await fetch(`/api/objetivos/${obj.id}/subobjetivos`);
+                if (resSub.ok) {
+                    obj.subobjetivos = await resSub.json();
+                } else {
+                    obj.subobjetivos = [];
+                }
+            } catch (err) {
+                console.error(`Error cargando subobjetivos para objetivo ${obj.id}:`, err);
+                obj.subobjetivos = [];
+            }
+        });
+        
+        // Esperar a que todas las peticiones terminen
+        await Promise.all(promesasSubobjetivos);
+        console.log('✅ Subobjetivos cargados para todos los objetivos');
+        
         // Obtener mapa de objetivos padre
         try {
             const resPadre = await fetch('/api/objetivos_padre');
@@ -1512,6 +1532,15 @@ function renderObjetivos() {
                 elemento.classList.add('resaltado-activo');
             }
             
+            // Calcular tiempo total (objetivo + subobjetivos)
+            let tiempoTotal = obj.tiempo_focus || 0;
+            if (obj.subobjetivos && obj.subobjetivos.length > 0) {
+                const tiempoSubobjetivos = obj.subobjetivos.reduce((total, sub) => {
+                    return total + (sub.tiempo_focus || 0);
+                }, 0);
+                tiempoTotal += tiempoSubobjetivos;
+            }
+            
             // Crear etiquetas para la vista de lista
             let etiquetas = [];
             if (obj.prioridad) {
@@ -1525,6 +1554,13 @@ function renderObjetivos() {
             }
             if (obj.horas_estimadas) {
                 etiquetas.push(`<span class="objetivo-lista-etiqueta horas"><i class='bi bi-clock me-1'></i>${formatearHorasMinutos(obj.horas_estimadas)}</span>`);
+            }
+            // Agregar etiqueta de tiempo focus total si existe
+            if (tiempoTotal > 0) {
+                const minutos = Math.floor(tiempoTotal / 60);
+                const segundos = tiempoTotal % 60;
+                const tiempoFormateado = `${minutos}:${segundos.toString().padStart(2, '0')}`;
+                etiquetas.push(`<span class="objetivo-lista-etiqueta tiempo-focus"><i class='bi bi-bullseye me-1'></i>${tiempoFormateado}</span>`);
             }
             if (obj.recompensa) {
                 etiquetas.push(`<span class="objetivo-lista-etiqueta recompensa"><i class='bi bi-gift me-1'></i>${obj.recompensa}</span>`);
@@ -1594,6 +1630,23 @@ function renderObjetivos() {
                     ${fechaInicio ? `<span class=\"objetivo-fecha\"><i class='bi bi-calendar-event'></i> Inicio: ${fechaInicio}</span>` : ''}
                     ${fechaFin ? `<span class=\"objetivo-fecha\"><i class='bi bi-calendar-check'></i> Fin: ${fechaFin}</span>` : ''}
                     ${obj.horas_estimadas ? `<span class=\"objetivo-horas\"><i class='bi bi-clock'></i> ${formatearHorasMinutos(obj.horas_estimadas)}</span>` : ''}
+                    ${(() => {
+                        // Calcular tiempo total (objetivo + subobjetivos)
+                        let tiempoTotal = obj.tiempo_focus || 0;
+                        if (obj.subobjetivos && obj.subobjetivos.length > 0) {
+                            const tiempoSubobjetivos = obj.subobjetivos.reduce((total, sub) => {
+                                return total + (sub.tiempo_focus || 0);
+                            }, 0);
+                            tiempoTotal += tiempoSubobjetivos;
+                        }
+                        if (tiempoTotal > 0) {
+                            const minutos = Math.floor(tiempoTotal / 60);
+                            const segundos = tiempoTotal % 60;
+                            const tiempoFormateado = `${minutos}:${segundos.toString().padStart(2, '0')}`;
+                            return `<span class=\"objetivo-tiempo-focus\"><i class='bi bi-bullseye'></i> Focus: ${tiempoFormateado}</span>`;
+                        }
+                        return '';
+                    })()}
                     ${obj.parte_dia ? `<span class=\"objetivo-parte-dia\"><i class='bi bi-${obj.parte_dia === 'mañana' ? 'sunrise' : obj.parte_dia === 'tarde' ? 'sun' : 'moon'}'></i> ${obj.parte_dia.charAt(0).toUpperCase() + obj.parte_dia.slice(1)}</span>` : ''}
 
                 </div>
@@ -5525,16 +5578,40 @@ async function abrirModoFocus(objetivoId) {
                 textoTiempo += `⏱️ Estimado: ${formatearHorasMinutos(objetivo.horas_estimadas)}`;
             }
             
+            // Calcular tiempo total (objetivo + subobjetivos)
+            let tiempoTotal = objetivo.tiempo_focus || 0;
+            
+            // Obtener tiempo de subobjetivos si existen
+            if (objetivo.subobjetivos && objetivo.subobjetivos.length > 0) {
+                const tiempoSubobjetivos = objetivo.subobjetivos.reduce((total, sub) => {
+                    return total + (sub.tiempo_focus || 0);
+                }, 0);
+                tiempoTotal += tiempoSubobjetivos;
+            }
+            
             // Mostrar tiempo acumulado de focus si existe
-            if (objetivo.tiempo_focus && objetivo.tiempo_focus > 0) {
-                const minutos = Math.floor(objetivo.tiempo_focus / 60);
-                const segundos = objetivo.tiempo_focus % 60;
+            if (tiempoTotal > 0) {
+                const minutos = Math.floor(tiempoTotal / 60);
+                const segundos = tiempoTotal % 60;
                 const tiempoFocusFormateado = `${minutos}:${segundos.toString().padStart(2, '0')}`;
+                
+                // Mostrar desglose si hay subobjetivos con tiempo
+                const tiempoObjetivo = objetivo.tiempo_focus || 0;
+                const tiempoSubs = tiempoTotal - tiempoObjetivo;
                 
                 if (textoTiempo) {
                     textoTiempo += ` | 🎯 Focus: ${tiempoFocusFormateado}`;
                 } else {
                     textoTiempo = `🎯 Tiempo Focus: ${tiempoFocusFormateado}`;
+                }
+                
+                // Agregar desglose si hay tiempo de subobjetivos
+                if (tiempoSubs > 0) {
+                    const minObj = Math.floor(tiempoObjetivo / 60);
+                    const segObj = tiempoObjetivo % 60;
+                    const minSub = Math.floor(tiempoSubs / 60);
+                    const segSub = tiempoSubs % 60;
+                    textoTiempo += ` (Obj: ${minObj}:${segObj.toString().padStart(2, '0')} + Subs: ${minSub}:${segSub.toString().padStart(2, '0')})`;
                 }
             }
             
