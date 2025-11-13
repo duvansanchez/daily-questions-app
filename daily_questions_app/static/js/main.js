@@ -1438,6 +1438,28 @@ function ordenarObjetivos(objetivos, criterio) {
     }
 }
 
+// Funciones para guardar y restaurar estado de subobjetivos
+function guardarEstadoSubobjetivos(objetivoId, visible) {
+    try {
+        const estadoActual = JSON.parse(localStorage.getItem('subobjetivosEstado') || '{}');
+        estadoActual[objetivoId] = visible;
+        localStorage.setItem('subobjetivosEstado', JSON.stringify(estadoActual));
+        console.log(`💾 Estado guardado para objetivo ${objetivoId}: ${visible ? 'visible' : 'oculto'}`);
+    } catch (error) {
+        console.error('Error guardando estado de subobjetivos:', error);
+    }
+}
+
+function obtenerEstadoSubobjetivos(objetivoId) {
+    try {
+        const estadoActual = JSON.parse(localStorage.getItem('subobjetivosEstado') || '{}');
+        return estadoActual[objetivoId] || false; // Por defecto oculto
+    } catch (error) {
+        console.error('Error obteniendo estado de subobjetivos:', error);
+        return false;
+    }
+}
+
 function renderObjetivos() {
     const lista = document.getElementById('lista-objetivos');
     if (!lista) {
@@ -1570,6 +1592,11 @@ function renderObjetivos() {
                 etiquetas.push(`<span class="objetivo-lista-etiqueta parte-dia"><i class='bi bi-${iconoParte} me-1'></i>${obj.parte_dia.charAt(0).toUpperCase() + obj.parte_dia.slice(1)}</span>`);
             }
             
+            // Obtener estado guardado de subobjetivos
+            const estadoSubobjetivos = obtenerEstadoSubobjetivos(obj.id);
+            const chevronIcon = 'bi-list';
+            const expandedClass = estadoSubobjetivos ? ' expanded' : '';
+            
             elemento.innerHTML = `
                 <div class="objetivo-lista-principal">
                     <input type="checkbox" class="objetivo-lista-checkbox check-objetivo" ${obj.completado ? 'checked' : ''} data-id="${obj.id}">
@@ -1579,8 +1606,8 @@ function renderObjetivos() {
                         ${etiquetas.length > 0 ? `<div class="objetivo-lista-meta">${etiquetas.join('')}</div>` : ''}
                     </div>
                     <div class="objetivo-lista-acciones">
-                        <button class="objetivo-lista-btn toggle-subobjetivos" title="Mostrar/ocultar subobjetivos" data-objetivo-id="${obj.id}">
-                            <i class="bi bi-chevron-down"></i>
+                        <button class="objetivo-lista-btn toggle-subobjetivos${expandedClass}" title="Mostrar/ocultar subobjetivos" data-objetivo-id="${obj.id}">
+                            <i class="${chevronIcon}"></i>
                         </button>
                         <button class="objetivo-lista-btn focus" title="Modo Focus" data-id="${obj.id}">
                             <i class="bi bi-bullseye"></i>
@@ -1596,7 +1623,7 @@ function renderObjetivos() {
                         ${obj.recurrente && obj.saltado_hoy && !obj.completado ? `<button class="objetivo-lista-btn reactivar" title="Reactivar hoy" data-id="${obj.id}">Reactivar hoy</button>` : ''}
                     </div>
                 </div>
-                <div class="objetivo-lista-subobjetivos" id="subobjetivos-lista-${obj.id}" style="display: none;">
+                <div class="objetivo-lista-subobjetivos" id="subobjetivos-lista-${obj.id}" style="display: ${estadoSubobjetivos ? 'block' : 'none'};">
                     <!-- Los subobjetivos se cargarán aquí -->
                 </div>
             `;
@@ -1656,10 +1683,12 @@ function renderObjetivos() {
                     <div class=\"subobjetivos-add\" style=\"display:none;\" id=\"subobjetivos-add-${obj.id}\">
                         <div class=\"d-flex gap-2 mt-2\">
                             <input type=\"text\" class=\"form-control form-control-sm subobjetivo-input\" placeholder=\"Nuevo subobjetivo...\">
-                            <button class=\"btn btn-sm btn-primary subobjetivo-add-btn\">Agregar</button>
+                            <button class=\"btn btn-sm btn-primary subobjetivo-add-btn\" style=\"width:32px; height:32px; padding:0; display:flex; align-items:center; justify-content:center;\">
+                                <i class=\"bi bi-plus\" style=\"font-size:1.2rem;\"></i>
+                            </button>
                         </div>
                     </div>
-                    <button class=\"btn btn-outline-secondary btn-sm rounded-circle subobjetivo-toggle-btn\" data-objetivo-id=\"${obj.id}\" title=\"Mostrar checklist\" style=\"padding:0.3rem 0.5rem; font-size:1.1rem;\">
+                    <button class=\"btn btn-outline-secondary btn-sm rounded-circle subobjetivo-toggle-btn\" data-objetivo-id=\"${obj.id}\" title=\"Mostrar/ocultar subobjetivos\" style=\"padding:0.3rem 0.5rem; font-size:1.1rem;\">
                         <i class=\"bi bi-list-check\"></i>
                     </button>
                 </div>
@@ -1686,6 +1715,12 @@ function renderObjetivos() {
         // Cargar y renderizar subobjetivos para este objetivo
         if (vistaActual === 'tarjetas') {
             cargarYRenderizarSubobjetivos(obj.id);
+        } else if (vistaActual === 'lista') {
+            // En vista de lista, cargar subobjetivos si el estado guardado es visible
+            const estadoSubobjetivos = obtenerEstadoSubobjetivos(obj.id);
+            if (estadoSubobjetivos) {
+                cargarSubobjetivosLista(obj.id);
+            }
         }
     });
     // Evento para el botón Saltar hoy
@@ -1741,8 +1776,11 @@ function renderObjetivos() {
         if (subobjetivosContainer && subobjetivosContainer.style.display === 'none') {
             // Mostrar subobjetivos
             subobjetivosContainer.style.display = 'block';
-            icon.className = 'bi bi-chevron-up';
+            icon.className = 'bi bi-list';
             toggleBtn.classList.add('expanded');
+            
+            // Guardar estado en localStorage
+            guardarEstadoSubobjetivos(objetivoId, true);
             
             // Cargar subobjetivos si no están cargados
             if (subobjetivosContainer.children.length === 0) {
@@ -1751,8 +1789,11 @@ function renderObjetivos() {
         } else if (subobjetivosContainer) {
             // Ocultar subobjetivos
             subobjetivosContainer.style.display = 'none';
-            icon.className = 'bi bi-chevron-down';
+            icon.className = 'bi bi-list';
             toggleBtn.classList.remove('expanded');
+            
+            // Guardar estado en localStorage
+            guardarEstadoSubobjetivos(objetivoId, false);
         }
     });
     // Eventos para flechas de reordenar objetivos principales
@@ -1918,13 +1959,42 @@ async function cargarYRenderizarSubobjetivos(objetivoId) {
     } catch (err) {
         contenedor.innerHTML = '<div class="text-danger small">Error al cargar checklist.</div>';
     }
-    // Mostrar/ocultar input para agregar subobjetivo
+    // Mostrar/ocultar subobjetivos y input para agregar
     const toggleBtn = document.querySelector(`#subobjetivos-container-${objetivoId} .subobjetivo-toggle-btn`);
     const addDiv = document.getElementById(`subobjetivos-add-${objetivoId}`);
-    if (toggleBtn && addDiv) {
+    const listDiv = document.getElementById(`subobjetivos-list-${objetivoId}`);
+    
+    if (toggleBtn && addDiv && listDiv) {
+        // Restaurar estado guardado
+        const estadoGuardado = obtenerEstadoSubobjetivos(objetivoId);
+        const icon = toggleBtn.querySelector('i');
+        
+        if (estadoGuardado) {
+            listDiv.style.display = '';
+            addDiv.style.display = '';
+            if (icon) icon.className = 'bi bi-list';
+        } else {
+            listDiv.style.display = 'none';
+            addDiv.style.display = 'none';
+            if (icon) icon.className = 'bi bi-list';
+        }
+        
         toggleBtn.addEventListener('click', function() {
-            addDiv.style.display = addDiv.style.display === 'none' ? '' : 'none';
+            const estaVisible = listDiv.style.display !== 'none';
+            
+            if (estaVisible) {
+                // Ocultar
+                listDiv.style.display = 'none';
+                addDiv.style.display = 'none';
+                guardarEstadoSubobjetivos(objetivoId, false);
+            } else {
+                // Mostrar
+                listDiv.style.display = '';
+                addDiv.style.display = '';
+                guardarEstadoSubobjetivos(objetivoId, true);
+            }
         });
+        
         // Evento para agregar subobjetivo (solo una vez)
         const addBtn = addDiv.querySelector('.subobjetivo-add-btn');
         const input = addDiv.querySelector('.subobjetivo-input');
