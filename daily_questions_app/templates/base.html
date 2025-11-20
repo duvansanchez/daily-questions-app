@@ -58,6 +58,11 @@
                 {% if current_user.is_authenticated %}
                 <ul class="navbar-nav">
                     <li class="nav-item">
+                        <button class="btn btn-link nav-link" onclick="toggleTheme()" title="Cambiar tema" style="border: none; background: none;">
+                            <i id="theme-icon" class="bi bi-moon-fill"></i>
+                        </button>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('logout') }}">
                             <i class="bi bi-box-arrow-right"></i> Cerrar sesión
                         </a>
@@ -87,6 +92,8 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Sistema de temas (cargar primero) -->
+    <script src="{{ url_for('static', filename='js/theme-toggle.js') }}"></script>
     <script src="{{ url_for('static', filename='js/main.js') }}?v=20241031-20"></script>
     <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
