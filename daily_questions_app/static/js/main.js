@@ -2492,6 +2492,9 @@ function formatearHorasMinutos(valor) {
   return res;
 }
 
+// Hacer la función global
+window.formatearHorasMinutos = formatearHorasMinutos;
+
 document.addEventListener('change', async function(e) {
     const checkbox = e.target.closest('.check-objetivo');
     if (!checkbox) return;

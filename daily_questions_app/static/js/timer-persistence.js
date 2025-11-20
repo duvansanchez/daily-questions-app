@@ -1,5 +1,56 @@
 // ===== PERSISTENCIA DE TIEMPO PARA OBJETIVOS =====
 
+// Variables globales del timer (si no existen)
+if (typeof timerSeconds === 'undefined') {
+    window.timerSeconds = 0;
+}
+if (typeof timerRunning === 'undefined') {
+    window.timerRunning = false;
+}
+if (typeof timerInterval === 'undefined') {
+    window.timerInterval = null;
+}
+
+// Función para resetear el timer
+async function resetearTimer() {
+    console.log('🔄 OBJ: Reseteando timer...');
+    timerRunning = false;
+    timerSeconds = 0;
+    clearInterval(timerInterval);
+    
+    // Actualizar display
+    if (typeof actualizarDisplayTimer === 'function') {
+        actualizarDisplayTimer();
+    } else {
+        const display = document.getElementById('timer-display');
+        if (display) {
+            display.textContent = '00:00:00';
+        }
+    }
+    
+    // Actualizar botones
+    const startBtn = document.getElementById('timer-start');
+    const pauseBtn = document.getElementById('timer-pause');
+    if (startBtn) startBtn.style.display = 'inline-block';
+    if (pauseBtn) pauseBtn.style.display = 'none';
+    
+    // Guardar el tiempo en 0 en la base de datos
+    if (objetivoEnFocus) {
+        console.log('🔄 OBJ: Guardando tiempo en 0 en la base de datos...');
+        const guardado = await guardarTiempoObjetivo(true); // forzar=true para guardar aunque sea 0
+        if (guardado) {
+            console.log('✅ OBJ: Tiempo reseteado y guardado exitosamente');
+            showSuccess('Tiempo reiniciado correctamente');
+        } else {
+            console.error('❌ OBJ: Error al guardar el tiempo reseteado');
+            showError('Error al reiniciar el tiempo');
+        }
+    }
+}
+
+// Hacer la función global
+window.resetearTimer = resetearTimer;
+
 // Función para cargar tiempo acumulado cuando se abre el modal
 async function cargarTiempoAcumuladoObjetivo() {
     if (!objetivoEnFocus) return;
@@ -41,12 +92,12 @@ async function guardarTiempoObjetivo(forzar = false) {
     
     if (!objetivoEnFocus) {
         console.log('❌ OBJ: No hay objetivo en focus');
-        return;
+        return false;
     }
     
     if (!forzar && timerSeconds === 0) {
         console.log('❌ OBJ: Tiempo es 0, no se guarda (usar forzar=true para guardar de todos modos)');
-        return;
+        return false;
     }
     
     try {
@@ -180,6 +231,15 @@ document.addEventListener('DOMContentLoaded', function() {
 // Esta función se ejecutará cuando se abra el modal
 
 // Configuración de botones de debug removida
+
+// Event listener para el botón de reset
+document.addEventListener('DOMContentLoaded', function() {
+    const btnReset = document.getElementById('timer-reset');
+    if (btnReset) {
+        btnReset.addEventListener('click', resetearTimer);
+        console.log('✅ OBJ: Event listener para botón reset configurado');
+    }
+});
 
 // Event listeners para el modal de objetivos
 document.addEventListener('DOMContentLoaded', function() {

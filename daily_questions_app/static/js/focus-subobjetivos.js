@@ -175,7 +175,7 @@ function pausarTimerSubobjetivo() {
     }
 }
 
-function resetearTimerSubobjetivo() {
+async function resetearTimerSubobjetivo() {
     timerSubobjetivoRunning = false;
     timerSubobjetivoSeconds = 0;
     clearInterval(timerSubobjetivoInterval);
@@ -183,6 +183,19 @@ function resetearTimerSubobjetivo() {
 
     document.getElementById('timer-sub-start').style.display = 'inline-block';
     document.getElementById('timer-sub-pause').style.display = 'none';
+    
+    // Guardar el tiempo en 0 en la base de datos
+    if (subobjetivoEnFocus) {
+        console.log('🔄 SUB: Reiniciando tiempo, guardando 0 en la base de datos...');
+        const guardado = await guardarTiempoSubobjetivo(true); // forzar=true para guardar aunque sea 0
+        if (guardado) {
+            console.log('✅ SUB: Tiempo reseteado y guardado exitosamente');
+            showSuccess('Tiempo del subobjetivo reiniciado correctamente');
+        } else {
+            console.error('❌ SUB: Error al guardar el tiempo reseteado');
+            showError('Error al reiniciar el tiempo del subobjetivo');
+        }
+    }
 }
 
 function actualizarDisplayTimerSubobjetivo() {
@@ -276,12 +289,12 @@ async function guardarTiempoSubobjetivo(forzar = false) {
     
     if (!subobjetivoEnFocus) {
         console.log('❌ No hay sub-objetivo en focus');
-        return;
+        return false;
     }
     
     if (!forzar && timerSubobjetivoSeconds <= 0) {
         console.log('❌ Tiempo es 0 o menor, no se guarda (usar forzar=true para guardar de todos modos)');
-        return;
+        return false;
     }
     
     try {
@@ -301,12 +314,15 @@ async function guardarTiempoSubobjetivo(forzar = false) {
         if (response.ok) {
             const result = await response.json();
             console.log('✅ Tiempo de sub-objetivo guardado exitosamente:', result);
+            return true;
         } else {
             const errorText = await response.text();
             console.error('❌ Error al guardar tiempo de sub-objetivo:', response.status, errorText);
+            return false;
         }
     } catch (error) {
         console.error('💥 Error guardando tiempo de sub-objetivo:', error);
+        return false;
     }
 }
 
