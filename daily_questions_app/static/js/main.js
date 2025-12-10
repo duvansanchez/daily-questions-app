@@ -4280,7 +4280,11 @@ async function mostrarFraseAleatoria() {
         }
     }
     
-    const fraseAleatoria = frasesDisponibles[Math.floor(Math.random() * frasesDisponibles.length)];
+    // Priorizar frases no repasadas hoy
+    const frasesNoRepasadasHoy = frasesDisponibles.filter(f => !esRepasadaHoyFrase(f.ultima_vez));
+    const frasesSeleccionables = frasesNoRepasadasHoy.length > 0 ? frasesNoRepasadasHoy : frasesDisponibles;
+    
+    const fraseAleatoria = frasesSeleccionables[Math.floor(Math.random() * frasesSeleccionables.length)];
     
     const html = `
         <div class="text-center">
