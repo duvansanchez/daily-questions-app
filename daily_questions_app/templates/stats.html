@@ -643,11 +643,11 @@
                     <div class="col-lg-8">
                         <div class="card shadow-sm border-0 w-100 mb-4" style="max-width:900px;">
                             <div class="card-body p-0">
-                                <h6 class="fw-bold mb-3 px-4 pt-4">Productividad por Día</h6>
+                                <h6 class="fw-bold mb-2 px-4 pt-2">Productividad por Día</h6>
                                 <table class="table mb-0 table-borderless" style="font-size:1.08rem;">
                                     <tbody>
                                         {% for dia in productividad_dias %}
-                                        <tr class="align-middle" style="background-color: {% if loop.index0 % 2 == 0 %}#fcfcfc{% else %}#f7f7f7{% endif %};">
+                                        <tr class="productividad-row">
                                             <td class="ps-4" style="width:20%;">{{ dia.nombre }}</td>
                                             <td class="text-end" style="width:30%;">{{ dia.respuestas }} resp.</td>
                                             <td class="text-end fw-bold pe-4" style="width:20%;">{{ dia.porcentaje }}%</td>

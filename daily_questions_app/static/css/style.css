@@ -1775,6 +1775,20 @@ h1 {
   border-color: #0ea5e9;
 }
 
+/* Modo oscuro: asegurar contraste para frases repasadas */
+[data-theme="dark"] .frase-card.repasada-hoy {
+    background: linear-gradient(135deg, #0b1b25 0%, #0e2230 100%);
+    border-color: #38bdf8; /* azul claro para contraste en dark */
+}
+
+[data-theme="dark"] .frase-card.repasada-hoy .frase-texto,
+[data-theme="dark"] .frase-card.repasada-hoy .frase-autor,
+[data-theme="dark"] .frase-card.repasada-hoy .frase-categoria,
+[data-theme="dark"] .frase-card.repasada-hoy .frase-contador span,
+[data-theme="dark"] .frase-card.repasada-hoy .frase-ultima-vez {
+    color: #e6f6ff; /* texto claro legible sobre fondo oscuro */
+}
+
 .frase-texto {
   font-size: 1.1rem;
   line-height: 1.6;
@@ -3531,4 +3545,30 @@ los para días clickeables del calendario */
 [data-theme="dark"] .bi,
 [data-theme="dark"] .fa {
     opacity: 0.9;
+}
+
+/* Estilos específicos para modo oscuro en notas de frases */
+[data-theme="dark"] .frase-notas,
+[data-theme="dark"] .frase-notas-repaso {
+    color: var(--text-primary) !important;
+    background: var(--bg-secondary) !important;
+    border-color: var(--border-color) !important;
+}
+
+/* Estilos para filas de la tabla "Productividad por Día" */
+.productividad-row:nth-child(odd) {
+    background-color: #fcfcfc;
+}
+
+.productividad-row:nth-child(even) {
+    background-color: #f7f7f7;
+}
+
+/* Modo oscuro para filas de productividad */
+[data-theme="dark"] .productividad-row:nth-child(odd) {
+    background-color: var(--bg-tertiary);
+}
+
+[data-theme="dark"] .productividad-row:nth-child(even) {
+    background-color: var(--bg-secondary);
 }

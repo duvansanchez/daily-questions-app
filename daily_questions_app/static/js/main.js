@@ -4331,6 +4331,29 @@ function editarFrase(fraseId) {
     document.getElementById('editar-frase-categoria').value = frase.categoria;
     document.getElementById('editar-frase-notas').value = frase.notas || '';
     
+    // Preseleccionar subcategoría correctamente: cargar opciones y luego asignar valor
+    (async () => {
+        try {
+            const subSelect = document.getElementById('editar-frase-subcategoria');
+            if (subSelect) {
+                // Inicializa opciones base
+                subSelect.innerHTML = '<option value="">Selecciona una subcategoría</option><option value="nueva">+ Nueva subcategoría</option>';
+                if (frase.categoria) {
+                    // Reutiliza la función global si existe en la página
+                    if (typeof cargarSubcategoriasParaCategoria === 'function') {
+                        await cargarSubcategoriasParaCategoria(frase.categoria, 'editar-frase-subcategoria');
+                    }
+                    // Asigna el valor de la subcategoría si existe
+                    if (frase.subcategoria) {
+                        subSelect.value = frase.subcategoria;
+                    }
+                }
+            }
+        } catch (e) {
+            console.warn('No se pudo preseleccionar la subcategoría en edición:', e);
+        }
+    })();
+    
     const modal = new bootstrap.Modal(document.getElementById('modalEditarFrase'));
     modal.show();
     
