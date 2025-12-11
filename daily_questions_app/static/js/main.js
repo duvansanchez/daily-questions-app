@@ -3738,7 +3738,7 @@ function mostrarFraseRepaso() {
     
     contenedor.innerHTML = `
         <div class="frase-repaso-card">
-            <div class="frase-texto-repaso mb-4" style="font-size: 1.5rem; color: #000000; line-height: 1.6;">
+            <div class="frase-texto-repaso mb-4" style="font-size: 1.5rem; font-weight: 500; color: #1a202c; line-height: 1.6; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);">
                 "${frase.texto}"
             </div>
             ${frase.autor ? `<div class="frase-autor-repaso mb-3" style="font-size: 1.1rem; color: #000000;">— ${frase.autor}</div>` : ''}
@@ -3748,7 +3748,7 @@ function mostrarFraseRepaso() {
                     ${capitalizarPrimeraLetra((frase.subcategoria && frase.subcategoria.trim()) ? frase.subcategoria : frase.categoria)}
                 </span>
             </div>
-            ${frase.notas ? `<div class="frase-notas-repaso mt-3 p-3 bg-light rounded" style="font-style: italic; color: #51565f;">${frase.notas}</div>` : ''}
+            ${frase.notas ? `<div class="frase-notas-repaso mt-3 p-3 rounded" style="font-style: italic;">${frase.notas}</div>` : ''}
         </div>
     `;
     

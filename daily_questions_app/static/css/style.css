@@ -2087,10 +2087,17 @@ ESTILOS PARA SESIÓN DE REPASO DE FRASES === */
 }
 
 .frase-notas-repaso {
-    font-size: 0.95rem;
+    font-size: 1.0rem;
     line-height: 1.5;
     white-space: pre-wrap;
     word-wrap: break-word;
+    border-left: 5px solid #6366f1;
+    border-top: 1px solid rgba(99, 102, 241, 0.3);
+    border-bottom: 1px solid rgba(99, 102, 241, 0.3);
+    background: linear-gradient(135deg, #f0f4ff 0%, #e0e7ff 100%);
+    box-shadow: 0 3px 8px rgba(99, 102, 241, 0.15);
+    color: #1f2937;
+    position: relative;
 }
 
 .progress-container {
@@ -3551,8 +3558,11 @@ los para días clickeables del calendario */
 [data-theme="dark"] .frase-notas,
 [data-theme="dark"] .frase-notas-repaso {
     color: var(--text-primary) !important;
-    background: var(--bg-secondary) !important;
-    border-color: var(--border-color) !important;
+    background: linear-gradient(135deg, rgba(30, 58, 138, 0.4) 0%, rgba(37, 99, 235, 0.3) 100%) !important;
+    border-left-color: #818cf8 !important;
+    border-top-color: rgba(129, 140, 248, 0.5) !important;
+    border-bottom-color: rgba(129, 140, 248, 0.5) !important;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3) !important;
 }
 
 /* Estilos para filas de la tabla "Productividad por Día" */
