@@ -288,6 +288,38 @@ def objetivos_stats_summary():
         logger.error(f"Error en objetivos_stats_summary: {str(e)}")
         return jsonify({'status': 'error', 'message': 'No se pudieron calcular las estadísticas de objetivos'}), 500
 
+def obtener_subobjetivos_completados_fecha(cursor, user_id, fecha):
+    """
+    Función auxiliar para obtener subobjetivos completados en una fecha específica.
+    Sigue el principio de función pequeña con una sola responsabilidad.
+    """
+    query_subobjetivos = """
+        SELECT s.id, s.titulo, s.objetivo_id, o.titulo as objetivo_titulo,
+               scl.fecha_completado, 
+               FORMAT(scl.fecha_creacion, 'HH:mm:ss') as hora_completado
+        FROM subobjetivos s
+        INNER JOIN subobjetivos_completados_log scl ON s.id = scl.subobjetivo_id
+        INNER JOIN objetivos o ON s.objetivo_id = o.id
+        WHERE scl.user_id = ? 
+          AND CAST(scl.fecha_completado AS DATE) = CAST(? AS DATE)
+        ORDER BY scl.fecha_creacion ASC
+    """
+    
+    cursor.execute(query_subobjetivos, (user_id, fecha))
+    subobjetivos_completados = []
+    
+    for row in cursor.fetchall():
+        subobjetivos_completados.append({
+            'id': row.id,
+            'titulo': row.titulo,
+            'objetivo_id': row.objetivo_id,
+            'objetivo_titulo': row.objetivo_titulo,
+            'fecha_completado': fecha,
+            'hora_completado': row.hora_completado
+        })
+    
+    return subobjetivos_completados
+
 @app.route('/api/objetivos/dia/<fecha>', methods=['GET'])
 @login_required
 def objetivos_detalle_dia(fecha):
@@ -408,10 +440,14 @@ def objetivos_detalle_dia(fecha):
                     'tipo_origen': 'recurrente_pendiente'
                 })
             
+            # Obtener subobjetivos completados en esta fecha
+            subobjetivos_completados = obtener_subobjetivos_completados_fecha(cursor, current_user.id, fecha)
+            
             resumen = {
                 'total_creados': len(objetivos_creados),
                 'total_completados': len(objetivos_completados),
-                'total_recurrentes_pendientes': len(objetivos_recurrentes_pendientes)
+                'total_recurrentes_pendientes': len(objetivos_recurrentes_pendientes),
+                'total_subobjetivos_completados': len(subobjetivos_completados)
             }
             
             return jsonify({
@@ -420,7 +456,8 @@ def objetivos_detalle_dia(fecha):
                 'resumen': resumen,
                 'objetivos_creados': objetivos_creados,
                 'objetivos_completados': objetivos_completados,
-                'objetivos_recurrentes_pendientes': objetivos_recurrentes_pendientes
+                'objetivos_recurrentes_pendientes': objetivos_recurrentes_pendientes,
+                'subobjetivos_completados': subobjetivos_completados
             })
             
     except Exception as e:
@@ -4518,12 +4555,17 @@ def api_update_subobjetivo(subobjetivo_id):
     
     campos = []
     valores = []
+    completado_changed = False
+    nuevo_completado = None
+    
     if 'titulo' in data:
         campos.append('titulo = ?')
         valores.append(data['titulo'].strip())
     if 'completado' in data:
         campos.append('completado = ?')
-        valores.append(int(bool(data['completado'])))
+        nuevo_completado = int(bool(data['completado']))
+        valores.append(nuevo_completado)
+        completado_changed = True
     if 'tiempo_focus' in data:
         campos.append('tiempo_focus = ?')
         valores.append(int(data['tiempo_focus']))
@@ -4542,10 +4584,93 @@ def api_update_subobjetivo(subobjetivo_id):
     
     with get_db_connection() as conn:
         cursor = conn.cursor()
+        
+        # Obtener información del subobjetivo antes de actualizar
+        cursor.execute('SELECT objetivo_id, completado FROM subobjetivos WHERE id = ?', (subobjetivo_id,))
+        subobj_info = cursor.fetchone()
+        if not subobj_info:
+            return jsonify({'error': 'Subobjetivo no encontrado'}), 404
+        
+        objetivo_id, completado_actual = subobj_info
+        
+        # Actualizar el subobjetivo
         cursor.execute(f'''UPDATE subobjetivos SET {', '.join(campos)} WHERE id = ?''', tuple(valores))
+        
+        # Si cambió el estado de completado, registrar en el log
+        if completado_changed:
+            fecha_hoy = datetime.now().date()
+            
+            if nuevo_completado == 1 and completado_actual == 0:
+                # Se completó el subobjetivo - agregar al log
+                try:
+                    cursor.execute('''
+                        INSERT INTO subobjetivos_completados_log 
+                        (subobjetivo_id, objetivo_id, user_id, fecha_completado)
+                        VALUES (?, ?, ?, ?)
+                    ''', (subobjetivo_id, objetivo_id, current_user.id, fecha_hoy))
+                    print(f"📝 Subobjetivo {subobjetivo_id} registrado como completado en {fecha_hoy}")
+                except Exception as e:
+                    # Si ya existe el registro para hoy, no es un error crítico
+                    if "UNIQUE constraint failed" in str(e) or "duplicate key" in str(e).lower():
+                        print(f"ℹ️ Subobjetivo {subobjetivo_id} ya estaba registrado como completado hoy")
+                    else:
+                        print(f"⚠️ Error registrando completado: {e}")
+                        
+            elif nuevo_completado == 0 and completado_actual == 1:
+                # Se descompletó el subobjetivo - remover del log de hoy
+                cursor.execute('''
+                    DELETE FROM subobjetivos_completados_log 
+                    WHERE subobjetivo_id = ? AND user_id = ? AND fecha_completado = ?
+                ''', (subobjetivo_id, current_user.id, fecha_hoy))
+                print(f"🗑️ Registro de completado removido para subobjetivo {subobjetivo_id} en {fecha_hoy}")
+        
         conn.commit()
         print(f"✅ Subobjetivo {subobjetivo_id} actualizado exitosamente")
         return jsonify({'status': 'success'})
+
+@app.route('/api/subobjetivos/completados/<fecha>', methods=['GET'])
+@login_required
+def api_subobjetivos_completados_fecha(fecha):
+    """Obtiene los subobjetivos completados en una fecha específica"""
+    try:
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            
+            # Obtener subobjetivos completados en la fecha específica
+            query = """
+                SELECT s.id, s.titulo, s.objetivo_id, o.titulo as objetivo_titulo,
+                       scl.fecha_completado, scl.fecha_creacion as hora_completado
+                FROM subobjetivos s
+                INNER JOIN subobjetivos_completados_log scl ON s.id = scl.subobjetivo_id
+                INNER JOIN objetivos o ON s.objetivo_id = o.id
+                WHERE scl.user_id = ? 
+                  AND CAST(scl.fecha_completado AS DATE) = ?
+                ORDER BY scl.fecha_creacion ASC
+            """
+            
+            cursor.execute(query, (current_user.id, fecha))
+            subobjetivos_completados = []
+            
+            for row in cursor.fetchall():
+                subobjetivos_completados.append({
+                    'id': row.id,
+                    'titulo': row.titulo,
+                    'objetivo_id': row.objetivo_id,
+                    'objetivo_titulo': row.objetivo_titulo,
+                    'fecha_completado': row.fecha_completado.strftime('%Y-%m-%d') if row.fecha_completado else None,
+                    'hora_completado': row.hora_completado.strftime('%H:%M:%S') if row.hora_completado else None
+                })
+            
+            return jsonify({
+                'status': 'success',
+                'fecha': fecha,
+                'subobjetivos_completados': subobjetivos_completados,
+                'total': len(subobjetivos_completados)
+            })
+            
+    except Exception as e:
+        logger.error(f"Error obteniendo subobjetivos completados para {fecha}: {str(e)}")
+        return jsonify({'status': 'error', 'error': str(e)}), 500
 
 @app.route('/api/subobjetivos/<int:subobjetivo_id>', methods=['DELETE'])
 @login_required

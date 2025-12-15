@@ -4865,11 +4865,16 @@ endblock %} {% block head %}
       // Acceder a los datos correctamente
       const objetivosData = data.data || data;
       
+      // Almacenar subobjetivos completados globalmente para uso en generarHtmlSubobjetivosCompletados
+      window.subobjetivosCompletadosFecha = objetivosData.subobjetivos_completados || [];
+      console.log(`📋 Subobjetivos completados en ${fecha}:`, window.subobjetivosCompletadosFecha.length);
+      
       // DEBUG: Mostrar estructura de datos
       console.log('🔍 DEBUG - objetivosData:', objetivosData);
       console.log('🔍 DEBUG - objetivos_creados:', objetivosData.objetivos_creados);
       console.log('🔍 DEBUG - objetivos_completados:', objetivosData.objetivos_completados);
       console.log('🔍 DEBUG - objetivos_recurrentes_pendientes:', objetivosData.objetivos_recurrentes_pendientes);
+      console.log('🔍 DEBUG - subobjetivos_completados:', objetivosData.subobjetivos_completados);
       
       // DEBUG: Mostrar resumen del servidor
       if (objetivosData.resumen) {
@@ -5140,6 +5145,48 @@ endblock %} {% block head %}
     }
   }
 
+  // Función auxiliar para generar HTML de subobjetivos completados
+  // Sigue el principio de función pequeña con una sola responsabilidad
+  function generarHtmlSubobjetivosCompletados(objetivoId) {
+    // Buscar subobjetivos completados para este objetivo en la fecha actual del modal
+    const subobjetivosDelObjetivo = (window.subobjetivosCompletadosFecha || [])
+      .filter(sub => sub.objetivo_id === objetivoId);
+    
+    if (subobjetivosDelObjetivo.length === 0) {
+      return '';
+    }
+    
+    let html = `
+      <div class="mt-3 pt-2 border-top border-light">
+        <h6 class="text-success mb-2" style="font-size: 0.85rem;">
+          <i class="bi bi-check2-square me-1"></i>
+          Subobjetivos completados este día (${subobjetivosDelObjetivo.length})
+        </h6>
+        <div class="subobjetivos-completados-lista">
+    `;
+    
+    subobjetivosDelObjetivo.forEach(sub => {
+      html += `
+        <div class="d-flex align-items-center mb-1">
+          <i class="bi bi-check-circle-fill text-success me-2" style="font-size: 0.8rem;"></i>
+          <span class="text-muted" style="font-size: 0.85rem;">${sub.titulo}</span>
+          ${sub.hora_completado ? `
+            <small class="text-success ms-auto" style="font-size: 0.75rem;">
+              ${sub.hora_completado}
+            </small>
+          ` : ''}
+        </div>
+      `;
+    });
+    
+    html += `
+        </div>
+      </div>
+    `;
+    
+    return html;
+  }
+
   // Función para generar HTML de un objetivo
   function generarHtmlObjetivo(objetivo) {
     const prioridadColor = {
@@ -5210,6 +5257,8 @@ endblock %} {% block head %}
               </small>
             </div>
           ` : ''}
+          
+          ${generarHtmlSubobjetivosCompletados(objetivo.id)}
         </div>
       </div>
     `;
