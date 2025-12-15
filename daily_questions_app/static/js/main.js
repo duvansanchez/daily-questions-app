@@ -3738,7 +3738,7 @@ function mostrarFraseRepaso() {
     
     contenedor.innerHTML = `
         <div class="frase-repaso-card">
-            <div class="frase-texto-repaso mb-4" style="font-size: 1.5rem; font-weight: 500; color: #1a202c; line-height: 1.6; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);">
+            <div class="frase-texto-repaso mb-4" style="font-size: 1.5rem; color: #000000; line-height: 1.6;">
                 "${frase.texto}"
             </div>
             ${frase.autor ? `<div class="frase-autor-repaso mb-3" style="font-size: 1.1rem; color: #000000;">— ${frase.autor}</div>` : ''}
@@ -3748,7 +3748,7 @@ function mostrarFraseRepaso() {
                     ${capitalizarPrimeraLetra((frase.subcategoria && frase.subcategoria.trim()) ? frase.subcategoria : frase.categoria)}
                 </span>
             </div>
-            ${frase.notas ? `<div class="frase-notas-repaso mt-3 p-3 rounded" style="font-style: italic;">${frase.notas}</div>` : ''}
+            ${frase.notas ? `<div class="frase-notas-repaso mt-3 p-3 bg-light rounded" style="font-style: italic; color: #51565f;">${frase.notas}</div>` : ''}
         </div>
     `;
     
@@ -4280,11 +4280,7 @@ async function mostrarFraseAleatoria() {
         }
     }
     
-    // Priorizar frases no repasadas hoy
-    const frasesNoRepasadasHoy = frasesDisponibles.filter(f => !esRepasadaHoyFrase(f.ultima_vez));
-    const frasesSeleccionables = frasesNoRepasadasHoy.length > 0 ? frasesNoRepasadasHoy : frasesDisponibles;
-    
-    const fraseAleatoria = frasesSeleccionables[Math.floor(Math.random() * frasesSeleccionables.length)];
+    const fraseAleatoria = frasesDisponibles[Math.floor(Math.random() * frasesDisponibles.length)];
     
     const html = `
         <div class="text-center">
@@ -4334,29 +4330,6 @@ function editarFrase(fraseId) {
     document.getElementById('editar-frase-autor').value = frase.autor || '';
     document.getElementById('editar-frase-categoria').value = frase.categoria;
     document.getElementById('editar-frase-notas').value = frase.notas || '';
-    
-    // Preseleccionar subcategoría correctamente: cargar opciones y luego asignar valor
-    (async () => {
-        try {
-            const subSelect = document.getElementById('editar-frase-subcategoria');
-            if (subSelect) {
-                // Inicializa opciones base
-                subSelect.innerHTML = '<option value="">Selecciona una subcategoría</option><option value="nueva">+ Nueva subcategoría</option>';
-                if (frase.categoria) {
-                    // Reutiliza la función global si existe en la página
-                    if (typeof cargarSubcategoriasParaCategoria === 'function') {
-                        await cargarSubcategoriasParaCategoria(frase.categoria, 'editar-frase-subcategoria');
-                    }
-                    // Asigna el valor de la subcategoría si existe
-                    if (frase.subcategoria) {
-                        subSelect.value = frase.subcategoria;
-                    }
-                }
-            }
-        } catch (e) {
-            console.warn('No se pudo preseleccionar la subcategoría en edición:', e);
-        }
-    })();
     
     const modal = new bootstrap.Modal(document.getElementById('modalEditarFrase'));
     modal.show();
@@ -4704,8 +4677,7 @@ function configurarEventListenersFrases() {
     // Botón repasar todas
     const btnRepasarTodas = document.getElementById('btn-repasar-todas');
     if (btnRepasarTodas) {
-        // Interceptamos para verificar audios y mostrar mini-modal
-        btnRepasarTodas.addEventListener('click', iniciarRepasoConChequeoAudios);
+        btnRepasarTodas.addEventListener('click', repasarTodasLasFrases);
     }
     
     // Botón frase aleatoria
@@ -4907,136 +4879,6 @@ document.addEventListener('DOMContentLoaded', function() {
 // Variables globales para audios
 let audios = [];
 let audioActual = null;
-
-// Verificar audios disponibles para los filtros actuales de frases
-async function verificarAudiosDisponiblesPorFiltrosFrases() {
-        try {
-                const categoria = document.getElementById('filtro-categoria-frases')?.value || '';
-                const subcategoria = document.getElementById('filtro-subcategoria-frases')?.value || '';
-                const params = new URLSearchParams();
-                if (categoria) params.set('categoria', categoria);
-                if (subcategoria) params.set('subcategoria', subcategoria);
-                params.set('solo_activas', '1');
-                const url = `/api/audios?${params.toString()}`;
-                const res = await fetch(url);
-                if (!res.ok) throw new Error(`Error ${res.status}`);
-                const data = await res.json();
-                return { audios: data || [], categoria, subcategoria };
-        } catch (e) {
-                console.error('Error verificando audios:', e);
-                return { audios: [], categoria: '', subcategoria: '' };
-        }
-}
-
-// Mini-modal para decidir si escuchar audios antes de frases
-function mostrarMiniModalAudios({ audios, categoria, subcategoria }, onSi, onNo) {
-        // Crear modal dinámico si no existe
-        let modalEl = document.getElementById('miniModalAudiosRepaso');
-        if (!modalEl) {
-                modalEl = document.createElement('div');
-                modalEl.id = 'miniModalAudiosRepaso';
-                modalEl.className = 'modal fade';
-                modalEl.tabIndex = -1;
-                modalEl.innerHTML = `
-                        <div class="modal-dialog modal-dialog-scrollable">
-                            <div class="modal-content">
-                                <div class="modal-header">
-                                    <h5 class="modal-title"><i class="bi bi-headphones"></i> Audios disponibles</h5>
-                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                </div>
-                                <div class="modal-body">
-                                    <p class="mb-2">¿Deseas escuchar los audios primero?</p>
-                                    <div id="mini-modal-audios-list" class="mb-3" style="display:none"></div>
-                                </div>
-                                <div class="modal-footer d-flex justify-content-between">
-                                    <button type="button" class="btn btn-success" id="btn-mini-modal-si">Sí, escuchar audios</button>
-                                    <button type="button" class="btn btn-primary" id="btn-mini-modal-continuar">Continuar con frases</button>
-                                </div>
-                            </div>
-                        </div>`;
-                document.body.appendChild(modalEl);
-        }
-
-        // Rellenar lista de audios si hay
-        const listEl = modalEl.querySelector('#mini-modal-audios-list');
-        if (audios && audios.length > 0) {
-                listEl.style.display = '';
-                listEl.innerHTML = audios.map(a => `
-                        <div class="card mb-2">
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <strong>${a.titulo || 'Audio'}</strong>
-                                        <div class="text-muted small">${(a.categoria||'')}${a.subcategoria? ' / '+a.subcategoria: ''}</div>
-                                    </div>
-                                </div>
-                                <audio controls preload="none" style="width:100%">
-                                    <source src="${a.archivo_url || a.audio_url || a.url || ''}" type="audio/mpeg" />
-                                    Tu navegador no soporta el elemento audio.
-                                </audio>
-                                ${a.descripcion ? `<div class="small mt-1 text-muted">${a.descripcion}</div>` : ''}
-                            </div>
-                        </div>
-                `).join('');
-        } else {
-                listEl.style.display = 'none';
-                listEl.innerHTML = '';
-        }
-
-        // Limpiar listeners previos
-        const btnSi = modalEl.querySelector('#btn-mini-modal-si');
-        const btnCont = modalEl.querySelector('#btn-mini-modal-continuar');
-        btnSi.replaceWith(btnSi.cloneNode(true));
-        btnCont.replaceWith(btnCont.cloneNode(true));
-
-        const btnSiNew = modalEl.querySelector('#btn-mini-modal-si');
-        const btnContNew = modalEl.querySelector('#btn-mini-modal-continuar');
-
-        const bsModal = new bootstrap.Modal(modalEl);
-        bsModal.show();
-
-        btnSiNew.addEventListener('click', async () => {
-            const firstAudioEl = modalEl.querySelector('#mini-modal-audios-list audio');
-            if (firstAudioEl) {
-                try {
-                    firstAudioEl.volume = 1.0;
-                    firstAudioEl.load();
-                    firstAudioEl.currentTime = 0;
-                    await firstAudioEl.play();
-                } catch (err) {
-                    console.warn('Error al reproducir primer audio:', err);
-                    showInfo('Pulsa play en el primer audio para comenzar.');
-                }
-            }
-        });
-
-        btnContNew.addEventListener('click', () => {
-            bsModal.hide();
-            onNo && onNo();
-        });
-}
-
-// Flujo principal al presionar "Repasar por filtros"
-async function iniciarRepasoConChequeoAudios() {
-        try {
-                // Primero verificar si hay audios según filtros actuales de frases
-                const resultado = await verificarAudiosDisponiblesPorFiltrosFrases();
-                if (resultado.audios && resultado.audios.length > 0) {
-                        // Mostrar mini-modal con la pregunta
-                        mostrarMiniModalAudios(resultado, null, () => {
-                                // Al elegir No o Continuar: cerrar modal y ejecutar repaso
-                                repasarTodasLasFrases();
-                        });
-                } else {
-                        // No hay audios, ir directo a repaso
-                        repasarTodasLasFrases();
-                }
-        } catch (e) {
-                console.error('Error en flujo de repaso con chequeo de audios:', e);
-                // Fallback: continuar con repaso
-                repasarTodasLasFrases();
-        }
-}
 
 // Cargar audios desde el servidor
 async function cargarAudios() {

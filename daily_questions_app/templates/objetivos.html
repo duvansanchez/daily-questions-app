@@ -396,18 +396,18 @@ endblock %} {% block head %}
             <div class="d-flex gap-2">
               <a
                 href="{{ url_for('gestion_categorias') }}"
-                class="btn btn-outline-secondary btn-sm"
+                class="btn btn-outline-secondary"
               >
                 <i class="bi bi-tags"></i> Gestionar Categorías
               </a>
-              <button class="btn btn-primary btn-sm" id="btn-nueva-frase">
+              <button class="btn btn-primary" id="btn-nueva-frase">
                 <i class="bi bi-plus-circle me-1"></i>Nueva Frase
               </button>
             </div>
           </div>
 
           <!-- Estadísticas de frases -->
-          <div class="row text-center mb-3">
+          <div class="row text-center justify-content-center mb-3">
             <div class="col-md-3">
               <div class="bg-light rounded py-3">
                 <div class="h4 mb-0 text-primary" id="total-frases">0</div>
@@ -447,7 +447,7 @@ endblock %} {% block head %}
           </div>
 
           <!-- Filtros y controles -->
-          <div class="d-flex justify-content-between align-items-end mb-3">
+          <div class="d-flex justify-content-between align-items-center mb-3">
             <div class="row g-2 flex-grow-1 align-items-end">
               <div class="col-sm-4">
                 <label class="form-label mb-0 fw-semibold">Categoría</label>
@@ -1630,7 +1630,7 @@ endblock %} {% block head %}
 
         <!-- Progreso de subobjetivos -->
         <div class="focus-subobjetivos mb-4">
-          <div class="d-flex justify-content-between align-items-end mb-3">
+          <div class="d-flex justify-content-between align-items-center mb-3">
             <h5 class="mb-0">
               <i class="bi bi-list-check me-2"></i>Progreso del objetivo
               <span class="badge bg-primary ms-2" id="focus-progreso">0/0</span>
@@ -4202,21 +4202,27 @@ endblock %} {% block head %}
       <div class="modal-body">
         <!-- Resumen del día -->
         <div class="row mb-4">
-          <div class="col-md-6">
+          <div class="col-md-4">
             <div class="card bg-light">
               <div class="card-body text-center">
-                <h3 class="text-primary mb-1" id="detalle-total-creados">0</h3>
-                <small class="text-muted">Objetivos Creados</small>
+                <h3 class="text-primary mb-1" id="detalle-total-objetivos">0</h3>
+                <small class="text-muted">Total Objetivos</small>
               </div>
             </div>
           </div>
-          <div class="col-md-6">
+          <div class="col-md-4">
             <div class="card bg-light">
               <div class="card-body text-center">
-                <h3 class="text-success mb-1" id="detalle-total-completados">
-                  0
-                </h3>
-                <small class="text-muted">Objetivos Completados</small>
+                <h3 class="text-success mb-1" id="detalle-total-completados">0</h3>
+                <small class="text-muted">Completados</small>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="card bg-light">
+              <div class="card-body text-center">
+                <h3 class="text-warning mb-1" id="detalle-total-pendientes">0</h3>
+                <small class="text-muted">Pendientes</small>
               </div>
             </div>
           </div>
@@ -4233,7 +4239,7 @@ endblock %} {% block head %}
               type="button"
               role="tab"
             >
-              <i class="bi bi-plus-circle me-1"></i>Objetivos Creados
+              <i class="bi bi-list-ul me-1"></i>Todos los Objetivos
               <span class="badge bg-primary ms-1" id="badge-creados">0</span>
             </button>
           </li>
@@ -4246,16 +4252,29 @@ endblock %} {% block head %}
               type="button"
               role="tab"
             >
-              <i class="bi bi-check-circle me-1"></i>Objetivos Completados
+              <i class="bi bi-check-circle me-1"></i>Completados
               <span class="badge bg-success ms-1" id="badge-completados"
                 >0</span
               >
             </button>
           </li>
+          <li class="nav-item" role="presentation">
+            <button
+              class="nav-link"
+              id="pendientes-tab"
+              data-bs-toggle="tab"
+              data-bs-target="#pendientes"
+              type="button"
+              role="tab"
+            >
+              <i class="bi bi-clock me-1"></i>Pendientes
+              <span class="badge bg-warning ms-1" id="badge-pendientes">0</span>
+            </button>
+          </li>
         </ul>
 
         <div class="tab-content mt-3" id="detalleTabContent">
-          <!-- Tab Objetivos Creados -->
+          <!-- Tab Todos los Objetivos -->
           <div class="tab-pane fade show active" id="creados" role="tabpanel">
             <div id="lista-objetivos-creados">
               <!-- Se carga dinámicamente -->
@@ -4265,6 +4284,13 @@ endblock %} {% block head %}
           <!-- Tab Objetivos Completados -->
           <div class="tab-pane fade" id="completados" role="tabpanel">
             <div id="lista-objetivos-completados">
+              <!-- Se carga dinámicamente -->
+            </div>
+          </div>
+
+          <!-- Tab Objetivos Pendientes -->
+          <div class="tab-pane fade" id="pendientes" role="tabpanel">
+            <div id="lista-objetivos-pendientes">
               <!-- Se carga dinámicamente -->
             </div>
           </div>
@@ -4789,6 +4815,404 @@ endblock %} {% block head %}
         error.message
       );
     }
+  }
+
+  // ===== FUNCIÓN PARA MODAL DETALLE DEL DÍA =====
+  
+  // Variable global para almacenar todos los objetivos del modal
+  let todosLosObjetivos = [];
+
+  // Función para abrir el modal de detalle del día
+  window.abrirDetalleDia = async function(fecha) {
+    console.log('🗓️ abrirDetalleDia llamada con fecha:', fecha);
+    try {
+      const modal = new bootstrap.Modal(document.getElementById('modalDetalleDia'));
+      document.getElementById('modalDetalleDiaFecha').textContent = new Date(fecha + 'T00:00:00').toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+      
+      // Mostrar modal con loading
+      modal.show();
+      
+      // Verificar si existe el contenedor unificado (de stats.html) o separado (de objetivos.html)
+      const listaUnificada = document.getElementById('lista-objetivos-unificada');
+      const listaCreados = document.getElementById('lista-objetivos-creados');
+      const listaCompletados = document.getElementById('lista-objetivos-completados');
+      
+      if (listaUnificada) {
+        // Versión de stats.html - lista unificada
+        listaUnificada.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-info"></div><div class="mt-2">Cargando objetivos...</div></div>';
+      } else if (listaCreados && listaCompletados) {
+        // Versión de objetivos.html - listas separadas
+        listaCreados.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary"></div><div class="mt-2">Cargando objetivos creados...</div></div>';
+        listaCompletados.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-success"></div><div class="mt-2">Cargando objetivos completados...</div></div>';
+      }
+
+      // Obtener datos del servidor
+      const response = await fetch(`/api/objetivos/dia/${fecha}?t=${new Date().getTime()}`);
+      const data = await response.json();
+
+      // DEBUG: Mostrar datos recibidos
+      console.log('🔍 DEBUG - Datos completos recibidos:', data);
+      console.log('🔍 DEBUG - Status:', data.status);
+
+      // Verificar si la respuesta es exitosa
+      if (data.status !== 'success') {
+        throw new Error(data.error || 'Error en la respuesta del servidor');
+      }
+
+      // Combinar todos los objetivos en una sola lista
+      todosLosObjetivos = [];
+
+      // Acceder a los datos correctamente
+      const objetivosData = data.data || data;
+      
+      // DEBUG: Mostrar estructura de datos
+      console.log('🔍 DEBUG - objetivosData:', objetivosData);
+      console.log('🔍 DEBUG - objetivos_creados:', objetivosData.objetivos_creados);
+      console.log('🔍 DEBUG - objetivos_completados:', objetivosData.objetivos_completados);
+      console.log('🔍 DEBUG - objetivos_recurrentes_pendientes:', objetivosData.objetivos_recurrentes_pendientes);
+      
+      // DEBUG: Mostrar resumen del servidor
+      if (objetivosData.resumen) {
+        console.log('🔍 DEBUG - Resumen del servidor:', objetivosData.resumen);
+      }
+
+      // Agregar objetivos creados (marcando si están completados o no)
+      if (objetivosData.objetivos_creados) {
+        objetivosData.objetivos_creados.forEach(obj => {
+          const estaCompletado = objetivosData.objetivos_completados && objetivosData.objetivos_completados.some(comp => comp.id === obj.id);
+          todosLosObjetivos.push({
+            ...obj,
+            estado: estaCompletado ? 'completado' : 'pendiente',
+            tipo_origen: 'creado',
+            hora_completado: estaCompletado ?
+              objetivosData.objetivos_completados.find(comp => comp.id === obj.id)?.hora_completado : null
+          });
+        });
+      }
+
+      // Agregar objetivos completados que no estén ya en la lista
+      if (objetivosData.objetivos_completados) {
+        objetivosData.objetivos_completados.forEach(obj => {
+          if (!todosLosObjetivos.some(existing => existing.id === obj.id)) {
+            todosLosObjetivos.push({
+              ...obj,
+              estado: 'completado',
+              tipo_origen: 'completado_recurrente'
+            });
+          }
+        });
+      }
+
+      // Agregar objetivos recurrentes pendientes
+      if (objetivosData.objetivos_recurrentes_pendientes) {
+        objetivosData.objetivos_recurrentes_pendientes.forEach(obj => {
+          if (!todosLosObjetivos.some(existing => existing.id === obj.id)) {
+            todosLosObjetivos.push({
+              ...obj,
+              estado: 'pendiente',
+              tipo_origen: 'recurrente_pendiente'
+            });
+          }
+        });
+      }
+
+      // DEBUG: Mostrar objetivos procesados
+      console.log('🔍 DEBUG - todosLosObjetivos procesados:', todosLosObjetivos);
+      console.log('🔍 DEBUG - Cantidad total:', todosLosObjetivos.length);
+      
+      // Actualizar contadores
+      const totalObjetivos = todosLosObjetivos.length;
+      const totalCompletados = todosLosObjetivos.filter(obj => obj.estado === 'completado').length;
+      const totalPendientes = totalObjetivos - totalCompletados;
+      
+      // Para el tab "Creados": contar objetivos creados + recurrentes pendientes
+      const totalCreados = todosLosObjetivos.filter(obj => 
+        obj.tipo_origen === 'creado' || obj.tipo_origen === 'recurrente_pendiente'
+      ).length;
+      
+      // DEBUG: Mostrar contadores calculados
+      console.log('🔍 DEBUG - Contadores:', {
+        totalObjetivos,
+        totalCompletados,
+        totalPendientes,
+        totalCreados
+      });
+
+      // Actualizar elementos del modal
+      const elementoTotalObjetivos = document.getElementById('detalle-total-objetivos');
+      const elementoTotalCompletados = document.getElementById('detalle-total-completados');
+      const elementoTotalPendientes = document.getElementById('detalle-total-pendientes');
+      const badgeCreados = document.getElementById('badge-creados');
+      const badgeCompletados = document.getElementById('badge-completados');
+
+      if (elementoTotalObjetivos) elementoTotalObjetivos.textContent = totalObjetivos;
+      if (elementoTotalCompletados) elementoTotalCompletados.textContent = totalCompletados;
+      if (elementoTotalPendientes) elementoTotalPendientes.textContent = totalPendientes;
+      if (badgeCreados) badgeCreados.textContent = totalCreados;
+      if (badgeCompletados) badgeCompletados.textContent = totalCompletados;
+
+      // Renderizar objetivos según el tipo de modal
+      if (listaUnificada) {
+        // Versión unificada (stats.html)
+        renderizarObjetivosUnificados(listaUnificada);
+      } else if (listaCreados && listaCompletados) {
+        // Versión separada (objetivos.html)
+        renderizarObjetivosSeparados(listaCreados, listaCompletados);
+      }
+
+      console.log(`✅ Modal cargado: ${totalObjetivos} objetivos (${totalCompletados} completados, ${totalPendientes} pendientes)`);
+      
+      // DEBUG: Comparar con datos del calendario
+      console.log('🔍 DEBUG - Comparación esperada vs real:');
+      console.log('  - Tooltip calendario dice: 0 creados, 2 completados, 3 pendientes (total 5)');
+      console.log(`  - Modal muestra: ${totalObjetivos} total, ${totalCompletados} completados, ${totalPendientes} pendientes`);
+      console.log('  - ¿Coinciden? NO - Hay una discrepancia en los datos');
+
+    } catch (error) {
+      console.error('❌ Error en abrirDetalleDia:', error);
+      
+      // Mostrar error en el modal
+      const listaUnificada = document.getElementById('lista-objetivos-unificada');
+      const listaCreados = document.getElementById('lista-objetivos-creados');
+      
+      const errorHtml = `
+        <div class="text-center py-4 text-danger">
+          <i class="bi bi-exclamation-triangle fs-1 mb-2"></i>
+          <h6>Error al cargar objetivos</h6>
+          <p class="mb-0">${error.message}</p>
+          <button class="btn btn-outline-primary btn-sm mt-2" onclick="abrirDetalleDia('${fecha}')">
+            <i class="bi bi-arrow-clockwise"></i> Reintentar
+          </button>
+        </div>
+      `;
+      
+      if (listaUnificada) {
+        listaUnificada.innerHTML = errorHtml;
+      } else if (listaCreados) {
+        listaCreados.innerHTML = errorHtml;
+        const listaCompletados = document.getElementById('lista-objetivos-completados');
+        if (listaCompletados) listaCompletados.innerHTML = '';
+      }
+    }
+  };
+
+  // Función para renderizar objetivos en versión unificada
+  function renderizarObjetivosUnificados(container) {
+    if (todosLosObjetivos.length === 0) {
+      container.innerHTML = `
+        <div class="text-center py-4 text-muted">
+          <i class="bi bi-calendar-x fs-1 mb-2"></i>
+          <h6>No hay objetivos para este día</h6>
+          <p class="mb-0">No se crearon ni completaron objetivos en esta fecha.</p>
+        </div>
+      `;
+      return;
+    }
+
+    // Separar por estado para mostrar completados primero
+    const completados = todosLosObjetivos.filter(obj => obj.estado === 'completado');
+    const pendientes = todosLosObjetivos.filter(obj => obj.estado === 'pendiente');
+    
+    let html = '';
+
+    // Mostrar completados primero
+    if (completados.length > 0) {
+      html += '<h6 class="text-success mb-3"><i class="bi bi-check-circle me-2"></i>Objetivos Completados</h6>';
+      completados.forEach(obj => {
+        html += generarHtmlObjetivo(obj);
+      });
+    }
+
+    // Mostrar pendientes después
+    if (pendientes.length > 0) {
+      html += '<h6 class="text-warning mb-3 mt-4"><i class="bi bi-clock me-2"></i>Objetivos Pendientes</h6>';
+      pendientes.forEach(obj => {
+        html += generarHtmlObjetivo(obj);
+      });
+    }
+
+    container.innerHTML = html;
+  }
+
+  // Función para renderizar objetivos en versión separada (3 tabs)
+  function renderizarObjetivosSeparados(containerCreados, containerCompletados) {
+    const containerPendientes = document.getElementById('lista-objetivos-pendientes');
+    
+    // Separar objetivos por estado
+    const todosObjetivos = todosLosObjetivos;
+    const objetivosCompletados = todosObjetivos.filter(obj => obj.estado === 'completado');
+    const objetivosPendientes = todosObjetivos.filter(obj => obj.estado === 'pendiente');
+
+    // Tab 1: "Todos los Objetivos" - Mostrar todos con separación visual
+    renderizarTabTodos(containerCreados, todosObjetivos);
+    
+    // Tab 2: "Completados" - Solo objetivos completados
+    renderizarTabCompletados(containerCompletados, objetivosCompletados);
+    
+    // Tab 3: "Pendientes" - Solo objetivos pendientes
+    if (containerPendientes) {
+      renderizarTabPendientes(containerPendientes, objetivosPendientes);
+    }
+    
+    // Actualizar badge de pendientes
+    const badgePendientes = document.getElementById('badge-pendientes');
+    if (badgePendientes) {
+      badgePendientes.textContent = objetivosPendientes.length;
+    }
+  }
+
+  // Función para renderizar el tab "Todos"
+  function renderizarTabTodos(container, objetivos) {
+    if (objetivos.length === 0) {
+      container.innerHTML = `
+        <div class="text-center py-4 text-muted">
+          <i class="bi bi-calendar-x fs-1 mb-2"></i>
+          <h6>No hay objetivos para este día</h6>
+          <p class="mb-0">No se encontraron objetivos para esta fecha.</p>
+        </div>
+      `;
+      return;
+    }
+
+    const completados = objetivos.filter(obj => obj.estado === 'completado');
+    const pendientes = objetivos.filter(obj => obj.estado === 'pendiente');
+    
+    let html = '';
+    
+    // Mostrar completados primero
+    if (completados.length > 0) {
+      html += '<div class="mb-4">';
+      html += '<h6 class="text-success mb-3"><i class="bi bi-check-circle me-2"></i>Completados</h6>';
+      completados.forEach(obj => {
+        html += generarHtmlObjetivo(obj);
+      });
+      html += '</div>';
+    }
+    
+    // Mostrar pendientes después
+    if (pendientes.length > 0) {
+      html += '<div class="mb-4">';
+      html += '<h6 class="text-warning mb-3"><i class="bi bi-clock me-2"></i>Pendientes</h6>';
+      pendientes.forEach(obj => {
+        html += generarHtmlObjetivo(obj);
+      });
+      html += '</div>';
+    }
+    
+    container.innerHTML = html;
+  }
+
+  // Función para renderizar el tab "Completados"
+  function renderizarTabCompletados(container, objetivosCompletados) {
+    if (objetivosCompletados.length === 0) {
+      container.innerHTML = `
+        <div class="text-center py-4 text-muted">
+          <i class="bi bi-check-circle fs-1 mb-2"></i>
+          <h6>No se completaron objetivos</h6>
+          <p class="mb-0">No se completaron objetivos en esta fecha.</p>
+        </div>
+      `;
+    } else {
+      let html = '';
+      objetivosCompletados.forEach(obj => {
+        html += generarHtmlObjetivo(obj);
+      });
+      container.innerHTML = html;
+    }
+  }
+
+  // Función para renderizar el tab "Pendientes"
+  function renderizarTabPendientes(container, objetivosPendientes) {
+    if (objetivosPendientes.length === 0) {
+      container.innerHTML = `
+        <div class="text-center py-4 text-muted">
+          <i class="bi bi-clock fs-1 mb-2"></i>
+          <h6>No hay objetivos pendientes</h6>
+          <p class="mb-0">Todos los objetivos de este día han sido completados.</p>
+        </div>
+      `;
+    } else {
+      let html = '';
+      objetivosPendientes.forEach(obj => {
+        html += generarHtmlObjetivo(obj);
+      });
+      container.innerHTML = html;
+    }
+  }
+
+  // Función para generar HTML de un objetivo
+  function generarHtmlObjetivo(objetivo) {
+    const prioridadColor = {
+      'alta': 'danger',
+      'media': 'warning', 
+      'baja': 'info'
+    }[objetivo.prioridad] || 'secondary';
+
+    const estadoIcon = objetivo.estado === 'completado' ? 'bi-check-circle-fill text-success' : 'bi-circle text-warning';
+    const estadoTexto = objetivo.estado === 'completado' ? 'Completado' : 'Pendiente';
+
+    const parteDiaIcon = {
+      'mañana': 'bi-sunrise',
+      'tarde': 'bi-sun', 
+      'noche': 'bi-moon'
+    }[objetivo.parte_dia] || 'bi-clock';
+
+    return `
+      <div class="card mb-2 border-start border-${prioridadColor} border-3">
+        <div class="card-body p-3">
+          <div class="d-flex justify-content-between align-items-start mb-2">
+            <h6 class="card-title mb-0">${objetivo.titulo}</h6>
+            <div class="d-flex gap-2 align-items-center">
+              <span class="badge bg-${prioridadColor}">${objetivo.prioridad}</span>
+              <i class="${estadoIcon}" title="${estadoTexto}"></i>
+            </div>
+          </div>
+          
+          ${objetivo.descripcion ? `<p class="card-text text-muted mb-2">${objetivo.descripcion}</p>` : ''}
+          
+          <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <div class="d-flex gap-3 flex-wrap">
+              ${objetivo.categoria ? `
+                <small class="text-muted">
+                  <i class="bi bi-tag"></i> ${objetivo.categoria.charAt(0).toUpperCase() + objetivo.categoria.slice(1).replace(/_/g, ' ')}
+                </small>
+              ` : ''}
+              ${objetivo.parte_dia ? `
+                <small class="text-muted">
+                  <i class="${parteDiaIcon}"></i> ${objetivo.parte_dia}
+                </small>
+              ` : ''}
+              ${objetivo.horas_estimadas ? `
+                <small class="text-muted">
+                  <i class="bi bi-clock"></i> ${objetivo.horas_estimadas}h
+                </small>
+              ` : ''}
+              ${objetivo.recurrente ? `
+                <small class="text-info">
+                  <i class="bi bi-arrow-repeat"></i> Recurrente
+                </small>
+              ` : ''}
+            </div>
+            
+            ${objetivo.hora_completado ? `
+              <small class="text-success">
+                <i class="bi bi-check-circle"></i> ${objetivo.hora_completado}
+              </small>
+            ` : ''}
+          </div>
+          
+          ${objetivo.tipo_origen ? `
+            <div class="mt-2">
+              <small class="badge bg-light text-dark">
+                ${objetivo.tipo_origen === 'creado' ? 'Creado este día' : 
+                  objetivo.tipo_origen === 'completado_recurrente' ? 'Recurrente completado' :
+                  objetivo.tipo_origen === 'recurrente_pendiente' ? 'Recurrente pendiente' : objetivo.tipo_origen}
+              </small>
+            </div>
+          ` : ''}
+        </div>
+      </div>
+    `;
   }
 </script>
 

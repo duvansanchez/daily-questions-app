@@ -1775,20 +1775,6 @@ h1 {
   border-color: #0ea5e9;
 }
 
-/* Modo oscuro: asegurar contraste para frases repasadas */
-[data-theme="dark"] .frase-card.repasada-hoy {
-    background: linear-gradient(135deg, #0b1b25 0%, #0e2230 100%);
-    border-color: #38bdf8; /* azul claro para contraste en dark */
-}
-
-[data-theme="dark"] .frase-card.repasada-hoy .frase-texto,
-[data-theme="dark"] .frase-card.repasada-hoy .frase-autor,
-[data-theme="dark"] .frase-card.repasada-hoy .frase-categoria,
-[data-theme="dark"] .frase-card.repasada-hoy .frase-contador span,
-[data-theme="dark"] .frase-card.repasada-hoy .frase-ultima-vez {
-    color: #e6f6ff; /* texto claro legible sobre fondo oscuro */
-}
-
 .frase-texto {
   font-size: 1.1rem;
   line-height: 1.6;
@@ -2087,17 +2073,10 @@ ESTILOS PARA SESIÓN DE REPASO DE FRASES === */
 }
 
 .frase-notas-repaso {
-    font-size: 1.0rem;
+    font-size: 0.95rem;
     line-height: 1.5;
     white-space: pre-wrap;
     word-wrap: break-word;
-    border-left: 5px solid #6366f1;
-    border-top: 1px solid rgba(99, 102, 241, 0.3);
-    border-bottom: 1px solid rgba(99, 102, 241, 0.3);
-    background: linear-gradient(135deg, #f0f4ff 0%, #e0e7ff 100%);
-    box-shadow: 0 3px 8px rgba(99, 102, 241, 0.15);
-    color: #1f2937;
-    position: relative;
 }
 
 .progress-container {
@@ -3558,11 +3537,8 @@ los para días clickeables del calendario */
 [data-theme="dark"] .frase-notas,
 [data-theme="dark"] .frase-notas-repaso {
     color: var(--text-primary) !important;
-    background: linear-gradient(135deg, rgba(30, 58, 138, 0.4) 0%, rgba(37, 99, 235, 0.3) 100%) !important;
-    border-left-color: #818cf8 !important;
-    border-top-color: rgba(129, 140, 248, 0.5) !important;
-    border-bottom-color: rgba(129, 140, 248, 0.5) !important;
-    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3) !important;
+    background: var(--bg-secondary) !important;
+    border-color: var(--border-color) !important;
 }
 
 /* Estilos para filas de la tabla "Productividad por Día" */

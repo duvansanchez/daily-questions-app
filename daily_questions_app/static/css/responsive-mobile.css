@@ -1,0 +1,323 @@
+/* ============================================
+   RESPONSIVE MOBILE CSS
+   Solución para desbordamiento horizontal en móviles
+   ============================================ */
+
+/* Media queries para móviles (≤768px) */
+@media (max-width: 768px) {
+
+    /* Asegurar que el body no tenga overflow horizontal */
+    body {
+        overflow-x: hidden;
+        max-width: 100vw;
+    }
+
+    /* Anular min-width de tarjeta de bienvenida */
+    .bienvenida-card .card.p-4.shadow-sm.mx-auto {
+        min-width: 0 !important;
+        max-width: 100% !important;
+        width: 100% !important;
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
+    }
+
+    /* Anular min-width de tarjetas de resumen */
+    .card.p-4.flex-fill.text-center {
+        min-width: 0 !important;
+        max-width: 100% !important;
+        flex: 1 1 100% !important;
+    }
+
+    /* Ajustar gap entre tarjetas - apilar verticalmente */
+    .d-flex.justify-content-center.gap-4.mb-3 {
+        flex-direction: column !important;
+        gap: 1rem !important;
+    }
+
+    /* Reducir padding en badges para que quepan */
+    .badge.px-4.py-2 {
+        padding-left: 0.75rem !important;
+        padding-right: 0.75rem !important;
+        font-size: 0.85rem !important;
+    }
+
+    /* Ajustar encabezado de bienvenida - reducir tamaño de fuentes */
+    #bienvenida-header h1 {
+        font-size: 2rem !important;
+    }
+
+    #bienvenida-header div:nth-child(2) {
+        font-size: 1.1rem !important;
+    }
+
+    #bienvenida-header div:nth-child(3) {
+        font-size: 1rem !important;
+    }
+
+    /* Asegurar que el contenedor principal no se desborde */
+    .container.d-flex.flex-column.align-items-center.justify-content-center {
+        max-width: 100% !important;
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
+    }
+
+    /* Ajustar contenedor de badges para que no se desborde */
+    .mb-3.d-flex.flex-row.justify-content-center.gap-2.w-100 {
+        flex-wrap: wrap !important;
+        gap: 0.5rem !important;
+    }
+}
+
+/* Para pantallas muy pequeñas (≤390px) - iPhone SE, iPhone 12 mini */
+@media (max-width: 390px) {
+
+    /* Reducir aún más el título principal */
+    #bienvenida-header h1 {
+        font-size: 1.75rem !important;
+    }
+
+    /* Badges más compactos */
+    .badge.px-4.py-2 {
+        font-size: 0.75rem !important;
+        padding: 0.4rem 0.6rem !important;
+    }
+
+    /* Reducir padding de tarjetas */
+    .bienvenida-card .card.p-4.shadow-sm.mx-auto {
+        padding-left: 0.75rem !important;
+        padding-right: 0.75rem !important;
+    }
+}
+
+/* Para pantallas extra pequeñas (≤320px) - dispositivos más antiguos */
+@media (max-width: 320px) {
+    #bienvenida-header h1 {
+        font-size: 1.5rem !important;
+    }
+
+    #bienvenida-header div:nth-child(2) {
+        font-size: 1rem !important;
+    }
+
+    #bienvenida-header div:nth-child(3) {
+        font-size: 0.9rem !important;
+    }
+
+    .badge.px-4.py-2 {
+        font-size: 0.7rem !important;
+        padding: 0.3rem 0.5rem !important;
+    }
+
+    /* Asegurar que los botones no se desborden */
+    .btn {
+        font-size: 0.9rem !important;
+        padding: 0.5rem 1rem !important;
+    }
+}
+
+/* ============================================
+   DESARROLLO PERSONAL PAGE RESPONSIVE
+   ============================================ */
+
+/* Media queries para móviles (≤768px) */
+@media (max-width: 768px) {
+
+    /* Estadísticas de objetivos - forzar 2 columnas en móvil */
+    .row.text-center .col-md-3 {
+        flex: 0 0 50% !important;
+        max-width: 50% !important;
+    }
+
+    /* Reducir padding en tarjetas de estadísticas */
+    .row.text-center .col-md-3 .bg-light {
+        padding-top: 0.75rem !important;
+        padding-bottom: 0.75rem !important;
+    }
+
+    /* Reducir tamaño de fuente en estadísticas */
+    .row.text-center .h4,
+    .row.text-center .h5 {
+        font-size: 1.25rem !important;
+    }
+
+    .row.text-center small {
+        font-size: 0.75rem !important;
+    }
+
+    /* Centrar estadísticas de Frases en móvil */
+    #card-frases .row.text-center {
+        margin-left: auto !important;
+        margin-right: auto !important;
+        width: fit-content !important;
+        gap: 0.5rem !important;
+    }
+
+    /* Botones de Frases - mismo tamaño que Objetivos */
+    #card-frases .btn-sm {
+        font-size: 0.85rem !important;
+        padding: 0.5rem 0.75rem !important;
+    }
+
+    /* Selects de Frases - mismo tamaño */
+    #card-frases .form-select-sm {
+        font-size: 0.85rem !important;
+        padding: 0.5rem 0.75rem !important;
+    }
+
+
+    /* Pills de navegación - permitir wrap */
+    .nav-pills {
+        flex-wrap: wrap !important;
+        gap: 0.25rem !important;
+    }
+
+    .nav-pills .nav-item {
+        margin-bottom: 0.25rem;
+    }
+
+    .nav-pills .nav-link {
+        padding: 0.4rem 0.75rem !important;
+        font-size: 0.85rem !important;
+    }
+
+    /* Controles de objetivos - apilar verticalmente */
+    #controles-objetivos {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 0.75rem !important;
+    }
+
+    #controles-objetivos>div {
+        width: 100% !important;
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 0.5rem !important;
+    }
+
+    /* Botón group de vista */
+    #controles-objetivos .btn-group {
+        width: 100%;
+    }
+
+    #controles-objetivos .btn-group label {
+        flex: 1;
+        font-size: 0.85rem !important;
+        padding: 0.5rem 0.75rem !important;
+    }
+
+    /* Select de orden */
+    #controles-objetivos select {
+        width: 100% !important;
+    }
+
+    /* Botones de acción en card-objetivos */
+    .d-flex.justify-content-end.mb-2.gap-2 {
+        flex-wrap: wrap !important;
+        justify-content: flex-start !important;
+        gap: 0.5rem !important;
+    }
+
+    .d-flex.justify-content-end.mb-2.gap-2 .btn-sm {
+        flex: 1 1 100% !important;
+        min-width: 0 !important;
+        font-size: 0.85rem !important;
+        padding: 0.5rem 0.75rem !important;
+    }
+
+    /* Ajustar tabs principales */
+    .nav-tabs {
+        flex-wrap: wrap;
+    }
+
+    .nav-tabs .nav-link {
+        font-size: 0.9rem;
+        padding: 0.5rem 0.75rem;
+    }
+
+    /* Filtros de frases/audios - mejor espaciado en móvil */
+    .row.g-2 .col-md-4,
+    .row.g-3 .col-md-4 {
+        margin-bottom: 0.5rem;
+    }
+
+    /* Botones de filtros wrap */
+    .d-flex.gap-1.justify-content-center.justify-content-md-end.flex-wrap {
+        justify-content: center !important;
+    }
+
+    /* Contenedor de frases - anular desbordamiento */
+    #card-frases {
+        width: 100% !important;
+        margin-left: 0 !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+        overflow-x: hidden !important;
+    }
+
+    /* Asegurar que todos los elementos internos de frases no se desborden */
+    #card-frases * {
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    /* Ajustar d-flex dentro de frases para móvil */
+    #card-frases .d-flex.justify-content-between {
+        flex-wrap: wrap !important;
+        gap: 0.5rem !important;
+    }
+
+    /* Contenedor de audios - anular desbordamiento también */
+    #card-audios {
+        width: 100% !important;
+        margin-left: 0 !important;
+        max-width: 100% !important;
+        box-sizing: border-box;
+    }
+}
+
+/* Para pantallas muy pequeñas (≤390px) */
+@media (max-width: 390px) {
+
+    /* Estadísticas en una sola columna */
+    .row.text-center .col-md-3 {
+        flex: 0 0 100% !important;
+        max-width: 100% !important;
+    }
+
+    /* Estadísticas de frases - mantener 2 columnas incluso en pantallas pequeñas */
+    /* #card-frases .row.text-center .col-12.col-md-3,
+    #card-frases .row.text-center .col-md-3 {
+        flex: 0 0 100% !important;
+        max-width: 100% !important;
+    } */
+
+    /* Pills más compactos */
+    .nav-pills .nav-link {
+        padding: 0.35rem 0.6rem !important;
+        font-size: 0.8rem !important;
+    }
+
+    /* Botones de acción en columna completa */
+    .d-flex.justify-content-end.mb-2.gap-2 .btn-sm {
+        flex: 1 1 100% !important;
+    }
+}
+
+/* Para pantallas extra pequeñas (≤320px) */
+@media (max-width: 320px) {
+    .nav-tabs .nav-link {
+        font-size: 0.85rem;
+        padding: 0.4rem 0.5rem;
+    }
+
+    .nav-pills .nav-link {
+        padding: 0.3rem 0.5rem !important;
+        font-size: 0.75rem !important;
+    }
+
+    /* Estadísticas con menos padding */
+    .row.text-center .col-md-3 .bg-light {
+        padding-top: 0.5rem !important;
+        padding-bottom: 0.5rem !important;
+    }
+}

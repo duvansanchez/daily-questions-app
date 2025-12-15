@@ -369,9 +369,49 @@ def objetivos_detalle_dia(fecha):
                     'fecha_completado': row.fecha_completado
                 })
             
+            # Obtener objetivos recurrentes pendientes para este día
+            # (objetivos recurrentes activos que no fueron completados este día)
+            # ACTUALIZADO: Usar la misma lógica que el calendario para consistencia
+            query_recurrentes_pendientes = """
+                SELECT o.id, o.titulo, o.descripcion, o.categoria, o.prioridad, 
+                       o.recurrente, o.parte_dia, o.horas_estimadas,
+                       CONVERT(varchar, o.fecha_creacion, 120) as fecha_creacion
+                FROM objetivos o
+                WHERE o.user_id = ?
+                  AND o.recurrente = 1
+                  AND (o.estado != 'histórico' OR o.estado IS NULL)
+                  AND LOWER(COALESCE(o.categoria, '')) = 'diario'
+                  AND CAST(o.fecha_creacion AS DATE) <= ?
+                  AND NOT EXISTS (
+                      SELECT 1 FROM objetivos_completados_log ocl 
+                      WHERE ocl.objetivo_id = o.id 
+                        AND ocl.user_id = o.user_id 
+                        AND TRY_CAST(ocl.fecha_completado AS DATE) = TRY_CAST(? AS DATE)
+                  )
+                ORDER BY o.fecha_creacion DESC
+            """
+            
+            cursor.execute(query_recurrentes_pendientes, (current_user.id, fecha, fecha))
+            objetivos_recurrentes_pendientes = []
+            for row in cursor.fetchall():
+                objetivos_recurrentes_pendientes.append({
+                    'id': row.id,
+                    'titulo': row.titulo,
+                    'descripcion': row.descripcion,
+                    'categoria': row.categoria,
+                    'prioridad': row.prioridad,
+                    'recurrente': True,
+                    'parte_dia': row.parte_dia,
+                    'horas_estimadas': float(row.horas_estimadas) if row.horas_estimadas else None,
+                    'fecha_creacion': row.fecha_creacion,
+                    'estado': 'pendiente',
+                    'tipo_origen': 'recurrente_pendiente'
+                })
+            
             resumen = {
                 'total_creados': len(objetivos_creados),
-                'total_completados': len(objetivos_completados)
+                'total_completados': len(objetivos_completados),
+                'total_recurrentes_pendientes': len(objetivos_recurrentes_pendientes)
             }
             
             return jsonify({
@@ -379,7 +419,8 @@ def objetivos_detalle_dia(fecha):
                 'fecha': fecha,
                 'resumen': resumen,
                 'objetivos_creados': objetivos_creados,
-                'objetivos_completados': objetivos_completados
+                'objetivos_completados': objetivos_completados,
+                'objetivos_recurrentes_pendientes': objetivos_recurrentes_pendientes
             })
             
     except Exception as e:
@@ -390,7 +431,11 @@ def objetivos_detalle_dia(fecha):
 @login_required
 def objetivos_calendario():
     """
-    Calendario mensual de objetivos creados y completados.
+    Calendario mensual de objetivos creados y completados (MEJORADO).
+    Ahora incluye:
+    - Objetivos recurrentes completados (desde objetivos_completados_log)
+    - Objetivos no completados por día
+    
     Parámetros:
       - mes: 0-11 (0=Enero)
       - anio: año numérico (ej. 2025)
@@ -402,9 +447,11 @@ def objetivos_calendario():
           mes: 0,
           dias_en_mes: 31,
           creados_por_dia: { '1': 2, '5': 1, ... },
-          completados_por_dia: { '2': 1, '10': 3, ... },
+          completados_por_dia: { '2': 3, '10': 5, ... },  # Incluye recurrentes
+          pendientes_por_dia: { '1': 1, '3': 2, ... },  # Total disponibles - completados
           total_creados: 10,
-          total_completados: 8
+          total_completados: 12,  # Incluye recurrentes
+          total_pendientes: 5
         }
       }
     """
@@ -434,11 +481,12 @@ def objetivos_calendario():
 
         creados = {}
         completados = {}
+        pendientes = {}
 
         with get_db_connection() as conn:
             cursor = conn.cursor()
 
-            # Creados por día (INCLUYE objetivos históricos)
+            # 1. Creados por día (solo objetivos normales)
             logger.info("Ejecutando consulta de objetivos creados")
             cursor.execute(
                 """
@@ -456,8 +504,10 @@ def objetivos_calendario():
             for row in creados_rows:
                 creados[str(int(row[0]))] = int(row[1])
 
-            # Completados por día (INCLUYE objetivos históricos)
-            logger.info("Ejecutando consulta de objetivos completados")
+            # 2. Completados por día (objetivos normales + recurrentes)
+            logger.info("Ejecutando consulta de objetivos completados (normales)")
+            
+            # 2a. Objetivos normales completados
             cursor.execute(
                 """
                 SELECT DAY(fecha_completado) AS dia, COUNT(*)
@@ -465,20 +515,97 @@ def objetivos_calendario():
                 WHERE user_id = ?
                   AND completado = 1
                   AND fecha_completado >= ? AND fecha_completado < ?
+                  AND (recurrente = 0 OR recurrente IS NULL)
                 GROUP BY DAY(fecha_completado)
                 """,
                 (current_user.id, inicio, fin)
             )
-            completados_rows = cursor.fetchall()
-            logger.info(f"Encontrados {len(completados_rows)} días con objetivos completados")
+            completados_normales = cursor.fetchall()
+            logger.info(f"Encontrados {len(completados_normales)} días con objetivos normales completados")
             
-            for row in completados_rows:
-                completados[str(int(row[0]))] = int(row[1])
+            for row in completados_normales:
+                dia = str(int(row[0]))
+                count = int(row[1])
+                completados[dia] = completados.get(dia, 0) + count
+
+            # 2b. Objetivos recurrentes completados (desde log)
+            logger.info("Ejecutando consulta de objetivos recurrentes completados")
+            cursor.execute(
+                """
+                SELECT DAY(ocl.fecha_completado) AS dia, COUNT(*)
+                FROM objetivos_completados_log ocl
+                JOIN objetivos o ON ocl.objetivo_id = o.id
+                WHERE ocl.user_id = ?
+                  AND ocl.fecha_completado >= ? AND ocl.fecha_completado < ?
+                GROUP BY DAY(ocl.fecha_completado)
+                """,
+                (current_user.id, inicio, fin)
+            )
+            completados_recurrentes = cursor.fetchall()
+            logger.info(f"Encontrados {len(completados_recurrentes)} días con objetivos recurrentes completados")
+            
+            for row in completados_recurrentes:
+                dia = str(int(row[0]))
+                count = int(row[1])
+                completados[dia] = completados.get(dia, 0) + count
+
+# 3. Pendientes por día (recurrentes no completados ese día + objetivos creados ese día no completados)
+            logger.info("Calculando objetivos pendientes por día")
+
+            # Para cada día del mes, calcular pendientes
+            dia_actual_loop = inicio.date()
+            while dia_actual_loop < fin.date():
+                fecha_dia = dia_actual_loop
+                dia_str = str(fecha_dia.day)
+                
+                # Solo calcular para días pasados o hoy
+                if fecha_dia <= datetime.now().date():
+                    # 3a. Objetivos recurrentes no completados ese día (basado en el log)
+                    cursor.execute(
+                        """
+                        SELECT COUNT(*)
+                        FROM objetivos o
+                        LEFT JOIN objetivos_completados_log ocl ON o.id = ocl.objetivo_id 
+                            AND ocl.user_id = o.user_id 
+                            AND CONVERT(date, ocl.fecha_completado) = ?
+                        WHERE o.user_id = ?
+                          AND o.recurrente = 1
+                          AND (o.estado != 'histórico' OR o.estado IS NULL)
+                          AND LOWER(COALESCE(o.categoria, '')) = 'diario'
+                          AND ocl.id IS NULL
+                          AND CAST(o.fecha_creacion AS DATE) <= ?
+                        """,
+                        (fecha_dia, current_user.id, fecha_dia)
+                    )
+                    recurrentes_pendientes = cursor.fetchone()[0]
+
+                    # 3b. Objetivos normales creados ese día no completados
+                    cursor.execute(
+                        """
+                        SELECT COUNT(*)
+                        FROM objetivos
+                        WHERE user_id = ?
+                          AND CAST(fecha_creacion AS DATE) = ?
+                          AND (recurrente = 0 OR recurrente IS NULL)
+                          AND completado = 0
+                        """,
+                        (current_user.id, fecha_dia)
+                    )
+                    normales_pendientes = cursor.fetchone()[0]
+
+                    total_pendientes_dia = recurrentes_pendientes + normales_pendientes
+                    if total_pendientes_dia > 0:
+                        pendientes[dia_str] = total_pendientes_dia
+                
+                dia_actual_loop += timedelta(days=1)
+
+            logger.info(f"Calculados pendientes para {len(pendientes)} días")
 
         total_creados = sum(creados.values())
         total_completados = sum(completados.values())
+        total_pendientes = sum(pendientes.values())
         
-        logger.info(f"Totales calculados - Creados: {total_creados}, Completados: {total_completados}")
+        logger.info(f"Totales - Creados: {total_creados}, Completados: {total_completados}, Pendientes: {total_pendientes}")
 
         response_data = {
             'status': 'success',
@@ -488,12 +615,14 @@ def objetivos_calendario():
                 'dias_en_mes': dias_en_mes,
                 'creados_por_dia': creados,
                 'completados_por_dia': completados,
+                'pendientes_por_dia': pendientes,
                 'total_creados': total_creados,
-                'total_completados': total_completados
+                'total_completados': total_completados,
+                'total_pendientes': total_pendientes
             }
         }
         
-        logger.info(f"Enviando respuesta del calendario: {len(creados)} días con creados, {len(completados)} días con completados")
+        logger.info(f"Enviando respuesta del calendario con {len(completados)} días con completados")
         return jsonify(response_data)
         
     except Exception as e:
@@ -551,38 +680,142 @@ def objetivos_dia():
         except ValueError:
             return jsonify({'status': 'error', 'message': 'Fecha inválida'}), 400
         
-        objetivos = []
+        # Listas para la respuesta
+        objetivos_creados = []
+        objetivos_completados = []
+        objetivos_recurrentes_pendientes = []
         
         with get_db_connection() as conn:
             cursor = conn.cursor()
             
-            # Buscar objetivos creados en este día O completados en este día
+            # 1. Objetivos Creados en este día
             cursor.execute(
                 """
-                SELECT DISTINCT o.id, o.titulo, o.descripcion, o.completado, 
-                       o.fecha_creacion, o.fecha_completado, o.categoria
+                SELECT o.id, o.titulo, o.descripcion, o.completado, 
+                       o.fecha_creacion, o.fecha_completado, o.categoria, o.prioridad, o.parte_dia,
+                       o.recurrente, o.tipo
                 FROM objetivos o
                 WHERE o.user_id = ?
-                  AND (
-                    (o.fecha_creacion >= ? AND o.fecha_creacion < ?) OR
-                    (o.completado = 1 AND o.fecha_completado >= ? AND o.fecha_completado < ?)
-                  )
+                  AND o.fecha_creacion >= ? AND o.fecha_creacion < ?
                 ORDER BY o.fecha_creacion DESC
                 """,
-                (current_user.id, fecha_objetivo, fecha_siguiente, fecha_objetivo, fecha_siguiente)
+                (current_user.id, fecha_objetivo, fecha_siguiente)
             )
             
             for row in cursor.fetchall():
-                objetivo = {
+                obj = {
                     'id': row[0],
                     'titulo': row[1],
                     'descripcion': row[2] or '',
                     'completado': bool(row[3]),
                     'fecha_creacion': row[4].strftime('%Y-%m-%d %H:%M:%S') if row[4] else '',
                     'fecha_completado': row[5].strftime('%Y-%m-%d %H:%M:%S') if row[5] else '',
-                    'categoria': row[6] or 'Sin categoría'
+                    'categoria': row[6] or 'Sin categoría',
+                    'prioridad': row[7] or 'media',
+                    'parte_dia': row[8] or '',
+                    'recurrente': bool(row[9]) if row[9] is not None else False,
+                    'tipo': row[10] or 'normal'
                 }
-                objetivos.append(objetivo)
+                objetivos_creados.append(obj)
+
+            # 2. Objetivos Completados en este día (Normales y Recurrentes)
+            # 2a. Normales completados hoy (que no fueron creados hoy, para no duplicar en lógica de frontend, 
+            # pero el frontend usa 'some' así que está bien tenerlos todos)
+            cursor.execute(
+                """
+                SELECT o.id, o.titulo, o.descripcion, 1 as completado, 
+                       o.fecha_creacion, o.fecha_completado, o.categoria, o.prioridad, o.parte_dia,
+                       o.recurrente, o.tipo
+                FROM objetivos o
+                WHERE o.user_id = ?
+                  AND o.completado = 1
+                  AND o.fecha_completado >= ? AND o.fecha_completado < ?
+                """,
+                (current_user.id, fecha_objetivo, fecha_siguiente)
+            )
+            for row in cursor.fetchall():
+                obj = {
+                    'id': row[0],
+                    'titulo': row[1],
+                    'descripcion': row[2] or '',
+                    'completado': True,
+                    'fecha_creacion': row[4].strftime('%Y-%m-%d %H:%M:%S') if row[4] else '',
+                    'fecha_completado': row[5].strftime('%Y-%m-%d %H:%M:%S') if row[5] else '',
+                    'categoria': row[6] or 'Sin categoría',
+                    'prioridad': row[7] or 'media',
+                    'parte_dia': row[8] or '',
+                    'recurrente': bool(row[9]) if row[9] is not None else False,
+                    'tipo': row[10] or 'normal'
+                }
+                objetivos_completados.append(obj)
+
+            # 2b. Recurrentes completados hoy (desde log)
+            cursor.execute(
+                """
+                SELECT o.id, o.titulo, o.descripcion, 1 as completado, 
+                       o.fecha_creacion, log.fecha_completado, o.categoria, o.prioridad, o.parte_dia,
+                       o.recurrente, o.tipo
+                FROM objetivos_completados_log log
+                JOIN objetivos o ON log.objetivo_id = o.id
+                WHERE log.user_id = ?
+                  AND log.fecha_completado >= ? AND log.fecha_completado < ?
+                """,
+                (current_user.id, fecha_objetivo, fecha_siguiente)
+            )
+            for row in cursor.fetchall():
+                # Evitar duplicados si ya está (aunque query anterior era tabla objetivos, esta es log)
+                if not any(o['id'] == row[0] for o in objetivos_completados):
+                    obj = {
+                        'id': row[0],
+                        'titulo': row[1],
+                        'descripcion': row[2] or '',
+                        'completado': True,
+                        'fecha_creacion': row[4].strftime('%Y-%m-%d %H:%M:%S') if row[4] else '',
+                        'fecha_completado': row[5].strftime('%Y-%m-%d %H:%M:%S') if row[5] else '',
+                        'categoria': row[6] or 'Sin categoría',
+                        'prioridad': row[7] or 'media',
+                        'parte_dia': row[8] or '',
+                        'recurrente': True,
+                        'tipo': row[10] or 'recurrente'
+                    }
+                    objetivos_completados.append(obj)
+
+            # 3. Objetivos Recurrentes Pendientes
+            # Solo si el día es hoy o pasado
+            if fecha_objetivo.date() <= datetime.now().date():
+                cursor.execute(
+                    """
+                    SELECT o.id, o.titulo, o.descripcion, 0 as completado, 
+                           o.fecha_creacion, NULL as fecha_completado, o.categoria, o.prioridad, o.parte_dia,
+                           o.recurrente, o.tipo
+                    FROM objetivos o
+                    LEFT JOIN objetivos_completados_log ocl ON o.id = ocl.objetivo_id 
+                        AND ocl.user_id = o.user_id 
+                        AND ocl.fecha_completado >= ? AND ocl.fecha_completado < ?
+                    WHERE o.user_id = ?
+                      AND o.recurrente = 1
+                      AND (o.estado != 'histórico' OR o.estado IS NULL)
+                      AND LOWER(COALESCE(o.categoria, '')) = 'diario'
+                      AND ocl.id IS NULL
+                      AND CAST(o.fecha_creacion AS DATE) <= ?
+                    """,
+                    (fecha_objetivo, fecha_siguiente, current_user.id, fecha_objetivo)
+                )
+                for row in cursor.fetchall():
+                    obj = {
+                        'id': row[0],
+                        'titulo': row[1],
+                        'descripcion': row[2] or '',
+                        'completado': False,
+                        'fecha_creacion': row[4].strftime('%Y-%m-%d %H:%M:%S') if row[4] else '',
+                        'fecha_completado': None,
+                        'categoria': row[6] or 'Sin categoría',
+                        'prioridad': row[7] or 'media',
+                        'parte_dia': row[8] or '',
+                        'recurrente': True,
+                        'tipo': row[10] or 'recurrente'
+                    }
+                    objetivos_recurrentes_pendientes.append(obj)
         
         return jsonify({
             'status': 'success',
@@ -591,7 +824,9 @@ def objetivos_dia():
                 'dia': dia,
                 'mes': mes,
                 'anio': anio,
-                'objetivos': objetivos
+                'objetivos_creados': objetivos_creados,
+                'objetivos_completados': objetivos_completados,
+                'objetivos_recurrentes_pendientes': objetivos_recurrentes_pendientes
             }
         })
         

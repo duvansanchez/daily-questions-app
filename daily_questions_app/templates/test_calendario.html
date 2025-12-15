@@ -7,6 +7,88 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .calendario-container {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        
+        .calendario-header {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 2px;
+            margin-bottom: 10px;
+        }
+        
+        .calendario-dia-semana {
+            text-align: center;
+            font-weight: bold;
+            font-size: 14px;
+            color: #666;
+            padding: 8px 0;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+        }
+        
+        .calendario-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 2px;
+        }
+        
+        .calendario-dia {
+            min-height: 70px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 4px;
+            transition: all 0.2s;
+        }
+        
+        .calendario-dia:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        
+        .calendario-dia.con-actividad {
+            cursor: pointer;
+        }
+        
+        .calendario-dia.sin-datos {
+            background-color: #f8f9fa !important;
+            cursor: default;
+        }
+        
+        .calendario-dia.otro-mes {
+            opacity: 0.3;
+        }
+        
+        .calendario-dia-numero {
+            font-weight: bold;
+            font-size: 16px;
+            margin-bottom: 2px;
+        }
+        
+        .calendario-dia-respuesta {
+            font-size: 10px;
+            margin-top: 1px;
+            line-height: 1;
+        }
+        
+        .calendario-leyenda {
+            font-size: 12px;
+        }
+        
+        .calendario-leyenda-item {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 2px;
+            margin-right: 4px;
+        }
+    </style>
 </head>
 <body>
     <div class="container py-4">
@@ -34,6 +116,10 @@
                         <div class="h4 fw-bold text-success mb-0" id="obj-total-completados">0</div>
                         <small class="text-muted">Completados en el mes</small>
                     </div>
+                    <div class="text-center">
+                        <div class="h4 fw-bold text-warning mb-0" id="obj-total-pendientes">0</div>
+                        <small class="text-muted">Pendientes en el mes</small>
+                    </div>
                 </div>
 
                 <div id="objetivos-calendario" class="calendario-container">
@@ -52,6 +138,10 @@
                         <span class="calendario-leyenda-item" style="background-color:#22c55e;"></span>
                         <small class="text-muted">✅ Objetivos Completados</small>
                     </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="calendario-leyenda-item" style="background-color:#ef4444;"></span>
+                        <small class="text-muted">⏳ Objetivos Pendientes</small>
+                    </div>
                 </div>
             </div>
         </div>
@@ -65,6 +155,76 @@
                 <pre id="debug-log" style="max-height: 300px; overflow-y: auto; font-size: 0.8rem;"></pre>
             </div>
         </div>
+    </div>
+
+    <!-- Modal Detalle del Día - Versión Unificada -->
+    <div class="modal fade" id="modalDetalleDia" tabindex="-1" aria-labelledby="modalDetalleDiaLabel" aria-hidden="true">
+      <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="modalDetalleDiaLabel">
+              <i class="bi bi-calendar-day me-2"></i>Detalle del día: 
+              <span id="modalDetalleDiaFecha" class="text-primary"></span>
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <!-- Resumen del día -->
+            <div class="row mb-4">
+              <div class="col-md-4">
+                <div class="card bg-light">
+                  <div class="card-body text-center">
+                    <h3 class="text-info mb-1" id="detalle-total-objetivos">0</h3>
+                    <small class="text-muted">Total Objetivos</small>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="card bg-light">
+                  <div class="card-body text-center">
+                    <h3 class="text-success mb-1" id="detalle-total-completados">0</h3>
+                    <small class="text-muted">Completados</small>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="card bg-light">
+                  <div class="card-body text-center">
+                    <h3 class="text-warning mb-1" id="detalle-total-pendientes">0</h3>
+                    <small class="text-muted">Pendientes</small>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Lista unificada de objetivos -->
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h6 class="mb-0">
+                <i class="bi bi-list-check me-2"></i>Todos los Objetivos del Día
+              </h6>
+              <div class="btn-group btn-group-sm" role="group">
+                <input type="radio" class="btn-check" name="filtro-objetivos" id="filtro-todos" autocomplete="off" checked>
+                <label class="btn btn-outline-secondary" for="filtro-todos">Todos</label>
+                
+                <input type="radio" class="btn-check" name="filtro-objetivos" id="filtro-completados" autocomplete="off">
+                <label class="btn btn-outline-success" for="filtro-completados">Completados</label>
+                
+                <input type="radio" class="btn-check" name="filtro-objetivos" id="filtro-pendientes" autocomplete="off">
+                <label class="btn btn-outline-warning" for="filtro-pendientes">Pendientes</label>
+              </div>
+            </div>
+            
+            <div id="lista-objetivos-unificada">
+              <!-- Aquí se cargarán todos los objetivos -->
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+              <i class="bi bi-x-circle me-1"></i>Cerrar
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
@@ -190,7 +350,7 @@
             
             debugLog(`Renderizando calendario con datos: ${JSON.stringify(data)}`);
             
-            const { anio, mes, dias_en_mes, creados_por_dia = {}, completados_por_dia = {} } = data;
+            const { anio, mes, dias_en_mes, creados_por_dia = {}, completados_por_dia = {}, pendientes_por_dia = {} } = data;
             
             // Encabezado de días de la semana
             const diasSemana = ['L','M','X','J','V','S','D'];
@@ -209,29 +369,37 @@
             for (let dia = 1; dia <= dias_en_mes; dia++) {
                 const creados = creados_por_dia[String(dia)] || 0;
                 const completados = completados_por_dia[String(dia)] || 0;
+                const pendientes = pendientes_por_dia[String(dia)] || 0;
                 
                 // Determinar el color de fondo basado en la actividad
                 let claseExtra = '';
                 let colorFondo = '#f8f9fa';
                 
-                if (creados > 0 || completados > 0) {
+                if (creados > 0 || completados > 0 || pendientes > 0) {
                     claseExtra = 'con-actividad';
-                    if (completados > creados) {
-                        colorFondo = '#d4edda'; // Verde claro si hay más completados
-                    } else if (creados > completados) {
-                        colorFondo = '#cce5ff'; // Azul claro si hay más creados
-                    } else {
-                        colorFondo = '#fff3cd'; // Amarillo claro si están equilibrados
+                    if (pendientes > 0 && completados === 0) {
+                        colorFondo = '#fef2f2'; // Rojo claro si solo pendientes
+                    } else if (completados > 0 && pendientes === 0) {
+                        colorFondo = '#d4edda'; // Verde claro si todo completado
+                    } else if (completados > 0 && pendientes > 0) {
+                        colorFondo = '#fff3cd'; // Amarillo claro si mixto
+                    } else if (creados > 0) {
+                        colorFondo = '#cce5ff'; // Azul claro si solo creados
                     }
                 }
                 
+                // Crear fecha para el día actual
+                const fechaDia = `${anio}-${String(mes + 1).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
+                
                 grid += `
                 <div class="calendario-dia ${claseExtra}" 
-                     style="background-color: ${colorFondo};" 
-                     title="${dia} ${MESES_NOMBRES[mes]} ${anio}\nCreados: ${creados}\nCompletados: ${completados}">
+                     style="background-color: ${colorFondo}; cursor: pointer;" 
+                     title="${dia} ${MESES_NOMBRES[mes]} ${anio}\nCreados: ${creados}\nCompletados: ${completados}\nPendientes: ${pendientes}\nHaz clic para ver detalles"
+                     onclick="abrirDetalleDia('${fechaDia}')">
                     <div class="calendario-dia-numero">${dia}</div>
                     <div class="calendario-dia-respuesta" style="color:#3b82f6; font-weight: 500;">📝 ${creados}</div>
                     <div class="calendario-dia-respuesta" style="color:#22c55e; font-weight: 500;">✅ ${completados}</div>
+                    <div class="calendario-dia-respuesta" style="color:#ef4444; font-weight: 500;">⏳ ${pendientes}</div>
                 </div>`;
             }
             grid += '</div>';
@@ -241,13 +409,16 @@
             // Totales
             const totalCreados = Object.values(creados_por_dia).reduce((a,b)=>a+Number(b),0);
             const totalCompletados = Object.values(completados_por_dia).reduce((a,b)=>a+Number(b),0);
+            const totalPendientes = Object.values(pendientes_por_dia).reduce((a,b)=>a+Number(b),0);
             const elCreados = document.getElementById('obj-total-creados');
             const elCompletados = document.getElementById('obj-total-completados');
+            const elPendientes = document.getElementById('obj-total-pendientes');
             
             if (elCreados) elCreados.textContent = totalCreados;
             if (elCompletados) elCompletados.textContent = totalCompletados;
+            if (elPendientes) elPendientes.textContent = totalPendientes;
             
-            debugLog(`Calendario renderizado: ${totalCreados} creados, ${totalCompletados} completados`);
+            debugLog(`Calendario renderizado: ${totalCreados} creados, ${totalCompletados} completados, ${totalPendientes} pendientes`);
         }
 
         // Inicialización
@@ -268,6 +439,177 @@
             // Carga inicial
             cargarCalendarioObjetivos();
         });
+
+        // Variable global para almacenar todos los objetivos
+        let todosLosObjetivos = [];
+
+        // Modal detalle del día - Versión unificada
+        window.abrirDetalleDia = async function(fecha) {
+            debugLog('🗓️ Abriendo detalle para: ' + fecha);
+            
+            try {
+                const modal = new bootstrap.Modal(document.getElementById('modalDetalleDia'));
+                document.getElementById('modalDetalleDiaFecha').textContent = new Date(fecha + 'T00:00:00').toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                document.getElementById('lista-objetivos-unificada').innerHTML = '<div class="text-center py-4"><div class="spinner-border text-info"></div><div class="mt-2">Cargando objetivos...</div></div>';
+                modal.show();
+                debugLog('✅ Modal mostrado');
+                
+                debugLog('📡 Haciendo petición a API...');
+                const response = await fetch(`/api/objetivos/dia/${fecha}`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                debugLog('📊 Respuesta recibida: ' + JSON.stringify(data));
+                
+                // Verificar si la respuesta es exitosa
+                if (data.status !== 'success') {
+                    throw new Error(data.error || 'Error en la respuesta del servidor');
+                }
+                
+                // Combinar todos los objetivos en una sola lista
+                todosLosObjetivos = [];
+                
+                // Agregar objetivos creados (marcando si están completados o no)
+                data.objetivos_creados.forEach(obj => {
+                    const estaCompletado = data.objetivos_completados.some(comp => comp.id === obj.id);
+                    const completadoInfo = estaCompletado ? 
+                        data.objetivos_completados.find(comp => comp.id === obj.id) : null;
+                    
+                    todosLosObjetivos.push({
+                        ...obj,
+                        estado: estaCompletado ? 'completado' : 'pendiente',
+                        tipo_origen: 'creado',
+                        hora_completado: completadoInfo ? completadoInfo.hora_completado : null,
+                        fecha_completado: completadoInfo ? completadoInfo.fecha_completado : null
+                    });
+                });
+                
+                // Agregar objetivos recurrentes pendientes
+                if (data.objetivos_recurrentes_pendientes) {
+                    data.objetivos_recurrentes_pendientes.forEach(obj => {
+                        todosLosObjetivos.push({
+                            ...obj,
+                            estado: 'pendiente',
+                            tipo_origen: 'recurrente_pendiente'
+                        });
+                    });
+                }
+                
+                // Actualizar contadores
+                const totalObjetivos = todosLosObjetivos.length;
+                const totalCompletados = todosLosObjetivos.filter(obj => obj.estado === 'completado').length;
+                const totalPendientes = totalObjetivos - totalCompletados;
+                
+                document.getElementById('detalle-total-objetivos').textContent = totalObjetivos;
+                document.getElementById('detalle-total-completados').textContent = totalCompletados;
+                document.getElementById('detalle-total-pendientes').textContent = totalPendientes;
+                
+                debugLog(`📊 Objetivos procesados: ${totalObjetivos} total, ${totalCompletados} completados, ${totalPendientes} pendientes`);
+                
+                // Renderizar lista unificada
+                renderizarObjetivosUnificados('todos');
+                
+                // Configurar filtros
+                configurarFiltrosObjetivos();
+                
+                debugLog('✅ Modal cargado correctamente');
+                
+            } catch (error) {
+                console.error('Error:', error);
+                debugLog('❌ Error: ' + error.message);
+                document.getElementById('lista-objetivos-unificada').innerHTML = '<div class="alert alert-danger"><i class="bi bi-exclamation-triangle me-2"></i>Error al cargar objetivos</div>';
+            }
+        };
+
+        function renderizarObjetivosUnificados(filtro = 'todos') {
+            const container = document.getElementById('lista-objetivos-unificada');
+            
+            let objetivosFiltrados = todosLosObjetivos;
+            
+            // Aplicar filtro
+            if (filtro === 'completados') {
+                objetivosFiltrados = todosLosObjetivos.filter(obj => obj.estado === 'completado');
+            } else if (filtro === 'pendientes') {
+                objetivosFiltrados = todosLosObjetivos.filter(obj => obj.estado === 'pendiente');
+            }
+            
+            if (objetivosFiltrados.length === 0) {
+                const mensajeFiltro = filtro === 'completados' ? 'completados' : 
+                                     filtro === 'pendientes' ? 'pendientes' : '';
+                container.innerHTML = `
+                    <div class="text-center text-muted py-4">
+                        <i class="bi bi-inbox" style="font-size: 2rem;"></i>
+                        <div class="mt-2">No hay objetivos ${mensajeFiltro} para este día</div>
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = '';
+            objetivosFiltrados.forEach((obj, index) => {
+                const esCompletado = obj.estado === 'completado';
+                const iconoEstado = esCompletado ? 'check-circle-fill' : 'circle';
+                const colorEstado = esCompletado ? 'success' : 'warning';
+                const bgClass = esCompletado ? 'bg-light' : '';
+                const prioridadColor = obj.prioridad === 'alta' ? 'danger' : 
+                                      obj.prioridad === 'media' ? 'warning' : 'secondary';
+                
+                const tipoIcon = obj.recurrente ? 'arrow-repeat' : 
+                                obj.tipo_origen === 'completado_recurrente' ? 'arrow-repeat' : 'plus-circle';
+                
+                html += `
+                    <div class="border rounded p-3 mb-3 ${bgClass}" data-estado="${obj.estado}">
+                        <div class="d-flex align-items-start">
+                            <div class="me-3 mt-1">
+                                <i class="bi bi-${iconoEstado} text-${colorEstado}" style="font-size: 1.2rem;"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <h6 class="mb-1 ${esCompletado ? 'text-decoration-line-through text-muted' : ''}">${obj.titulo}</h6>
+                                    <div class="d-flex gap-2">
+                                        <span class="badge bg-${prioridadColor}">${obj.prioridad || 'media'}</span>
+                                        <i class="bi bi-${tipoIcon} text-info" title="${obj.recurrente || obj.tipo_origen === 'completado_recurrente' ? 'Recurrente' : 'Normal'}"></i>
+                                    </div>
+                                </div>
+                                <p class="text-muted small mb-2">${obj.descripcion || 'Sin descripción'}</p>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="d-flex gap-3">
+                                        <small class="text-info">
+                                            <i class="bi bi-tag me-1"></i>${obj.categoria || 'Sin categoría'}
+                                        </small>
+                                        ${obj.parte_dia ? `<small class="text-secondary"><i class="bi bi-clock me-1"></i>${obj.parte_dia}</small>` : ''}
+                                    </div>
+                                    <div class="text-end">
+                                        ${esCompletado ? 
+                                            `<small class="text-success"><i class="bi bi-check2 me-1"></i>Completado ${obj.hora_completado || ''}</small>` :
+                                            `<small class="text-warning"><i class="bi bi-hourglass-split me-1"></i>Pendiente</small>`
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+            debugLog(`🔄 Renderizados ${objetivosFiltrados.length} objetivos (filtro: ${filtro})`);
+        }
+
+        function configurarFiltrosObjetivos() {
+            const filtros = document.querySelectorAll('input[name="filtro-objetivos"]');
+            filtros.forEach(filtro => {
+                filtro.addEventListener('change', function() {
+                    if (this.checked) {
+                        const tipoFiltro = this.id.replace('filtro-', '');
+                        renderizarObjetivosUnificados(tipoFiltro);
+                    }
+                });
+            });
+        }
     </script>
 </body>
 </html>
