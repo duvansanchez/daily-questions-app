@@ -675,14 +675,15 @@ def objetivos_calendario():
             logger.info("Ejecutando consulta de objetivos recurrentes completados")
             cursor.execute(
                 """
-                SELECT DAY(ocl.fecha_completado) AS dia, COUNT(*)
+                SELECT DAY(CAST(ocl.fecha_completado AS DATE)) AS dia, COUNT(*)
                 FROM objetivos_completados_log ocl
                 JOIN objetivos o ON ocl.objetivo_id = o.id
                 WHERE ocl.user_id = ?
-                  AND ocl.fecha_completado >= ? AND ocl.fecha_completado < ?
-                GROUP BY DAY(ocl.fecha_completado)
+                  AND CAST(ocl.fecha_completado AS DATE) >= CAST(? AS DATE) 
+                  AND CAST(ocl.fecha_completado AS DATE) < CAST(? AS DATE)
+                GROUP BY DAY(CAST(ocl.fecha_completado AS DATE))
                 """,
-                (current_user.id, inicio, fin)
+                (current_user.id, inicio.date(), fin.date())
             )
             completados_recurrentes = cursor.fetchall()
             logger.info(f"Encontrados {len(completados_recurrentes)} días con objetivos recurrentes completados")
@@ -3784,14 +3785,18 @@ def api_list_objetivos():
         cursor = conn.cursor()
         # Consulta con ordenamiento que pone solo los completados al final
         hoy = datetime.now().date()
+        # Modificado para incluir chequeo de log de completados recurrentes
         cursor.execute('''
             SELECT o.id, o.titulo, o.descripcion, o.prioridad, o.categoria, o.completado, o.fecha_creacion, o.fecha_completado, 
                    o.objetivo_padre_id, o.es_padre, o.estado, o.fecha_inicio, o.fecha_fin, 
                    o.horas_estimadas, o.recompensa, o.recurrente, o.frecuencia, o.orden, o.parte_dia,
                    CASE WHEN os.objetivo_id IS NOT NULL THEN 1 ELSE 0 END as saltado_hoy,
-                   o.fecha_programada, o.programado_para, o.tiempo_focus
+                   o.fecha_programada, o.programado_para, o.tiempo_focus,
+                   CASE WHEN ocl.id IS NOT NULL THEN 1 ELSE 0 END as completado_hoy_recurrente,
+                   ocl.fecha_completado as fecha_completado_log
             FROM objetivos o
             LEFT JOIN objetivos_saltados os ON o.id = os.objetivo_id AND os.user_id = o.user_id AND os.fecha_saltada = ?
+            LEFT JOIN objetivos_completados_log ocl ON o.id = ocl.objetivo_id AND ocl.user_id = o.user_id AND CAST(ocl.fecha_completado AS DATE) = ?
             WHERE o.user_id = ? 
             AND (
                 (o.fecha_programada IS NULL AND o.programado_para IS NULL) OR
@@ -3800,7 +3805,7 @@ def api_list_objetivos():
             )
             ORDER BY 
                 CASE 
-                    WHEN o.completado = 1 THEN 2
+                    WHEN o.completado = 1 OR ocl.id IS NOT NULL THEN 2
                     WHEN os.objetivo_id IS NOT NULL THEN 1
                     ELSE 0
                 END ASC,
@@ -3812,21 +3817,33 @@ def api_list_objetivos():
                 END ASC,
                 o.orden ASC, 
                 o.fecha_creacion DESC
-        ''', (hoy, current_user.id, hoy))
+        ''', (hoy, hoy, current_user.id, hoy))
         rows = cursor.fetchall()
         objetivos = []
         objetivo_ids = []
         
         for row in rows:
+            # Determinar si está completado (ya sea directamente o vía log recurrente)
+            es_completado_base = bool(row[5])
+            es_completado_recurrente = bool(row[23]) if len(row) > 23 else False
+            esta_completado = es_completado_base or es_completado_recurrente
+            
+            # Determinar fecha completado correcta
+            fecha_completado_str = None
+            if row[7]: # fecha_completado original
+                fecha_completado_str = row[7].strftime('%Y-%m-%d')
+            elif es_completado_recurrente and len(row) > 24 and row[24]: # fecha del log
+                fecha_completado_str = row[24].strftime('%Y-%m-%d')
+            
             obj = {
                 'id': row[0],
                 'titulo': row[1],
                 'descripcion': row[2],
                 'prioridad': row[3],
                 'categoria': row[4],
-                'completado': bool(row[5]),
+                'completado': esta_completado,
                 'fecha_creacion': row[6].strftime('%Y-%m-%d') if row[6] else None,
-                'fecha_completado': row[7].strftime('%Y-%m-%d') if row[7] else None,
+                'fecha_completado': fecha_completado_str,
                 'objetivo_padre_id': row[8],
                 'es_padre': bool(row[9]),
                 'estado': row[10],
@@ -4301,22 +4318,21 @@ def api_update_objetivo(objetivo_id):
     if 'completado' in data:
         campos['completado'] = int(bool(data['completado']))
         if data['completado']:
-            campos['fecha_completado'] = 'GETDATE()'
+            # Si se proporciona una fecha personalizada, usarla; sino usar GETDATE()
+            if 'fecha_completado' in data and data['fecha_completado']:
+                try:
+                    # Parsear la fecha (formato YYYY-MM-DD)
+                    fecha_completado = parse_fecha(data['fecha_completado'])
+                    if fecha_completado:
+                        campos['fecha_completado'] = fecha_completado
+                    else:
+                        campos['fecha_completado'] = 'GETDATE()'
+                except:
+                    campos['fecha_completado'] = 'GETDATE()'
+            else:
+                campos['fecha_completado'] = 'GETDATE()'
         else:
             campos['fecha_completado'] = 'NULL'
-    if not campos:
-        return jsonify({'error': 'No hay campos para actualizar'}), 400
-    set_clause = []
-    values = []
-    for k, v in campos.items():
-        if k == 'fecha_completado' and v == 'GETDATE()':
-            set_clause.append(f"{k} = GETDATE()")
-        elif k == 'fecha_completado' and v == 'NULL':
-            set_clause.append(f"{k} = NULL")
-        else:
-            set_clause.append(f"{k} = ?")
-            values.append(v)
-    values.extend([objetivo_id, current_user.id])
     with get_db_connection() as conn:
         cursor = conn.cursor()
         
@@ -4329,37 +4345,94 @@ def api_update_objetivo(objetivo_id):
         
         es_recurrente = objetivo_info.recurrente
         
-        # Actualizar el objetivo
-        query = f"UPDATE objetivos SET {', '.join(set_clause)} WHERE id = ? AND user_id = ?"
-        cursor.execute(query, tuple(values))
+        # Para objetivos recurrentes, NO actualizar el campo completado del objetivo principal
+        # Solo registrar en el log. Los objetivos recurrentes siempre deben tener completado = 0
+        if es_recurrente and 'completado' in data:
+            # Remover completado y fecha_completado de los campos a actualizar
+            if 'completado' in campos:
+                del campos['completado']
+            if 'fecha_completado' in campos:
+                del campos['fecha_completado']
+        
+        if not campos:
+            # Si solo se estaba intentando actualizar completado y es recurrente, no hacer nada en la tabla objetivos
+            # Solo registrar en el log más abajo
+            pass
+        else:
+            set_clause = []
+            values = []
+            for k, v in campos.items():
+                if k == 'fecha_completado' and v == 'GETDATE()':
+                    set_clause.append(f"{k} = GETDATE()")
+                elif k == 'fecha_completado' and v == 'NULL':
+                    set_clause.append(f"{k} = NULL")
+                elif k == 'fecha_completado' and isinstance(v, datetime):
+                    # Si es una fecha personalizada (datetime), usar parámetro
+                    set_clause.append(f"{k} = ?")
+                    values.append(v)
+                else:
+                    set_clause.append(f"{k} = ?")
+                    values.append(v)
+            values.extend([objetivo_id, current_user.id])
+            
+            # Actualizar el objetivo (sin completado si es recurrente)
+            query = f"UPDATE objetivos SET {', '.join(set_clause)} WHERE id = ? AND user_id = ?"
+            cursor.execute(query, tuple(values))
         
         # Si es un objetivo recurrente y se está marcando como completado, registrar en el log
         if 'completado' in data and data['completado'] and es_recurrente:
-            # Verificar si ya existe un registro para hoy
-            hoy = datetime.now().date()
+            # Determinar la fecha a usar (personalizada o hoy)
+            if 'fecha_completado' in data and data['fecha_completado']:
+                try:
+                    fecha_log_datetime = parse_fecha(data['fecha_completado'])
+                    if fecha_log_datetime:
+                        fecha_log = fecha_log_datetime.date()
+                    else:
+                        fecha_log = datetime.now().date()
+                except:
+                    fecha_log = datetime.now().date()
+            else:
+                fecha_log = datetime.now().date()
+            
+            # Verificar si ya existe un registro para esa fecha
             cursor.execute("""
                 SELECT COUNT(*) FROM objetivos_completados_log 
                 WHERE objetivo_id = ? AND user_id = ? AND CAST(fecha_completado AS DATE) = ?
-            """, (objetivo_id, current_user.id, hoy))
+            """, (objetivo_id, current_user.id, fecha_log))
             
-            existe_hoy = cursor.fetchone()[0] > 0
+            existe_fecha = cursor.fetchone()[0] > 0
             
-            if not existe_hoy:
-                # Registrar en el log de completados
+            if not existe_fecha:
+                # Convertir fecha_log (date) a datetime para insertar correctamente
+                # Usar hora mediodía (12:00:00) para evitar problemas de zona horaria
+                from datetime import time
+                fecha_log_datetime = datetime.combine(fecha_log, time(12, 0, 0))
+                
+                # Registrar en el log de completados con la fecha especificada
                 cursor.execute("""
                     INSERT INTO objetivos_completados_log (objetivo_id, user_id, fecha_completado)
-                    VALUES (?, ?, GETDATE())
-                """, (objetivo_id, current_user.id))
-                logger.info(f"Objetivo recurrente {objetivo_id} registrado en log de completados para hoy")
+                    VALUES (?, ?, ?)
+                """, (objetivo_id, current_user.id, fecha_log_datetime))
+                logger.info(f"Objetivo recurrente {objetivo_id} registrado en log de completados para {fecha_log} (datetime: {fecha_log_datetime})")
         
-        # Si es un objetivo recurrente y se está desmarcando, eliminar del log de hoy
+        # Si es un objetivo recurrente y se está desmarcando, eliminar del log
         elif 'completado' in data and not data['completado'] and es_recurrente:
-            hoy = datetime.now().date()
+            # Determinar la fecha a usar (personalizada o hoy)
+            if 'fecha_completado' in data and data['fecha_completado']:
+                try:
+                    fecha_log = parse_fecha(data['fecha_completado'])
+                    if not fecha_log:
+                        fecha_log = datetime.now().date()
+                except:
+                    fecha_log = datetime.now().date()
+            else:
+                fecha_log = datetime.now().date()
+            
             cursor.execute("""
                 DELETE FROM objetivos_completados_log 
                 WHERE objetivo_id = ? AND user_id = ? AND CAST(fecha_completado AS DATE) = ?
-            """, (objetivo_id, current_user.id, hoy))
-            logger.info(f"Objetivo recurrente {objetivo_id} eliminado del log de completados para hoy")
+            """, (objetivo_id, current_user.id, fecha_log))
+            logger.info(f"Objetivo recurrente {objetivo_id} eliminado del log de completados para {fecha_log}")
         
         conn.commit()
         return jsonify({'status': 'success'})
@@ -4740,7 +4813,16 @@ def api_update_subobjetivo(subobjetivo_id):
         
         # Si cambió el estado de completado, registrar en el log
         if completado_changed:
-            fecha_hoy = datetime.now().date()
+            # Determinar la fecha a usar (personalizada o hoy)
+            if 'fecha_completado' in data and data['fecha_completado']:
+                try:
+                    fecha_log = parse_fecha(data['fecha_completado'])
+                    if not fecha_log:
+                        fecha_log = datetime.now().date()
+                except:
+                    fecha_log = datetime.now().date()
+            else:
+                fecha_log = datetime.now().date()
             
             if nuevo_completado == 1 and completado_actual == 0:
                 # Se completó el subobjetivo - agregar al log
@@ -4749,22 +4831,22 @@ def api_update_subobjetivo(subobjetivo_id):
                         INSERT INTO subobjetivos_completados_log 
                         (subobjetivo_id, objetivo_id, user_id, fecha_completado)
                         VALUES (?, ?, ?, ?)
-                    ''', (subobjetivo_id, objetivo_id, current_user.id, fecha_hoy))
-                    print(f"📝 Subobjetivo {subobjetivo_id} registrado como completado en {fecha_hoy}")
+                    ''', (subobjetivo_id, objetivo_id, current_user.id, fecha_log))
+                    print(f"📝 Subobjetivo {subobjetivo_id} registrado como completado en {fecha_log}")
                 except Exception as e:
-                    # Si ya existe el registro para hoy, no es un error crítico
+                    # Si ya existe el registro para esa fecha, no es un error crítico
                     if "UNIQUE constraint failed" in str(e) or "duplicate key" in str(e).lower():
-                        print(f"ℹ️ Subobjetivo {subobjetivo_id} ya estaba registrado como completado hoy")
+                        print(f"ℹ️ Subobjetivo {subobjetivo_id} ya estaba registrado como completado en {fecha_log}")
                     else:
                         print(f"⚠️ Error registrando completado: {e}")
                         
             elif nuevo_completado == 0 and completado_actual == 1:
-                # Se descompletó el subobjetivo - remover del log de hoy
+                # Se descompletó el subobjetivo - remover del log
                 cursor.execute('''
                     DELETE FROM subobjetivos_completados_log 
                     WHERE subobjetivo_id = ? AND user_id = ? AND fecha_completado = ?
-                ''', (subobjetivo_id, current_user.id, fecha_hoy))
-                print(f"🗑️ Registro de completado removido para subobjetivo {subobjetivo_id} en {fecha_hoy}")
+                ''', (subobjetivo_id, current_user.id, fecha_log))
+                print(f"🗑️ Registro de completado removido para subobjetivo {subobjetivo_id} en {fecha_log}")
         
         conn.commit()
         print(f"✅ Subobjetivo {subobjetivo_id} actualizado exitosamente")

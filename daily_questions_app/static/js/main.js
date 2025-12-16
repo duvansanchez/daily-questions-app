@@ -5789,11 +5789,24 @@ document.addEventListener('change', async function(e) {
         const objetivoId = e.target.getAttribute('data-objetivo-id');
         const completado = e.target.checked;
         
+        // Preparar datos para enviar
+        const datosActualizacion = { completado };
+        
+        // Si el checkbox "marcar como ayer" está marcado, agregar fecha de ayer
+        const checkboxAyer = document.getElementById('focus-marcar-como-ayer');
+        if (checkboxAyer && checkboxAyer.checked && completado) {
+            datosActualizacion.fecha_completado = window.obtenerFechaAyer();
+            console.log(`📅 Marcando subobjetivo como completado ayer: ${datosActualizacion.fecha_completado}`);
+        } else if (completado) {
+            datosActualizacion.fecha_completado = window.obtenerFechaHoy();
+            console.log(`📅 Marcando subobjetivo como completado hoy: ${datosActualizacion.fecha_completado}`);
+        }
+        
         try {
             const response = await fetch(`/api/subobjetivos/${subobjetivoId}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ completado })
+                body: JSON.stringify(datosActualizacion)
             });
             
             if (response.ok) {
@@ -5876,6 +5889,26 @@ function actualizarDisplayTimer() {
 
 // ===== BOTONES DE ACCIÓN EN FOCUS =====
 
+// Función auxiliar para obtener la fecha de ayer en formato YYYY-MM-DD
+// Disponible globalmente para uso en otros scripts
+window.obtenerFechaAyer = function() {
+    const date = new Date();
+    date.setDate(date.getDate() - 1);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+};
+
+// Función para obtener la fecha de hoy en formato YYYY-MM-DD (Local)
+window.obtenerFechaHoy = function() {
+    const date = new Date();
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+};
+
 document.getElementById('focus-completar').addEventListener('click', async function() {
     if (objetivoEnFocus) {
         try {
@@ -5883,6 +5916,16 @@ document.getElementById('focus-completar').addEventListener('click', async funct
             const datosActualizacion = {
                 completado: true
             };
+            
+            // Si el checkbox "marcar como ayer" está marcado, agregar fecha de ayer
+            const checkboxAyer = document.getElementById('focus-marcar-como-ayer');
+            if (checkboxAyer && checkboxAyer.checked) {
+                datosActualizacion.fecha_completado = window.obtenerFechaAyer();
+                console.log(`📅 Marcando objetivo como completado ayer: ${datosActualizacion.fecha_completado}`);
+            } else {
+                datosActualizacion.fecha_completado = window.obtenerFechaHoy();
+                console.log(`📅 Marcando objetivo como completado hoy: ${datosActualizacion.fecha_completado}`);
+            }
             
             // Si hay tiempo transcurrido, incluirlo
             if (timerSeconds > 0) {

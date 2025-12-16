@@ -296,6 +296,13 @@ document.addEventListener('DOMContentLoaded', function() {
                         tiempo_focus: timerSeconds,
                         notas_adicionales: notas
                     };
+                    
+                    // Si el checkbox "marcar como ayer" está marcado, agregar fecha de ayer
+                    const checkboxAyer = document.getElementById('focus-marcar-como-ayer');
+                    if (checkboxAyer && checkboxAyer.checked) {
+                        datosActualizacion.fecha_completado = window.obtenerFechaAyer();
+                        console.log(`📅 [timer-persistence] Marcando objetivo como completado ayer: ${datosActualizacion.fecha_completado}`);
+                    }
 
                     const response = await fetch(`/api/objetivos/${objetivoEnFocus.id}`, {
                         method: 'PATCH',

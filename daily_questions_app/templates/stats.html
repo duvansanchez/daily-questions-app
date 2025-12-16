@@ -2800,12 +2800,13 @@
             // Los datos vienen directamente en el nivel raíz de la respuesta
             const objetivosData = data;
 
-            // Almacenar subobjetivos completados globalmente para uso en renderizado
+            // Almacenar TODOS los subobjetivos globalmente para uso en renderizado
             window.subobjetivosCompletadosFecha = objetivosData.subobjetivos_completados || [];
+            window.todosLosSubobjetivosFecha = objetivosData.todos_los_subobjetivos || [];
             console.log(`📋 Subobjetivos completados en ${fecha}:`, window.subobjetivosCompletadosFecha.length);
+            console.log(`📋 TODOS los subobjetivos en ${fecha}:`, window.todosLosSubobjetivosFecha.length);
             console.log('🔍 DEBUG - Estructura completa de data:', data);
-            console.log('🔍 DEBUG - subobjetivos_completados data:', objetivosData.subobjetivos_completados);
-            console.log('🔍 DEBUG - window.subobjetivosCompletadosFecha:', window.subobjetivosCompletadosFecha);
+            console.log('🔍 DEBUG - todos_los_subobjetivos data:', objetivosData.todos_los_subobjetivos);
 
             if (objetivosData.objetivos_creados) {
                 objetivosData.objetivos_creados.forEach(obj => {
@@ -2873,43 +2874,61 @@
         }
     };
 
-    // Función auxiliar para generar HTML de subobjetivos completados (stats.html)
+    // Función auxiliar para generar HTML de TODOS los subobjetivos (stats.html)
     // Sigue el principio de función pequeña con una sola responsabilidad
     function generarHtmlSubobjetivosCompletadosStats(objetivoId) {
         console.log(`🔍 DEBUG - generarHtmlSubobjetivosCompletadosStats llamada para objetivo ID: ${objetivoId}`);
-        console.log('🔍 DEBUG - window.subobjetivosCompletadosFecha disponible:', window.subobjetivosCompletadosFecha);
+        console.log('🔍 DEBUG - window.todosLosSubobjetivosFecha disponible:', window.todosLosSubobjetivosFecha);
         
-        // Buscar subobjetivos completados para este objetivo en la fecha actual del modal
-        const subobjetivosDelObjetivo = (window.subobjetivosCompletadosFecha || [])
+        // Buscar TODOS los subobjetivos para este objetivo
+        const subobjetivosDelObjetivo = (window.todosLosSubobjetivosFecha || [])
             .filter(sub => sub.objetivo_id === objetivoId);
         
-        console.log(`🔍 DEBUG - subobjetivos encontrados para objetivo ${objetivoId}:`, subobjetivosDelObjetivo.length);
+        console.log(`🔍 DEBUG - TODOS los subobjetivos encontrados para objetivo ${objetivoId}:`, subobjetivosDelObjetivo.length);
         console.log('🔍 DEBUG - subobjetivos data:', subobjetivosDelObjetivo);
         
         if (subobjetivosDelObjetivo.length === 0) {
-            console.log(`ℹ️ No hay subobjetivos completados para objetivo ${objetivoId}`);
+            console.log(`ℹ️ No hay subobjetivos para objetivo ${objetivoId}`);
             return '';
         }
         
+        // Separar completados y pendientes
+        const completados = subobjetivosDelObjetivo.filter(sub => sub.completado_en_fecha);
+        const pendientes = subobjetivosDelObjetivo.filter(sub => !sub.completado_en_fecha);
+        
         let html = `
             <div class="mt-3 pt-2 border-top border-light">
-                <h6 class="text-success mb-2" style="font-size: 0.85rem;">
-                    <i class="bi bi-check2-square me-1"></i>
-                    Subobjetivos completados este día (${subobjetivosDelObjetivo.length})
+                <h6 class="text-info mb-2" style="font-size: 0.85rem;">
+                    <i class="bi bi-list-check me-1"></i>
+                    Subobjetivos (${completados.length}/${subobjetivosDelObjetivo.length} completados este día)
                 </h6>
-                <div class="subobjetivos-completados-lista">
+                <div class="subobjetivos-lista">
         `;
         
-        subobjetivosDelObjetivo.forEach(sub => {
+        // Mostrar completados primero
+        completados.forEach(sub => {
             html += `
                 <div class="d-flex align-items-center mb-1">
                     <i class="bi bi-check-circle-fill text-success me-2" style="font-size: 0.8rem;"></i>
-                    <span class="text-muted" style="font-size: 0.85rem;">${sub.titulo}</span>
+                    <span class="text-success" style="font-size: 0.85rem; text-decoration: line-through;">${sub.titulo}</span>
                     ${sub.hora_completado ? `
                         <small class="text-success ms-auto" style="font-size: 0.75rem;">
                             ${sub.hora_completado}
                         </small>
                     ` : ''}
+                </div>
+            `;
+        });
+        
+        // Mostrar pendientes después
+        pendientes.forEach(sub => {
+            html += `
+                <div class="d-flex align-items-center mb-1">
+                    <i class="bi bi-circle text-warning me-2" style="font-size: 0.8rem;"></i>
+                    <span class="text-muted" style="font-size: 0.85rem;">${sub.titulo}</span>
+                    <small class="text-muted ms-auto" style="font-size: 0.75rem;">
+                        Pendiente
+                    </small>
                 </div>
             `;
         });
