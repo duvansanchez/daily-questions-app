@@ -2708,6 +2708,49 @@
     // Variable global para almacenar todos los objetivos
     let todosLosObjetivos = [];
 
+    // Función auxiliar para agregar objetivos que tienen subobjetivos completados
+    // pero no aparecen en las listas principales (creados, completados, recurrentes)
+    async function agregarObjetivosConSubobjetivosCompletados() {
+        console.log('🔍 Buscando objetivos faltantes con subobjetivos completados...');
+        
+        // Obtener IDs únicos de objetivos que tienen subobjetivos completados
+        const objetivosConSubobjetivos = [...new Set(
+            window.subobjetivosCompletadosFecha.map(sub => sub.objetivo_id)
+        )];
+        
+        console.log('🎯 Objetivos con subobjetivos completados:', objetivosConSubobjetivos);
+        
+        // Verificar cuáles objetivos ya están en la lista
+        const objetivosYaIncluidos = todosLosObjetivos.map(obj => obj.id);
+        const objetivosFaltantes = objetivosConSubobjetivos.filter(id => !objetivosYaIncluidos.includes(id));
+        
+        console.log('📋 Objetivos ya incluidos:', objetivosYaIncluidos);
+        console.log('❓ Objetivos faltantes:', objetivosFaltantes);
+        
+        // Si hay objetivos faltantes, obtenerlos del servidor
+        if (objetivosFaltantes.length > 0) {
+            for (const objetivoId of objetivosFaltantes) {
+                try {
+                    const response = await fetch(`/api/objetivos/${objetivoId}`);
+                    if (response.ok) {
+                        const objetivoData = await response.json();
+                        
+                        // Agregar el objetivo a la lista con estado especial
+                        todosLosObjetivos.push({
+                            ...objetivoData,
+                            estado: 'con_subobjetivos_completados',
+                            tipo_origen: 'objetivo_con_subobjetivos'
+                        });
+                        
+                        console.log(`✅ Agregado objetivo faltante: ${objetivoData.titulo}`);
+                    }
+                } catch (error) {
+                    console.error(`❌ Error obteniendo objetivo ${objetivoId}:`, error);
+                }
+            }
+        }
+    }
+
     window.abrirDetalleDia = async function (fecha) {
         console.log('🗓️ abrirDetalleDia llamada con fecha:', fecha);
         try {
@@ -2754,7 +2797,15 @@
             // So in JS, `data` is the whole object. `data.data` is the inner object.
             // So we should access `data.data.objetivos_creados`.
 
-            const objetivosData = data.data || data; // Fallback just in case
+            // Los datos vienen directamente en el nivel raíz de la respuesta
+            const objetivosData = data;
+
+            // Almacenar subobjetivos completados globalmente para uso en renderizado
+            window.subobjetivosCompletadosFecha = objetivosData.subobjetivos_completados || [];
+            console.log(`📋 Subobjetivos completados en ${fecha}:`, window.subobjetivosCompletadosFecha.length);
+            console.log('🔍 DEBUG - Estructura completa de data:', data);
+            console.log('🔍 DEBUG - subobjetivos_completados data:', objetivosData.subobjetivos_completados);
+            console.log('🔍 DEBUG - window.subobjetivosCompletadosFecha:', window.subobjetivosCompletadosFecha);
 
             if (objetivosData.objetivos_creados) {
                 objetivosData.objetivos_creados.forEach(obj => {
@@ -2795,6 +2846,12 @@
                 });
             }
 
+            // NUEVA FUNCIONALIDAD: Agregar objetivos que tienen subobjetivos completados
+            // pero que no aparecen en las listas anteriores
+            if (window.subobjetivosCompletadosFecha && window.subobjetivosCompletadosFecha.length > 0) {
+                await agregarObjetivosConSubobjetivosCompletados();
+            }
+
             // Actualizar contadores
             const totalObjetivos = todosLosObjetivos.length;
             const totalCompletados = todosLosObjetivos.filter(obj => obj.estado === 'completado').length;
@@ -2815,6 +2872,55 @@
             document.getElementById('lista-objetivos-unificada').innerHTML = '<div class="alert alert-danger"><i class="bi bi-exclamation-triangle me-2"></i>Error al cargar objetivos</div>';
         }
     };
+
+    // Función auxiliar para generar HTML de subobjetivos completados (stats.html)
+    // Sigue el principio de función pequeña con una sola responsabilidad
+    function generarHtmlSubobjetivosCompletadosStats(objetivoId) {
+        console.log(`🔍 DEBUG - generarHtmlSubobjetivosCompletadosStats llamada para objetivo ID: ${objetivoId}`);
+        console.log('🔍 DEBUG - window.subobjetivosCompletadosFecha disponible:', window.subobjetivosCompletadosFecha);
+        
+        // Buscar subobjetivos completados para este objetivo en la fecha actual del modal
+        const subobjetivosDelObjetivo = (window.subobjetivosCompletadosFecha || [])
+            .filter(sub => sub.objetivo_id === objetivoId);
+        
+        console.log(`🔍 DEBUG - subobjetivos encontrados para objetivo ${objetivoId}:`, subobjetivosDelObjetivo.length);
+        console.log('🔍 DEBUG - subobjetivos data:', subobjetivosDelObjetivo);
+        
+        if (subobjetivosDelObjetivo.length === 0) {
+            console.log(`ℹ️ No hay subobjetivos completados para objetivo ${objetivoId}`);
+            return '';
+        }
+        
+        let html = `
+            <div class="mt-3 pt-2 border-top border-light">
+                <h6 class="text-success mb-2" style="font-size: 0.85rem;">
+                    <i class="bi bi-check2-square me-1"></i>
+                    Subobjetivos completados este día (${subobjetivosDelObjetivo.length})
+                </h6>
+                <div class="subobjetivos-completados-lista">
+        `;
+        
+        subobjetivosDelObjetivo.forEach(sub => {
+            html += `
+                <div class="d-flex align-items-center mb-1">
+                    <i class="bi bi-check-circle-fill text-success me-2" style="font-size: 0.8rem;"></i>
+                    <span class="text-muted" style="font-size: 0.85rem;">${sub.titulo}</span>
+                    ${sub.hora_completado ? `
+                        <small class="text-success ms-auto" style="font-size: 0.75rem;">
+                            ${sub.hora_completado}
+                        </small>
+                    ` : ''}
+                </div>
+            `;
+        });
+        
+        html += `
+                </div>
+            </div>
+        `;
+        
+        return html;
+    }
 
     function renderizarObjetivosUnificados(filtro = 'todos') {
         const container = document.getElementById('lista-objetivos-unificada');
@@ -2843,9 +2949,24 @@
         let html = '';
         objetivosFiltrados.forEach((obj, index) => {
             const esCompletado = obj.estado === 'completado';
-            const iconoEstado = esCompletado ? 'check-circle-fill' : 'circle';
-            const colorEstado = esCompletado ? 'success' : 'warning';
-            const bgClass = esCompletado ? 'bg-light' : '';
+            const tieneSubobjetivosCompletados = obj.estado === 'con_subobjetivos_completados';
+            
+            let iconoEstado, colorEstado, bgClass;
+            
+            if (esCompletado) {
+                iconoEstado = 'check-circle-fill';
+                colorEstado = 'success';
+                bgClass = 'bg-light';
+            } else if (tieneSubobjetivosCompletados) {
+                iconoEstado = 'check2-square';
+                colorEstado = 'info';
+                bgClass = 'bg-info bg-opacity-10';
+            } else {
+                iconoEstado = 'circle';
+                colorEstado = 'warning';
+                bgClass = '';
+            }
+            
             const prioridadColor = obj.prioridad === 'alta' ? 'danger' :
                 obj.prioridad === 'media' ? 'warning' : 'secondary';
 
@@ -2877,10 +2998,13 @@
                             <div class="text-end">
                                 ${esCompletado ?
                     `<small class="text-success"><i class="bi bi-check2 me-1"></i>Completado ${obj.hora_completado || ''}</small>` :
+                    tieneSubobjetivosCompletados ?
+                    `<small class="text-info"><i class="bi bi-check2-square me-1"></i>Con subobjetivos completados</small>` :
                     `<small class="text-warning"><i class="bi bi-hourglass-split me-1"></i>Pendiente</small>`
                 }
                             </div>
                         </div>
+                        ${generarHtmlSubobjetivosCompletadosStats(obj.id)}
                     </div>
                 </div>
             </div>

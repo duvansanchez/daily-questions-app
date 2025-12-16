@@ -4862,12 +4862,14 @@ endblock %} {% block head %}
       // Combinar todos los objetivos en una sola lista
       todosLosObjetivos = [];
 
-      // Acceder a los datos correctamente
-      const objetivosData = data.data || data;
+      // Los datos vienen directamente en el nivel raíz de la respuesta
+      const objetivosData = data;
       
       // Almacenar subobjetivos completados globalmente para uso en generarHtmlSubobjetivosCompletados
       window.subobjetivosCompletadosFecha = objetivosData.subobjetivos_completados || [];
       console.log(`📋 Subobjetivos completados en ${fecha}:`, window.subobjetivosCompletadosFecha.length);
+      console.log('🔍 DEBUG - Estructura completa de data:', data);
+      console.log('🔍 DEBUG - subobjetivos_completados data:', objetivosData.subobjetivos_completados);
       
       // DEBUG: Mostrar estructura de datos
       console.log('🔍 DEBUG - objetivosData:', objetivosData);
@@ -4919,6 +4921,12 @@ endblock %} {% block head %}
             });
           }
         });
+      }
+
+      // NUEVA FUNCIONALIDAD: Agregar objetivos que tienen subobjetivos completados
+      // pero que no aparecen en las listas anteriores
+      if (window.subobjetivosCompletadosFecha && window.subobjetivosCompletadosFecha.length > 0) {
+        await agregarObjetivosConSubobjetivosCompletadosObjetivos();
       }
 
       // DEBUG: Mostrar objetivos procesados
@@ -5145,6 +5153,48 @@ endblock %} {% block head %}
     }
   }
 
+  // Función auxiliar para agregar objetivos que tienen subobjetivos completados (objetivos.html)
+  async function agregarObjetivosConSubobjetivosCompletadosObjetivos() {
+    console.log('🔍 [Objetivos] Buscando objetivos faltantes con subobjetivos completados...');
+    
+    // Obtener IDs únicos de objetivos que tienen subobjetivos completados
+    const objetivosConSubobjetivos = [...new Set(
+      window.subobjetivosCompletadosFecha.map(sub => sub.objetivo_id)
+    )];
+    
+    console.log('🎯 [Objetivos] Objetivos con subobjetivos completados:', objetivosConSubobjetivos);
+    
+    // Verificar cuáles objetivos ya están en la lista
+    const objetivosYaIncluidos = todosLosObjetivos.map(obj => obj.id);
+    const objetivosFaltantes = objetivosConSubobjetivos.filter(id => !objetivosYaIncluidos.includes(id));
+    
+    console.log('📋 [Objetivos] Objetivos ya incluidos:', objetivosYaIncluidos);
+    console.log('❓ [Objetivos] Objetivos faltantes:', objetivosFaltantes);
+    
+    // Si hay objetivos faltantes, obtenerlos del servidor
+    if (objetivosFaltantes.length > 0) {
+      for (const objetivoId of objetivosFaltantes) {
+        try {
+          const response = await fetch(`/api/objetivos/${objetivoId}`);
+          if (response.ok) {
+            const objetivoData = await response.json();
+            
+            // Agregar el objetivo a la lista con estado especial
+            todosLosObjetivos.push({
+              ...objetivoData,
+              estado: 'con_subobjetivos_completados',
+              tipo_origen: 'objetivo_con_subobjetivos'
+            });
+            
+            console.log(`✅ [Objetivos] Agregado objetivo faltante: ${objetivoData.titulo}`);
+          }
+        } catch (error) {
+          console.error(`❌ [Objetivos] Error obteniendo objetivo ${objetivoId}:`, error);
+        }
+      }
+    }
+  }
+
   // Función auxiliar para generar HTML de subobjetivos completados
   // Sigue el principio de función pequeña con una sola responsabilidad
   function generarHtmlSubobjetivosCompletados(objetivoId) {
@@ -5195,8 +5245,18 @@ endblock %} {% block head %}
       'baja': 'info'
     }[objetivo.prioridad] || 'secondary';
 
-    const estadoIcon = objetivo.estado === 'completado' ? 'bi-check-circle-fill text-success' : 'bi-circle text-warning';
-    const estadoTexto = objetivo.estado === 'completado' ? 'Completado' : 'Pendiente';
+    let estadoIcon, estadoTexto;
+    
+    if (objetivo.estado === 'completado') {
+      estadoIcon = 'bi-check-circle-fill text-success';
+      estadoTexto = 'Completado';
+    } else if (objetivo.estado === 'con_subobjetivos_completados') {
+      estadoIcon = 'bi-check2-square text-info';
+      estadoTexto = 'Con subobjetivos completados';
+    } else {
+      estadoIcon = 'bi-circle text-warning';
+      estadoTexto = 'Pendiente';
+    }
 
     const parteDiaIcon = {
       'mañana': 'bi-sunrise',

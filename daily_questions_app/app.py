@@ -288,6 +288,120 @@ def objetivos_stats_summary():
         logger.error(f"Error en objetivos_stats_summary: {str(e)}")
         return jsonify({'status': 'error', 'message': 'No se pudieron calcular las estadísticas de objetivos'}), 500
 
+def agregar_objetivos_con_subobjetivos_completados(cursor, user_id, fecha, objetivos_existentes, subobjetivos_completados):
+    """
+    Función auxiliar para agregar objetivos que tengan subobjetivos completados 
+    pero no aparezcan en otras categorías del modal.
+    Sigue el principio de función pequeña con una sola responsabilidad.
+    """
+    if not subobjetivos_completados:
+        return objetivos_existentes
+    
+    # Obtener IDs de objetivos que ya están en la lista
+    objetivos_existentes_ids = set(obj['id'] for obj in objetivos_existentes)
+    
+    # Obtener IDs únicos de objetivos que tienen subobjetivos completados
+    objetivos_con_subs_ids = set(sub['objetivo_id'] for sub in subobjetivos_completados)
+    
+    # Encontrar objetivos que tienen subobjetivos completados pero no están en la lista
+    objetivos_faltantes_ids = objetivos_con_subs_ids - objetivos_existentes_ids
+    
+    if not objetivos_faltantes_ids:
+        return objetivos_existentes
+    
+    # Obtener información de los objetivos faltantes
+    placeholders = ','.join(['?' for _ in objetivos_faltantes_ids])
+    query_objetivos_faltantes = f"""
+        SELECT o.id, o.titulo, o.descripcion, o.categoria, o.prioridad, 
+               o.recurrente, o.parte_dia, o.horas_estimadas,
+               CONVERT(varchar, o.fecha_creacion, 120) as fecha_creacion
+        FROM objetivos o
+        WHERE o.user_id = ? AND o.id IN ({placeholders})
+    """
+    
+    params = [user_id] + list(objetivos_faltantes_ids)
+    cursor.execute(query_objetivos_faltantes, params)
+    
+    objetivos_adicionales = []
+    for row in cursor.fetchall():
+        objetivos_adicionales.append({
+            'id': row.id,
+            'titulo': row.titulo,
+            'descripcion': row.descripcion,
+            'categoria': row.categoria,
+            'prioridad': row.prioridad,
+            'recurrente': bool(row.recurrente),
+            'parte_dia': row.parte_dia,
+            'horas_estimadas': float(row.horas_estimadas) if row.horas_estimadas else None,
+            'fecha_creacion': row.fecha_creacion,
+            'estado': 'con_subobjetivos_completados',
+            'tipo_origen': 'objetivo_con_subobjetivos_completados'
+        })
+    
+    return objetivos_existentes + objetivos_adicionales
+
+def obtener_todos_subobjetivos_objetivos_modal(cursor, objetivos_creados, objetivos_completados, objetivos_recurrentes_pendientes, subobjetivos_completados, fecha):
+    """
+    Función auxiliar para obtener TODOS los subobjetivos de los objetivos que aparecen en el modal,
+    marcando cuáles se completaron en la fecha específica.
+    Sigue el principio de función pequeña con una sola responsabilidad.
+    """
+    # Recopilar todos los IDs de objetivos que aparecen en el modal
+    objetivos_ids = set()
+    
+    # Agregar IDs de objetivos creados
+    for obj in objetivos_creados:
+        objetivos_ids.add(obj['id'])
+    
+    # Agregar IDs de objetivos completados
+    for obj in objetivos_completados:
+        objetivos_ids.add(obj['id'])
+    
+    # Agregar IDs de objetivos recurrentes pendientes
+    for obj in objetivos_recurrentes_pendientes:
+        objetivos_ids.add(obj['id'])
+    
+    # Agregar IDs de objetivos que tienen subobjetivos completados
+    for sub in subobjetivos_completados:
+        objetivos_ids.add(sub['objetivo_id'])
+    
+    if not objetivos_ids:
+        return []
+    
+    # Obtener todos los subobjetivos de estos objetivos
+    objetivos_ids_str = ','.join(map(str, objetivos_ids))
+    query_todos_subobjetivos = f"""
+        SELECT s.id, s.titulo, s.objetivo_id, s.completado as estado_actual,
+               o.titulo as objetivo_titulo,
+               CASE 
+                   WHEN scl.subobjetivo_id IS NOT NULL THEN 1 
+                   ELSE 0 
+               END as completado_en_fecha,
+               FORMAT(scl.fecha_creacion, 'HH:mm:ss') as hora_completado
+        FROM subobjetivos s
+        INNER JOIN objetivos o ON s.objetivo_id = o.id
+        LEFT JOIN subobjetivos_completados_log scl ON s.id = scl.subobjetivo_id 
+            AND CAST(scl.fecha_completado AS DATE) = CAST(? AS DATE)
+        WHERE s.objetivo_id IN ({objetivos_ids_str})
+        ORDER BY s.objetivo_id, s.orden ASC, s.id ASC
+    """
+    
+    cursor.execute(query_todos_subobjetivos, (fecha,))
+    todos_subobjetivos = []
+    
+    for row in cursor.fetchall():
+        todos_subobjetivos.append({
+            'id': row.id,
+            'titulo': row.titulo,
+            'objetivo_id': row.objetivo_id,
+            'objetivo_titulo': row.objetivo_titulo,
+            'estado_actual': bool(row.estado_actual),
+            'completado_en_fecha': bool(row.completado_en_fecha),
+            'hora_completado': row.hora_completado if row.completado_en_fecha else None
+        })
+    
+    return todos_subobjetivos
+
 def obtener_subobjetivos_completados_fecha(cursor, user_id, fecha):
     """
     Función auxiliar para obtener subobjetivos completados en una fecha específica.
@@ -354,38 +468,19 @@ def objetivos_detalle_dia(fecha):
                 })
             
             # Obtener objetivos completados en esta fecha
-            # Consulta simplificada y robusta para evitar errores de conversión
             query_completados = """
-                SELECT o.id, o.titulo, o.descripcion, o.categoria, o.prioridad,
-                       o.parte_dia, o.horas_estimadas,
-                       'normal' as tipo,
-                       ISNULL(FORMAT(o.fecha_completado, 'HH:mm:ss'), 'N/A') as hora_completado,
-                       ISNULL(FORMAT(o.fecha_completado, 'yyyy-MM-dd HH:mm:ss'), 'N/A') as fecha_completado
-                FROM objetivos o
-                WHERE o.user_id = ? 
-                AND (o.recurrente = 0 OR o.recurrente IS NULL)
-                AND o.fecha_completado IS NOT NULL
-                AND TRY_CAST(o.fecha_completado AS DATE) = TRY_CAST(? AS DATE)
-                AND o.completado = 1
-                
-                UNION ALL
-                
-                SELECT o.id, o.titulo, o.descripcion, o.categoria, o.prioridad,
-                       o.parte_dia, o.horas_estimadas,
-                       'recurrente' as tipo,
-                       ISNULL(FORMAT(ocl.fecha_completado, 'HH:mm:ss'), 'N/A') as hora_completado,
-                       ISNULL(FORMAT(ocl.fecha_completado, 'yyyy-MM-dd HH:mm:ss'), 'N/A') as fecha_completado
-                FROM objetivos o
-                INNER JOIN objetivos_completados_log ocl ON o.id = ocl.objetivo_id
-                WHERE o.user_id = ? 
-                AND o.recurrente = 1
-                AND ocl.fecha_completado IS NOT NULL
-                AND TRY_CAST(ocl.fecha_completado AS DATE) = TRY_CAST(? AS DATE)
-                
-                ORDER BY fecha_completado DESC
+                SELECT o.id, o.titulo, o.descripcion, o.categoria, o.prioridad, 
+                       o.parte_dia, o.horas_estimadas, o.recurrente,
+                       FORMAT(ocl.fecha_completado, 'HH:mm:ss') as hora_completado,
+                       CAST(ocl.fecha_completado AS DATE) as fecha_completado
+                FROM objetivos_completados_log ocl
+                JOIN objetivos o ON ocl.objetivo_id = o.id
+                WHERE ocl.user_id = ? 
+                  AND CAST(ocl.fecha_completado AS DATE) = CAST(? AS DATE)
+                ORDER BY ocl.fecha_completado ASC
             """
             
-            cursor.execute(query_completados, (current_user.id, fecha, current_user.id, fecha))
+            cursor.execute(query_completados, (current_user.id, fecha))
             objetivos_completados = []
             for row in cursor.fetchall():
                 objetivos_completados.append({
@@ -396,9 +491,9 @@ def objetivos_detalle_dia(fecha):
                     'prioridad': row.prioridad,
                     'parte_dia': row.parte_dia,
                     'horas_estimadas': float(row.horas_estimadas) if row.horas_estimadas else None,
-                    'tipo': row.tipo,
+                    'tipo': 'recurrente' if row.recurrente else 'normal',
                     'hora_completado': row.hora_completado,
-                    'fecha_completado': row.fecha_completado
+                    'fecha_completado': str(row.fecha_completado)
                 })
             
             # Obtener objetivos recurrentes pendientes para este día
@@ -443,6 +538,16 @@ def objetivos_detalle_dia(fecha):
             # Obtener subobjetivos completados en esta fecha
             subobjetivos_completados = obtener_subobjetivos_completados_fecha(cursor, current_user.id, fecha)
             
+            # Obtener todos los subobjetivos de los objetivos que aparecen en el modal
+            todos_los_subobjetivos = obtener_todos_subobjetivos_objetivos_modal(
+                cursor, objetivos_creados, objetivos_completados, objetivos_recurrentes_pendientes, subobjetivos_completados, fecha
+            )
+            
+            # TEMPORALMENTE COMENTADO - función no implementada
+            # objetivos_con_subobjetivos_completados = agregar_objetivos_con_subobjetivos_completados(
+            #     cursor, current_user.id, fecha, todosLosObjetivos, subobjetivos_completados
+            # )
+            
             resumen = {
                 'total_creados': len(objetivos_creados),
                 'total_completados': len(objetivos_completados),
@@ -457,7 +562,8 @@ def objetivos_detalle_dia(fecha):
                 'objetivos_creados': objetivos_creados,
                 'objetivos_completados': objetivos_completados,
                 'objetivos_recurrentes_pendientes': objetivos_recurrentes_pendientes,
-                'subobjetivos_completados': subobjetivos_completados
+                'subobjetivos_completados': subobjetivos_completados,
+                'todos_los_subobjetivos': todos_los_subobjetivos
             })
             
     except Exception as e:
@@ -730,7 +836,7 @@ def objetivos_dia():
                 """
                 SELECT o.id, o.titulo, o.descripcion, o.completado, 
                        o.fecha_creacion, o.fecha_completado, o.categoria, o.prioridad, o.parte_dia,
-                       o.recurrente, o.tipo
+                       o.recurrente
                 FROM objetivos o
                 WHERE o.user_id = ?
                   AND o.fecha_creacion >= ? AND o.fecha_creacion < ?
@@ -751,7 +857,7 @@ def objetivos_dia():
                     'prioridad': row[7] or 'media',
                     'parte_dia': row[8] or '',
                     'recurrente': bool(row[9]) if row[9] is not None else False,
-                    'tipo': row[10] or 'normal'
+                    'tipo': 'recurrente' if row[9] else 'normal'
                 }
                 objetivos_creados.append(obj)
 
@@ -762,7 +868,7 @@ def objetivos_dia():
                 """
                 SELECT o.id, o.titulo, o.descripcion, 1 as completado, 
                        o.fecha_creacion, o.fecha_completado, o.categoria, o.prioridad, o.parte_dia,
-                       o.recurrente, o.tipo
+                       o.recurrente
                 FROM objetivos o
                 WHERE o.user_id = ?
                   AND o.completado = 1
@@ -782,7 +888,7 @@ def objetivos_dia():
                     'prioridad': row[7] or 'media',
                     'parte_dia': row[8] or '',
                     'recurrente': bool(row[9]) if row[9] is not None else False,
-                    'tipo': row[10] or 'normal'
+                    'tipo': 'recurrente' if row[9] else 'normal'
                 }
                 objetivos_completados.append(obj)
 
@@ -791,7 +897,7 @@ def objetivos_dia():
                 """
                 SELECT o.id, o.titulo, o.descripcion, 1 as completado, 
                        o.fecha_creacion, log.fecha_completado, o.categoria, o.prioridad, o.parte_dia,
-                       o.recurrente, o.tipo
+                       o.recurrente
                 FROM objetivos_completados_log log
                 JOIN objetivos o ON log.objetivo_id = o.id
                 WHERE log.user_id = ?
@@ -813,7 +919,7 @@ def objetivos_dia():
                         'prioridad': row[7] or 'media',
                         'parte_dia': row[8] or '',
                         'recurrente': True,
-                        'tipo': row[10] or 'recurrente'
+                        'tipo': 'recurrente'
                     }
                     objetivos_completados.append(obj)
 
@@ -824,7 +930,7 @@ def objetivos_dia():
                     """
                     SELECT o.id, o.titulo, o.descripcion, 0 as completado, 
                            o.fecha_creacion, NULL as fecha_completado, o.categoria, o.prioridad, o.parte_dia,
-                           o.recurrente, o.tipo
+                           o.recurrente
                     FROM objetivos o
                     LEFT JOIN objetivos_completados_log ocl ON o.id = ocl.objetivo_id 
                         AND ocl.user_id = o.user_id 
@@ -850,7 +956,7 @@ def objetivos_dia():
                         'prioridad': row[7] or 'media',
                         'parte_dia': row[8] or '',
                         'recurrente': True,
-                        'tipo': row[10] or 'recurrente'
+                        'tipo': 'recurrente'
                     }
                     objetivos_recurrentes_pendientes.append(obj)
         
@@ -4627,6 +4733,48 @@ def api_update_subobjetivo(subobjetivo_id):
         conn.commit()
         print(f"✅ Subobjetivo {subobjetivo_id} actualizado exitosamente")
         return jsonify({'status': 'success'})
+
+@app.route('/api/objetivos/<int:objetivo_id>', methods=['GET'])
+@login_required
+def api_get_objetivo_by_id(objetivo_id):
+    """Obtiene un objetivo específico por su ID"""
+    try:
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            
+            # Obtener el objetivo por ID
+            cursor.execute("""
+                SELECT id, titulo, descripcion, categoria, prioridad, 
+                       recurrente, parte_dia, horas_estimadas,
+                       CONVERT(varchar, fecha_creacion, 120) as fecha_creacion,
+                       completado, estado
+                FROM objetivos 
+                WHERE id = ? AND user_id = ?
+            """, (objetivo_id, current_user.id))
+            
+            row = cursor.fetchone()
+            if not row:
+                return jsonify({'status': 'error', 'error': 'Objetivo no encontrado'}), 404
+            
+            objetivo = {
+                'id': row.id,
+                'titulo': row.titulo,
+                'descripcion': row.descripcion,
+                'categoria': row.categoria,
+                'prioridad': row.prioridad,
+                'recurrente': bool(row.recurrente),
+                'parte_dia': row.parte_dia,
+                'horas_estimadas': float(row.horas_estimadas) if row.horas_estimadas else None,
+                'fecha_creacion': row.fecha_creacion,
+                'completado': bool(row.completado),
+                'estado': row.estado
+            }
+            
+            return jsonify(objetivo)
+            
+    except Exception as e:
+        logger.error(f"Error obteniendo objetivo {objetivo_id}: {str(e)}")
+        return jsonify({'status': 'error', 'error': str(e)}), 500
 
 @app.route('/api/subobjetivos/completados/<fecha>', methods=['GET'])
 @login_required
