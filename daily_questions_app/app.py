@@ -4282,8 +4282,7 @@ def api_get_objetivo(objetivo_id):
 @login_required
 def api_update_objetivo(objetivo_id):
     data = request.get_json()
-    
-
+    logger.info(f"🔍 DEBUG api_update_objetivo - objetivo_id: {objetivo_id}, data recibida: {data}")
     
     # Si se está marcando como recurrente Y viene del histórico (solo restaurar si cambia de False a True)
     # Esta lógica debería ejecutarse solo cuando se restaura desde histórico, no en ediciones normales
@@ -4415,23 +4414,35 @@ def api_update_objetivo(objetivo_id):
                 """, (objetivo_id, current_user.id, fecha_log_datetime))
                 logger.info(f"Objetivo recurrente {objetivo_id} registrado en log de completados para {fecha_log} (datetime: {fecha_log_datetime})")
         
+        
         # Si es un objetivo recurrente y se está desmarcando, eliminar del log
         elif 'completado' in data and not data['completado'] and es_recurrente:
+            logger.info(f"DEBUG: Entrando a desmarcar - completado: {data.get('completado')}, es_recurrente: {es_recurrente}")
             # Determinar la fecha a usar (personalizada o hoy)
             if 'fecha_completado' in data and data['fecha_completado']:
                 try:
-                    fecha_log = parse_fecha(data['fecha_completado'])
-                    if not fecha_log:
+                    fecha_log_datetime = parse_fecha(data['fecha_completado'])
+                    if fecha_log_datetime:
+                        fecha_log = fecha_log_datetime.date()
+                    else:
                         fecha_log = datetime.now().date()
                 except:
                     fecha_log = datetime.now().date()
             else:
                 fecha_log = datetime.now().date()
             
+            # Usar rango de fechas para asegurar eliminación correcta sin depender de CAST/CONVERT
+            from datetime import time, timedelta
+            fecha_inicio = datetime.combine(fecha_log, time(0, 0, 0))
+            fecha_fin = datetime.combine(fecha_log + timedelta(days=1), time(0, 0, 0))
+            
+            logger.info(f"Eliminando log objetivo {objetivo_id} entre {fecha_inicio} y {fecha_fin}")
+            
             cursor.execute("""
                 DELETE FROM objetivos_completados_log 
-                WHERE objetivo_id = ? AND user_id = ? AND CAST(fecha_completado AS DATE) = ?
-            """, (objetivo_id, current_user.id, fecha_log))
+                WHERE objetivo_id = ? AND user_id = ? 
+                AND fecha_completado >= ? AND fecha_completado < ?
+            """, (objetivo_id, current_user.id, fecha_inicio, fecha_fin))
             logger.info(f"Objetivo recurrente {objetivo_id} eliminado del log de completados para {fecha_log}")
         
         conn.commit()
@@ -4816,8 +4827,10 @@ def api_update_subobjetivo(subobjetivo_id):
             # Determinar la fecha a usar (personalizada o hoy)
             if 'fecha_completado' in data and data['fecha_completado']:
                 try:
-                    fecha_log = parse_fecha(data['fecha_completado'])
-                    if not fecha_log:
+                    fecha_datetime = parse_fecha(data['fecha_completado'])
+                    if fecha_datetime:
+                        fecha_log = fecha_datetime.date()
+                    else:
                         fecha_log = datetime.now().date()
                 except:
                     fecha_log = datetime.now().date()
@@ -4844,7 +4857,7 @@ def api_update_subobjetivo(subobjetivo_id):
                 # Se descompletó el subobjetivo - remover del log
                 cursor.execute('''
                     DELETE FROM subobjetivos_completados_log 
-                    WHERE subobjetivo_id = ? AND user_id = ? AND fecha_completado = ?
+                    WHERE subobjetivo_id = ? AND user_id = ? AND CAST(fecha_completado AS DATE) = ?
                 ''', (subobjetivo_id, current_user.id, fecha_log))
                 print(f"🗑️ Registro de completado removido para subobjetivo {subobjetivo_id} en {fecha_log}")
         

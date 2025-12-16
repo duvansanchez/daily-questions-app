@@ -5703,6 +5703,23 @@ async function abrirModoFocus(objetivoId) {
         modalElement.setAttribute('data-objetivo-id', objetivoId);
         console.log('✅ ID del objetivo establecido en modal:', objetivoId);
         
+        // Resetear checkbox "ayer" y actualizar botones
+        const checkboxAyer = document.getElementById('focus-marcar-como-ayer');
+        if (checkboxAyer) {
+            checkboxAyer.checked = false;
+        }
+        
+        // Resetear checkbox "desmarcar ayer"
+        const checkboxDesmarcarAyer = document.getElementById('focus-desmarcar-ayer');
+        if (checkboxDesmarcarAyer) {
+            checkboxDesmarcarAyer.checked = false;
+        }
+        
+        // Si la función existe, llamar a actualizar botones
+        if (typeof actualizarTextosBotonesFocus === 'function') {
+            actualizarTextosBotonesFocus();
+        }
+
         const modal = new bootstrap.Modal(modalElement);
         modal.show();
         
@@ -5792,14 +5809,32 @@ document.addEventListener('change', async function(e) {
         // Preparar datos para enviar
         const datosActualizacion = { completado };
         
-        // Si el checkbox "marcar como ayer" está marcado, agregar fecha de ayer
+        // Lógica de fechas con doble checkbox
         const checkboxAyer = document.getElementById('focus-marcar-como-ayer');
-        if (checkboxAyer && checkboxAyer.checked && completado) {
+        const checkboxDesmarcarAyer = document.getElementById('focus-desmarcar-ayer');
+        
+        let usarFechaAyer = false;
+
+        if (completado) {
+             // Si marcamos, depende solo de "Marcar como ayer"
+             if (checkboxAyer && checkboxAyer.checked) usarFechaAyer = true;
+        } else {
+             // Si desmarcamos, depende de "Desmarcar de ayer" O "Marcar como ayer"
+             if (checkboxDesmarcarAyer && checkboxDesmarcarAyer.checked) {
+                 usarFechaAyer = true;
+                 console.log('📅 Desmarcando explícitamente de AYER');
+             } else if (checkboxAyer && checkboxAyer.checked) {
+                 usarFechaAyer = true;
+                 console.log('📅 Desmarcando de AYER (por herencia)');
+             }
+        }
+
+        if (usarFechaAyer) {
             datosActualizacion.fecha_completado = window.obtenerFechaAyer();
-            console.log(`📅 Marcando subobjetivo como completado ayer: ${datosActualizacion.fecha_completado}`);
-        } else if (completado) {
+            console.log(`📅 Actualizando subobjetivo (ayer): ${datosActualizacion.fecha_completado}, completado: ${completado}`);
+        } else {
             datosActualizacion.fecha_completado = window.obtenerFechaHoy();
-            console.log(`📅 Marcando subobjetivo como completado hoy: ${datosActualizacion.fecha_completado}`);
+            console.log(`📅 Actualizando subobjetivo (hoy): ${datosActualizacion.fecha_completado}, completado: ${completado}`);
         }
         
         try {
@@ -5887,6 +5922,49 @@ function actualizarDisplayTimer() {
     document.getElementById('timer-display').textContent = display;
 }
 
+// Función para actualizar los textos de los botones según los checkboxes
+function actualizarTextosBotonesFocus() {
+    const checkboxMarcarAyer = document.getElementById('focus-marcar-como-ayer');
+    const checkboxDesmarcarAyer = document.getElementById('focus-desmarcar-ayer');
+    const btnCompletar = document.getElementById('focus-completar');
+    
+    if (btnCompletar) {
+        if (checkboxDesmarcarAyer && checkboxDesmarcarAyer.checked) {
+            // MODO DESMARCAR AYER
+            btnCompletar.innerHTML = '<i class="bi bi-x-lg me-1"></i>Desmarcar (Ayer)';
+            btnCompletar.classList.remove('btn-success', 'btn-warning');
+            btnCompletar.classList.add('btn-outline-danger');
+        } else if (checkboxMarcarAyer && checkboxMarcarAyer.checked) {
+            // MODO MARCAR AYER
+            btnCompletar.innerHTML = '<i class="bi bi-check-lg me-1"></i>Completar (Ayer)';
+            btnCompletar.classList.remove('btn-success', 'btn-outline-danger');
+            btnCompletar.classList.add('btn-warning');
+        } else {
+            // MODO NORMAL (Completar Hoy)
+            btnCompletar.innerHTML = '<i class="bi bi-check-lg me-1"></i>Completar Objetivo';
+            btnCompletar.classList.remove('btn-warning', 'btn-outline-danger');
+            btnCompletar.classList.add('btn-success');
+        }
+    }
+}
+
+// Event listeners para el cambio de los checkboxes
+const checkboxMarcarAyerGlobal = document.getElementById('focus-marcar-como-ayer');
+if (checkboxMarcarAyerGlobal) {
+    checkboxMarcarAyerGlobal.addEventListener('change', actualizarTextosBotonesFocus);
+}
+const checkboxDesmarcarAyerGlobal = document.getElementById('focus-desmarcar-ayer');
+if (checkboxDesmarcarAyerGlobal) {
+    checkboxDesmarcarAyerGlobal.addEventListener('change', actualizarTextosBotonesFocus);
+}
+
+// Delegación de eventos para elementos dinámicos
+document.addEventListener('change', function(e) {
+    if (e.target && (e.target.id === 'focus-marcar-como-ayer' || e.target.id === 'focus-desmarcar-ayer')) {
+        actualizarTextosBotonesFocus();
+    }
+});
+
 // ===== BOTONES DE ACCIÓN EN FOCUS =====
 
 // Función auxiliar para obtener la fecha de ayer en formato YYYY-MM-DD
@@ -5909,23 +5987,41 @@ window.obtenerFechaHoy = function() {
     return `${year}-${month}-${day}`;
 };
 
+
+
 document.getElementById('focus-completar').addEventListener('click', async function() {
     if (objetivoEnFocus) {
         try {
-            // Preparar datos para enviar
-            const datosActualizacion = {
-                completado: true
-            };
+            const checkboxMarcarAyer = document.getElementById('focus-marcar-como-ayer');
+            const checkboxDesmarcarAyer = document.getElementById('focus-desmarcar-ayer');
             
-            // Si el checkbox "marcar como ayer" está marcado, agregar fecha de ayer
-            const checkboxAyer = document.getElementById('focus-marcar-como-ayer');
-            if (checkboxAyer && checkboxAyer.checked) {
+            console.log('🔍 DEBUG Checkboxes:', {
+                marcarAyer: checkboxMarcarAyer ? checkboxMarcarAyer.checked : 'NO ENCONTRADO',
+                desmarcarAyer: checkboxDesmarcarAyer ? checkboxDesmarcarAyer.checked : 'NO ENCONTRADO'
+            });
+            
+            // Determinar acción y fecha
+            const datosActualizacion = {};
+            
+            if (checkboxDesmarcarAyer && checkboxDesmarcarAyer.checked) {
+                // ACCIÓN: DESMARCAR AYER
+                datosActualizacion.completado = false;
                 datosActualizacion.fecha_completado = window.obtenerFechaAyer();
-                console.log(`📅 Marcando objetivo como completado ayer: ${datosActualizacion.fecha_completado}`);
+                console.log(`📅 Desmarcando objetivo de ayer: ${datosActualizacion.fecha_completado}`);
+                showInfo('Desmarcando objetivo de ayer...');
+            } else if (checkboxMarcarAyer && checkboxMarcarAyer.checked) {
+                // ACCIÓN: MARCAR AYER
+                datosActualizacion.completado = true;
+                datosActualizacion.fecha_completado = window.obtenerFechaAyer();
+                console.log(`📅 Marcando objetivo completado ayer: ${datosActualizacion.fecha_completado}`);
             } else {
+                // ACCIÓN: MARCAR HOY (Default)
+                datosActualizacion.completado = true;
                 datosActualizacion.fecha_completado = window.obtenerFechaHoy();
-                console.log(`📅 Marcando objetivo como completado hoy: ${datosActualizacion.fecha_completado}`);
-            }
+                console.log(`📅 Marcando objetivo completado hoy: ${datosActualizacion.fecha_completado}`);
+            } // Nota: No hay "Desmarcar Hoy" explícito en el botón principal, se asume que si el usuario quiere desmarcar hoy, usa otro mecanismo o el botón debería cambiar de estado si el objetivo YA está completado. 
+              // PERO, la lógica original siempre enviaba 'true'. Asumimos que el botón es para COMPLETAR.
+              // La excepción es el nuevo modo "Desmarcar Ayer".
             
             // Si hay tiempo transcurrido, incluirlo
             if (timerSeconds > 0) {
@@ -5940,13 +6036,20 @@ document.getElementById('focus-completar').addEventListener('click', async funct
             });
             
             if (response.ok) {
-                // Mostrar mensaje con tiempo si se registró
-                let mensaje = '¡Objetivo completado! 🎉';
-                if (timerSeconds > 0) {
-                    const minutos = Math.floor(timerSeconds / 60);
-                    const segundos = timerSeconds % 60;
-                    const tiempoFormateado = `${minutos}:${segundos.toString().padStart(2, '0')}`;
-                    mensaje += ` Tiempo registrado: ${tiempoFormateado}`;
+                // Mensaje diferente según la acción
+                if (datosActualizacion.completado === false) {
+                     // Caso desmarcar
+                     showInfo('Objetivo desmarcado de ayer correctamente');
+                } else {
+                     // Caso completar
+                    let mensaje = '¡Objetivo completado! 🎉';
+                    if (timerSeconds > 0) {
+                        const minutos = Math.floor(timerSeconds / 60);
+                        const segundos = timerSeconds % 60;
+                        const tiempoFormateado = `${minutos}:${segundos.toString().padStart(2, '0')}`;
+                        mensaje += ` Tiempo registrado: ${tiempoFormateado}`;
+                    }
+                    showSuccess(mensaje);
                 }
                 
                 // Cerrar modal
@@ -5956,9 +6059,8 @@ document.getElementById('focus-completar').addEventListener('click', async funct
                 // Recargar objetivos
                 await cargarObjetivos();
                 
-                showSuccess(mensaje);
             } else {
-                showError('Error al completar objetivo');
+                showError('Error al actualizar objetivo');
             }
         } catch (error) {
             console.error('Error al completar objetivo:', error);

@@ -1,9 +1,6 @@
 {% extends 'base.html' %} {% block title %}Objetivos | Desarrollo Personal{%
 endblock %} {% block head %}
-<link
-  rel="stylesheet"
-  href="{{ url_for('static', filename='css/focus-subobjetivos.css') }}"
-/>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/focus-subobjetivos.css') }}" />
 {% endblock %} {% block content %}
 <div class="container py-4">
   <div class="mb-4">
@@ -29,10 +26,7 @@ endblock %} {% block head %}
           <a class="nav-link disabled" href="#">Progreso</a>
         </li>
       </ul>
-      <div
-        class="d-flex justify-content-between align-items-center mb-4"
-        id="titulo-objetivos"
-      >
+      <div class="d-flex justify-content-between align-items-center mb-4" id="titulo-objetivos">
         <div>
           <h5 class="mb-1">
             <i class="bi bi-bullseye"></i> Objetivos de Desarrollo
@@ -94,55 +88,27 @@ endblock %} {% block head %}
           <a class="nav-link" href="#" data-periodo="general">Generales</a>
         </li>
         <li class="nav-item">
-          <a
-            class="nav-link"
-            id="tab-historico"
-            href="#"
-            data-periodo="historico"
-            >Histórico</a
-          >
+          <a class="nav-link" id="tab-historico" href="#" data-periodo="historico">Histórico</a>
         </li>
       </ul>
-      <div
-        class="d-flex justify-content-between align-items-center mb-2"
-        id="controles-objetivos"
-      >
+      <div class="d-flex justify-content-between align-items-center mb-2" id="controles-objetivos">
         <div class="d-flex align-items-center gap-3">
           <label class="form-label mb-0 fw-semibold">Vista:</label>
           <div class="btn-group" role="group" aria-label="Tipo de vista">
-            <input
-              type="radio"
-              class="btn-check"
-              name="vista-objetivos"
-              id="vista-lista"
-              value="lista"
-            />
+            <input type="radio" class="btn-check" name="vista-objetivos" id="vista-lista" value="lista" />
             <label class="btn btn-outline-primary btn-sm" for="vista-lista">
               <i class="bi bi-list-ul me-1"></i>Lista
             </label>
 
-            <input
-              type="radio"
-              class="btn-check"
-              name="vista-objetivos"
-              id="vista-tarjetas"
-              value="tarjetas"
-              checked
-            />
+            <input type="radio" class="btn-check" name="vista-objetivos" id="vista-tarjetas" value="tarjetas" checked />
             <label class="btn btn-outline-primary btn-sm" for="vista-tarjetas">
               <i class="bi bi-grid-3x3-gap me-1"></i>Tarjetas
             </label>
           </div>
         </div>
         <div class="d-flex align-items-center gap-2">
-          <label for="orden-objetivos" class="form-label mb-0 fw-semibold"
-            >Ordenar por:</label
-          >
-          <select
-            class="form-select form-select-sm"
-            id="orden-objetivos"
-            style="width: auto"
-          >
+          <label for="orden-objetivos" class="form-label mb-0 fw-semibold">Ordenar por:</label>
+          <select class="form-select form-select-sm" id="orden-objetivos" style="width: auto">
             <option value="backend" selected>
               Orden inteligente (completados al final)
             </option>
@@ -156,40 +122,22 @@ endblock %} {% block head %}
       </div>
 
       <!-- Sección de Objetivos de Mañana (solo visible en pestaña objetivos) -->
-      <div
-        class="card mt-3 objetivos-content"
-        id="card-objetivos-manana"
-        style="border-left: 3px solid #28a745; display: block"
-      >
+      <div class="card mt-3 objetivos-content" id="card-objetivos-manana"
+        style="border-left: 3px solid #28a745; display: block">
         <!-- Header colapsible -->
-        <div
-          class="card-header bg-light border-0 py-2"
-          id="header-objetivos-manana"
-          style="cursor: pointer; user-select: none; transition: all 0.2s ease"
-        >
+        <div class="card-header bg-light border-0 py-2" id="header-objetivos-manana"
+          style="cursor: pointer; user-select: none; transition: all 0.2s ease">
           <div class="d-flex justify-content-between align-items-center">
             <div class="d-flex align-items-center">
-              <i
-                class="bi bi-chevron-right me-2 text-success"
-                id="icono-chevron-manana"
-                style="transition: transform 0.2s ease; font-size: 0.9rem"
-              ></i>
+              <i class="bi bi-chevron-right me-2 text-success" id="icono-chevron-manana"
+                style="transition: transform 0.2s ease; font-size: 0.9rem"></i>
               <h6 class="mb-0 text-success" style="font-size: 1rem">
                 <i class="bi bi-calendar-plus me-1"></i> Objetivos para Mañana
               </h6>
-              <small
-                class="text-muted ms-2"
-                id="fecha-manana-header"
-                style="font-size: 0.8rem"
-              ></small>
+              <small class="text-muted ms-2" id="fecha-manana-header" style="font-size: 0.8rem"></small>
             </div>
             <div>
-              <span
-                class="badge bg-success"
-                id="contador-objetivos-manana"
-                style="font-size: 0.7rem"
-                >0 objetivos</span
-              >
+              <span class="badge bg-success" id="contador-objetivos-manana" style="font-size: 0.7rem">0 objetivos</span>
             </div>
           </div>
         </div>
@@ -199,17 +147,12 @@ endblock %} {% block head %}
           <div class="card-body py-3">
             <div id="lista-objetivos-manana">
               <!-- Los objetivos de mañana se cargarán aquí -->
-              <div
-                class="text-center text-muted py-2"
-                id="mensaje-sin-objetivos-manana"
-              >
+              <div class="text-center text-muted py-2" id="mensaje-sin-objetivos-manana">
                 <i class="bi bi-calendar-check fs-3 mb-1"></i>
                 <p class="mb-0 small">
                   No hay objetivos programados para mañana
                 </p>
-                <small class="text-muted" style="font-size: 0.75rem"
-                  >Los objetivos programados aparecerán aquí</small
-                >
+                <small class="text-muted" style="font-size: 0.75rem">Los objetivos programados aparecerán aquí</small>
               </div>
             </div>
           </div>
@@ -219,51 +162,28 @@ endblock %} {% block head %}
       <div class="card mt-3" id="card-objetivos">
         <div class="card-body">
           <div class="d-flex justify-content-end mb-2 gap-2">
-            <button
-              class="btn btn-primary btn-sm"
-              type="button"
-              id="btn-abrir-modal-objetivo"
-            >
+            <button class="btn btn-primary btn-sm" type="button" id="btn-abrir-modal-objetivo">
               <i class="bi bi-plus"></i> Nuevo Objetivo
             </button>
-            <button
-              class="btn btn-outline-info btn-sm"
-              type="button"
-              id="btn-objetivos-programados"
-              title="Ver objetivos programados"
-            >
+            <button class="btn btn-outline-info btn-sm" type="button" id="btn-objetivos-programados"
+              title="Ver objetivos programados">
               <i class="bi bi-calendar-check"></i> Objetivos Programados
             </button>
-            <button
-              class="btn btn-outline-warning btn-sm"
-              id="btn-toggle-saltados"
-              type="button"
-              title="Mostrar objetivos saltados"
-            >
+            <button class="btn btn-outline-warning btn-sm" id="btn-toggle-saltados" type="button"
+              title="Mostrar objetivos saltados">
               <i class="bi bi-eye"></i> Mostrar saltados
             </button>
-            <button
-              class="btn btn-outline-secondary btn-sm"
-              id="btn-deseleccionar-recurrentes"
-              type="button"
-            >
+            <button class="btn btn-outline-secondary btn-sm" id="btn-deseleccionar-recurrentes" type="button">
               <i class="bi bi-arrow-counterclockwise"></i> Desmarcar todos los
               recurrentes
             </button>
           </div>
           <!-- Spinner de carga para objetivos -->
-          <div
-            id="objetivos-loading"
-            class="text-center py-5"
-            style="display: none"
-          >
+          <div id="objetivos-loading" class="text-center py-5" style="display: none">
             <div class="d-flex justify-content-center mb-4">
               <div class="spinner-gradient">
-                <div
-                  class="spinner-border text-primary"
-                  role="status"
-                  style="width: 3rem; height: 3rem; border-width: 3px"
-                >
+                <div class="spinner-border text-primary" role="status"
+                  style="width: 3rem; height: 3rem; border-width: 3px">
                   <span class="visually-hidden">Cargando...</span>
                 </div>
               </div>
@@ -283,11 +203,7 @@ endblock %} {% block head %}
               <div class="row justify-content-center">
                 <div class="col-auto">
                   <div class="d-flex align-items-center text-muted">
-                    <div
-                      class="spinner-border spinner-border-sm me-2"
-                      role="status"
-                      style="width: 1rem; height: 1rem"
-                    >
+                    <div class="spinner-border spinner-border-sm me-2" role="status" style="width: 1rem; height: 1rem">
                       <span class="visually-hidden">Loading...</span>
                     </div>
                     <small>Sincronizando datos...</small>
@@ -310,9 +226,7 @@ endblock %} {% block head %}
           </h5>
           <div id="filtros-historico" class="mb-3 row g-2">
             <div class="col-md-3">
-              <label for="filtro-tipo-historico" class="form-label fw-bold"
-                >Tipo de objetivo</label
-              >
+              <label for="filtro-tipo-historico" class="form-label fw-bold">Tipo de objetivo</label>
               <select class="form-select" id="filtro-tipo-historico">
                 <option value="">Todos los tipos</option>
                 <option value="diario">Diarios</option>
@@ -322,9 +236,7 @@ endblock %} {% block head %}
               </select>
             </div>
             <div class="col-md-3">
-              <label for="filtro-estado-historico" class="form-label fw-bold"
-                >Estado</label
-              >
+              <label for="filtro-estado-historico" class="form-label fw-bold">Estado</label>
               <select class="form-select" id="filtro-estado-historico">
                 <option value="">Todos los estados</option>
                 <option value="completado">Completados</option>
@@ -332,49 +244,24 @@ endblock %} {% block head %}
               </select>
             </div>
             <div class="col-md-3">
-              <label
-                for="filtro-fecha-inicio-historico"
-                class="form-label fw-bold"
-                >Desde</label
-              >
-              <input
-                type="date"
-                class="form-control"
-                id="filtro-fecha-inicio-historico"
-                placeholder="Desde"
-              />
+              <label for="filtro-fecha-inicio-historico" class="form-label fw-bold">Desde</label>
+              <input type="date" class="form-control" id="filtro-fecha-inicio-historico" placeholder="Desde" />
             </div>
             <div class="col-md-3">
-              <label for="filtro-fecha-fin-historico" class="form-label fw-bold"
-                >Hasta</label
-              >
-              <input
-                type="date"
-                class="form-control"
-                id="filtro-fecha-fin-historico"
-                placeholder="Hasta"
-              />
+              <label for="filtro-fecha-fin-historico" class="form-label fw-bold">Hasta</label>
+              <input type="date" class="form-control" id="filtro-fecha-fin-historico" placeholder="Hasta" />
             </div>
             <div class="col-md-12 mt-2">
-              <label for="filtro-busqueda-historico" class="form-label fw-bold"
-                >Buscar por palabra clave</label
-              >
-              <input
-                type="text"
-                class="form-control"
-                id="filtro-busqueda-historico"
-                placeholder="Ej: salud, trabajo, meta..."
-              />
+              <label for="filtro-busqueda-historico" class="form-label fw-bold">Buscar por palabra clave</label>
+              <input type="text" class="form-control" id="filtro-busqueda-historico"
+                placeholder="Ej: salud, trabajo, meta..." />
             </div>
           </div>
           <ul class="list-group" id="lista-historico">
             <!-- Histórico se renderiza aquí por JS -->
           </ul>
           <div class="d-flex justify-content-center mt-3">
-            <button
-              class="btn btn-outline-primary"
-              id="btn-cargar-mas-historico"
-            >
+            <button class="btn btn-outline-primary" id="btn-cargar-mas-historico">
               Cargar más
             </button>
           </div>
@@ -394,10 +281,7 @@ endblock %} {% block head %}
               </p>
             </div>
             <div class="d-flex gap-2">
-              <a
-                href="{{ url_for('gestion_categorias') }}"
-                class="btn btn-outline-secondary"
-              >
+              <a href="{{ url_for('gestion_categorias') }}" class="btn btn-outline-secondary">
                 <i class="bi bi-tags"></i> Gestionar Categorías
               </a>
               <button class="btn btn-primary" id="btn-nueva-frase">
@@ -413,9 +297,7 @@ endblock %} {% block head %}
                 <div class="h4 mb-0 text-primary" id="total-frases">0</div>
                 <small class="text-muted">Total Frases</small>
                 <div class="mt-1">
-                  <span class="badge bg-success" id="frases-activas-stats"
-                    >Activas: 0 / 0</span
-                  >
+                  <span class="badge bg-success" id="frases-activas-stats">Activas: 0 / 0</span>
                 </div>
               </div>
             </div>
@@ -441,9 +323,7 @@ endblock %} {% block head %}
 
           <!-- Indicador de filtro activo -->
           <div class="text-center mb-4">
-            <small id="indicador-filtro-estadisticas" class="text-muted"
-              >Estadísticas generales</small
-            >
+            <small id="indicador-filtro-estadisticas" class="text-muted">Estadísticas generales</small>
           </div>
 
           <!-- Filtros y controles -->
@@ -451,19 +331,13 @@ endblock %} {% block head %}
             <div class="row g-2 flex-grow-1 align-items-end">
               <div class="col-sm-4">
                 <label class="form-label mb-0 fw-semibold">Categoría</label>
-                <select
-                  class="form-select form-select-sm"
-                  id="filtro-categoria-frases"
-                >
+                <select class="form-select form-select-sm" id="filtro-categoria-frases">
                   <option value="">Todas las categorías</option>
                 </select>
               </div>
               <div class="col-sm-4">
                 <label class="form-label mb-0 fw-semibold">Subcategoría</label>
-                <select
-                  class="form-select form-select-sm"
-                  id="filtro-subcategoria-frases"
-                >
+                <select class="form-select form-select-sm" id="filtro-subcategoria-frases">
                   <option value="">Todas las subcategorías</option>
                 </select>
               </div>
@@ -488,16 +362,10 @@ endblock %} {% block head %}
               </div>
             </div>
             <div class="d-flex align-items-center gap-2 ms-3">
-              <button
-                class="btn btn-outline-success btn-sm"
-                id="btn-repasar-todas"
-              >
+              <button class="btn btn-outline-success btn-sm" id="btn-repasar-todas">
                 <i class="bi bi-arrow-repeat me-1"></i>Repasar por filtros
               </button>
-              <button
-                class="btn btn-outline-info btn-sm"
-                id="btn-frase-aleatoria"
-              >
+              <button class="btn btn-outline-info btn-sm" id="btn-frase-aleatoria">
                 <i class="bi bi-shuffle me-1"></i>Frase Aleatoria
               </button>
             </div>
@@ -509,23 +377,13 @@ endblock %} {% block head %}
           </div>
 
           <!-- Mensaje cuando no hay frases -->
-          <div
-            id="mensaje-sin-frases"
-            class="text-center py-5"
-            style="display: none"
-          >
-            <i
-              class="bi bi-chat-quote text-muted"
-              style="font-size: 4rem; opacity: 0.3"
-            ></i>
+          <div id="mensaje-sin-frases" class="text-center py-5" style="display: none">
+            <i class="bi bi-chat-quote text-muted" style="font-size: 4rem; opacity: 0.3"></i>
             <h6 class="text-muted mt-3">No tienes frases agregadas</h6>
             <p class="text-muted">
               Agrega tu primera frase inspiracional para comenzar
             </p>
-            <button
-              class="btn btn-primary"
-              onclick="document.getElementById('btn-nueva-frase').click()"
-            >
+            <button class="btn btn-primary" onclick="document.getElementById('btn-nueva-frase').click()">
               <i class="bi bi-plus-circle me-1"></i>Agregar Primera Frase
             </button>
           </div>
@@ -548,10 +406,7 @@ endblock %} {% block head %}
         </p>
       </div>
       <div class="d-flex gap-2">
-        <a
-          href="{{ url_for('gestion_categorias') }}"
-          class="btn btn-outline-secondary"
-        >
+        <a href="{{ url_for('gestion_categorias') }}" class="btn btn-outline-secondary">
           <i class="bi bi-tags"></i> Gestionar Categorías
         </a>
         <button class="btn btn-primary" id="btn-nuevo-audio">
@@ -591,28 +446,19 @@ endblock %} {% block head %}
     <!-- Filtros y controles -->
     <div class="row mb-4">
       <div class="col-md-4">
-        <label for="filtro-categoria-audios" class="form-label fw-semibold"
-          >Categoría</label
-        >
+        <label for="filtro-categoria-audios" class="form-label fw-semibold">Categoría</label>
         <select class="form-select form-select-sm" id="filtro-categoria-audios">
           <option value="">Todas las categorías</option>
         </select>
       </div>
       <div class="col-md-4">
-        <label for="filtro-subcategoria-audios" class="form-label fw-semibold"
-          >Subcategoría</label
-        >
-        <select
-          class="form-select form-select-sm"
-          id="filtro-subcategoria-audios"
-        >
+        <label for="filtro-subcategoria-audios" class="form-label fw-semibold">Subcategoría</label>
+        <select class="form-select form-select-sm" id="filtro-subcategoria-audios">
           <option value="">Todas las subcategorías</option>
         </select>
       </div>
       <div class="col-md-4">
-        <label for="orden-audios" class="form-label fw-semibold"
-          >Ordenar por</label
-        >
+        <label for="orden-audios" class="form-label fw-semibold">Ordenar por</label>
         <select class="form-select form-select-sm" id="orden-audios">
           <option value="reciente">Más recientes</option>
           <option value="antiguo">Más antiguos</option>
@@ -648,10 +494,7 @@ endblock %} {% block head %}
         Comienza agregando tu primer audio motivacional para escuchar cuando
         necesites inspiración.
       </p>
-      <button
-        class="btn btn-primary"
-        onclick="document.getElementById('btn-nuevo-audio').click()"
-      >
+      <button class="btn btn-primary" onclick="document.getElementById('btn-nuevo-audio').click()">
         <i class="bi bi-plus-circle me-1"></i>Agregar Primer Audio
       </button>
     </div>
@@ -659,13 +502,7 @@ endblock %} {% block head %}
 </div>
 
 <!-- Modal Nueva Frase -->
-<div
-  class="modal fade"
-  id="modalNuevaFrase"
-  tabindex="-1"
-  aria-labelledby="modalNuevaFraseLabel"
-  aria-hidden="true"
->
+<div class="modal fade" id="modalNuevaFrase" tabindex="-1" aria-labelledby="modalNuevaFraseLabel" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
       <form id="form-nueva-frase">
@@ -676,69 +513,35 @@ endblock %} {% block head %}
               Agregar Nueva Frase
             </h5>
           </div>
-          <button
-            type="button"
-            class="btn-close"
-            data-bs-dismiss="modal"
-            aria-label="Close"
-          ></button>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
           <div class="mb-3">
-            <label for="frase-texto" class="form-label fw-semibold"
-              >Frase</label
-            >
-            <textarea
-              class="form-control"
-              id="frase-texto"
-              rows="3"
-              placeholder="Escribe la frase inspiracional..."
-              required
-            ></textarea>
+            <label for="frase-texto" class="form-label fw-semibold">Frase</label>
+            <textarea class="form-control" id="frase-texto" rows="3" placeholder="Escribe la frase inspiracional..."
+              required></textarea>
           </div>
           <div class="mb-3">
-            <label for="frase-autor" class="form-label fw-semibold"
-              >Autor (opcional)</label
-            >
-            <input
-              type="text"
-              class="form-control"
-              id="frase-autor"
-              placeholder="Nombre del autor"
-            />
+            <label for="frase-autor" class="form-label fw-semibold">Autor (opcional)</label>
+            <input type="text" class="form-control" id="frase-autor" placeholder="Nombre del autor" />
           </div>
           <div class="mb-3">
-            <label for="frase-categoria" class="form-label fw-semibold"
-              >Categoría</label
-            >
+            <label for="frase-categoria" class="form-label fw-semibold">Categoría</label>
             <div class="d-flex gap-2">
               <select class="form-select" id="frase-categoria" required>
                 <option value="">Selecciona una categoría</option>
                 <option value="nueva">+ Nueva categoría</option>
               </select>
             </div>
-            <div
-              id="nueva-categoria-container"
-              class="mt-2"
-              style="display: none"
-            >
-              <input
-                type="text"
-                class="form-control"
-                id="nueva-categoria-input"
-                placeholder="Nombre de la nueva categoría"
-                maxlength="50"
-              />
-              <small class="text-muted"
-                >Solo letras, números y espacios. Máximo 50 caracteres.</small
-              >
+            <div id="nueva-categoria-container" class="mt-2" style="display: none">
+              <input type="text" class="form-control" id="nueva-categoria-input"
+                placeholder="Nombre de la nueva categoría" maxlength="50" />
+              <small class="text-muted">Solo letras, números y espacios. Máximo 50 caracteres.</small>
             </div>
           </div>
 
           <div class="mb-3">
-            <label for="frase-subcategoria" class="form-label fw-semibold"
-              >Subcategoría</label
-            >
+            <label for="frase-subcategoria" class="form-label fw-semibold">Subcategoría</label>
             <div class="d-flex gap-2">
               <select class="form-select" id="frase-subcategoria" required>
                 <option value="">Selecciona una subcategoría</option>
@@ -746,41 +549,20 @@ endblock %} {% block head %}
               </select>
             </div>
             <!-- Contenedor para crear una nueva subcategoría (utilizado cuando se selecciona 'nueva') -->
-            <div
-              id="nueva-subcategoria-container"
-              class="mt-2"
-              style="display: none"
-            >
-              <input
-                type="text"
-                class="form-control"
-                id="nueva-subcategoria-input"
-                placeholder="Nombre de la nueva subcategoría"
-                maxlength="50"
-              />
-              <small class="text-muted"
-                >Solo letras, números y espacios. Máximo 50 caracteres.</small
-              >
+            <div id="nueva-subcategoria-container" class="mt-2" style="display: none">
+              <input type="text" class="form-control" id="nueva-subcategoria-input"
+                placeholder="Nombre de la nueva subcategoría" maxlength="50" />
+              <small class="text-muted">Solo letras, números y espacios. Máximo 50 caracteres.</small>
             </div>
           </div>
           <div class="mb-3">
-            <label for="frase-notas" class="form-label fw-semibold"
-              >Notas personales (opcional)</label
-            >
-            <textarea
-              class="form-control"
-              id="frase-notas"
-              rows="2"
-              placeholder="¿Por qué es importante esta frase para ti?"
-            ></textarea>
+            <label for="frase-notas" class="form-label fw-semibold">Notas personales (opcional)</label>
+            <textarea class="form-control" id="frase-notas" rows="2"
+              placeholder="¿Por qué es importante esta frase para ti?"></textarea>
           </div>
         </div>
         <div class="modal-footer">
-          <button
-            type="button"
-            class="btn btn-outline-secondary"
-            data-bs-dismiss="modal"
-          >
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
             Cancelar
           </button>
           <button type="submit" class="btn btn-primary">Guardar Frase</button>
@@ -791,13 +573,7 @@ endblock %} {% block head %}
 </div>
 
 <!-- Modal Editar Frase -->
-<div
-  class="modal fade"
-  id="modalEditarFrase"
-  tabindex="-1"
-  aria-labelledby="modalEditarFraseLabel"
-  aria-hidden="true"
->
+<div class="modal fade" id="modalEditarFrase" tabindex="-1" aria-labelledby="modalEditarFraseLabel" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
       <form id="form-editar-frase">
@@ -808,110 +584,54 @@ endblock %} {% block head %}
               Editar Frase
             </h5>
           </div>
-          <button
-            type="button"
-            class="btn-close"
-            data-bs-dismiss="modal"
-            aria-label="Close"
-          ></button>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
           <input type="hidden" id="editar-frase-id" />
           <div class="mb-3">
-            <label for="editar-frase-texto" class="form-label fw-semibold"
-              >Frase</label
-            >
-            <textarea
-              class="form-control"
-              id="editar-frase-texto"
-              rows="3"
-              required
-            ></textarea>
+            <label for="editar-frase-texto" class="form-label fw-semibold">Frase</label>
+            <textarea class="form-control" id="editar-frase-texto" rows="3" required></textarea>
           </div>
           <div class="mb-3">
-            <label for="editar-frase-autor" class="form-label fw-semibold"
-              >Autor (opcional)</label
-            >
+            <label for="editar-frase-autor" class="form-label fw-semibold">Autor (opcional)</label>
             <input type="text" class="form-control" id="editar-frase-autor" />
           </div>
           <div class="mb-3">
-            <label for="editar-frase-categoria" class="form-label fw-semibold"
-              >Categoría</label
-            >
+            <label for="editar-frase-categoria" class="form-label fw-semibold">Categoría</label>
             <div class="d-flex gap-2">
               <select class="form-select" id="editar-frase-categoria" required>
                 <option value="">Selecciona una categoría</option>
                 <option value="nueva">+ Nueva categoría</option>
               </select>
             </div>
-            <div
-              id="editar-nueva-categoria-container"
-              class="mt-2"
-              style="display: none"
-            >
-              <input
-                type="text"
-                class="form-control"
-                id="editar-nueva-categoria-input"
-                placeholder="Nombre de la nueva categoría"
-                maxlength="50"
-              />
-              <small class="text-muted"
-                >Solo letras, números y espacios. Máximo 50 caracteres.</small
-              >
+            <div id="editar-nueva-categoria-container" class="mt-2" style="display: none">
+              <input type="text" class="form-control" id="editar-nueva-categoria-input"
+                placeholder="Nombre de la nueva categoría" maxlength="50" />
+              <small class="text-muted">Solo letras, números y espacios. Máximo 50 caracteres.</small>
             </div>
           </div>
 
           <div class="mb-3">
-            <label
-              for="editar-frase-subcategoria"
-              class="form-label fw-semibold"
-              >Subcategoría</label
-            >
+            <label for="editar-frase-subcategoria" class="form-label fw-semibold">Subcategoría</label>
             <div class="d-flex gap-2">
-              <select
-                class="form-select"
-                id="editar-frase-subcategoria"
-                required
-              >
+              <select class="form-select" id="editar-frase-subcategoria" required>
                 <option value="">Selecciona una subcategoría</option>
                 <option value="nueva">+ Nueva subcategoría</option>
               </select>
             </div>
-            <div
-              id="editar-nueva-subcategoria-container"
-              class="mt-2"
-              style="display: none"
-            >
-              <input
-                type="text"
-                class="form-control"
-                id="editar-nueva-subcategoria-input"
-                placeholder="Nombre de la nueva subcategoría"
-                maxlength="50"
-              />
-              <small class="text-muted"
-                >Solo letras, números y espacios. Máximo 50 caracteres.</small
-              >
+            <div id="editar-nueva-subcategoria-container" class="mt-2" style="display: none">
+              <input type="text" class="form-control" id="editar-nueva-subcategoria-input"
+                placeholder="Nombre de la nueva subcategoría" maxlength="50" />
+              <small class="text-muted">Solo letras, números y espacios. Máximo 50 caracteres.</small>
             </div>
           </div>
           <div class="mb-3">
-            <label for="editar-frase-notas" class="form-label fw-semibold"
-              >Notas personales (opcional)</label
-            >
-            <textarea
-              class="form-control"
-              id="editar-frase-notas"
-              rows="2"
-            ></textarea>
+            <label for="editar-frase-notas" class="form-label fw-semibold">Notas personales (opcional)</label>
+            <textarea class="form-control" id="editar-frase-notas" rows="2"></textarea>
           </div>
         </div>
         <div class="modal-footer">
-          <button
-            type="button"
-            class="btn btn-outline-secondary"
-            data-bs-dismiss="modal"
-          >
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
             Cancelar
           </button>
           <button type="submit" class="btn btn-primary">Guardar Cambios</button>
@@ -922,13 +642,8 @@ endblock %} {% block head %}
 </div>
 
 <!-- Modal Agregar Nuevo Objetivo -->
-<div
-  class="modal fade"
-  id="modalNuevoObjetivo"
-  tabindex="-1"
-  aria-labelledby="modalNuevoObjetivoLabel"
-  aria-hidden="true"
->
+<div class="modal fade" id="modalNuevoObjetivo" tabindex="-1" aria-labelledby="modalNuevoObjetivoLabel"
+  aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
       <form id="form-modal-nuevo-objetivo">
@@ -939,47 +654,25 @@ endblock %} {% block head %}
               Agregar Nuevo Objetivo
             </h5>
           </div>
-          <button
-            type="button"
-            class="btn-close"
-            data-bs-dismiss="modal"
-            aria-label="Close"
-          ></button>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
           <div class="mb-2 text-muted" style="font-size: 1rem">
             Completa los campos para crear un nuevo objetivo.
           </div>
           <div class="mb-3">
-            <label for="modal-titulo-objetivo" class="form-label fw-semibold"
-              >Título</label
-            >
-            <input
-              type="text"
-              class="form-control"
-              id="modal-titulo-objetivo"
-              placeholder="Título del objetivo"
-              required
-            />
+            <label for="modal-titulo-objetivo" class="form-label fw-semibold">Título</label>
+            <input type="text" class="form-control" id="modal-titulo-objetivo" placeholder="Título del objetivo"
+              required />
           </div>
           <div class="mb-3">
-            <label for="modal-desc-objetivo" class="form-label fw-semibold"
-              >Descripción</label
-            >
-            <textarea
-              class="form-control"
-              id="modal-desc-objetivo"
-              rows="2"
-              placeholder="Descripción detallada del objetivo"
-            ></textarea>
+            <label for="modal-desc-objetivo" class="form-label fw-semibold">Descripción</label>
+            <textarea class="form-control" id="modal-desc-objetivo" rows="2"
+              placeholder="Descripción detallada del objetivo"></textarea>
           </div>
           <div class="row">
             <div class="col mb-3">
-              <label
-                for="modal-prioridad-objetivo"
-                class="form-label fw-semibold"
-                >Prioridad</label
-              >
+              <label for="modal-prioridad-objetivo" class="form-label fw-semibold">Prioridad</label>
               <select class="form-select" id="modal-prioridad-objetivo">
                 <option value="alta">Alta</option>
                 <option value="media" selected>Media</option>
@@ -987,16 +680,9 @@ endblock %} {% block head %}
               </select>
             </div>
             <div class="col mb-3">
-              <label
-                for="modal-categoria-objetivo"
-                class="form-label fw-semibold"
-                >Categoría <span style="color: red">*</span></label
-              >
-              <select
-                class="form-select"
-                id="modal-categoria-objetivo"
-                required
-              >
+              <label for="modal-categoria-objetivo" class="form-label fw-semibold">Categoría <span
+                  style="color: red">*</span></label>
+              <select class="form-select" id="modal-categoria-objetivo" required>
                 <option value="" disabled selected>
                   Selecciona una categoría
                 </option>
@@ -1009,9 +695,7 @@ endblock %} {% block head %}
             </div>
           </div>
           <div class="mb-3">
-            <label for="modal-padre-objetivo" class="form-label fw-semibold"
-              >Objetivo Padre (Opcional)</label
-            >
+            <label for="modal-padre-objetivo" class="form-label fw-semibold">Objetivo Padre (Opcional)</label>
             <select class="form-select" id="modal-padre-objetivo">
               <option value="">Seleccionar objetivo padre</option>
               <!-- Opciones dinámicas por JS -->
@@ -1020,77 +704,36 @@ endblock %} {% block head %}
 
           <div class="row">
             <div class="col mb-3">
-              <label
-                for="modal-fecha-inicio-objetivo"
-                class="form-label fw-semibold"
-                >Fecha inicio</label
-              >
-              <input
-                type="date"
-                class="form-control"
-                id="modal-fecha-inicio-objetivo"
-              />
+              <label for="modal-fecha-inicio-objetivo" class="form-label fw-semibold">Fecha inicio</label>
+              <input type="date" class="form-control" id="modal-fecha-inicio-objetivo" />
             </div>
             <div class="col mb-3">
-              <label
-                for="modal-fecha-fin-objetivo"
-                class="form-label fw-semibold"
-                >Fecha fin</label
-              >
-              <input
-                type="date"
-                class="form-control"
-                id="modal-fecha-fin-objetivo"
-              />
+              <label for="modal-fecha-fin-objetivo" class="form-label fw-semibold">Fecha fin</label>
+              <input type="date" class="form-control" id="modal-fecha-fin-objetivo" />
             </div>
           </div>
 
           <div class="mb-3">
-            <label
-              for="modal-horas-estimadas-objetivo"
-              class="form-label fw-semibold"
-              >Duración estimada</label
-            >
+            <label for="modal-horas-estimadas-objetivo" class="form-label fw-semibold">Duración estimada</label>
             <div class="row g-2">
               <div class="col">
-                <input
-                  type="number"
-                  class="form-control"
-                  id="modal-horas-estimadas-objetivo"
-                  min="0"
-                  placeholder="Horas"
-                />
+                <input type="number" class="form-control" id="modal-horas-estimadas-objetivo" min="0"
+                  placeholder="Horas" />
               </div>
               <div class="col">
-                <input
-                  type="number"
-                  class="form-control"
-                  id="modal-minutos-estimados-objetivo"
-                  min="0"
-                  max="59"
-                  placeholder="Minutos"
-                />
+                <input type="number" class="form-control" id="modal-minutos-estimados-objetivo" min="0" max="59"
+                  placeholder="Minutos" />
               </div>
             </div>
           </div>
           <div class="mb-3">
-            <label
-              for="modal-recompensa-objetivo"
-              class="form-label fw-semibold"
-              >Recompensa</label
-            >
-            <input
-              type="text"
-              class="form-control"
-              id="modal-recompensa-objetivo"
-              placeholder="¿Qué te darás si lo logras?"
-            />
+            <label for="modal-recompensa-objetivo" class="form-label fw-semibold">Recompensa</label>
+            <input type="text" class="form-control" id="modal-recompensa-objetivo"
+              placeholder="¿Qué te darás si lo logras?" />
           </div>
 
           <div class="mb-3">
-            <label for="modal-parte-dia-objetivo" class="form-label fw-semibold"
-              >Parte del día (Opcional)</label
-            >
+            <label for="modal-parte-dia-objetivo" class="form-label fw-semibold">Parte del día (Opcional)</label>
             <select class="form-select" id="modal-parte-dia-objetivo">
               <option value="">Sin especificar</option>
               <option value="mañana">🌅 Mañana</option>
@@ -1099,37 +742,18 @@ endblock %} {% block head %}
             </select>
           </div>
 
-          <hr
-            style="border-top: 1.5px dashed #b6d4fe; margin: 1.2rem 0 1rem 0"
-          />
+          <hr style="border-top: 1.5px dashed #b6d4fe; margin: 1.2rem 0 1rem 0" />
           <div class="mb-3 d-flex align-items-center gap-2">
-            <label
-              class="form-label fw-semibold mb-0"
-              for="modal-recurrente-objetivo"
-              ><i class="bi bi-repeat"></i> Hacer este objetivo
-              recurrente</label
-            >
-            <input
-              type="checkbox"
-              class="form-check-input"
-              id="modal-recurrente-objetivo"
-            />
+            <label class="form-label fw-semibold mb-0" for="modal-recurrente-objetivo"><i class="bi bi-repeat"></i>
+              Hacer este objetivo
+              recurrente</label>
+            <input type="checkbox" class="form-check-input" id="modal-recurrente-objetivo" />
           </div>
           <div class="mb-3 d-flex align-items-center gap-2">
-            <label
-              class="form-label fw-semibold mb-0"
-              for="modal-es-padre-objetivo"
-              >¿Este objetivo es padre?</label
-            >
-            <input
-              type="checkbox"
-              class="form-check-input"
-              id="modal-es-padre-objetivo"
-            />
+            <label class="form-label fw-semibold mb-0" for="modal-es-padre-objetivo">¿Este objetivo es padre?</label>
+            <input type="checkbox" class="form-check-input" id="modal-es-padre-objetivo" />
           </div>
-          <hr
-            style="border-top: 1.5px dashed #b6d4fe; margin: 1.2rem 0 1rem 0"
-          />
+          <hr style="border-top: 1.5px dashed #b6d4fe; margin: 1.2rem 0 1rem 0" />
 
           <!-- Sección de Programación -->
           <div class="mb-3">
@@ -1140,10 +764,7 @@ endblock %} {% block head %}
               <div class="card-body py-3">
                 <div class="row g-2">
                   <div class="col-md-6">
-                    <label
-                      for="modal-programado-para"
-                      class="form-label small fw-semibold"
-                    >
+                    <label for="modal-programado-para" class="form-label small fw-semibold">
                       Programar para:
                     </label>
                     <select class="form-select" id="modal-programado-para">
@@ -1155,18 +776,10 @@ endblock %} {% block head %}
                     </select>
                   </div>
                   <div class="col-md-6">
-                    <label
-                      for="modal-fecha-programada"
-                      class="form-label small fw-semibold"
-                    >
+                    <label for="modal-fecha-programada" class="form-label small fw-semibold">
                       Fecha específica:
                     </label>
-                    <input
-                      type="date"
-                      class="form-control"
-                      id="modal-fecha-programada"
-                      disabled
-                    />
+                    <input type="date" class="form-control" id="modal-fecha-programada" disabled />
                   </div>
                 </div>
                 <div class="mt-2">
@@ -1180,39 +793,19 @@ endblock %} {% block head %}
             </div>
           </div>
 
-          <hr
-            style="border-top: 1.5px dashed #b6d4fe; margin: 1.2rem 0 1rem 0"
-          />
+          <hr style="border-top: 1.5px dashed #b6d4fe; margin: 1.2rem 0 1rem 0" />
           <div class="mb-3">
-            <button
-              type="button"
-              class="btn btn-outline-info btn-sm"
-              id="btn-toggle-checklist-nuevo"
-            >
+            <button type="button" class="btn btn-outline-info btn-sm" id="btn-toggle-checklist-nuevo">
               <i class="bi bi-list-check"></i> Agregar checklist (subobjetivos)
             </button>
           </div>
-          <div
-            class="mb-3"
-            id="checklist-nuevo-container"
-            style="display: none"
-          >
-            <label class="form-label fw-semibold"
-              >Checklist (subobjetivos)</label
-            >
+          <div class="mb-3" id="checklist-nuevo-container" style="display: none">
+            <label class="form-label fw-semibold">Checklist (subobjetivos)</label>
             <div id="checklist-nuevo-list"></div>
             <div class="d-flex mt-2">
-              <input
-                type="text"
-                class="form-control form-control-sm me-2"
-                id="checklist-nuevo-input"
-                placeholder="Nuevo subobjetivo..."
-              />
-              <button
-                type="button"
-                class="btn btn-sm btn-primary"
-                id="checklist-nuevo-add-btn"
-              >
+              <input type="text" class="form-control form-control-sm me-2" id="checklist-nuevo-input"
+                placeholder="Nuevo subobjetivo..." />
+              <button type="button" class="btn btn-sm btn-primary" id="checklist-nuevo-add-btn">
                 Agregar
               </button>
             </div>
@@ -1229,13 +822,8 @@ endblock %} {% block head %}
 </div>
 
 <!-- Modal Editar Objetivo -->
-<div
-  class="modal fade"
-  id="modalEditarObjetivo"
-  tabindex="-1"
-  aria-labelledby="modalEditarObjetivoLabel"
-  aria-hidden="true"
->
+<div class="modal fade" id="modalEditarObjetivo" tabindex="-1" aria-labelledby="modalEditarObjetivoLabel"
+  aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
       <form id="form-modal-editar-objetivo">
@@ -1246,12 +834,8 @@ endblock %} {% block head %}
               Editar Objetivo
             </h5>
           </div>
-          <button
-            type="button"
-            class="btn-close position-absolute end-0 me-3"
-            data-bs-dismiss="modal"
-            aria-label="Close"
-          ></button>
+          <button type="button" class="btn-close position-absolute end-0 me-3" data-bs-dismiss="modal"
+            aria-label="Close"></button>
         </div>
         <div class="modal-body">
           <div class="mb-2 text-muted text-center" style="font-size: 1rem">
@@ -1259,33 +843,16 @@ endblock %} {% block head %}
           </div>
           <input type="hidden" id="editar-id-objetivo" />
           <div class="mb-3">
-            <label for="editar-titulo-objetivo" class="form-label fw-semibold"
-              >Título</label
-            >
-            <input
-              type="text"
-              class="form-control"
-              id="editar-titulo-objetivo"
-              required
-            />
+            <label for="editar-titulo-objetivo" class="form-label fw-semibold">Título</label>
+            <input type="text" class="form-control" id="editar-titulo-objetivo" required />
           </div>
           <div class="mb-3">
-            <label for="editar-desc-objetivo" class="form-label fw-semibold"
-              >Descripción</label
-            >
-            <textarea
-              class="form-control"
-              id="editar-desc-objetivo"
-              rows="2"
-            ></textarea>
+            <label for="editar-desc-objetivo" class="form-label fw-semibold">Descripción</label>
+            <textarea class="form-control" id="editar-desc-objetivo" rows="2"></textarea>
           </div>
           <div class="row">
             <div class="col mb-3">
-              <label
-                for="editar-prioridad-objetivo"
-                class="form-label fw-semibold"
-                >Prioridad</label
-              >
+              <label for="editar-prioridad-objetivo" class="form-label fw-semibold">Prioridad</label>
               <select class="form-select" id="editar-prioridad-objetivo">
                 <option value="alta">Alta</option>
                 <option value="media">Media</option>
@@ -1293,16 +860,9 @@ endblock %} {% block head %}
               </select>
             </div>
             <div class="col mb-3">
-              <label
-                for="editar-categoria-objetivo"
-                class="form-label fw-semibold"
-                >Categoría <span style="color: red">*</span></label
-              >
-              <select
-                class="form-select"
-                id="editar-categoria-objetivo"
-                required
-              >
+              <label for="editar-categoria-objetivo" class="form-label fw-semibold">Categoría <span
+                  style="color: red">*</span></label>
+              <select class="form-select" id="editar-categoria-objetivo" required>
                 <option value="" disabled selected>
                   Selecciona una categoría
                 </option>
@@ -1315,9 +875,7 @@ endblock %} {% block head %}
             </div>
           </div>
           <div class="mb-3">
-            <label for="editar-padre-objetivo" class="form-label fw-semibold"
-              >Objetivo Padre (Opcional)</label
-            >
+            <label for="editar-padre-objetivo" class="form-label fw-semibold">Objetivo Padre (Opcional)</label>
             <select class="form-select" id="editar-padre-objetivo">
               <option value="">Seleccionar objetivo padre</option>
               <!-- Opciones dinámicas por JS -->
@@ -1326,80 +884,37 @@ endblock %} {% block head %}
 
           <div class="row">
             <div class="col mb-3">
-              <label
-                for="editar-fecha-inicio-objetivo"
-                class="form-label fw-semibold"
-                >Fecha inicio</label
-              >
-              <input
-                type="date"
-                class="form-control"
-                id="editar-fecha-inicio-objetivo"
-              />
+              <label for="editar-fecha-inicio-objetivo" class="form-label fw-semibold">Fecha inicio</label>
+              <input type="date" class="form-control" id="editar-fecha-inicio-objetivo" />
             </div>
             <div class="col mb-3">
-              <label
-                for="editar-fecha-fin-objetivo"
-                class="form-label fw-semibold"
-                >Fecha fin</label
-              >
-              <input
-                type="date"
-                class="form-control"
-                id="editar-fecha-fin-objetivo"
-              />
+              <label for="editar-fecha-fin-objetivo" class="form-label fw-semibold">Fecha fin</label>
+              <input type="date" class="form-control" id="editar-fecha-fin-objetivo" />
             </div>
           </div>
 
           <div class="mb-3">
-            <label
-              for="editar-horas-estimadas-objetivo"
-              class="form-label fw-semibold"
-              >Duración estimada</label
-            >
+            <label for="editar-horas-estimadas-objetivo" class="form-label fw-semibold">Duración estimada</label>
             <div class="row g-2">
               <div class="col">
-                <input
-                  type="number"
-                  class="form-control"
-                  id="editar-horas-estimadas-objetivo"
-                  min="0"
-                  placeholder="Horas"
-                />
+                <input type="number" class="form-control" id="editar-horas-estimadas-objetivo" min="0"
+                  placeholder="Horas" />
               </div>
               <div class="col">
-                <input
-                  type="number"
-                  class="form-control"
-                  id="editar-minutos-estimados-objetivo"
-                  min="0"
-                  max="59"
-                  placeholder="Minutos"
-                />
+                <input type="number" class="form-control" id="editar-minutos-estimados-objetivo" min="0" max="59"
+                  placeholder="Minutos" />
               </div>
             </div>
           </div>
 
           <div class="mb-3">
-            <label
-              for="editar-recompensa-objetivo"
-              class="form-label fw-semibold"
-              >Recompensa</label
-            >
-            <input
-              type="text"
-              class="form-control"
-              id="editar-recompensa-objetivo"
-              placeholder="¿Qué te darás si lo logras?"
-            />
+            <label for="editar-recompensa-objetivo" class="form-label fw-semibold">Recompensa</label>
+            <input type="text" class="form-control" id="editar-recompensa-objetivo"
+              placeholder="¿Qué te darás si lo logras?" />
           </div>
 
           <div class="mb-3">
-            <label
-              for="editar-parte-dia-objetivo"
-              class="form-label fw-semibold"
-              >Parte del día (Opcional)</label
-            >
+            <label for="editar-parte-dia-objetivo" class="form-label fw-semibold">Parte del día (Opcional)</label>
             <select class="form-select" id="editar-parte-dia-objetivo">
               <option value="">Sin especificar</option>
               <option value="mañana">🌅 Mañana</option>
@@ -1408,37 +923,18 @@ endblock %} {% block head %}
             </select>
           </div>
 
-          <hr
-            style="border-top: 1.5px dashed #b6d4fe; margin: 1.2rem 0 1rem 0"
-          />
+          <hr style="border-top: 1.5px dashed #b6d4fe; margin: 1.2rem 0 1rem 0" />
           <div class="mb-3 d-flex align-items-center gap-2">
-            <label
-              class="form-label fw-semibold mb-0"
-              for="editar-recurrente-objetivo"
-              ><i class="bi bi-repeat"></i> Hacer este objetivo
-              recurrente</label
-            >
-            <input
-              type="checkbox"
-              class="form-check-input"
-              id="editar-recurrente-objetivo"
-            />
+            <label class="form-label fw-semibold mb-0" for="editar-recurrente-objetivo"><i class="bi bi-repeat"></i>
+              Hacer este objetivo
+              recurrente</label>
+            <input type="checkbox" class="form-check-input" id="editar-recurrente-objetivo" />
           </div>
           <div class="mb-3 d-flex align-items-center gap-2">
-            <label
-              class="form-label fw-semibold mb-0"
-              for="editar-es-padre-objetivo"
-              >¿Este objetivo es padre?</label
-            >
-            <input
-              type="checkbox"
-              class="form-check-input"
-              id="editar-es-padre-objetivo"
-            />
+            <label class="form-label fw-semibold mb-0" for="editar-es-padre-objetivo">¿Este objetivo es padre?</label>
+            <input type="checkbox" class="form-check-input" id="editar-es-padre-objetivo" />
           </div>
-          <hr
-            style="border-top: 1.5px dashed #b6d4fe; margin: 1.2rem 0 1rem 0"
-          />
+          <hr style="border-top: 1.5px dashed #b6d4fe; margin: 1.2rem 0 1rem 0" />
 
           <!-- Sección de Programación -->
           <div class="mb-3">
@@ -1449,10 +945,7 @@ endblock %} {% block head %}
               <div class="card-body py-3">
                 <div class="row g-2">
                   <div class="col-md-6">
-                    <label
-                      for="editar-programado-para"
-                      class="form-label small fw-semibold"
-                    >
+                    <label for="editar-programado-para" class="form-label small fw-semibold">
                       Programar para:
                     </label>
                     <select class="form-select" id="editar-programado-para">
@@ -1464,18 +957,10 @@ endblock %} {% block head %}
                     </select>
                   </div>
                   <div class="col-md-6">
-                    <label
-                      for="editar-fecha-programada"
-                      class="form-label small fw-semibold"
-                    >
+                    <label for="editar-fecha-programada" class="form-label small fw-semibold">
                       Fecha específica:
                     </label>
-                    <input
-                      type="date"
-                      class="form-control"
-                      id="editar-fecha-programada"
-                      disabled
-                    />
+                    <input type="date" class="form-control" id="editar-fecha-programada" disabled />
                   </div>
                 </div>
                 <div class="mt-2">
@@ -1489,50 +974,26 @@ endblock %} {% block head %}
             </div>
           </div>
 
-          <hr
-            style="border-top: 1.5px dashed #b6d4fe; margin: 1.2rem 0 1rem 0"
-          />
+          <hr style="border-top: 1.5px dashed #b6d4fe; margin: 1.2rem 0 1rem 0" />
           <div class="mb-3">
-            <button
-              type="button"
-              class="btn btn-outline-info btn-sm"
-              id="btn-toggle-checklist-editar"
-            >
+            <button type="button" class="btn btn-outline-info btn-sm" id="btn-toggle-checklist-editar">
               <i class="bi bi-list-check"></i> Editar checklist (subobjetivos)
             </button>
           </div>
-          <div
-            class="mb-3"
-            id="checklist-editar-container"
-            style="display: none"
-          >
-            <label class="form-label fw-semibold"
-              >Checklist (subobjetivos)</label
-            >
+          <div class="mb-3" id="checklist-editar-container" style="display: none">
+            <label class="form-label fw-semibold">Checklist (subobjetivos)</label>
             <div id="checklist-editar-list"></div>
             <div class="d-flex mt-2">
-              <input
-                type="text"
-                class="form-control form-control-sm me-2"
-                id="checklist-editar-input"
-                placeholder="Nuevo subobjetivo..."
-              />
-              <button
-                type="button"
-                class="btn btn-sm btn-primary"
-                id="checklist-editar-add-btn"
-              >
+              <input type="text" class="form-control form-control-sm me-2" id="checklist-editar-input"
+                placeholder="Nuevo subobjetivo..." />
+              <button type="button" class="btn btn-sm btn-primary" id="checklist-editar-add-btn">
                 Agregar
               </button>
             </div>
           </div>
         </div>
         <div class="modal-footer">
-          <button
-            type="button"
-            class="btn btn-outline-secondary"
-            data-bs-dismiss="modal"
-          >
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
             Cancelar
           </button>
           <button type="submit" class="btn btn-primary">Guardar Cambios</button>
@@ -1543,20 +1004,13 @@ endblock %} {% block head %}
 </div>
 
 <!-- Modal Modo Focus -->
-<div
-  class="modal fade"
-  id="modalFocusObjetivo"
-  tabindex="-1"
-  aria-labelledby="modalFocusObjetivoLabel"
-  aria-hidden="true"
->
+<div class="modal fade" id="modalFocusObjetivo" tabindex="-1" aria-labelledby="modalFocusObjetivoLabel"
+  aria-hidden="true">
   <div class="modal-dialog modal-xl">
     <div class="modal-content">
       <div class="modal-header border-0 pb-0">
         <div class="d-flex align-items-center gap-3">
-          <span class="modal-icon fs-2"
-            ><i class="bi bi-bullseye text-primary"></i
-          ></span>
+          <span class="modal-icon fs-2"><i class="bi bi-bullseye text-primary"></i></span>
           <div>
             <h4 class="modal-title mb-0" id="modalFocusObjetivoLabel">
               Modo Focus
@@ -1564,62 +1018,34 @@ endblock %} {% block head %}
             <small class="text-muted">Concéntrate en este objetivo</small>
           </div>
         </div>
-        <button
-          type="button"
-          class="btn-close"
-          data-bs-dismiss="modal"
-          aria-label="Close"
-        ></button>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
 
       <div class="modal-body p-4">
         <!-- Información del objetivo -->
         <div class="focus-objetivo-info mb-4">
           <h2 class="focus-titulo mb-3" id="focus-titulo"></h2>
-          <p
-            class="focus-descripcion text-muted mb-3"
-            id="focus-descripcion"
-          ></p>
+          <p class="focus-descripcion text-muted mb-3" id="focus-descripcion"></p>
 
           <!-- Metadatos del objetivo -->
           <div class="focus-meta d-flex flex-wrap gap-3 mb-4">
-            <span
-              class="badge bg-light text-dark border"
-              id="focus-categoria"
-            ></span>
-            <span
-              class="badge bg-light text-dark border"
-              id="focus-prioridad"
-            ></span>
-            <span
-              class="badge bg-light text-dark border"
-              id="focus-parte-dia"
-            ></span>
-            <span
-              class="badge bg-light text-dark border"
-              id="focus-tiempo"
-            ></span>
+            <span class="badge bg-light text-dark border" id="focus-categoria"></span>
+            <span class="badge bg-light text-dark border" id="focus-prioridad"></span>
+            <span class="badge bg-light text-dark border" id="focus-parte-dia"></span>
+            <span class="badge bg-light text-dark border" id="focus-tiempo"></span>
           </div>
         </div>
 
         <!-- Timer/Cronómetro -->
         <div class="focus-timer mb-4 text-center">
           <div class="timer-display mb-3">
-            <span
-              class="timer-time fs-1 fw-bold text-primary"
-              id="timer-display"
-              >00:00:00</span
-            >
+            <span class="timer-time fs-1 fw-bold text-primary" id="timer-display">00:00:00</span>
           </div>
           <div class="timer-controls">
             <button class="btn btn-success me-2" id="timer-start">
               <i class="bi bi-play-fill"></i> Iniciar
             </button>
-            <button
-              class="btn btn-warning me-2"
-              id="timer-pause"
-              style="display: none"
-            >
+            <button class="btn btn-warning me-2" id="timer-pause" style="display: none">
               <i class="bi bi-pause-fill"></i> Pausar
             </button>
             <button class="btn btn-secondary" id="timer-reset">
@@ -1635,10 +1061,7 @@ endblock %} {% block head %}
               <i class="bi bi-list-check me-2"></i>Progreso del objetivo
               <span class="badge bg-primary ms-2" id="focus-progreso">0/0</span>
             </h5>
-            <button
-              class="btn btn-outline-primary btn-sm"
-              id="btn-agregar-subobjetivo-focus"
-            >
+            <button class="btn btn-outline-primary btn-sm" id="btn-agregar-subobjetivo-focus">
               <i class="bi bi-plus"></i> Agregar subobjetivo
             </button>
           </div>
@@ -1646,37 +1069,24 @@ endblock %} {% block head %}
           <!-- Input para nuevo subobjetivo -->
           <div class="mb-3" id="nuevo-subobjetivo-focus" style="display: none">
             <div class="input-group" style="align-items: stretch">
-              <input
-                type="text"
-                class="form-control"
-                id="input-nuevo-subobjetivo-focus"
-                placeholder="Escribe el nuevo subobjetivo..."
-                style="height: 38px"
-              />
-              <button
-                class="btn btn-success"
-                id="btn-guardar-subobjetivo-focus"
-                style="
+              <input type="text" class="form-control" id="input-nuevo-subobjetivo-focus"
+                placeholder="Escribe el nuevo subobjetivo..." style="height: 38px" />
+              <button class="btn btn-success" id="btn-guardar-subobjetivo-focus" style="
                   display: flex;
                   align-items: center;
                   justify-content: center;
                   height: 38px;
                   min-width: 45px;
-                "
-              >
+                ">
                 <i class="bi bi-plus"></i>
               </button>
-              <button
-                class="btn btn-secondary"
-                id="btn-cancelar-subobjetivo-focus"
-                style="
+              <button class="btn btn-secondary" id="btn-cancelar-subobjetivo-focus" style="
                   display: flex;
                   align-items: center;
                   justify-content: center;
                   height: 38px;
                   min-width: 45px;
-                "
-              >
+                ">
                 <i class="bi bi-x"></i>
               </button>
             </div>
@@ -1692,12 +1102,8 @@ endblock %} {% block head %}
           <h5 class="mb-3">
             <i class="bi bi-journal-text me-2"></i>Notas de la sesión
           </h5>
-          <textarea
-            class="form-control"
-            id="focus-notas-texto"
-            rows="4"
-            placeholder="Anota tu progreso, ideas o reflexiones sobre este objetivo..."
-          >
+          <textarea class="form-control" id="focus-notas-texto" rows="4"
+            placeholder="Anota tu progreso, ideas o reflexiones sobre este objetivo...">
           </textarea>
         </div>
       </div>
@@ -1705,26 +1111,26 @@ endblock %} {% block head %}
       <div class="modal-footer border-0 pt-0">
         <div class="d-flex justify-content-between w-100 align-items-center">
           <div>
-            <button
-              type="button"
-              class="btn btn-outline-secondary"
-              data-bs-dismiss="modal"
-            >
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
               <i class="bi bi-x-lg me-1"></i>Salir del Focus
             </button>
           </div>
           <div class="d-flex align-items-center gap-3">
             <div class="form-check">
-              <input 
-                class="form-check-input" 
-                type="checkbox" 
-                id="focus-marcar-como-ayer"
-                title="Si está marcado, los objetivos y subobjetivos se registrarán con la fecha de ayer"
-              >
+              <input class="form-check-input" type="checkbox" id="focus-marcar-como-ayer"
+                title="Si está marcado, los objetivos y subobjetivos se registrarán con la fecha de ayer">
               <label class="form-check-label" for="focus-marcar-como-ayer">
                 Marcar como ayer
               </label>
             </div>
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="focus-desmarcar-ayer"
+                title="Si está marcado, se eliminará el registro de completado de ayer al desmarcar">
+              <label class="form-check-label" for="focus-desmarcar-ayer">
+                Desmarcar de ayer
+              </label>
+            </div>
+
             <button type="button" class="btn btn-success" id="focus-completar">
               <i class="bi bi-check-lg me-1"></i>Completar Objetivo
             </button>
@@ -1736,35 +1142,21 @@ endblock %} {% block head %}
 </div>
 
 <!-- Modal Modo Focus Sub-objetivo -->
-<div
-  class="modal fade"
-  id="modalFocusSubobjetivo"
-  tabindex="-1"
-  aria-labelledby="modalFocusSubobjetivoLabel"
-  aria-hidden="true"
->
+<div class="modal fade" id="modalFocusSubobjetivo" tabindex="-1" aria-labelledby="modalFocusSubobjetivoLabel"
+  aria-hidden="true">
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
       <div class="modal-header border-0 pb-0">
         <div class="d-flex align-items-center gap-3">
-          <span class="modal-icon fs-2"
-            ><i class="bi bi-bullseye text-success"></i
-          ></span>
+          <span class="modal-icon fs-2"><i class="bi bi-bullseye text-success"></i></span>
           <div>
             <h4 class="modal-title mb-0" id="modalFocusSubobjetivoLabel">
               Focus Sub-objetivo
             </h4>
-            <small class="text-muted"
-              >Concéntrate en esta tarea específica</small
-            >
+            <small class="text-muted">Concéntrate en esta tarea específica</small>
           </div>
         </div>
-        <button
-          type="button"
-          class="btn-close"
-          data-bs-dismiss="modal"
-          aria-label="Close"
-        ></button>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
 
       <div class="modal-body p-4">
@@ -1781,21 +1173,13 @@ endblock %} {% block head %}
         <!-- Timer/Cronómetro para sub-objetivo -->
         <div class="focus-timer mb-4 text-center">
           <div class="timer-display mb-3">
-            <span
-              class="timer-time fs-1 fw-bold text-success"
-              id="timer-sub-display"
-              >00:00:00</span
-            >
+            <span class="timer-time fs-1 fw-bold text-success" id="timer-sub-display">00:00:00</span>
           </div>
           <div class="timer-controls">
             <button class="btn btn-success me-2" id="timer-sub-start">
               <i class="bi bi-play-fill"></i> Iniciar
             </button>
-            <button
-              class="btn btn-warning me-2"
-              id="timer-sub-pause"
-              style="display: none"
-            >
+            <button class="btn btn-warning me-2" id="timer-sub-pause" style="display: none">
               <i class="bi bi-pause-fill"></i> Pausar
             </button>
             <button class="btn btn-secondary" id="timer-sub-reset">
@@ -1809,12 +1193,8 @@ endblock %} {% block head %}
           <h5 class="mb-3">
             <i class="bi bi-journal-text me-2"></i>Notas de esta tarea
           </h5>
-          <textarea
-            class="form-control"
-            id="focus-sub-notas-texto"
-            rows="4"
-            placeholder="Anota tu progreso, ideas o reflexiones sobre esta tarea específica..."
-          >
+          <textarea class="form-control" id="focus-sub-notas-texto" rows="4"
+            placeholder="Anota tu progreso, ideas o reflexiones sobre esta tarea específica...">
           </textarea>
         </div>
       </div>
@@ -1822,20 +1202,12 @@ endblock %} {% block head %}
       <div class="modal-footer border-0 pt-0">
         <div class="d-flex justify-content-between w-100">
           <div>
-            <button
-              type="button"
-              class="btn btn-outline-secondary"
-              data-bs-dismiss="modal"
-            >
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
               <i class="bi bi-x-lg me-1"></i>Volver al objetivo
             </button>
           </div>
           <div>
-            <button
-              type="button"
-              class="btn btn-success"
-              id="focus-sub-completar"
-            >
+            <button type="button" class="btn btn-success" id="focus-sub-completar">
               <i class="bi bi-check-lg me-1"></i>Completar Tarea
             </button>
           </div>
@@ -2361,8 +1733,8 @@ endblock %} {% block head %}
           categoria:
             categoria === "nueva"
               ? document
-                  .getElementById("editar-nueva-categoria-input")
-                  .value.trim()
+                .getElementById("editar-nueva-categoria-input")
+                .value.trim()
               : categoria,
           subcategoria,
           notas: notas || null,
@@ -3262,11 +2634,10 @@ endblock %} {% block head %}
                   <input type="checkbox" class="form-check-input focus-subobjetivo-checkbox me-3" 
                          ${sub.completado ? "checked" : ""} 
                          data-subobjetivo-id="${sub.id}">
-                  <span class="focus-subobjetivo-titulo ${
-                    sub.completado
-                      ? "text-decoration-line-through text-muted"
-                      : ""
-                  }" 
+                  <span class="focus-subobjetivo-titulo ${sub.completado
+                  ? "text-decoration-line-through text-muted"
+                  : ""
+                }" 
                         data-subobjetivo-id="${sub.id}">${sub.titulo}</span>
                 </div>
               `;
@@ -3879,11 +3250,10 @@ endblock %} {% block head %}
                     <input type="checkbox" class="form-check-input focus-subobjetivo-checkbox me-3" 
                            ${sub.completado ? "checked" : ""} 
                            data-subobjetivo-id="${sub.id}">
-                    <span class="focus-subobjetivo-titulo ${
-                      sub.completado
-                        ? "text-decoration-line-through text-muted"
-                        : ""
-                    }" 
+                    <span class="focus-subobjetivo-titulo ${sub.completado
+              ? "text-decoration-line-through text-muted"
+              : ""
+            }" 
                           data-subobjetivo-id="${sub.id}">${sub.titulo}</span>
                 </div>
             `;
@@ -3911,144 +3281,71 @@ endblock %} {% block head %}
 </script>
 
 <!-- Modal Nuevo Audio -->
-<div
-  class="modal fade"
-  id="modalNuevoAudio"
-  tabindex="-1"
-  aria-labelledby="modalNuevoAudioLabel"
-  aria-hidden="true"
->
+<div class="modal fade" id="modalNuevoAudio" tabindex="-1" aria-labelledby="modalNuevoAudioLabel" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
       <form id="form-nuevo-audio" enctype="multipart/form-data">
         <div class="modal-header">
           <div class="d-flex align-items-center gap-2">
-            <span class="modal-icon"
-              ><i class="bi bi-music-note-beamed"></i
-            ></span>
+            <span class="modal-icon"><i class="bi bi-music-note-beamed"></i></span>
             <h5 class="modal-title mb-0" id="modalNuevoAudioLabel">
               Agregar Nuevo Audio
             </h5>
           </div>
-          <button
-            type="button"
-            class="btn-close"
-            data-bs-dismiss="modal"
-            aria-label="Close"
-          ></button>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
           <div class="mb-3">
-            <label for="audio-titulo" class="form-label fw-semibold"
-              >Título</label
-            >
-            <input
-              type="text"
-              class="form-control"
-              id="audio-titulo"
-              placeholder="Título del audio..."
-              required
-            />
+            <label for="audio-titulo" class="form-label fw-semibold">Título</label>
+            <input type="text" class="form-control" id="audio-titulo" placeholder="Título del audio..." required />
           </div>
           <div class="mb-3">
-            <label for="audio-descripcion" class="form-label fw-semibold"
-              >Descripción (opcional)</label
-            >
-            <textarea
-              class="form-control"
-              id="audio-descripcion"
-              rows="2"
-              placeholder="Descripción del audio..."
-            ></textarea>
+            <label for="audio-descripcion" class="form-label fw-semibold">Descripción (opcional)</label>
+            <textarea class="form-control" id="audio-descripcion" rows="2"
+              placeholder="Descripción del audio..."></textarea>
           </div>
           <div class="mb-3">
-            <label for="audio-file" class="form-label fw-semibold"
-              >Archivo de Audio</label
-            >
-            <input
-              type="file"
-              class="form-control"
-              id="audio-file"
-              accept=".mp3,.wav,.m4a,.ogg"
-              required
-            />
-            <small class="text-muted"
-              >Formatos permitidos: MP3, WAV, M4A, OGG. Máximo 50 MB.</small
-            >
+            <label for="audio-file" class="form-label fw-semibold">Archivo de Audio</label>
+            <input type="file" class="form-control" id="audio-file" accept=".mp3,.wav,.m4a,.ogg" required />
+            <small class="text-muted">Formatos permitidos: MP3, WAV, M4A, OGG. Máximo 50 MB.</small>
           </div>
           <div class="mb-3">
-            <label for="audio-categoria" class="form-label fw-semibold"
-              >Categoría</label
-            >
+            <label for="audio-categoria" class="form-label fw-semibold">Categoría</label>
             <div class="d-flex gap-2">
               <select class="form-select" id="audio-categoria" required>
                 <option value="">Selecciona una categoría</option>
                 <option value="nueva">+ Nueva categoría</option>
               </select>
             </div>
-            <div
-              id="nueva-categoria-container-audio"
-              class="mt-2"
-              style="display: none"
-            >
-              <input
-                type="text"
-                class="form-control"
-                id="nueva-categoria-input-audio"
-                placeholder="Nombre de la nueva categoría"
-                maxlength="50"
-              />
-              <small class="text-muted"
-                >Solo letras, números y espacios. Máximo 50 caracteres.</small
-              >
+            <div id="nueva-categoria-container-audio" class="mt-2" style="display: none">
+              <input type="text" class="form-control" id="nueva-categoria-input-audio"
+                placeholder="Nombre de la nueva categoría" maxlength="50" />
+              <small class="text-muted">Solo letras, números y espacios. Máximo 50 caracteres.</small>
             </div>
           </div>
 
           <div class="mb-3">
-            <label for="audio-subcategoria" class="form-label fw-semibold"
-              >Subcategoría</label
-            >
+            <label for="audio-subcategoria" class="form-label fw-semibold">Subcategoría</label>
             <div class="d-flex gap-2">
               <select class="form-select" id="audio-subcategoria" required>
                 <option value="">Selecciona una subcategoría</option>
                 <option value="nueva">+ Nueva subcategoría</option>
               </select>
             </div>
-            <div
-              id="nueva-subcategoria-container-audio"
-              class="mt-2"
-              style="display: none"
-            >
-              <input
-                type="text"
-                class="form-control"
-                id="nueva-subcategoria-input-audio"
-                placeholder="Nombre de la nueva subcategoría"
-                maxlength="50"
-              />
-              <small class="text-muted"
-                >Solo letras, números y espacios. Máximo 50 caracteres.</small
-              >
+            <div id="nueva-subcategoria-container-audio" class="mt-2" style="display: none">
+              <input type="text" class="form-control" id="nueva-subcategoria-input-audio"
+                placeholder="Nombre de la nueva subcategoría" maxlength="50" />
+              <small class="text-muted">Solo letras, números y espacios. Máximo 50 caracteres.</small>
             </div>
           </div>
           <div class="mb-3">
-            <label for="audio-notas" class="form-label fw-semibold"
-              >Notas personales (opcional)</label
-            >
-            <textarea
-              class="form-control"
-              id="audio-notas"
-              rows="2"
-              placeholder="¿Por qué es importante este audio para ti?"
-            ></textarea>
+            <label for="audio-notas" class="form-label fw-semibold">Notas personales (opcional)</label>
+            <textarea class="form-control" id="audio-notas" rows="2"
+              placeholder="¿Por qué es importante este audio para ti?"></textarea>
           </div>
         </div>
         <div class="modal-footer">
-          <button
-            type="button"
-            class="btn btn-secondary"
-            data-bs-dismiss="modal"
-          >
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
             Cancelar
           </button>
           <button type="submit" class="btn btn-primary">
@@ -4061,13 +3358,7 @@ endblock %} {% block head %}
 </div>
 
 <!-- Modal Editar Audio -->
-<div
-  class="modal fade"
-  id="modalEditarAudio"
-  tabindex="-1"
-  aria-labelledby="modalEditarAudioLabel"
-  aria-hidden="true"
->
+<div class="modal fade" id="modalEditarAudio" tabindex="-1" aria-labelledby="modalEditarAudioLabel" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
       <form id="form-editar-audio">
@@ -4078,107 +3369,51 @@ endblock %} {% block head %}
               Editar Audio
             </h5>
           </div>
-          <button
-            type="button"
-            class="btn-close"
-            data-bs-dismiss="modal"
-            aria-label="Close"
-          ></button>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
           <input type="hidden" id="editar-audio-id" />
           <div class="mb-3">
-            <label for="editar-audio-titulo" class="form-label fw-semibold"
-              >Título</label
-            >
-            <input
-              type="text"
-              class="form-control"
-              id="editar-audio-titulo"
-              required
-            />
+            <label for="editar-audio-titulo" class="form-label fw-semibold">Título</label>
+            <input type="text" class="form-control" id="editar-audio-titulo" required />
           </div>
           <div class="mb-3">
-            <label for="editar-audio-descripcion" class="form-label fw-semibold"
-              >Descripción (opcional)</label
-            >
-            <textarea
-              class="form-control"
-              id="editar-audio-descripcion"
-              rows="2"
-            ></textarea>
+            <label for="editar-audio-descripcion" class="form-label fw-semibold">Descripción (opcional)</label>
+            <textarea class="form-control" id="editar-audio-descripcion" rows="2"></textarea>
           </div>
           <div class="mb-3">
-            <label for="editar-audio-categoria" class="form-label fw-semibold"
-              >Categoría</label
-            >
+            <label for="editar-audio-categoria" class="form-label fw-semibold">Categoría</label>
             <div class="d-flex gap-2">
               <select class="form-select" id="editar-audio-categoria" required>
                 <option value="">Selecciona una categoría</option>
                 <option value="nueva">+ Nueva categoría</option>
               </select>
             </div>
-            <div
-              id="editar-nueva-categoria-container-audio"
-              class="mt-2"
-              style="display: none"
-            >
-              <input
-                type="text"
-                class="form-control"
-                id="editar-nueva-categoria-input-audio"
-                placeholder="Nombre de la nueva categoría"
-                maxlength="50"
-              />
+            <div id="editar-nueva-categoria-container-audio" class="mt-2" style="display: none">
+              <input type="text" class="form-control" id="editar-nueva-categoria-input-audio"
+                placeholder="Nombre de la nueva categoría" maxlength="50" />
             </div>
           </div>
           <div class="mb-3">
-            <label
-              for="editar-audio-subcategoria"
-              class="form-label fw-semibold"
-              >Subcategoría</label
-            >
+            <label for="editar-audio-subcategoria" class="form-label fw-semibold">Subcategoría</label>
             <div class="d-flex gap-2">
-              <select
-                class="form-select"
-                id="editar-audio-subcategoria"
-                required
-              >
+              <select class="form-select" id="editar-audio-subcategoria" required>
                 <option value="">Selecciona una subcategoría</option>
                 <option value="nueva">+ Nueva subcategoría</option>
               </select>
             </div>
-            <div
-              id="editar-nueva-subcategoria-container-audio"
-              class="mt-2"
-              style="display: none"
-            >
-              <input
-                type="text"
-                class="form-control"
-                id="editar-nueva-subcategoria-input-audio"
-                placeholder="Nombre de la nueva subcategoría"
-                maxlength="50"
-              />
+            <div id="editar-nueva-subcategoria-container-audio" class="mt-2" style="display: none">
+              <input type="text" class="form-control" id="editar-nueva-subcategoria-input-audio"
+                placeholder="Nombre de la nueva subcategoría" maxlength="50" />
             </div>
           </div>
           <div class="mb-3">
-            <label for="editar-audio-notas" class="form-label fw-semibold"
-              >Notas personales (opcional)</label
-            >
-            <textarea
-              class="form-control"
-              id="editar-audio-notas"
-              rows="2"
-            ></textarea>
+            <label for="editar-audio-notas" class="form-label fw-semibold">Notas personales (opcional)</label>
+            <textarea class="form-control" id="editar-audio-notas" rows="2"></textarea>
           </div>
         </div>
         <div class="modal-footer">
-          <button
-            type="button"
-            class="btn btn-secondary"
-            data-bs-dismiss="modal"
-          >
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
             Cancelar
           </button>
           <button type="submit" class="btn btn-primary">Guardar Cambios</button>
@@ -4189,13 +3424,7 @@ endblock %} {% block head %}
 </div>
 
 <!-- Modal Detalle del Día -->
-<div
-  class="modal fade"
-  id="modalDetalleDia"
-  tabindex="-1"
-  aria-labelledby="modalDetalleDiaLabel"
-  aria-hidden="true"
->
+<div class="modal fade" id="modalDetalleDia" tabindex="-1" aria-labelledby="modalDetalleDiaLabel" aria-hidden="true">
   <div class="modal-dialog modal-xl">
     <div class="modal-content">
       <div class="modal-header">
@@ -4203,12 +3432,7 @@ endblock %} {% block head %}
           <i class="bi bi-calendar-day me-2"></i>Detalle del día:
           <span id="modalDetalleDiaFecha" class="text-primary"></span>
         </h5>
-        <button
-          type="button"
-          class="btn-close"
-          data-bs-dismiss="modal"
-          aria-label="Close"
-        ></button>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
         <!-- Resumen del día -->
@@ -4242,42 +3466,22 @@ endblock %} {% block head %}
         <!-- Tabs para objetivos -->
         <ul class="nav nav-tabs" id="detalleTab" role="tablist">
           <li class="nav-item" role="presentation">
-            <button
-              class="nav-link active"
-              id="creados-tab"
-              data-bs-toggle="tab"
-              data-bs-target="#creados"
-              type="button"
-              role="tab"
-            >
+            <button class="nav-link active" id="creados-tab" data-bs-toggle="tab" data-bs-target="#creados"
+              type="button" role="tab">
               <i class="bi bi-list-ul me-1"></i>Todos los Objetivos
               <span class="badge bg-primary ms-1" id="badge-creados">0</span>
             </button>
           </li>
           <li class="nav-item" role="presentation">
-            <button
-              class="nav-link"
-              id="completados-tab"
-              data-bs-toggle="tab"
-              data-bs-target="#completados"
-              type="button"
-              role="tab"
-            >
+            <button class="nav-link" id="completados-tab" data-bs-toggle="tab" data-bs-target="#completados"
+              type="button" role="tab">
               <i class="bi bi-check-circle me-1"></i>Completados
-              <span class="badge bg-success ms-1" id="badge-completados"
-                >0</span
-              >
+              <span class="badge bg-success ms-1" id="badge-completados">0</span>
             </button>
           </li>
           <li class="nav-item" role="presentation">
-            <button
-              class="nav-link"
-              id="pendientes-tab"
-              data-bs-toggle="tab"
-              data-bs-target="#pendientes"
-              type="button"
-              role="tab"
-            >
+            <button class="nav-link" id="pendientes-tab" data-bs-toggle="tab" data-bs-target="#pendientes" type="button"
+              role="tab">
               <i class="bi bi-clock me-1"></i>Pendientes
               <span class="badge bg-warning ms-1" id="badge-pendientes">0</span>
             </button>
@@ -4347,8 +3551,7 @@ endblock %} {% block head %}
         console.log("📋 Objetivos encontrados:");
         data.objetivos.forEach((obj, index) => {
           console.log(
-            `  ${index + 1}. ${obj.titulo} (${
-              obj.total_subobjetivos
+            `  ${index + 1}. ${obj.titulo} (${obj.total_subobjetivos
             } subobjetivos)`
           );
         });
@@ -4390,9 +3593,8 @@ endblock %} {% block head %}
 
     // Actualizar contador
     if (contador) {
-      contador.textContent = `${data.total} objetivo${
-        data.total !== 1 ? "s" : ""
-      }`;
+      contador.textContent = `${data.total} objetivo${data.total !== 1 ? "s" : ""
+        }`;
     }
 
     // Si no hay objetivos, mostrar mensaje
@@ -4444,40 +3646,36 @@ endblock %} {% block head %}
                         
                         <div class="d-flex justify-content-between align-items-center flex-wrap gap-1">
                             <div class="d-flex gap-2 flex-wrap">
-                                ${
-                                  objetivo.parte_dia
-                                    ? `
+                                ${objetivo.parte_dia
+          ? `
                                     <small class="text-muted" style="font-size: 0.75rem;">
                                         <i class="${parteDiaIcon}"></i> ${objetivo.parte_dia}
                                     </small>
                                 `
-                                    : ""
-                                }
-                                ${
-                                  objetivo.horas_estimadas
-                                    ? `
+          : ""
+        }
+                                ${objetivo.horas_estimadas
+          ? `
                                     <small class="text-muted" style="font-size: 0.75rem;">
                                         <i class="bi bi-clock"></i> ${objetivo.horas_estimadas}h
                                     </small>
                                 `
-                                    : ""
-                                }
-                                ${
-                                  objetivo.categoria
-                                    ? `
+          : ""
+        }
+                                ${objetivo.categoria
+          ? `
                                     <small class="text-muted" style="font-size: 0.75rem;">
-                                        <i class="bi bi-tag"></i> ${
-                                          objetivo.categoria
-                                            .charAt(0)
-                                            .toUpperCase() +
-                                          objetivo.categoria
-                                            .slice(1)
-                                            .replace(/_/g, " ")
-                                        }
+                                        <i class="bi bi-tag"></i> ${objetivo.categoria
+            .charAt(0)
+            .toUpperCase() +
+          objetivo.categoria
+            .slice(1)
+            .replace(/_/g, " ")
+          }
                                     </small>
                                 `
-                                    : ""
-                                }
+          : ""
+        }
                             </div>
                         </div>
                     </div>
@@ -4503,11 +3701,10 @@ endblock %} {% block head %}
             <div class="text-center text-danger py-3">
                 <i class="bi bi-exclamation-triangle fs-1 mb-2"></i>
                 <p class="mb-0">Error al cargar objetivos de mañana</p>
-                ${
-                  errorMessage
-                    ? `<small class="text-muted">${errorMessage}</small><br>`
-                    : ""
-                }
+                ${errorMessage
+          ? `<small class="text-muted">${errorMessage}</small><br>`
+          : ""
+        }
                 <small class="text-muted">Intenta recargar la página</small>
                 <br>
                 <button class="btn btn-sm btn-outline-primary mt-2" onclick="cargarObjetivosManana()">
@@ -4806,9 +4003,8 @@ endblock %} {% block head %}
         // Actualizar contador
         const contador = document.getElementById("contador-objetivos-manana");
         if (contador) {
-          contador.textContent = `${data.total} objetivo${
-            data.total !== 1 ? "s" : ""
-          }`;
+          contador.textContent = `${data.total} objetivo${data.total !== 1 ? "s" : ""
+            }`;
         }
 
         // Actualizar fecha en el header
@@ -4837,25 +4033,25 @@ endblock %} {% block head %}
   }
 
   // ===== FUNCIÓN PARA MODAL DETALLE DEL DÍA =====
-  
+
   // Variable global para almacenar todos los objetivos del modal
   let todosLosObjetivos = [];
 
   // Función para abrir el modal de detalle del día
-  window.abrirDetalleDia = async function(fecha) {
+  window.abrirDetalleDia = async function (fecha) {
     console.log('🗓️ abrirDetalleDia llamada con fecha:', fecha);
     try {
       const modal = new bootstrap.Modal(document.getElementById('modalDetalleDia'));
       document.getElementById('modalDetalleDiaFecha').textContent = new Date(fecha + 'T00:00:00').toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-      
+
       // Mostrar modal con loading
       modal.show();
-      
+
       // Verificar si existe el contenedor unificado (de stats.html) o separado (de objetivos.html)
       const listaUnificada = document.getElementById('lista-objetivos-unificada');
       const listaCreados = document.getElementById('lista-objetivos-creados');
       const listaCompletados = document.getElementById('lista-objetivos-completados');
-      
+
       if (listaUnificada) {
         // Versión de stats.html - lista unificada
         listaUnificada.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-info"></div><div class="mt-2">Cargando objetivos...</div></div>';
@@ -4883,20 +4079,20 @@ endblock %} {% block head %}
 
       // Los datos vienen directamente en el nivel raíz de la respuesta
       const objetivosData = data;
-      
+
       // Almacenar subobjetivos completados globalmente para uso en generarHtmlSubobjetivosCompletados
       window.subobjetivosCompletadosFecha = objetivosData.subobjetivos_completados || [];
       console.log(`📋 Subobjetivos completados en ${fecha}:`, window.subobjetivosCompletadosFecha.length);
       console.log('🔍 DEBUG - Estructura completa de data:', data);
       console.log('🔍 DEBUG - subobjetivos_completados data:', objetivosData.subobjetivos_completados);
-      
+
       // DEBUG: Mostrar estructura de datos
       console.log('🔍 DEBUG - objetivosData:', objetivosData);
       console.log('🔍 DEBUG - objetivos_creados:', objetivosData.objetivos_creados);
       console.log('🔍 DEBUG - objetivos_completados:', objetivosData.objetivos_completados);
       console.log('🔍 DEBUG - objetivos_recurrentes_pendientes:', objetivosData.objetivos_recurrentes_pendientes);
       console.log('🔍 DEBUG - subobjetivos_completados:', objetivosData.subobjetivos_completados);
-      
+
       // DEBUG: Mostrar resumen del servidor
       if (objetivosData.resumen) {
         console.log('🔍 DEBUG - Resumen del servidor:', objetivosData.resumen);
@@ -4951,17 +4147,17 @@ endblock %} {% block head %}
       // DEBUG: Mostrar objetivos procesados
       console.log('🔍 DEBUG - todosLosObjetivos procesados:', todosLosObjetivos);
       console.log('🔍 DEBUG - Cantidad total:', todosLosObjetivos.length);
-      
+
       // Actualizar contadores
       const totalObjetivos = todosLosObjetivos.length;
       const totalCompletados = todosLosObjetivos.filter(obj => obj.estado === 'completado').length;
       const totalPendientes = totalObjetivos - totalCompletados;
-      
+
       // Para el tab "Creados": contar objetivos creados + recurrentes pendientes
-      const totalCreados = todosLosObjetivos.filter(obj => 
+      const totalCreados = todosLosObjetivos.filter(obj =>
         obj.tipo_origen === 'creado' || obj.tipo_origen === 'recurrente_pendiente'
       ).length;
-      
+
       // DEBUG: Mostrar contadores calculados
       console.log('🔍 DEBUG - Contadores:', {
         totalObjetivos,
@@ -4993,7 +4189,7 @@ endblock %} {% block head %}
       }
 
       console.log(`✅ Modal cargado: ${totalObjetivos} objetivos (${totalCompletados} completados, ${totalPendientes} pendientes)`);
-      
+
       // DEBUG: Comparar con datos del calendario
       console.log('🔍 DEBUG - Comparación esperada vs real:');
       console.log('  - Tooltip calendario dice: 0 creados, 2 completados, 3 pendientes (total 5)');
@@ -5002,11 +4198,11 @@ endblock %} {% block head %}
 
     } catch (error) {
       console.error('❌ Error en abrirDetalleDia:', error);
-      
+
       // Mostrar error en el modal
       const listaUnificada = document.getElementById('lista-objetivos-unificada');
       const listaCreados = document.getElementById('lista-objetivos-creados');
-      
+
       const errorHtml = `
         <div class="text-center py-4 text-danger">
           <i class="bi bi-exclamation-triangle fs-1 mb-2"></i>
@@ -5017,7 +4213,7 @@ endblock %} {% block head %}
           </button>
         </div>
       `;
-      
+
       if (listaUnificada) {
         listaUnificada.innerHTML = errorHtml;
       } else if (listaCreados) {
@@ -5044,7 +4240,7 @@ endblock %} {% block head %}
     // Separar por estado para mostrar completados primero
     const completados = todosLosObjetivos.filter(obj => obj.estado === 'completado');
     const pendientes = todosLosObjetivos.filter(obj => obj.estado === 'pendiente');
-    
+
     let html = '';
 
     // Mostrar completados primero
@@ -5069,7 +4265,7 @@ endblock %} {% block head %}
   // Función para renderizar objetivos en versión separada (3 tabs)
   function renderizarObjetivosSeparados(containerCreados, containerCompletados) {
     const containerPendientes = document.getElementById('lista-objetivos-pendientes');
-    
+
     // Separar objetivos por estado
     const todosObjetivos = todosLosObjetivos;
     const objetivosCompletados = todosObjetivos.filter(obj => obj.estado === 'completado');
@@ -5077,15 +4273,15 @@ endblock %} {% block head %}
 
     // Tab 1: "Todos los Objetivos" - Mostrar todos con separación visual
     renderizarTabTodos(containerCreados, todosObjetivos);
-    
+
     // Tab 2: "Completados" - Solo objetivos completados
     renderizarTabCompletados(containerCompletados, objetivosCompletados);
-    
+
     // Tab 3: "Pendientes" - Solo objetivos pendientes
     if (containerPendientes) {
       renderizarTabPendientes(containerPendientes, objetivosPendientes);
     }
-    
+
     // Actualizar badge de pendientes
     const badgePendientes = document.getElementById('badge-pendientes');
     if (badgePendientes) {
@@ -5108,9 +4304,9 @@ endblock %} {% block head %}
 
     const completados = objetivos.filter(obj => obj.estado === 'completado');
     const pendientes = objetivos.filter(obj => obj.estado === 'pendiente');
-    
+
     let html = '';
-    
+
     // Mostrar completados primero
     if (completados.length > 0) {
       html += '<div class="mb-4">';
@@ -5120,7 +4316,7 @@ endblock %} {% block head %}
       });
       html += '</div>';
     }
-    
+
     // Mostrar pendientes después
     if (pendientes.length > 0) {
       html += '<div class="mb-4">';
@@ -5130,7 +4326,7 @@ endblock %} {% block head %}
       });
       html += '</div>';
     }
-    
+
     container.innerHTML = html;
   }
 
@@ -5175,21 +4371,21 @@ endblock %} {% block head %}
   // Función auxiliar para agregar objetivos que tienen subobjetivos completados (objetivos.html)
   async function agregarObjetivosConSubobjetivosCompletadosObjetivos() {
     console.log('🔍 [Objetivos] Buscando objetivos faltantes con subobjetivos completados...');
-    
+
     // Obtener IDs únicos de objetivos que tienen subobjetivos completados
     const objetivosConSubobjetivos = [...new Set(
       window.subobjetivosCompletadosFecha.map(sub => sub.objetivo_id)
     )];
-    
+
     console.log('🎯 [Objetivos] Objetivos con subobjetivos completados:', objetivosConSubobjetivos);
-    
+
     // Verificar cuáles objetivos ya están en la lista
     const objetivosYaIncluidos = todosLosObjetivos.map(obj => obj.id);
     const objetivosFaltantes = objetivosConSubobjetivos.filter(id => !objetivosYaIncluidos.includes(id));
-    
+
     console.log('📋 [Objetivos] Objetivos ya incluidos:', objetivosYaIncluidos);
     console.log('❓ [Objetivos] Objetivos faltantes:', objetivosFaltantes);
-    
+
     // Si hay objetivos faltantes, obtenerlos del servidor
     if (objetivosFaltantes.length > 0) {
       for (const objetivoId of objetivosFaltantes) {
@@ -5197,14 +4393,14 @@ endblock %} {% block head %}
           const response = await fetch(`/api/objetivos/${objetivoId}`);
           if (response.ok) {
             const objetivoData = await response.json();
-            
+
             // Agregar el objetivo a la lista con estado especial
             todosLosObjetivos.push({
               ...objetivoData,
               estado: 'con_subobjetivos_completados',
               tipo_origen: 'objetivo_con_subobjetivos'
             });
-            
+
             console.log(`✅ [Objetivos] Agregado objetivo faltante: ${objetivoData.titulo}`);
           }
         } catch (error) {
@@ -5220,11 +4416,11 @@ endblock %} {% block head %}
     // Buscar subobjetivos completados para este objetivo en la fecha actual del modal
     const subobjetivosDelObjetivo = (window.subobjetivosCompletadosFecha || [])
       .filter(sub => sub.objetivo_id === objetivoId);
-    
+
     if (subobjetivosDelObjetivo.length === 0) {
       return '';
     }
-    
+
     let html = `
       <div class="mt-3 pt-2 border-top border-light">
         <h6 class="text-success mb-2" style="font-size: 0.85rem;">
@@ -5233,7 +4429,7 @@ endblock %} {% block head %}
         </h6>
         <div class="subobjetivos-completados-lista">
     `;
-    
+
     subobjetivosDelObjetivo.forEach(sub => {
       html += `
         <div class="d-flex align-items-center mb-1">
@@ -5247,12 +4443,12 @@ endblock %} {% block head %}
         </div>
       `;
     });
-    
+
     html += `
         </div>
       </div>
     `;
-    
+
     return html;
   }
 
@@ -5260,12 +4456,12 @@ endblock %} {% block head %}
   function generarHtmlObjetivo(objetivo) {
     const prioridadColor = {
       'alta': 'danger',
-      'media': 'warning', 
+      'media': 'warning',
       'baja': 'info'
     }[objetivo.prioridad] || 'secondary';
 
     let estadoIcon, estadoTexto;
-    
+
     if (objetivo.estado === 'completado') {
       estadoIcon = 'bi-check-circle-fill text-success';
       estadoTexto = 'Completado';
@@ -5279,7 +4475,7 @@ endblock %} {% block head %}
 
     const parteDiaIcon = {
       'mañana': 'bi-sunrise',
-      'tarde': 'bi-sun', 
+      'tarde': 'bi-sun',
       'noche': 'bi-moon'
     }[objetivo.parte_dia] || 'bi-clock';
 
@@ -5330,9 +4526,9 @@ endblock %} {% block head %}
           ${objetivo.tipo_origen ? `
             <div class="mt-2">
               <small class="badge bg-light text-dark">
-                ${objetivo.tipo_origen === 'creado' ? 'Creado este día' : 
-                  objetivo.tipo_origen === 'completado_recurrente' ? 'Recurrente completado' :
-                  objetivo.tipo_origen === 'recurrente_pendiente' ? 'Recurrente pendiente' : objetivo.tipo_origen}
+                ${objetivo.tipo_origen === 'creado' ? 'Creado este día' :
+          objetivo.tipo_origen === 'completado_recurrente' ? 'Recurrente completado' :
+            objetivo.tipo_origen === 'recurrente_pendiente' ? 'Recurrente pendiente' : objetivo.tipo_origen}
               </small>
             </div>
           ` : ''}

@@ -286,22 +286,41 @@ document.addEventListener('DOMContentLoaded', function() {
         newBtn.addEventListener('click', async function() {
             if (objetivoEnFocus) {
                 try {
+                    const checkboxMarcarAyer = document.getElementById('focus-marcar-como-ayer');
+                    const checkboxDesmarcarAyer = document.getElementById('focus-desmarcar-ayer');
+                    
+                    console.log('🔍 DEBUG Checkboxes (timer-persistence):', {
+                        marcarAyer: checkboxMarcarAyer ? checkboxMarcarAyer.checked : 'NO ENCONTRADO',
+                        desmarcarAyer: checkboxDesmarcarAyer ? checkboxDesmarcarAyer.checked : 'NO ENCONTRADO'
+                    });
+                    
                     // Obtener notas del textarea
                     const notasTextarea = document.getElementById('focus-notas-texto');
                     const notas = notasTextarea ? notasTextarea.value.trim() : '';
                     
-                    // Preparar datos para enviar incluyendo tiempo final y notas
+                    // Determinar acción y fecha
                     const datosActualizacion = {
-                        completado: true,
-                        tiempo_focus: timerSeconds,
                         notas_adicionales: notas
                     };
                     
-                    // Si el checkbox "marcar como ayer" está marcado, agregar fecha de ayer
-                    const checkboxAyer = document.getElementById('focus-marcar-como-ayer');
-                    if (checkboxAyer && checkboxAyer.checked) {
+                    if (checkboxDesmarcarAyer && checkboxDesmarcarAyer.checked) {
+                        // ACCIÓN: DESMARCAR AYER
+                        datosActualizacion.completado = false;
                         datosActualizacion.fecha_completado = window.obtenerFechaAyer();
-                        console.log(`📅 [timer-persistence] Marcando objetivo como completado ayer: ${datosActualizacion.fecha_completado}`);
+                        console.log(`📅 [timer-persistence] Desmarcando objetivo de ayer: ${datosActualizacion.fecha_completado}`);
+                        showInfo('Desmarcando objetivo de ayer...');
+                    } else if (checkboxMarcarAyer && checkboxMarcarAyer.checked) {
+                        // ACCIÓN: MARCAR AYER
+                        datosActualizacion.completado = true;
+                        datosActualizacion.tiempo_focus = timerSeconds;
+                        datosActualizacion.fecha_completado = window.obtenerFechaAyer();
+                        console.log(`📅 [timer-persistence] Marcando objetivo completado ayer: ${datosActualizacion.fecha_completado}`);
+                    } else {
+                        // ACCIÓN: MARCAR HOY (Default)
+                        datosActualizacion.completado = true;
+                        datosActualizacion.tiempo_focus = timerSeconds;
+                        datosActualizacion.fecha_completado = window.obtenerFechaHoy();
+                        console.log(`📅 [timer-persistence] Marcando objetivo completado hoy: ${datosActualizacion.fecha_completado}`);
                     }
 
                     const response = await fetch(`/api/objetivos/${objetivoEnFocus.id}`, {
@@ -311,13 +330,29 @@ document.addEventListener('DOMContentLoaded', function() {
                     });
 
                     if (response.ok) {
-                        // Mostrar mensaje con tiempo si se registró
-                        let mensaje = '¡Objetivo completado! 🎉';
-                        if (timerSeconds > 0) {
-                            const minutos = Math.floor(timerSeconds / 60);
-                            const segundos = timerSeconds % 60;
-                            const tiempoFormateado = `${minutos}:${segundos.toString().padStart(2, '0')}`;
-                            mensaje += ` Tiempo total registrado: ${tiempoFormateado}`;
+                        // Mensaje diferente según la acción
+                        let mensaje;
+                        if (datosActualizacion.completado === false) {
+                            // Caso desmarcar
+                            mensaje = 'Objetivo desmarcado de ayer correctamente';
+                            showInfo(mensaje);
+                        } else {
+                            // Caso completar
+                            if (checkboxMarcarAyer && checkboxMarcarAyer.checked) {
+                                // Marcado como ayer
+                                mensaje = '¡Objetivo marcado como completado AYER! 📅';
+                            } else {
+                                // Marcado como hoy
+                                mensaje = '¡Objetivo completado! 🎉';
+                            }
+                            
+                            if (timerSeconds > 0) {
+                                const minutos = Math.floor(timerSeconds / 60);
+                                const segundos = timerSeconds % 60;
+                                const tiempoFormateado = `${minutos}:${segundos.toString().padStart(2, '0')}`;
+                                mensaje += ` Tiempo total registrado: ${tiempoFormateado}`;
+                            }
+                            showSuccess(mensaje);
                         }
 
                         // Cerrar modal
@@ -328,14 +363,12 @@ document.addEventListener('DOMContentLoaded', function() {
                         if (typeof cargarObjetivos === 'function') {
                             await cargarObjetivos();
                         }
-
-                        showSuccess(mensaje);
                     } else {
-                        showError('Error al completar objetivo');
+                        showError('Error al actualizar objetivo');
                     }
                 } catch (error) {
-                    console.error('Error al completar objetivo:', error);
-                    showError('Error al completar objetivo');
+                    console.error('Error al actualizar objetivo:', error);
+                    showError('Error al actualizar objetivo');
                 }
             }
         });
