@@ -3815,6 +3815,7 @@ def api_list_objetivos():
         ''', (hoy, current_user.id, hoy))
         rows = cursor.fetchall()
         objetivos = []
+        objetivo_ids = []
         
         for row in rows:
             obj = {
@@ -3840,7 +3841,8 @@ def api_list_objetivos():
                 'saltado_hoy': bool(row[19]) if len(row) > 19 else False,
                 'fecha_programada': row[20].strftime('%Y-%m-%d') if len(row) > 20 and row[20] else None,
                 'programado_para': row[21] if len(row) > 21 else None,
-                'tiempo_focus': row[22] if len(row) > 22 else None
+                'tiempo_focus': row[22] if len(row) > 22 else None,
+                'subobjetivos': []  # Inicializar lista de subobjetivos
             }
             # Verificar si el objetivo está vencido
             vencido = es_objetivo_vencido(obj, hoy)
@@ -3858,8 +3860,42 @@ def api_list_objetivos():
             # Solo mostrar como activo si NO está vencido, aunque esté completado manualmente
             if not vencido:
                 objetivos.append(obj)
+                objetivo_ids.append(obj['id'])
         
-
+        # Cargar todos los subobjetivos de una vez para evitar N+1 queries
+        if objetivo_ids:
+            # Crear placeholders para la consulta IN
+            placeholders = ','.join(['?' for _ in objetivo_ids])
+            cursor.execute(f'''
+                SELECT id, titulo, completado, fecha_creacion, orden, tiempo_focus, notas, objetivo_id
+                FROM subobjetivos 
+                WHERE objetivo_id IN ({placeholders})
+                ORDER BY objetivo_id, orden ASC, id ASC
+            ''', objetivo_ids)
+            
+            subobjetivos_rows = cursor.fetchall()
+            
+            # Crear un diccionario para agrupar subobjetivos por objetivo_id
+            subobjetivos_por_objetivo = {}
+            for sub_row in subobjetivos_rows:
+                objetivo_id = sub_row[7]
+                if objetivo_id not in subobjetivos_por_objetivo:
+                    subobjetivos_por_objetivo[objetivo_id] = []
+                
+                subobjetivos_por_objetivo[objetivo_id].append({
+                    'id': sub_row[0],
+                    'titulo': sub_row[1],
+                    'completado': bool(sub_row[2]),
+                    'fecha_creacion': sub_row[3].strftime('%Y-%m-%d %H:%M') if sub_row[3] else None,
+                    'orden': sub_row[4],
+                    'tiempo_focus': sub_row[5] if sub_row[5] else 0,
+                    'notas': sub_row[6] if sub_row[6] else ''
+                })
+            
+            # Asignar subobjetivos a cada objetivo
+            for obj in objetivos:
+                if obj['id'] in subobjetivos_por_objetivo:
+                    obj['subobjetivos'] = subobjetivos_por_objetivo[obj['id']]
         
         return jsonify(objetivos)
 

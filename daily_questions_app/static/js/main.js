@@ -1262,25 +1262,14 @@ async function cargarObjetivos() {
             return fechaProgramada <= hoy;
         });
         
-        // Cargar subobjetivos para cada objetivo EN PARALELO para calcular tiempo total
-        console.log('📊 Cargando subobjetivos en paralelo...');
-        const promesasSubobjetivos = objetivos.map(async (obj) => {
-            try {
-                const resSub = await fetch(`/api/objetivos/${obj.id}/subobjetivos`);
-                if (resSub.ok) {
-                    obj.subobjetivos = await resSub.json();
-                } else {
-                    obj.subobjetivos = [];
-                }
-            } catch (err) {
-                console.error(`Error cargando subobjetivos para objetivo ${obj.id}:`, err);
+        // Los subobjetivos ya vienen incluidos en la respuesta del endpoint
+        // Asegurar que todos los objetivos tengan la propiedad subobjetivos inicializada
+        objetivos.forEach(obj => {
+            if (!obj.subobjetivos) {
                 obj.subobjetivos = [];
             }
         });
-        
-        // Esperar a que todas las peticiones terminen
-        await Promise.all(promesasSubobjetivos);
-        console.log('✅ Subobjetivos cargados para todos los objetivos');
+        console.log('✅ Subobjetivos cargados (incluidos en respuesta principal)');
         
         // Obtener mapa de objetivos padre
         try {
@@ -4859,19 +4848,12 @@ function configurarEventListenersFrases() {
 
 // Event listeners para frases
 document.addEventListener('DOMContentLoaded', function() {
-    // Configurar event listeners iniciales
+    // Configurar event listeners iniciales (sin cargar datos todavía)
     configurarEventListenersFrases();
     configurarEventListenersAudios();
 
-    // Cargar frases si estamos en la página de frases
-    if (document.getElementById('card-frases')) {
-        cargarFrases();
-    }
-    
-    // Cargar audios si estamos en la página de audios
-    if (document.getElementById('card-audios')) {
-        cargarAudios();
-    }
+    // NO cargar frases/audios automáticamente - solo se cargarán cuando el usuario haga clic en sus pestañas
+    // Esto mejora el rendimiento al cargar la página de objetivos
 });
 
 // ==================== FUNCIONES DE AUDIOS ====================

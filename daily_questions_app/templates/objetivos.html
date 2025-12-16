@@ -1868,8 +1868,8 @@ endblock %} {% block head %}
 
   // Cargar categorías y configurar eventos al cargar la página
   document.addEventListener("DOMContentLoaded", async function () {
-    // Cargar categorías en los selects
-    await cargarCategoriasParaFormularios();
+    // NO cargar categorías automáticamente - se cargarán cuando se abra el primer modal
+    // Esto mejora el rendimiento al cargar la página
 
     // Configurar eventos para el modal de nueva frase
     configurarEventosNuevaFrase();
@@ -4568,7 +4568,15 @@ endblock %} {% block head %}
   document.addEventListener("DOMContentLoaded", function () {
     const tabObjetivos = document.getElementById("tab-objetivos");
     if (tabObjetivos && tabObjetivos.classList.contains("active")) {
-      setTimeout(cargarContadorObjetivosManana, 500);
+      // Cargar contador después de que la página esté completamente cargada
+      // Usar requestIdleCallback si está disponible, sino setTimeout
+      if (window.requestIdleCallback) {
+        requestIdleCallback(() => {
+          setTimeout(cargarContadorObjetivosManana, 1000);
+        });
+      } else {
+        setTimeout(cargarContadorObjetivosManana, 2000);
+      }
     }
   });
 
