@@ -1933,9 +1933,9 @@ endblock %} {% block head %}
     cargarCategoriasParaFiltros();
 
     // Evento para cambio de categoría en filtros
-    document
-      .getElementById("filtro-categoria-frases")
-      .addEventListener("change", async function () {
+    const filtroCategoria = document.getElementById("filtro-categoria-frases");
+    if (filtroCategoria) {
+      filtroCategoria.addEventListener("change", async function () {
         const categoria = this.value;
         filtrosActivos.categoria = categoria;
 
@@ -1947,43 +1947,50 @@ endblock %} {% block head %}
           const subSelect = document.getElementById(
             "filtro-subcategoria-frases"
           );
-          subSelect.innerHTML =
-            '<option value="">Todas las subcategorías</option>';
-          filtrosActivos.subcategoria = "";
+          if (subSelect) {
+            subSelect.innerHTML =
+              '<option value="">Todas las subcategorías</option>';
+            filtrosActivos.subcategoria = "";
+          }
         }
 
         // Aplicar filtros automáticamente
         aplicarFiltros();
       });
+    }
 
     // Evento para cambio de subcategoría en filtros
-    document
-      .getElementById("filtro-subcategoria-frases")
-      .addEventListener("change", function () {
+    const filtroSubcategoria = document.getElementById("filtro-subcategoria-frases");
+    if (filtroSubcategoria) {
+      filtroSubcategoria.addEventListener("change", function () {
         filtrosActivos.subcategoria = this.value;
         aplicarFiltros();
       });
+    }
 
     // Evento para botón aplicar filtro
-    document
-      .getElementById("btn-aplicar-filtro")
-      .addEventListener("click", function () {
+    const btnAplicar = document.getElementById("btn-aplicar-filtro");
+    if (btnAplicar) {
+      btnAplicar.addEventListener("click", function () {
         aplicarFiltros();
       });
+    }
 
     // Evento para botón limpiar filtro
-    document
-      .getElementById("btn-limpiar-filtro")
-      .addEventListener("click", function () {
+    const btnLimpiar = document.getElementById("btn-limpiar-filtro");
+    if (btnLimpiar) {
+      btnLimpiar.addEventListener("click", function () {
         limpiarFiltros();
       });
+    }
 
     // Evento para repasar por filtros
-    document
-      .getElementById("btn-repasar-todas")
-      .addEventListener("click", function () {
+    const btnRepasar = document.getElementById("btn-repasar-todas");
+    if (btnRepasar) {
+      btnRepasar.addEventListener("click", function () {
         repasarPorFiltros();
       });
+    }
   }
 
   // Configurar eventos de filtros para audios
