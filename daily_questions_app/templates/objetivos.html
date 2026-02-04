@@ -1193,9 +1193,95 @@ endblock %} {% block head %}
           <h5 class="mb-3">
             <i class="bi bi-journal-text me-2"></i>Notas de esta tarea
           </h5>
-          <textarea class="form-control" id="focus-sub-notas-texto" rows="4"
-            placeholder="Anota tu progreso, ideas o reflexiones sobre esta tarea específica...">
-          </textarea>
+          
+          <!-- Barra de herramientas del editor -->
+          <div class="editor-toolbar mb-2">
+            <div class="btn-group btn-group-sm" role="group" aria-label="Formato de texto">
+              <button type="button" class="btn btn-outline-secondary" id="btn-bold" title="Negrita (Ctrl+B)">
+                <i class="bi bi-type-bold"></i>
+              </button>
+              <button type="button" class="btn btn-outline-secondary" id="btn-italic" title="Cursiva (Ctrl+I)">
+                <i class="bi bi-type-italic"></i>
+              </button>
+              
+              <!-- Dropdown para resaltado con colores -->
+              <div class="btn-group" role="group">
+                <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" title="Resaltar texto">
+                  <i class="bi bi-highlighter"></i>
+                </button>
+                <ul class="dropdown-menu highlight-colors-menu">
+                  <li><h6 class="dropdown-header">Colores de resaltado</h6></li>
+                  <li><button class="dropdown-item highlight-color" data-color="yellow" data-syntax="==yellow==">
+                    <span class="color-preview" style="background-color: #fff3cd;"></span> Amarillo
+                  </button></li>
+                  <li><button class="dropdown-item highlight-color" data-color="green" data-syntax="==green==">
+                    <span class="color-preview" style="background-color: #d1e7dd;"></span> Verde
+                  </button></li>
+                  <li><button class="dropdown-item highlight-color" data-color="blue" data-syntax="==blue==">
+                    <span class="color-preview" style="background-color: #cff4fc;"></span> Azul
+                  </button></li>
+                  <li><button class="dropdown-item highlight-color" data-color="red" data-syntax="==red==">
+                    <span class="color-preview" style="background-color: #f8d7da;"></span> Rojo
+                  </button></li>
+                  <li><button class="dropdown-item highlight-color" data-color="orange" data-syntax="==orange==">
+                    <span class="color-preview" style="background-color: #ffe69c;"></span> Naranja
+                  </button></li>
+                  <li><button class="dropdown-item highlight-color" data-color="purple" data-syntax="==purple==">
+                    <span class="color-preview" style="background-color: #e2d9f3;"></span> Morado
+                  </button></li>
+                  <li><hr class="dropdown-divider"></li>
+                  <li><button class="dropdown-item" id="btn-remove-highlight">
+                    <i class="bi bi-eraser me-2"></i> Quitar resaltado
+                  </button></li>
+                </ul>
+              </div>
+            </div>
+            
+            <div class="btn-group btn-group-sm ms-2" role="group" aria-label="Listas y tareas">
+              <button type="button" class="btn btn-outline-secondary" id="btn-task" title="Añadir tarea">
+                <i class="bi bi-check-square"></i>
+              </button>
+              <button type="button" class="btn btn-outline-secondary" id="btn-bullet" title="Lista con viñetas">
+                <i class="bi bi-list-ul"></i>
+              </button>
+            </div>
+            
+            <div class="btn-group btn-group-sm ms-2" role="group" aria-label="Acciones">
+              <button type="button" class="btn btn-outline-info" id="btn-preview" title="Vista previa">
+                <i class="bi bi-eye"></i>
+              </button>
+              <button type="button" class="btn btn-outline-success" id="btn-save-notes" title="Guardar notas">
+                <i class="bi bi-floppy"></i>
+              </button>
+            </div>
+          </div>
+          
+          <!-- Editor de texto -->
+          <div class="editor-container">
+            <textarea class="form-control editor-textarea" id="focus-sub-notas-texto" rows="6"
+              placeholder="Anota tu progreso, ideas o reflexiones sobre esta tarea específica...
+
+Puedes usar:
+**texto** para negritas
+*texto* para cursivas  
+==color:texto== para resaltado con colores (amarillo, verde, azul, rojo, naranja, morado)
+- [] para tareas pendientes
+- [x] para tareas completadas
+- texto para listas con viñetas">
+            </textarea>
+            
+            <!-- Vista previa (oculta por defecto) -->
+            <div class="editor-preview" id="focus-sub-notas-preview" style="display: none;">
+              <div class="preview-content"></div>
+            </div>
+          </div>
+          
+          <!-- Indicador de guardado -->
+          <div class="mt-2">
+            <small class="text-muted" id="notes-save-status">
+              <i class="bi bi-cloud-check"></i> Guardado automáticamente
+            </small>
+          </div>
         </div>
       </div>
 

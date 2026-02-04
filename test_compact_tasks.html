@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test: Tareas Compactas (sin espacio)</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body { padding: 20px; background-color: #f8f9fa; }
+        .container { max-width: 900px; margin: 0 auto; }
+        
+        .editor-toolbar {
+            border: 1px solid #e9ecef;
+            border-bottom: none;
+            background-color: #f8f9fa;
+            padding: 8px;
+            border-radius: 8px 8px 0 0;
+        }
+        
+        .editor-textarea {
+            border-radius: 0 0 8px 8px !important;
+            border-top: none !important;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            resize: vertical;
+            min-height: 200px;
+        }
+        
+        .editor-preview {
+            border: 1px solid #e9ecef;
+            border-radius: 0 0 8px 8px;
+            background-color: white;
+            padding: 12px;
+            min-height: 200px;
+            max-height: 400px;
+            overflow-y: auto;
+            resize: vertical;
+            position: relative;
+        }
+        
+        .editor-preview::after {
+            content: "";
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 16px;
+            height: 16px;
+            background: linear-gradient(-45deg, transparent 0%, transparent 40%, #ccc 40%, #ccc 60%, transparent 60%);
+            cursor: nw-resize;
+            pointer-events: none;
+        }
+        
+        .preview-content {
+            font-size: 18px;
+            line-height: 1.6;
+        }
+        
+        .preview-content .task-item {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 0.5rem;
+            padding: 2px 0;
+            font-size: 18px;
+        }
+        
+        .preview-content .task-checkbox {
+            margin-right: 8px;
+            margin-top: 2px;
+        }
+        
+        .preview-content .task-completed {
+            text-decoration: line-through;
+            color: #6c757d;
+            font-size: 18px;
+        }
+        
+        .btn.active {
+            background-color: #28a745;
+            border-color: #28a745;
+            color: white;
+        }
+        
+        .comparison-table {
+            background-color: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .comparison-table th {
+            background-color: #f8f9fa;
+            padding: 12px;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        .comparison-table td {
+            padding: 12px;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        .old-format { color: #dc3545; }
+        .new-format { color: #28a745; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>✅ Test: Tareas Compactas (Formato Mejorado)</h1>
+        
+        <div class="alert alert-success">
+            <h5><i class="bi bi-check-circle me-2"></i>Cambio Implementado:</h5>
+            <p class="mb-0">Las tareas ahora usan formato compacto <code>- []</code> en lugar de <code>- [ ]</code> para facilitar el marcado.</p>
+        </div>
+        
+        <div class="row mb-4">
+            <div class="col-md-12">
+                <table class="comparison-table w-100">
+                    <thead>
+                        <tr>
+                            <th>Aspecto</th>
+                            <th class="old-format">Formato Anterior</th>
+                            <th class="new-format">Formato Nuevo</th>
+                            <th>Ventaja</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Tarea pendiente</strong></td>
+                            <td class="old-format"><code>- [ ] tarea</code></td>
+                            <td class="new-format"><code>- [] tarea</code></td>
+                            <td>Más compacto</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Marcar como completada</strong></td>
+                            <td class="old-format">Cambiar <code>[ ]</code> → <code>[x]</code><br><small>(hay que borrar espacio)</small></td>
+                            <td class="new-format">Cambiar <code>[]</code> → <code>[x]</code><br><small>(directo, sin borrar)</small></td>
+                            <td>Más rápido de editar</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Tarea completada</strong></td>
+                            <td class="old-format"><code>- [x] tarea</code></td>
+                            <td class="new-format"><code>- [x] tarea</code></td>
+                            <td>Igual resultado</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-body p-0">
+                        <!-- Barra de herramientas -->
+                        <div class="editor-toolbar">
+                            <div class="btn-group btn-group-sm">
+                                <button type="button" class="btn btn-outline-secondary" id="btn-task" title="Añadir tarea">
+                                    <i class="bi bi-check-square"></i> Tarea
+                                </button>
+                                <button type="button" class="btn btn-outline-info" id="btn-preview" title="Vista previa">
+                                    <i class="bi bi-eye"></i> Vista Previa
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Editor -->
+                        <div class="editor-container">
+                            <textarea class="form-control editor-textarea" id="editor-textarea">**Lista de tareas con formato compacto:**
+
+- [] Tarea pendiente 1
+- [] Tarea pendiente 2
+- [x] Tarea completada
+- [] Otra tarea pendiente
+
+**Compatibilidad con formato anterior:**
+
+- [ ] Tarea con formato anterior (también funciona)
+- [x] Tarea completada formato anterior
+
+**Prueba el botón "Tarea" - debería añadir: - [] **</textarea>
+                            
+                            <!-- Vista previa -->
+                            <div class="editor-preview" id="editor-preview" style="display: none;">
+                                <div class="preview-content"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <h5>🧪 Instrucciones de Prueba</h5>
+                
+                <div class="card">
+                    <div class="card-body">
+                        <h6>1. Botón de Tarea:</h6>
+                        <ul>
+                            <li>Haz clic en "Tarea"</li>
+                            <li>Debería añadir: <code>- [] </code></li>
+                            <li>Escribe tu tarea</li>
+                        </ul>
+                        
+                        <h6>2. Marcar como Completada:</h6>
+                        <ul>
+                            <li>Cambia <code>[]</code> por <code>[x]</code></li>
+                            <li>¡No necesitas borrar espacios!</li>
+                        </ul>
+                        
+                        <h6>3. Vista Previa:</h6>
+                        <ul>
+                            <li>Haz clic en "Vista Previa"</li>
+                            <li>Verifica que se renderizan correctamente</li>
+                            <li>Ambos formatos deberían funcionar</li>
+                        </ul>
+                        
+                        <h6>4. Compatibilidad:</h6>
+                        <ul>
+                            <li>El formato anterior <code>- [ ]</code> sigue funcionando</li>
+                            <li>Puedes mezclar ambos formatos</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let editorMode = 'edit';
+        
+        // Función para añadir tarea (NUEVO FORMATO)
+        function añadirTarea() {
+            const textarea = document.getElementById('editor-textarea');
+            if (!textarea) return;
+            
+            const cursorPos = textarea.selectionStart;
+            const textBefore = textarea.value.substring(0, cursorPos);
+            const textAfter = textarea.value.substring(cursorPos);
+            
+            const needsNewLine = textBefore.length > 0 && !textBefore.endsWith('\n');
+            const taskText = (needsNewLine ? '\n' : '') + '- [] ';
+            
+            textarea.value = textBefore + taskText + textAfter;
+            textarea.setSelectionRange(cursorPos + taskText.length, cursorPos + taskText.length);
+            textarea.focus();
+            
+            console.log('✅ Tarea añadida con formato compacto:', taskText);
+        }
+        
+        function togglePreview() {
+            const textarea = document.getElementById('editor-textarea');
+            const previewDiv = document.getElementById('editor-preview');
+            const previewBtn = document.getElementById('btn-preview');
+            
+            if (!textarea || !previewDiv || !previewBtn) return;
+            
+            if (editorMode === 'edit') {
+                editorMode = 'preview';
+                textarea.style.display = 'none';
+                previewDiv.style.display = 'block';
+                previewBtn.classList.add('active');
+                previewBtn.innerHTML = '<i class="bi bi-pencil"></i> Editar';
+                previewBtn.title = 'Editar';
+                
+                renderizarPreview();
+            } else {
+                editorMode = 'edit';
+                textarea.style.display = 'block';
+                previewDiv.style.display = 'none';
+                previewBtn.classList.remove('active');
+                previewBtn.innerHTML = '<i class="bi bi-eye"></i> Vista Previa';
+                previewBtn.title = 'Vista previa';
+                textarea.focus();
+            }
+        }
+        
+        function renderizarPreview() {
+            const textarea = document.getElementById('editor-textarea');
+            const previewContent = document.querySelector('#editor-preview .preview-content');
+            
+            if (!textarea || !previewContent) return;
+            
+            let content = textarea.value;
+            let lines = content.split('\n');
+            let processedLines = [];
+            
+            for (let i = 0; i < lines.length; i++) {
+                let line = lines[i].trim();
+                
+                if (line === '') {
+                    processedLines.push('<br>');
+                    continue;
+                }
+                
+                // Procesar tareas completadas (ambos formatos)
+                if (line.match(/^- \[x\] (.*)$/) || line.match(/^- \[X\] (.*)$/)) {
+                    const taskText = line.replace(/^- \[[xX]\] (.*)$/, '$1');
+                    processedLines.push(`<div class="task-item"><input type="checkbox" class="task-checkbox" checked disabled> <span class="task-completed">${taskText}</span></div>`);
+                    continue;
+                }
+                
+                // Procesar tareas pendientes (ambos formatos)
+                if (line.match(/^- \[ \] (.*)$/) || line.match(/^- \[\] (.*)$/)) {
+                    const taskText = line.replace(/^- \[[\s]*\] (.*)$/, '$1');
+                    processedLines.push(`<div class="task-item"><input type="checkbox" class="task-checkbox" disabled> <span>${taskText}</span></div>`);
+                    continue;
+                }
+                
+                // Procesar listas con viñetas (que no sean tareas)
+                if (line.match(/^- (.*)$/) && !line.match(/^- \[/)) {
+                    const listText = line.replace(/^- (.*)$/, '$1');
+                    processedLines.push(`<li>${listText}</li>`);
+                    continue;
+                }
+                
+                // Procesar texto normal con formato
+                line = line
+                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                    .replace(/\*(.*?)\*/g, '<em>$1</em>');
+                
+                processedLines.push(`<p>${line}</p>`);
+            }
+            
+            content = processedLines.join('');
+            
+            // Envolver elementos <li> consecutivos en <ul>
+            content = content.replace(/(<li>.*?<\/li>)(\s*<li>.*?<\/li>)*/g, function(match) {
+                return '<ul>' + match + '</ul>';
+            });
+            
+            // Envolver elementos de tarea consecutivos en contenedor
+            content = content.replace(/(<div class="task-item">.*?<\/div>)(\s*<div class="task-item">.*?<\/div>)*/g, function(match) {
+                return '<div class="task-list">' + match + '</div>';
+            });
+            
+            // Limpiar <br> innecesarios
+            content = content
+                .replace(/<\/div><br><div/g, '</div><div')
+                .replace(/<\/ul><br><ul/g, '</ul><ul>')
+                .replace(/<\/p><br><p/g, '</p><p>');
+            
+            previewContent.innerHTML = content || '<em class="text-muted">No hay contenido para mostrar</em>';
+        }
+        
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            const taskBtn = document.getElementById('btn-task');
+            const previewBtn = document.getElementById('btn-preview');
+            
+            if (taskBtn) {
+                taskBtn.addEventListener('click', añadirTarea);
+            }
+            
+            if (previewBtn) {
+                previewBtn.addEventListener('click', togglePreview);
+            }
+        });
+    </script>
+</body>
+</html>

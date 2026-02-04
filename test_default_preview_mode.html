@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test: Modo Preview por Defecto</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body { padding: 20px; background-color: #f8f9fa; }
+        .container { max-width: 900px; margin: 0 auto; }
+        
+        .editor-toolbar {
+            border: 1px solid #e9ecef;
+            border-bottom: none;
+            background-color: #f8f9fa;
+            padding: 8px;
+            border-radius: 8px 8px 0 0;
+        }
+        
+        .editor-textarea {
+            border-radius: 0 0 8px 8px !important;
+            border-top: none !important;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            resize: vertical;
+            min-height: 200px;
+        }
+        
+        .editor-preview {
+            border: 1px solid #e9ecef;
+            border-radius: 0 0 8px 8px;
+            background-color: white;
+            padding: 12px;
+            min-height: 200px;
+            max-height: 400px;
+            overflow-y: auto;
+            resize: vertical;
+        }
+        
+        .preview-content {
+            font-size: 18px;
+            line-height: 1.6;
+        }
+        
+        /* Estilos de resaltado */
+        .preview-content .highlight-yellow {
+            background-color: #fff3cd;
+            padding: 2px 4px;
+            border-radius: 3px;
+            color: #856404;
+        }
+        
+        .preview-content .highlight-green {
+            background-color: #d1e7dd;
+            padding: 2px 4px;
+            border-radius: 3px;
+            color: #0f5132;
+        }
+        
+        .preview-content .highlight-blue {
+            background-color: #cff4fc;
+            padding: 2px 4px;
+            border-radius: 3px;
+            color: #055160;
+        }
+        
+        .preview-content .highlight-red {
+            background-color: #f8d7da;
+            padding: 2px 4px;
+            border-radius: 3px;
+            color: #721c24;
+        }
+        
+        .preview-content .task-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0.5rem;
+            padding: 2px 0;
+            font-size: 18px;
+            line-height: 1.6;
+        }
+        
+        .preview-content .task-checkbox {
+            margin-right: 8px;
+            margin-top: 0;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+        
+        .preview-content .task-completed {
+            text-decoration: line-through;
+            color: #6c757d;
+        }
+        
+        .preview-content p {
+            margin-bottom: 0.75rem;
+            line-height: 1.6;
+            font-size: 18px;
+        }
+        
+        .preview-content ul {
+            padding-left: 20px;
+            margin-bottom: 1rem;
+        }
+        
+        .preview-content ul li {
+            margin-bottom: 0.25rem;
+            line-height: 1.6;
+            font-size: 18px;
+        }
+        
+        .btn.active {
+            background-color: #28a745;
+            border-color: #28a745;
+            color: white;
+        }
+        
+        .demo-modal {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .status-indicator {
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-weight: 500;
+            margin-bottom: 15px;
+        }
+        
+        .status-preview {
+            background-color: #d1e7dd;
+            color: #0f5132;
+            border: 1px solid #badbcc;
+        }
+        
+        .status-edit {
+            background-color: #cff4fc;
+            color: #055160;
+            border: 1px solid #b8daff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>👁️ Test: Modo Preview por Defecto</h1>
+        
+        <div class="alert alert-success">
+            <h5><i class="bi bi-check-circle me-2"></i>Funcionalidad Implementada:</h5>
+            <p class="mb-0">El modo focus de sub-objetivos ahora inicia automáticamente en <strong>vista previa</strong> para mostrar las notas existentes.</p>
+        </div>
+        
+        <div class="demo-modal">
+            <h5><i class="bi bi-bullseye text-success me-2"></i>Simulación: Focus Sub-objetivo</h5>
+            
+            <div class="status-indicator status-preview" id="mode-indicator">
+                <i class="bi bi-eye me-2"></i>Modo: Vista Previa (Por Defecto)
+            </div>
+            
+            <div class="card">
+                <div class="card-body p-0">
+                    <!-- Barra de herramientas -->
+                    <div class="editor-toolbar">
+                        <div class="btn-group btn-group-sm">
+                            <button type="button" class="btn btn-outline-info active" id="btn-preview" title="Cambiar a edición">
+                                <i class="bi bi-pencil"></i> Editar
+                            </button>
+                        </div>
+                        <small class="text-muted ms-3">Haz clic en "Editar" si necesitas modificar las notas</small>
+                    </div>
+                    
+                    <!-- Editor (oculto por defecto) -->
+                    <div class="editor-container">
+                        <textarea class="form-control editor-textarea" id="editor-textarea" style="display: none;">**Notas de la tarea:**
+
+==yellow:EXPLICAR REFERENCIA DE ASESORIA HACIA ELLA==
+
+- [] Revisar el proceso actual
+- [x] Contactar con Carmen para aclaración  
+- [] Documentar el flujo correcto
+
+==red:NO HAY HORARIO PROGRAMADO PARA LOS SLA==
+
+**Próximos pasos:**
+- Definir horarios específicos
+- Crear alertas automáticas
+- ==blue:Establecer métricas de seguimiento==</textarea>
+                        
+                        <!-- Vista previa (visible por defecto) -->
+                        <div class="editor-preview" id="editor-preview" style="display: block;">
+                            <div class="preview-content">
+                                <p><strong>Notas de la tarea:</strong></p>
+                                <p><span class="highlight-yellow">EXPLICAR REFERENCIA DE ASESORIA HACIA ELLA</span></p>
+                                <div class="task-item">
+                                    <input type="checkbox" class="task-checkbox" disabled> 
+                                    <span>Revisar el proceso actual</span>
+                                </div>
+                                <div class="task-item">
+                                    <input type="checkbox" class="task-checkbox" checked disabled> 
+                                    <span class="task-completed">Contactar con Carmen para aclaración</span>
+                                </div>
+                                <div class="task-item">
+                                    <input type="checkbox" class="task-checkbox" disabled> 
+                                    <span>Documentar el flujo correcto</span>
+                                </div>
+                                <p><span class="highlight-red">NO HAY HORARIO PROGRAMADO PARA LOS SLA</span></p>
+                                <p><strong>Próximos pasos:</strong></p>
+                                <ul>
+                                    <li>Definir horarios específicos</li>
+                                    <li>Crear alertas automáticas</li>
+                                    <li><span class="highlight-blue">Establecer métricas de seguimiento</span></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <h5>✅ Ventajas del Modo Preview por Defecto:</h5>
+                <ul>
+                    <li><strong>Visualización inmediata:</strong> Ves las notas formateadas al abrir</li>
+                    <li><strong>Mejor legibilidad:</strong> Resaltados y formato aplicados</li>
+                    <li><strong>Menos clics:</strong> No necesitas activar preview manualmente</li>
+                    <li><strong>Flujo natural:</strong> Lees primero, editas si es necesario</li>
+                </ul>
+            </div>
+            
+            <div class="col-md-6">
+                <h5>🔧 Comportamiento Implementado:</h5>
+                <ul>
+                    <li><strong>Al abrir modal:</strong> Inicia automáticamente en preview</li>
+                    <li><strong>Botón "Editar":</strong> Cambia a modo edición cuando necesites</li>
+                    <li><strong>Al cerrar modal:</strong> Se resetea para la próxima vez</li>
+                    <li><strong>Delay de 100ms:</strong> Asegura que elementos estén listos</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="alert alert-info">
+            <h5><i class="bi bi-lightbulb me-2"></i>Flujo de Uso Mejorado:</h5>
+            <ol>
+                <li>Abres el modo focus de un sub-objetivo</li>
+                <li><strong>Automáticamente ves las notas en preview</strong> (sin hacer nada)</li>
+                <li>Si necesitas editar, haces clic en "Editar"</li>
+                <li>Si solo querías leer, ya tienes todo visible</li>
+            </ol>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let editorMode = 'preview'; // Inicia en preview por defecto
+        
+        function togglePreview() {
+            const textarea = document.getElementById('editor-textarea');
+            const previewDiv = document.getElementById('editor-preview');
+            const previewBtn = document.getElementById('btn-preview');
+            const modeIndicator = document.getElementById('mode-indicator');
+            
+            if (!textarea || !previewDiv || !previewBtn) return;
+            
+            if (editorMode === 'preview') {
+                // Cambiar a edición
+                editorMode = 'edit';
+                textarea.style.display = 'block';
+                previewDiv.style.display = 'none';
+                previewBtn.classList.remove('active');
+                previewBtn.innerHTML = '<i class="bi bi-eye"></i> Vista Previa';
+                previewBtn.title = 'Vista previa';
+                
+                modeIndicator.className = 'status-indicator status-edit';
+                modeIndicator.innerHTML = '<i class="bi bi-pencil me-2"></i>Modo: Edición';
+                
+                textarea.focus();
+            } else {
+                // Cambiar a vista previa
+                editorMode = 'preview';
+                textarea.style.display = 'none';
+                previewDiv.style.display = 'block';
+                previewBtn.classList.add('active');
+                previewBtn.innerHTML = '<i class="bi bi-pencil"></i> Editar';
+                previewBtn.title = 'Editar';
+                
+                modeIndicator.className = 'status-indicator status-preview';
+                modeIndicator.innerHTML = '<i class="bi bi-eye me-2"></i>Modo: Vista Previa';
+            }
+        }
+        
+        // Event listener para el botón de preview
+        document.addEventListener('DOMContentLoaded', function() {
+            const previewBtn = document.getElementById('btn-preview');
+            if (previewBtn) {
+                previewBtn.addEventListener('click', togglePreview);
+            }
+            
+            // Simular la inicialización automática en preview
+            console.log('👁️ Iniciando en modo preview por defecto...');
+        });
+    </script>
+</body>
+</html>

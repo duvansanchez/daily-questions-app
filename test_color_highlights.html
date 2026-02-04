@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test: Resaltado con Colores</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body { padding: 20px; background-color: #f8f9fa; }
+        .test-container { max-width: 800px; margin: 0 auto; }
+        .test-section { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        
+        /* Estilos del editor */
+        .editor-toolbar {
+            border: 1px solid #e9ecef;
+            border-bottom: none;
+            background-color: #f8f9fa;
+            padding: 8px;
+            border-radius: 8px 8px 0 0;
+        }
+        
+        .editor-textarea {
+            border-radius: 0 0 8px 8px !important;
+            border-top: none !important;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            resize: vertical;
+            min-height: 150px;
+        }
+        
+        .editor-preview {
+            border: 1px solid #e9ecef;
+            border-radius: 0 0 8px 8px;
+            background-color: white;
+            padding: 12px;
+            min-height: 150px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        /* Dropdown de colores */
+        .highlight-colors-menu {
+            min-width: 200px;
+        }
+        
+        .highlight-colors-menu .color-preview {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border-radius: 3px;
+            border: 1px solid #dee2e6;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+        
+        .highlight-colors-menu .dropdown-item {
+            display: flex;
+            align-items: center;
+            padding: 6px 12px;
+        }
+        
+        /* Colores de resaltado */
+        .preview-content .highlight-yellow {
+            background-color: #fff3cd;
+            padding: 2px 4px;
+            border-radius: 3px;
+            color: #856404;
+        }
+        
+        .preview-content .highlight-green {
+            background-color: #d1e7dd;
+            padding: 2px 4px;
+            border-radius: 3px;
+            color: #0f5132;
+        }
+        
+        .preview-content .highlight-blue {
+            background-color: #cff4fc;
+            padding: 2px 4px;
+            border-radius: 3px;
+            color: #055160;
+        }
+        
+        .preview-content .highlight-red {
+            background-color: #f8d7da;
+            padding: 2px 4px;
+            border-radius: 3px;
+            color: #721c24;
+        }
+        
+        .preview-content .highlight-orange {
+            background-color: #ffe69c;
+            padding: 2px 4px;
+            border-radius: 3px;
+            color: #997404;
+        }
+        
+        .preview-content .highlight-purple {
+            background-color: #e2d9f3;
+            padding: 2px 4px;
+            border-radius: 3px;
+            color: #59359a;
+        }
+        
+        .preview-content p {
+            margin-bottom: 0.75rem;
+            line-height: 1.5;
+        }
+        
+        .preview-content strong {
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        
+        .preview-content em {
+            font-style: italic;
+            color: #34495e;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🎨 Test: Resaltado con Colores</h1>
+        
+        <div class="test-section">
+            <h2>📝 Editor con Resaltado de Colores</h2>
+            <p>Selecciona texto y elige un color del dropdown de resaltado.</p>
+            
+            <!-- Editor -->
+            <div class="focus-notas mb-4">
+                <!-- Barra de herramientas -->
+                <div class="editor-toolbar mb-2">
+                    <div class="btn-group btn-group-sm" role="group">
+                        <button type="button" class="btn btn-outline-secondary" id="btn-bold" title="Negrita">
+                            <i class="bi bi-type-bold"></i>
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" id="btn-italic" title="Cursiva">
+                            <i class="bi bi-type-italic"></i>
+                        </button>
+                        
+                        <!-- Dropdown para resaltado con colores -->
+                        <div class="btn-group" role="group">
+                            <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" title="Resaltar texto">
+                                <i class="bi bi-highlighter"></i>
+                            </button>
+                            <ul class="dropdown-menu highlight-colors-menu">
+                                <li><h6 class="dropdown-header">Colores de resaltado</h6></li>
+                                <li><button class="dropdown-item highlight-color" data-color="yellow">
+                                    <span class="color-preview" style="background-color: #fff3cd;"></span> Amarillo
+                                </button></li>
+                                <li><button class="dropdown-item highlight-color" data-color="green">
+                                    <span class="color-preview" style="background-color: #d1e7dd;"></span> Verde
+                                </button></li>
+                                <li><button class="dropdown-item highlight-color" data-color="blue">
+                                    <span class="color-preview" style="background-color: #cff4fc;"></span> Azul
+                                </button></li>
+                                <li><button class="dropdown-item highlight-color" data-color="red">
+                                    <span class="color-preview" style="background-color: #f8d7da;"></span> Rojo
+                                </button></li>
+                                <li><button class="dropdown-item highlight-color" data-color="orange">
+                                    <span class="color-preview" style="background-color: #ffe69c;"></span> Naranja
+                                </button></li>
+                                <li><button class="dropdown-item highlight-color" data-color="purple">
+                                    <span class="color-preview" style="background-color: #e2d9f3;"></span> Morado
+                                </button></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><button class="dropdown-item" id="btn-remove-highlight">
+                                    <i class="bi bi-eraser me-2"></i> Quitar resaltado
+                                </button></li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="btn-group btn-group-sm ms-2" role="group">
+                        <button type="button" class="btn btn-outline-info" id="btn-preview" title="Vista previa">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Editor de texto -->
+                <div class="editor-container">
+                    <textarea class="form-control editor-textarea" id="editor-textarea" rows="8">Este es un texto de ejemplo.
+
+Puedes seleccionar cualquier parte del texto y aplicar diferentes colores de resaltado:
+
+==yellow:Texto resaltado en amarillo==
+==green:Texto resaltado en verde==
+==blue:Texto resaltado en azul==
+==red:Texto resaltado en rojo==
+==orange:Texto resaltado en naranja==
+==purple:Texto resaltado en morado==
+
+**También puedes usar negritas** y *cursivas* junto con los resaltados.
+
+Selecciona texto y usa el dropdown del resaltador para aplicar colores.</textarea>
+                    
+                    <!-- Vista previa -->
+                    <div class="editor-preview" id="editor-preview" style="display: none;">
+                        <div class="preview-content"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>🎯 Instrucciones de Uso</h3>
+            <ol>
+                <li><strong>Selecciona texto</strong> en el editor</li>
+                <li><strong>Haz clic en el dropdown</strong> del resaltador (icono de marcador)</li>
+                <li><strong>Elige un color</strong> de la lista</li>
+                <li><strong>El texto se marcará</strong> con la sintaxis: <code>==color:texto==</code></li>
+                <li><strong>Usa "Vista previa"</strong> para ver el resultado renderizado</li>
+                <li><strong>Usa "Quitar resaltado"</strong> para eliminar el formato</li>
+            </ol>
+        </div>
+
+        <div class="test-section">
+            <h3>📋 Sintaxis de Colores</h3>
+            <ul>
+                <li><code>==yellow:texto==</code> → <span class="highlight-yellow">texto amarillo</span></li>
+                <li><code>==green:texto==</code> → <span class="highlight-green">texto verde</span></li>
+                <li><code>==blue:texto==</code> → <span class="highlight-blue">texto azul</span></li>
+                <li><code>==red:texto==</code> → <span class="highlight-red">texto rojo</span></li>
+                <li><code>==orange:texto==</code> → <span class="highlight-orange">texto naranja</span></li>
+                <li><code>==purple:texto==</code> → <span class="highlight-purple">texto morado</span></li>
+            </ul>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let editorMode = 'edit';
+
+        // Función para aplicar formato
+        function aplicarFormato(inicio, fin, placeholder) {
+            const textarea = document.getElementById('editor-textarea');
+            if (!textarea) return;
+            
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
+            const selectedText = textarea.value.substring(start, end);
+            const textToInsert = selectedText || placeholder;
+            
+            const newText = inicio + textToInsert + fin;
+            
+            textarea.value = textarea.value.substring(0, start) + newText + textarea.value.substring(end);
+            
+            if (selectedText) {
+                textarea.setSelectionRange(start, start + newText.length);
+            } else {
+                textarea.setSelectionRange(start + inicio.length, start + inicio.length + placeholder.length);
+            }
+            
+            textarea.focus();
+        }
+
+        // Función para aplicar resaltado con color
+        function aplicarResaltado(color) {
+            const textarea = document.getElementById('editor-textarea');
+            if (!textarea) return;
+            
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
+            const selectedText = textarea.value.substring(start, end);
+            const textToInsert = selectedText || 'texto resaltado';
+            
+            const newText = `==${color}:${textToInsert}==`;
+            
+            textarea.value = textarea.value.substring(0, start) + newText + textarea.value.substring(end);
+            
+            if (selectedText) {
+                textarea.setSelectionRange(start, start + newText.length);
+            } else {
+                textarea.setSelectionRange(start + `==${color}:`.length, start + `==${color}:`.length + 'texto resaltado'.length);
+            }
+            
+            textarea.focus();
+        }
+
+        // Función para quitar resaltado
+        function quitarResaltado() {
+            const textarea = document.getElementById('editor-textarea');
+            if (!textarea) return;
+            
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
+            const selectedText = textarea.value.substring(start, end);
+            
+            if (selectedText) {
+                const cleanText = selectedText.replace(/==\w+:([^=]*)==/g, '$1');
+                textarea.value = textarea.value.substring(0, start) + cleanText + textarea.value.substring(end);
+                textarea.setSelectionRange(start, start + cleanText.length);
+            }
+            
+            textarea.focus();
+        }
+
+        // Función para alternar vista previa
+        function togglePreview() {
+            const textarea = document.getElementById('editor-textarea');
+            const previewDiv = document.getElementById('editor-preview');
+            const previewBtn = document.getElementById('btn-preview');
+            
+            if (editorMode === 'edit') {
+                editorMode = 'preview';
+                textarea.style.display = 'none';
+                previewDiv.style.display = 'block';
+                previewBtn.classList.add('active');
+                previewBtn.innerHTML = '<i class="bi bi-pencil"></i>';
+                previewBtn.title = 'Editar';
+                
+                renderizarPreview();
+            } else {
+                editorMode = 'edit';
+                textarea.style.display = 'block';
+                previewDiv.style.display = 'none';
+                previewBtn.classList.remove('active');
+                previewBtn.innerHTML = '<i class="bi bi-eye"></i>';
+                previewBtn.title = 'Vista previa';
+                textarea.focus();
+            }
+        }
+
+        // Función para renderizar la vista previa
+        function renderizarPreview() {
+            const textarea = document.getElementById('editor-textarea');
+            const previewContent = document.querySelector('#editor-preview .preview-content');
+            
+            if (!textarea || !previewContent) return;
+            
+            let content = textarea.value;
+            
+            // Dividir en líneas y procesar
+            let lines = content.split('\n');
+            let processedLines = [];
+            
+            for (let line of lines) {
+                line = line.trim();
+                
+                if (line === '') {
+                    processedLines.push('<br>');
+                    continue;
+                }
+                
+                // Procesar formato
+                line = line
+                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                    .replace(/==(\w+):(.*?)==/g, '<span class="highlight-$1">$2</span>')
+                    .replace(/==(.*?)==/g, '<span class="highlight-yellow">$1</span>');
+                
+                processedLines.push(`<p>${line}</p>`);
+            }
+            
+            content = processedLines.join('');
+            
+            // Limpiar <br> innecesarios
+            content = content.replace(/<\/p><br><p/g, '</p><p>');
+            
+            previewContent.innerHTML = content || '<em class="text-muted">No hay contenido para mostrar</em>';
+        }
+
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            // Botones de formato
+            document.getElementById('btn-bold')?.addEventListener('click', () => aplicarFormato('**', '**', 'texto en negrita'));
+            document.getElementById('btn-italic')?.addEventListener('click', () => aplicarFormato('*', '*', 'texto en cursiva'));
+            
+            // Colores de resaltado
+            document.querySelectorAll('.highlight-color').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const color = btn.getAttribute('data-color');
+                    aplicarResaltado(color);
+                });
+            });
+            
+            // Quitar resaltado
+            document.getElementById('btn-remove-highlight')?.addEventListener('click', (e) => {
+                e.preventDefault();
+                quitarResaltado();
+            });
+            
+            // Vista previa
+            document.getElementById('btn-preview')?.addEventListener('click', () => togglePreview());
+        });
+    </script>
+</body>
+</html>

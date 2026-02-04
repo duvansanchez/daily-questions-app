@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test: Botones de Formato Corregidos</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body { padding: 20px; background-color: #f8f9fa; }
+        .container { max-width: 900px; margin: 0 auto; }
+        
+        .editor-toolbar {
+            border: 1px solid #e9ecef;
+            border-bottom: none;
+            background-color: #f8f9fa;
+            padding: 8px;
+            border-radius: 8px 8px 0 0;
+        }
+        
+        .editor-textarea {
+            border-radius: 0 0 8px 8px !important;
+            border-top: none !important;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            resize: vertical;
+            min-height: 200px;
+        }
+        
+        .test-result {
+            background-color: #e8f5e8;
+            border: 1px solid #c3e6c3;
+            border-radius: 4px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .test-case {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Test: Botones de Formato Corregidos</h1>
+        
+        <div class="test-result">
+            <h5>✅ Problemas Solucionados:</h5>
+            <ol>
+                <li><strong>Botones sin texto de ejemplo:</strong> Solo añaden los marcadores (** o *)</li>
+                <li><strong>Ctrl+Z funciona:</strong> No interceptamos atajos del sistema</li>
+                <li><strong>Cursor bien posicionado:</strong> Entre los marcadores cuando no hay selección</li>
+            </ol>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-body p-0">
+                        <!-- Barra de herramientas -->
+                        <div class="editor-toolbar">
+                            <div class="btn-group btn-group-sm">
+                                <button type="button" class="btn btn-outline-secondary" id="btn-bold" title="Negrita (Ctrl+B)">
+                                    <i class="bi bi-type-bold"></i>
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary" id="btn-italic" title="Cursiva (Ctrl+I)">
+                                    <i class="bi bi-type-italic"></i>
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary" id="btn-task" title="Añadir tarea">
+                                    <i class="bi bi-check-square"></i>
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary" id="btn-bullet" title="Añadir viñeta">
+                                    <i class="bi bi-list-ul"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Editor -->
+                        <div class="editor-container">
+                            <textarea class="form-control editor-textarea" id="editor-textarea" placeholder="Prueba los botones y atajos:
+
+1. Escribe texto y selecciónalo, luego usa los botones
+2. Sin seleccionar texto, usa los botones (solo añaden marcadores)
+3. Prueba Ctrl+B y Ctrl+I
+4. Prueba Ctrl+Z para deshacer
+5. Prueba Ctrl+Y para rehacer
+
+¡Ahora todo debería funcionar correctamente!"></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <h5>🧪 Casos de Prueba</h5>
+                
+                <div class="test-case">
+                    <strong>1. Con texto seleccionado:</strong>
+                    <ol>
+                        <li>Escribe: "texto importante"</li>
+                        <li>Selecciona "importante"</li>
+                        <li>Haz clic en <strong>B</strong></li>
+                        <li>Resultado: "texto **importante**"</li>
+                    </ol>
+                </div>
+                
+                <div class="test-case">
+                    <strong>2. Sin texto seleccionado:</strong>
+                    <ol>
+                        <li>Posiciona el cursor</li>
+                        <li>Haz clic en <em>I</em></li>
+                        <li>Resultado: "**" (cursor entre asteriscos)</li>
+                        <li>Escribe tu texto</li>
+                    </ol>
+                </div>
+                
+                <div class="test-case">
+                    <strong>3. Atajos de teclado:</strong>
+                    <ul>
+                        <li><kbd>Ctrl+B</kbd> - Negrita</li>
+                        <li><kbd>Ctrl+I</kbd> - Cursiva</li>
+                        <li><kbd>Ctrl+S</kbd> - Guardar</li>
+                        <li><kbd>Ctrl+Z</kbd> - Deshacer ✅</li>
+                        <li><kbd>Ctrl+Y</kbd> - Rehacer ✅</li>
+                    </ul>
+                </div>
+                
+                <div class="test-case">
+                    <strong>4. Botones de lista:</strong>
+                    <ul>
+                        <li>Tarea: Añade "- [ ] "</li>
+                        <li>Viñeta: Añade "- "</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <div class="alert alert-info mt-4">
+            <h6><i class="bi bi-info-circle me-2"></i>Comportamiento Esperado:</h6>
+            <ul class="mb-0">
+                <li><strong>Con selección:</strong> Aplica formato al texto seleccionado</li>
+                <li><strong>Sin selección:</strong> Inserta solo los marcadores y posiciona el cursor entre ellos</li>
+                <li><strong>Ctrl+Z/Y:</strong> Funciona normalmente para deshacer/rehacer</li>
+                <li><strong>Otros atajos:</strong> Ctrl+A, Ctrl+C, Ctrl+V, etc. funcionan normalmente</li>
+            </ul>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Función para aplicar formato (CORREGIDA)
+        function aplicarFormato(inicio, fin) {
+            const textarea = document.getElementById('editor-textarea');
+            if (!textarea) return;
+            
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
+            const selectedText = textarea.value.substring(start, end);
+            
+            if (selectedText) {
+                // Si hay texto seleccionado, aplicar formato
+                const newText = inicio + selectedText + fin;
+                textarea.value = textarea.value.substring(0, start) + newText + textarea.value.substring(end);
+                textarea.setSelectionRange(start, start + newText.length);
+                console.log('✅ Formato aplicado a texto seleccionado:', selectedText);
+            } else {
+                // Si no hay texto seleccionado, solo insertar los marcadores
+                const newText = inicio + fin;
+                textarea.value = textarea.value.substring(0, start) + newText + textarea.value.substring(end);
+                // Posicionar cursor entre los marcadores
+                textarea.setSelectionRange(start + inicio.length, start + inicio.length);
+                console.log('✅ Marcadores insertados, cursor posicionado entre ellos');
+            }
+            
+            textarea.focus();
+        }
+
+        // Función para añadir tarea (CORREGIDA)
+        function añadirTarea() {
+            const textarea = document.getElementById('editor-textarea');
+            if (!textarea) return;
+            
+            const cursorPos = textarea.selectionStart;
+            const textBefore = textarea.value.substring(0, cursorPos);
+            const textAfter = textarea.value.substring(cursorPos);
+            
+            const needsNewLine = textBefore.length > 0 && !textBefore.endsWith('\n');
+            const taskText = (needsNewLine ? '\n' : '') + '- [ ] ';
+            
+            textarea.value = textBefore + taskText + textAfter;
+            textarea.setSelectionRange(cursorPos + taskText.length, cursorPos + taskText.length);
+            textarea.focus();
+            
+            console.log('✅ Tarea añadida');
+        }
+
+        // Función para añadir viñeta (CORREGIDA)
+        function añadirViñeta() {
+            const textarea = document.getElementById('editor-textarea');
+            if (!textarea) return;
+            
+            const cursorPos = textarea.selectionStart;
+            const textBefore = textarea.value.substring(0, cursorPos);
+            const textAfter = textarea.value.substring(cursorPos);
+            
+            const needsNewLine = textBefore.length > 0 && !textBefore.endsWith('\n');
+            const bulletText = (needsNewLine ? '\n' : '') + '- ';
+            
+            textarea.value = textBefore + bulletText + textAfter;
+            textarea.setSelectionRange(cursorPos + bulletText.length, cursorPos + bulletText.length);
+            textarea.focus();
+            
+            console.log('✅ Viñeta añadida');
+        }
+        
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            const textarea = document.getElementById('editor-textarea');
+            const btnBold = document.getElementById('btn-bold');
+            const btnItalic = document.getElementById('btn-italic');
+            const btnTask = document.getElementById('btn-task');
+            const btnBullet = document.getElementById('btn-bullet');
+            
+            // Botones
+            if (btnBold) btnBold.addEventListener('click', () => aplicarFormato('**', '**'));
+            if (btnItalic) btnItalic.addEventListener('click', () => aplicarFormato('*', '*'));
+            if (btnTask) btnTask.addEventListener('click', añadirTarea);
+            if (btnBullet) btnBullet.addEventListener('click', añadirViñeta);
+            
+            // Atajos de teclado (CORREGIDOS - no interfieren con Ctrl+Z)
+            if (textarea) {
+                textarea.addEventListener('keydown', (e) => {
+                    if (e.ctrlKey || e.metaKey) {
+                        switch (e.key.toLowerCase()) {
+                            case 'b':
+                                e.preventDefault();
+                                aplicarFormato('**', '**');
+                                break;
+                            case 'i':
+                                e.preventDefault();
+                                aplicarFormato('*', '*');
+                                break;
+                            case 's':
+                                e.preventDefault();
+                                console.log('💾 Guardado (simulado)');
+                                break;
+                            // NO interceptar otras teclas como Ctrl+Z, Ctrl+Y, Ctrl+A, etc.
+                            // Dejar que el navegador maneje el resto de atajos
+                        }
+                    }
+                });
+                
+                console.log('✅ Event listeners configurados correctamente');
+            }
+        });
+    </script>
+</body>
+</html>

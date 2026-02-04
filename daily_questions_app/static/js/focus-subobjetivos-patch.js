@@ -1,6 +1,16 @@
 // Parche para agregar selects de acciones a los subobjetivos
 // Este archivo se ejecuta después de cargar los subobjetivos para agregar los selects
 
+console.log('🔧 Cargando focus-subobjetivos-patch.js...');
+
+// Verificar dependencias al cargar
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('📋 Verificando dependencias del patch...');
+    console.log('- abrirModoFocusSubobjetivo:', typeof abrirModoFocusSubobjetivo);
+    console.log('- window.abrirModoFocusSubobjetivo:', typeof window.abrirModoFocusSubobjetivo);
+    console.log('- Scripts cargados:', Array.from(document.scripts).map(s => s.src.split('/').pop()).filter(s => s.includes('focus')));
+});
+
 // Variable global para almacenar datos de subobjetivos
 window.currentSubobjetivos = [];
 let patcheandoSubobjetivos = false;
@@ -148,10 +158,81 @@ function agregarBotonesFocusSubobjetivos() {
             
             if (accion === 'focus') {
                 console.log('Ejecutando focus para:', subobjetivoId);
-                if (typeof abrirModoFocusSubobjetivo === 'function') {
-                    abrirModoFocusSubobjetivo(subobjetivoId, tituloTexto);
+                console.log('🔍 Verificando disponibilidad de función...');
+                console.log('- typeof abrirModoFocusSubobjetivo:', typeof abrirModoFocusSubobjetivo);
+                console.log('- typeof window.abrirModoFocusSubobjetivo:', typeof window.abrirModoFocusSubobjetivo);
+                
+                // Función para ejecutar el focus
+                const ejecutarFocus = () => {
+                    if (typeof abrirModoFocusSubobjetivo === 'function') {
+                        console.log('✅ Usando función directa');
+                        abrirModoFocusSubobjetivo(subobjetivoId, tituloTexto);
+                        return true;
+                    } else if (typeof window.abrirModoFocusSubobjetivo === 'function') {
+                        console.log('✅ Usando función de window');
+                        window.abrirModoFocusSubobjetivo(subobjetivoId, tituloTexto);
+                        return true;
+                    }
+                    return false;
+                };
+                
+                // Intentar ejecutar inmediatamente
+                if (ejecutarFocus()) {
+                    return;
+                }
+                
+                // Si no funciona, intentar cargar el script manualmente
+                console.log('⚠️ Función no encontrada, intentando cargar script...');
+                
+                // Verificar si el script está cargado
+                const scriptExists = document.querySelector('script[src*="focus-subobjetivos.js"]');
+                console.log('📜 Script focus-subobjetivos.js encontrado:', !!scriptExists);
+                
+                if (!scriptExists) {
+                    console.log('🔄 Cargando script manualmente...');
+                    const script = document.createElement('script');
+                    script.src = '/static/js/focus-subobjetivos.js';
+                    script.onload = () => {
+                        console.log('✅ Script cargado, reintentando...');
+                        setTimeout(() => {
+                            if (!ejecutarFocus()) {
+                                console.error('❌ Función sigue no disponible después de cargar script');
+                                alert('Error: No se pudo cargar la función de focus. Recarga la página.');
+                            }
+                        }, 100);
+                    };
+                    script.onerror = () => {
+                        console.error('❌ Error cargando script');
+                        alert('Error: No se pudo cargar el script de focus. Verifica la conexión.');
+                    };
+                    document.head.appendChild(script);
                 } else {
-                    alert('Función de focus no disponible');
+                    // El script existe pero la función no está disponible
+                    console.log('⏳ Script existe, esperando carga completa...');
+                    let intentos = 0;
+                    const maxIntentos = 10;
+                    
+                    const verificarFuncion = () => {
+                        intentos++;
+                        console.log(`🔄 Intento ${intentos}/${maxIntentos}`);
+                        
+                        if (ejecutarFocus()) {
+                            console.log('✅ Función encontrada después de esperar');
+                            return;
+                        }
+                        
+                        if (intentos < maxIntentos) {
+                            setTimeout(verificarFuncion, 200);
+                        } else {
+                            console.error('❌ Función no disponible después de múltiples intentos');
+                            console.log('🔍 Estado final:');
+                            console.log('- window keys:', Object.keys(window).filter(k => k.includes('abrir')));
+                            console.log('- scripts cargados:', Array.from(document.scripts).map(s => s.src));
+                            alert('Error: Función de focus no disponible después de múltiples intentos. Recarga la página.');
+                        }
+                    };
+                    
+                    verificarFuncion();
                 }
             } else if (accion === 'subir') {
                 console.log('Ejecutando subir para:', subobjetivoId);

@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test: Corrección de Duplicación de Resaltados</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body { padding: 20px; background-color: #f8f9fa; }
+        .container { max-width: 900px; margin: 0 auto; }
+        
+        .editor-toolbar {
+            border: 1px solid #e9ecef;
+            border-bottom: none;
+            background-color: #f8f9fa;
+            padding: 8px;
+            border-radius: 8px 8px 0 0;
+        }
+        
+        .editor-textarea {
+            border-radius: 0 0 8px 8px !important;
+            border-top: none !important;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            resize: vertical;
+            min-height: 200px;
+        }
+        
+        .editor-preview {
+            border: 1px solid #e9ecef;
+            border-radius: 0 0 8px 8px;
+            background-color: white;
+            padding: 12px;
+            min-height: 200px;
+            max-height: 400px;
+            overflow-y: auto;
+            resize: vertical;
+        }
+        
+        .preview-content {
+            font-size: 18px;
+            line-height: 1.6;
+        }
+        
+        /* Estilos de resaltado */
+        .preview-content .highlight-yellow {
+            background-color: #fff3cd;
+            padding: 2px 4px;
+            border-radius: 3px;
+            color: #856404;
+        }
+        
+        .preview-content .highlight-green {
+            background-color: #d1e7dd;
+            padding: 2px 4px;
+            border-radius: 3px;
+            color: #0f5132;
+        }
+        
+        .preview-content .highlight-blue {
+            background-color: #cff4fc;
+            padding: 2px 4px;
+            border-radius: 3px;
+            color: #055160;
+        }
+        
+        .preview-content .highlight-red {
+            background-color: #f8d7da;
+            padding: 2px 4px;
+            border-radius: 3px;
+            color: #721c24;
+        }
+        
+        .highlight-colors-menu {
+            min-width: 200px;
+        }
+        
+        .highlight-colors-menu .color-preview {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border-radius: 3px;
+            border: 1px solid #dee2e6;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+        
+        .highlight-colors-menu .dropdown-item {
+            display: flex;
+            align-items: center;
+            padding: 6px 12px;
+        }
+        
+        .btn.active {
+            background-color: #28a745;
+            border-color: #28a745;
+            color: white;
+        }
+        
+        .problem-demo {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            border-radius: 6px;
+            padding: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .solution-demo {
+            background-color: #d1e7dd;
+            border: 1px solid #badbcc;
+            border-radius: 6px;
+            padding: 10px;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Test: Corrección de Duplicación de Resaltados</h1>
+        
+        <div class="alert alert-success">
+            <h5><i class="bi bi-check-circle me-2"></i>Problema Solucionado:</h5>
+            <p class="mb-0">Los event listeners de resaltado ahora se configuran solo una vez usando delegación de eventos.</p>
+        </div>
+        
+        <div class="problem-demo">
+            <h6 class="text-danger">❌ Problema Anterior:</h6>
+            <p class="mb-0">Los event listeners se agregaban cada vez que se abría el modal, causando múltiples ejecuciones: <code>==yellow:==yellow:==yellow:texto==</code></p>
+        </div>
+        
+        <div class="solution-demo">
+            <h6 class="text-success">✅ Solución Implementada:</h6>
+            <p class="mb-0">Event listeners globales con delegación que se ejecutan solo una vez: <code>==yellow:texto==</code></p>
+        </div>
+        
+        <div class="card">
+            <div class="card-body p-0">
+                <!-- Barra de herramientas -->
+                <div class="editor-toolbar">
+                    <div class="btn-group btn-group-sm">
+                        <!-- Dropdown para resaltado con colores -->
+                        <div class="btn-group" role="group">
+                            <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" title="Resaltar texto">
+                                <i class="bi bi-highlighter"></i> Resaltar
+                            </button>
+                            <ul class="dropdown-menu highlight-colors-menu">
+                                <li><h6 class="dropdown-header">Colores de resaltado</h6></li>
+                                <li><button class="dropdown-item highlight-color" data-color="yellow">
+                                    <span class="color-preview" style="background-color: #fff3cd;"></span> Amarillo
+                                </button></li>
+                                <li><button class="dropdown-item highlight-color" data-color="green">
+                                    <span class="color-preview" style="background-color: #d1e7dd;"></span> Verde
+                                </button></li>
+                                <li><button class="dropdown-item highlight-color" data-color="blue">
+                                    <span class="color-preview" style="background-color: #cff4fc;"></span> Azul
+                                </button></li>
+                                <li><button class="dropdown-item highlight-color" data-color="red">
+                                    <span class="color-preview" style="background-color: #f8d7da;"></span> Rojo
+                                </button></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><button class="dropdown-item" id="btn-remove-highlight">
+                                    <i class="bi bi-eraser me-2"></i> Quitar resaltado
+                                </button></li>
+                            </ul>
+                        </div>
+                        
+                        <button type="button" class="btn btn-outline-info" id="btn-preview" title="Vista previa">
+                            <i class="bi bi-eye"></i> Vista Previa
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Editor -->
+                <div class="editor-container">
+                    <textarea class="form-control editor-textarea" id="editor-textarea">Selecciona este texto y usa el botón de resaltado.
+
+Prueba diferentes colores:
+- Texto para resaltar en amarillo
+- Texto para resaltar en verde  
+- Texto para resaltar en azul
+- Texto para resaltar en rojo
+
+Ahora debería funcionar correctamente sin duplicar la sintaxis.</textarea>
+                    
+                    <!-- Vista previa -->
+                    <div class="editor-preview" id="editor-preview" style="display: none;">
+                        <div class="preview-content"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <h5>🧪 Instrucciones de Prueba:</h5>
+                <ol>
+                    <li>Selecciona texto en el editor</li>
+                    <li>Haz clic en "Resaltar" → Elige un color</li>
+                    <li>Verifica que solo se agregue una vez: <code>==color:texto==</code></li>
+                    <li>Usa "Vista Previa" para ver el resultado</li>
+                    <li>Repite varias veces para confirmar que no se duplica</li>
+                </ol>
+            </div>
+            
+            <div class="col-md-6">
+                <h5>🔧 Cambios Técnicos:</h5>
+                <ul>
+                    <li><strong>Event listeners movidos:</strong> Fuera de <code>inicializarEditorNotas()</code></li>
+                    <li><strong>Delegación de eventos:</strong> Un solo listener en <code>document</code></li>
+                    <li><strong>Prevención de duplicados:</strong> Se ejecutan solo una vez</li>
+                    <li><strong>Mejor rendimiento:</strong> Menos listeners en memoria</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let editorMode = 'edit';
+        
+        // Event listeners globales para resaltado (solo se ejecutan una vez)
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('.highlight-color')) {
+                e.preventDefault();
+                const btn = e.target.closest('.highlight-color');
+                const color = btn.getAttribute('data-color');
+                console.log('🎨 Aplicando color:', color);
+                aplicarResaltado(color);
+            }
+        });
+        
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('#btn-remove-highlight')) {
+                e.preventDefault();
+                console.log('🧹 Quitando resaltado');
+                quitarResaltado();
+            }
+        });
+        
+        function aplicarResaltado(color) {
+            const textarea = document.getElementById('editor-textarea');
+            if (!textarea) return;
+            
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
+            const selectedText = textarea.value.substring(start, end);
+            const textToInsert = selectedText || 'texto resaltado';
+            
+            const newText = `==${color}:${textToInsert}==`;
+            
+            // Reemplazar texto seleccionado
+            textarea.value = textarea.value.substring(0, start) + newText + textarea.value.substring(end);
+            
+            // Posicionar cursor
+            if (selectedText) {
+                textarea.setSelectionRange(start, start + newText.length);
+            } else {
+                textarea.setSelectionRange(start + `==${color}:`.length, start + `==${color}:`.length + 'texto resaltado'.length);
+            }
+            
+            textarea.focus();
+        }
+        
+        function quitarResaltado() {
+            const textarea = document.getElementById('editor-textarea');
+            if (!textarea) return;
+            
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
+            const selectedText = textarea.value.substring(start, end);
+            
+            if (selectedText) {
+                const cleanText = selectedText.replace(/==\w+:([^=]*)==/g, '$1');
+                textarea.value = textarea.value.substring(0, start) + cleanText + textarea.value.substring(end);
+                textarea.setSelectionRange(start, start + cleanText.length);
+            }
+            
+            textarea.focus();
+        }
+        
+        function togglePreview() {
+            const textarea = document.getElementById('editor-textarea');
+            const previewDiv = document.getElementById('editor-preview');
+            const previewBtn = document.getElementById('btn-preview');
+            
+            if (!textarea || !previewDiv || !previewBtn) return;
+            
+            if (editorMode === 'edit') {
+                editorMode = 'preview';
+                textarea.style.display = 'none';
+                previewDiv.style.display = 'block';
+                previewBtn.classList.add('active');
+                previewBtn.innerHTML = '<i class="bi bi-pencil"></i> Editar';
+                
+                renderizarPreview();
+            } else {
+                editorMode = 'edit';
+                textarea.style.display = 'block';
+                previewDiv.style.display = 'none';
+                previewBtn.classList.remove('active');
+                previewBtn.innerHTML = '<i class="bi bi-eye"></i> Vista Previa';
+                textarea.focus();
+            }
+        }
+        
+        function renderizarPreview() {
+            const textarea = document.getElementById('editor-textarea');
+            const previewContent = document.querySelector('#editor-preview .preview-content');
+            
+            if (!textarea || !previewContent) return;
+            
+            let content = textarea.value;
+            
+            // Aplicar formato
+            content = content
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                .replace(/==(\w+):(.*?)==/g, '<span class="highlight-$1">$2</span>')
+                .replace(/==(.*?)==/g, '<span class="highlight-yellow">$1</span>')
+                .replace(/\n/g, '<br>');
+            
+            previewContent.innerHTML = content || '<em class="text-muted">No hay contenido para mostrar</em>';
+        }
+        
+        // Event listener para el botón de preview
+        document.addEventListener('DOMContentLoaded', function() {
+            const previewBtn = document.getElementById('btn-preview');
+            if (previewBtn) {
+                previewBtn.addEventListener('click', togglePreview);
+            }
+        });
+    </script>
+</body>
+</html>

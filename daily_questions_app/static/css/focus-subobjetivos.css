@@ -95,6 +95,238 @@
     color: #28a745 !important;
 }
 
+/* Editor de notas enriquecido */
+.editor-toolbar {
+    border: 1px solid #e9ecef;
+    border-bottom: none;
+    background-color: #f8f9fa;
+    padding: 8px;
+    border-radius: 8px 8px 0 0;
+}
+
+.editor-container {
+    position: relative;
+}
+
+.editor-textarea {
+    border-radius: 0 0 8px 8px !important;
+    border-top: none !important;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 14px;
+    line-height: 1.5;
+    resize: vertical;
+    min-height: 150px;
+}
+
+.editor-textarea:focus {
+    border-color: #28a745;
+    box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+}
+
+.editor-preview {
+    border: 1px solid #e9ecef;
+    border-radius: 0 0 8px 8px;
+    background-color: white;
+    padding: 12px;
+    min-height: 150px;
+    max-height: 300px;
+    overflow-y: auto;
+    resize: vertical;
+    position: relative;
+}
+
+.editor-preview::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 16px;
+    height: 16px;
+    background: linear-gradient(-45deg, transparent 0%, transparent 40%, #ccc 40%, #ccc 60%, transparent 60%);
+    cursor: nw-resize;
+    pointer-events: none;
+}
+
+.preview-content {
+    font-size: 18px;
+    line-height: 1.6;
+}
+
+/* Estilos para el contenido renderizado */
+.preview-content p {
+    margin-bottom: 0.75rem;
+    line-height: 1.6;
+    font-size: 18px;
+}
+
+.preview-content p:last-child {
+    margin-bottom: 0;
+}
+
+.preview-content strong {
+    font-weight: bold;
+    color: #2c3e50;
+    font-size: 18px;
+}
+
+.preview-content em {
+    font-style: italic;
+    color: #34495e;
+    font-size: 18px;
+}
+
+/* Colores de resaltado */
+.preview-content mark,
+.preview-content .highlight-yellow {
+    background-color: #fff3cd;
+    padding: 2px 4px;
+    border-radius: 3px;
+    color: #856404;
+    font-size: 18px;
+}
+
+.preview-content .highlight-green {
+    background-color: #d1e7dd;
+    padding: 2px 4px;
+    border-radius: 3px;
+    color: #0f5132;
+    font-size: 18px;
+}
+
+.preview-content .highlight-blue {
+    background-color: #cff4fc;
+    padding: 2px 4px;
+    border-radius: 3px;
+    color: #055160;
+    font-size: 18px;
+}
+
+.preview-content .highlight-red {
+    background-color: #f8d7da;
+    padding: 2px 4px;
+    border-radius: 3px;
+    color: #721c24;
+    font-size: 18px;
+}
+
+.preview-content .highlight-orange {
+    background-color: #ffe69c;
+    padding: 2px 4px;
+    border-radius: 3px;
+    color: #997404;
+    font-size: 18px;
+}
+
+.preview-content .highlight-purple {
+    background-color: #e2d9f3;
+    padding: 2px 4px;
+    border-radius: 3px;
+    color: #59359a;
+    font-size: 18px;
+}
+
+.preview-content .task-list {
+    margin-bottom: 1rem;
+}
+
+.preview-content .task-list:last-child {
+    margin-bottom: 0;
+}
+
+.preview-content .task-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.5rem;
+    padding: 2px 0;
+    font-size: 18px;
+    line-height: 1.6;
+}
+
+.preview-content .task-item:last-child {
+    margin-bottom: 0;
+}
+
+.preview-content .task-checkbox {
+    margin-right: 8px;
+    margin-top: 0;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.preview-content .task-completed {
+    text-decoration: line-through;
+    color: #6c757d;
+    font-size: 18px;
+}
+
+.preview-content ul {
+    padding-left: 20px;
+    margin-bottom: 1rem;
+}
+
+.preview-content ul:last-child {
+    margin-bottom: 0;
+}
+
+.preview-content ul li {
+    margin-bottom: 0.25rem;
+    line-height: 1.6;
+    font-size: 18px;
+}
+
+.preview-content ul li:last-child {
+    margin-bottom: 0;
+}
+
+/* Estados de los botones de la toolbar */
+.editor-toolbar .btn.active {
+    background-color: #28a745;
+    border-color: #28a745;
+    color: white;
+}
+
+/* Dropdown de colores de resaltado */
+.highlight-colors-menu {
+    min-width: 200px;
+}
+
+.highlight-colors-menu .color-preview {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border-radius: 3px;
+    border: 1px solid #dee2e6;
+    margin-right: 8px;
+    vertical-align: middle;
+}
+
+.highlight-colors-menu .dropdown-item {
+    display: flex;
+    align-items: center;
+    padding: 6px 12px;
+}
+
+.highlight-colors-menu .dropdown-item:hover {
+    background-color: #f8f9fa;
+}
+
+/* Indicador de guardado */
+#notes-save-status {
+    transition: all 0.3s ease;
+}
+
+#notes-save-status.saving {
+    color: #ffc107 !important;
+}
+
+#notes-save-status.saved {
+    color: #28a745 !important;
+}
+
+#notes-save-status.error {
+    color: #dc3545 !important;
+}
+
 #modalFocusSubobjetivo .focus-notas textarea {
     border: 2px solid #e9ecef;
     border-radius: 8px;
@@ -445,6 +677,78 @@ Estilos para tooltip personalizado con subobjetivos */
 [data-theme="dark"] #modalFocusSubobjetivo .focus-notas textarea:focus {
     border-color: var(--primary-color);
     background-color: var(--bg-secondary);
+}
+
+/* Editor en modo oscuro */
+[data-theme="dark"] .editor-toolbar {
+    background-color: var(--bg-tertiary);
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] .editor-textarea {
+    background-color: var(--bg-secondary);
+    border-color: var(--border-color);
+    color: var(--text-color);
+}
+
+[data-theme="dark"] .editor-preview {
+    background-color: var(--bg-secondary);
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] .preview-content {
+    color: var(--text-color);
+}
+
+[data-theme="dark"] .preview-content strong {
+    color: var(--text-color);
+}
+
+[data-theme="dark"] .preview-content em {
+    color: var(--text-muted);
+}
+
+[data-theme="dark"] .preview-content mark {
+    background-color: #856404;
+    color: #fff3cd;
+}
+
+[data-theme="dark"] .preview-content .highlight-yellow {
+    background-color: #856404;
+    color: #fff3cd;
+}
+
+[data-theme="dark"] .preview-content .highlight-green {
+    background-color: #0f5132;
+    color: #d1e7dd;
+}
+
+[data-theme="dark"] .preview-content .highlight-blue {
+    background-color: #055160;
+    color: #cff4fc;
+}
+
+[data-theme="dark"] .preview-content .highlight-red {
+    background-color: #721c24;
+    color: #f8d7da;
+}
+
+[data-theme="dark"] .preview-content .highlight-orange {
+    background-color: #997404;
+    color: #ffe69c;
+}
+
+[data-theme="dark"] .preview-content .highlight-purple {
+    background-color: #59359a;
+    color: #e2d9f3;
+}
+
+[data-theme="dark"] .preview-content .task-completed {
+    color: var(--text-muted);
+}
+
+[data-theme="dark"] .editor-preview::after {
+    background: linear-gradient(-45deg, transparent 0%, transparent 40%, #666 40%, #666 60%, transparent 60%);
 }
 
 [data-theme="dark"] #card-objetivos-manana {

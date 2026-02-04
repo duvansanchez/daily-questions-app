@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test: Vista Previa Redimensionable</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body { padding: 20px; background-color: #f8f9fa; }
+        .container { max-width: 900px; margin: 0 auto; }
+        
+        .editor-toolbar {
+            border: 1px solid #e9ecef;
+            border-bottom: none;
+            background-color: #f8f9fa;
+            padding: 8px;
+            border-radius: 8px 8px 0 0;
+        }
+        
+        .editor-textarea {
+            border-radius: 0 0 8px 8px !important;
+            border-top: none !important;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            resize: vertical;
+            min-height: 200px;
+        }
+        
+        .editor-preview {
+            border: 1px solid #e9ecef;
+            border-radius: 0 0 8px 8px;
+            background-color: white;
+            padding: 12px;
+            min-height: 200px;
+            max-height: 400px;
+            overflow-y: auto;
+            resize: vertical;
+            position: relative;
+        }
+        
+        .editor-preview::after {
+            content: "";
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 16px;
+            height: 16px;
+            background: linear-gradient(-45deg, transparent 0%, transparent 40%, #ccc 40%, #ccc 60%, transparent 60%);
+            cursor: nw-resize;
+            pointer-events: none;
+        }
+        
+        .preview-content {
+            font-size: 18px;
+            line-height: 1.6;
+        }
+        
+        .preview-content p {
+            margin-bottom: 0.75rem;
+            line-height: 1.6;
+            font-size: 18px;
+        }
+        
+        .preview-content strong {
+            font-weight: bold;
+            color: #2c3e50;
+            font-size: 18px;
+        }
+        
+        .preview-content em {
+            font-style: italic;
+            color: #34495e;
+            font-size: 18px;
+        }
+        
+        .preview-content .highlight-yellow {
+            background-color: #fff3cd;
+            padding: 2px 4px;
+            border-radius: 3px;
+            color: #856404;
+            font-size: 18px;
+        }
+        
+        .preview-content .highlight-red {
+            background-color: #f8d7da;
+            padding: 2px 4px;
+            border-radius: 3px;
+            color: #721c24;
+            font-size: 18px;
+        }
+        
+        .preview-content .highlight-green {
+            background-color: #d1e7dd;
+            padding: 2px 4px;
+            border-radius: 3px;
+            color: #0f5132;
+            font-size: 18px;
+        }
+        
+        .preview-content .task-item {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 0.5rem;
+            padding: 2px 0;
+            font-size: 18px;
+        }
+        
+        .preview-content .task-checkbox {
+            margin-right: 8px;
+            margin-top: 2px;
+        }
+        
+        .preview-content .task-completed {
+            text-decoration: line-through;
+            color: #6c757d;
+            font-size: 18px;
+        }
+        
+        .preview-content ul li {
+            margin-bottom: 0.25rem;
+            line-height: 1.6;
+            font-size: 18px;
+        }
+        
+        .btn.active {
+            background-color: #28a745;
+            border-color: #28a745;
+            color: white;
+        }
+        
+        .resize-hint {
+            background-color: #e3f2fd;
+            border: 1px solid #bbdefb;
+            border-radius: 4px;
+            padding: 8px 12px;
+            margin-bottom: 15px;
+            font-size: 14px;
+            color: #1565c0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📏 Test: Vista Previa Redimensionable con Texto Más Grande</h1>
+        
+        <div class="resize-hint">
+            <i class="bi bi-info-circle me-2"></i>
+            <strong>Nuevas funcionalidades:</strong> 
+            • Texto más grande (18px) en vista previa 
+            • Vista previa redimensionable (arrastra desde la esquina inferior derecha)
+        </div>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <h3>📝 Editor</h3>
+                <div class="card">
+                    <div class="card-body p-0">
+                        <!-- Barra de herramientas -->
+                        <div class="editor-toolbar">
+                            <div class="btn-group btn-group-sm">
+                                <button type="button" class="btn btn-outline-secondary" id="btn-bold">
+                                    <i class="bi bi-type-bold"></i>
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary" id="btn-italic">
+                                    <i class="bi bi-type-italic"></i>
+                                </button>
+                                <button type="button" class="btn btn-outline-info" id="btn-preview">
+                                    <i class="bi bi-eye"></i> Vista Previa
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Editor -->
+                        <div class="editor-container">
+                            <textarea class="form-control editor-textarea" id="editor-textarea">**Título Principal**
+
+Este es un párrafo de ejemplo con texto normal.
+
+*Texto en cursiva* y **texto en negrita**.
+
+==yellow:Resaltado amarillo==
+==red:Resaltado rojo==
+==green:Resaltado verde==
+
+**Lista de tareas:**
+- [ ] Tarea pendiente 1
+- [x] Tarea completada
+- [ ] Otra tarea pendiente
+
+**Lista normal:**
+- Elemento de lista 1
+- Elemento de lista 2
+- Elemento de lista 3
+
+Este texto debería verse más grande en la vista previa (18px en lugar de 16px).</textarea>
+                            
+                            <!-- Vista previa -->
+                            <div class="editor-preview" id="editor-preview" style="display: none;">
+                                <div class="preview-content"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <h3>📋 Instrucciones</h3>
+                <div class="card">
+                    <div class="card-body">
+                        <h5>🎯 Prueba estas funcionalidades:</h5>
+                        <ol>
+                            <li><strong>Cambiar a vista previa</strong> - Haz clic en "Vista Previa"</li>
+                            <li><strong>Verificar texto más grande</strong> - El texto debería verse a 18px</li>
+                            <li><strong>Redimensionar vista previa</strong> - Arrastra desde la esquina inferior derecha</li>
+                            <li><strong>Volver a editar</strong> - Haz clic en "Editar"</li>
+                            <li><strong>Redimensionar editor</strong> - También se puede redimensionar</li>
+                        </ol>
+                        
+                        <h5 class="mt-4">✨ Mejoras implementadas:</h5>
+                        <ul>
+                            <li><strong>Texto más grande:</strong> 18px (antes 16px)</li>
+                            <li><strong>Vista previa redimensionable:</strong> Igual que el textarea</li>
+                            <li><strong>Indicador visual:</strong> Líneas en la esquina para mostrar que es redimensionable</li>
+                            <li><strong>Mejor legibilidad:</strong> Line-height optimizado</li>
+                        </ul>
+                        
+                        <h5 class="mt-4">🎨 Elementos con nuevo tamaño:</h5>
+                        <ul>
+                            <li>Párrafos normales</li>
+                            <li>Texto en <strong>negrita</strong></li>
+                            <li>Texto en <em>cursiva</em></li>
+                            <li><span style="background-color: #fff3cd; padding: 2px 4px; border-radius: 3px;">Resaltados de colores</span></li>
+                            <li>Listas y tareas</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let editorMode = 'edit';
+        
+        function togglePreview() {
+            const textarea = document.getElementById('editor-textarea');
+            const previewDiv = document.getElementById('editor-preview');
+            const previewBtn = document.getElementById('btn-preview');
+            
+            if (!textarea || !previewDiv || !previewBtn) return;
+            
+            if (editorMode === 'edit') {
+                editorMode = 'preview';
+                textarea.style.display = 'none';
+                previewDiv.style.display = 'block';
+                previewBtn.classList.add('active');
+                previewBtn.innerHTML = '<i class="bi bi-pencil"></i> Editar';
+                previewBtn.title = 'Editar';
+                
+                renderizarPreview();
+            } else {
+                editorMode = 'edit';
+                textarea.style.display = 'block';
+                previewDiv.style.display = 'none';
+                previewBtn.classList.remove('active');
+                previewBtn.innerHTML = '<i class="bi bi-eye"></i> Vista Previa';
+                previewBtn.title = 'Vista previa';
+                textarea.focus();
+            }
+        }
+        
+        function renderizarPreview() {
+            const textarea = document.getElementById('editor-textarea');
+            const previewContent = document.querySelector('#editor-preview .preview-content');
+            
+            if (!textarea || !previewContent) return;
+            
+            let content = textarea.value;
+            let lines = content.split('\n');
+            let processedLines = [];
+            
+            for (let i = 0; i < lines.length; i++) {
+                let line = lines[i].trim();
+                
+                if (line === '') {
+                    processedLines.push('<br>');
+                    continue;
+                }
+                
+                // Procesar tareas completadas
+                if (line.match(/^- \[x\] (.*)$/)) {
+                    const taskText = line.replace(/^- \[x\] (.*)$/, '$1');
+                    processedLines.push(`<div class="task-item"><input type="checkbox" class="task-checkbox" checked disabled> <span class="task-completed">${taskText}</span></div>`);
+                    continue;
+                }
+                
+                // Procesar tareas pendientes
+                if (line.match(/^- \[ \] (.*)$/)) {
+                    const taskText = line.replace(/^- \[ \] (.*)$/, '$1');
+                    processedLines.push(`<div class="task-item"><input type="checkbox" class="task-checkbox" disabled> <span>${taskText}</span></div>`);
+                    continue;
+                }
+                
+                // Procesar listas con viñetas (que no sean tareas)
+                if (line.match(/^- (.*)$/) && !line.match(/^- \[/)) {
+                    const listText = line.replace(/^- (.*)$/, '$1');
+                    processedLines.push(`<li>${listText}</li>`);
+                    continue;
+                }
+                
+                // Procesar texto normal con formato
+                line = line
+                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                    .replace(/==(\w+):(.*?)==/g, '<span class="highlight-$1">$2</span>')
+                    .replace(/==(.*?)==/g, '<span class="highlight-yellow">$1</span>');
+                
+                processedLines.push(`<p>${line}</p>`);
+            }
+            
+            content = processedLines.join('');
+            
+            // Envolver elementos <li> consecutivos en <ul>
+            content = content.replace(/(<li>.*?<\/li>)(\s*<li>.*?<\/li>)*/g, function(match) {
+                return '<ul>' + match + '</ul>';
+            });
+            
+            // Envolver elementos de tarea consecutivos en contenedor
+            content = content.replace(/(<div class="task-item">.*?<\/div>)(\s*<div class="task-item">.*?<\/div>)*/g, function(match) {
+                return '<div class="task-list">' + match + '</div>';
+            });
+            
+            // Limpiar <br> innecesarios
+            content = content
+                .replace(/<\/div><br><div/g, '</div><div')
+                .replace(/<\/ul><br><ul/g, '</ul><ul>')
+                .replace(/<\/p><br><p/g, '</p><p>');
+            
+            previewContent.innerHTML = content || '<em class="text-muted">No hay contenido para mostrar</em>';
+        }
+        
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            const previewBtn = document.getElementById('btn-preview');
+            if (previewBtn) {
+                previewBtn.addEventListener('click', togglePreview);
+            }
+        });
+    </script>
+</body>
+</html>

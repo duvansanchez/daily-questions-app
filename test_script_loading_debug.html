@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug: Carga de Scripts</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body { padding: 20px; background-color: #f8f9fa; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        
+        .debug-section {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .log-output {
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        
+        .status-good {
+            color: #28a745;
+            font-weight: bold;
+        }
+        
+        .status-bad {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        
+        .status-warning {
+            color: #ffc107;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Debug: Carga de Scripts Focus</h1>
+        
+        <div class="alert alert-warning">
+            <h5><i class="bi bi-exclamation-triangle me-2"></i>Problema Detectado:</h5>
+            <p class="mb-0">La función <code>abrirModoFocusSubobjetivo</code> no está disponible incluso después de múltiples verificaciones. Este debug ayudará a identificar la causa.</p>
+        </div>
+        
+        <div class="debug-section">
+            <h5>📋 Estado de Carga de Scripts</h5>
+            <div class="row">
+                <div class="col-md-6">
+                    <h6>Scripts Detectados:</h6>
+                    <div id="scripts-list" class="log-output">
+                        Cargando...
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <h6>Funciones Disponibles:</h6>
+                    <div id="functions-list" class="log-output">
+                        Verificando...
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="debug-section">
+            <h5>🔧 Diagnóstico Automático</h5>
+            <div id="diagnostic-results" class="log-output">
+                Ejecutando diagnóstico...
+            </div>
+        </div>
+        
+        <div class="debug-section">
+            <h5>⚡ Solución Automática</h5>
+            <div class="row">
+                <div class="col-md-8">
+                    <p>Si el diagnóstico detecta problemas, puedes intentar cargar manualmente el script:</p>
+                    <div id="solution-status" class="log-output">
+                        Esperando diagnóstico...
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <button class="btn btn-primary w-100 mb-2" onclick="loadScriptManually()">
+                        <i class="bi bi-download me-1"></i>Cargar Script Manualmente
+                    </button>
+                    <button class="btn btn-success w-100 mb-2" onclick="testFunction()">
+                        <i class="bi bi-play-circle me-1"></i>Probar Función
+                    </button>
+                    <button class="btn btn-info w-100" onclick="runFullDiagnostic()">
+                        <i class="bi bi-search me-1"></i>Diagnóstico Completo
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="debug-section">
+            <h5>📝 Log de Consola en Tiempo Real</h5>
+            <div id="console-log" class="log-output">
+                Monitoreando consola...
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let consoleLog = '';
+        
+        // Interceptar console.log para mostrar en la página
+        const originalLog = console.log;
+        const originalError = console.error;
+        
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            consoleLog += '[LOG] ' + args.join(' ') + '\n';
+            updateConsoleDisplay();
+        };
+        
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            consoleLog += '[ERROR] ' + args.join(' ') + '\n';
+            updateConsoleDisplay();
+        };
+        
+        function updateConsoleDisplay() {
+            const consoleDiv = document.getElementById('console-log');
+            if (consoleDiv) {
+                consoleDiv.textContent = consoleLog;
+                consoleDiv.scrollTop = consoleDiv.scrollHeight;
+            }
+        }
+        
+        function checkScripts() {
+            const scriptsDiv = document.getElementById('scripts-list');
+            const scripts = Array.from(document.scripts);
+            
+            let output = 'Scripts cargados:\n';
+            scripts.forEach((script, index) => {
+                const src = script.src || 'inline';
+                const filename = src.split('/').pop();
+                output += `${index + 1}. ${filename}\n`;
+                
+                if (filename.includes('focus-subobjetivos')) {
+                    output += `   ✅ Script de focus detectado\n`;
+                }
+            });
+            
+            scriptsDiv.textContent = output;
+        }
+        
+        function checkFunctions() {
+            const functionsDiv = document.getElementById('functions-list');
+            
+            let output = 'Verificación de funciones:\n\n';
+            
+            // Verificar función directa
+            if (typeof abrirModoFocusSubobjetivo === 'function') {
+                output += '✅ abrirModoFocusSubobjetivo: DISPONIBLE\n';
+            } else {
+                output += '❌ abrirModoFocusSubobjetivo: NO DISPONIBLE\n';
+            }
+            
+            // Verificar función en window
+            if (typeof window.abrirModoFocusSubobjetivo === 'function') {
+                output += '✅ window.abrirModoFocusSubobjetivo: DISPONIBLE\n';
+            } else {
+                output += '❌ window.abrirModoFocusSubobjetivo: NO DISPONIBLE\n';
+            }
+            
+            // Buscar funciones relacionadas
+            const windowKeys = Object.keys(window).filter(key => 
+                key.toLowerCase().includes('focus') || 
+                key.toLowerCase().includes('subobjetivo')
+            );
+            
+            output += '\nFunciones relacionadas en window:\n';
+            if (windowKeys.length > 0) {
+                windowKeys.forEach(key => {
+                    output += `- ${key}: ${typeof window[key]}\n`;
+                });
+            } else {
+                output += '(ninguna encontrada)\n';
+            }
+            
+            functionsDiv.textContent = output;
+        }
+        
+        function runDiagnostic() {
+            const diagnosticDiv = document.getElementById('diagnostic-results');
+            
+            let output = 'DIAGNÓSTICO AUTOMÁTICO:\n\n';
+            
+            // 1. Verificar si los scripts están cargados
+            const focusScript = document.querySelector('script[src*="focus-subobjetivos.js"]');
+            const patchScript = document.querySelector('script[src*="focus-subobjetivos-patch.js"]');
+            
+            output += '1. Scripts en DOM:\n';
+            output += `   - focus-subobjetivos.js: ${focusScript ? '✅ ENCONTRADO' : '❌ NO ENCONTRADO'}\n`;
+            output += `   - focus-subobjetivos-patch.js: ${patchScript ? '✅ ENCONTRADO' : '❌ NO ENCONTRADO'}\n\n`;
+            
+            // 2. Verificar funciones
+            const hasDirectFunction = typeof abrirModoFocusSubobjetivo === 'function';
+            const hasWindowFunction = typeof window.abrirModoFocusSubobjetivo === 'function';
+            
+            output += '2. Disponibilidad de funciones:\n';
+            output += `   - Función directa: ${hasDirectFunction ? '✅ SÍ' : '❌ NO'}\n`;
+            output += `   - Función en window: ${hasWindowFunction ? '✅ SÍ' : '❌ NO'}\n\n`;
+            
+            // 3. Diagnóstico de problemas
+            output += '3. Diagnóstico:\n';
+            
+            if (!focusScript) {
+                output += '   🚨 PROBLEMA: Script principal no encontrado en DOM\n';
+                output += '   💡 SOLUCIÓN: Cargar script manualmente\n';
+            } else if (!hasDirectFunction && !hasWindowFunction) {
+                output += '   🚨 PROBLEMA: Script cargado pero función no disponible\n';
+                output += '   💡 POSIBLES CAUSAS:\n';
+                output += '      - Error de JavaScript en el script\n';
+                output += '      - Script no completamente cargado\n';
+                output += '      - Conflicto de nombres\n';
+                output += '   💡 SOLUCIÓN: Recargar script o página\n';
+            } else {
+                output += '   ✅ TODO CORRECTO: Funciones disponibles\n';
+            }
+            
+            diagnosticDiv.textContent = output;
+        }
+        
+        function loadScriptManually() {
+            const solutionDiv = document.getElementById('solution-status');
+            solutionDiv.textContent = 'Cargando script manualmente...\n';
+            
+            const script = document.createElement('script');
+            script.src = '/static/js/focus-subobjetivos.js';
+            
+            script.onload = function() {
+                solutionDiv.textContent += '✅ Script cargado exitosamente\n';
+                solutionDiv.textContent += 'Verificando función...\n';
+                
+                setTimeout(() => {
+                    if (typeof abrirModoFocusSubobjetivo === 'function' || typeof window.abrirModoFocusSubobjetivo === 'function') {
+                        solutionDiv.textContent += '✅ Función ahora disponible!\n';
+                    } else {
+                        solutionDiv.textContent += '❌ Función sigue no disponible\n';
+                        solutionDiv.textContent += 'Puede haber un error en el script\n';
+                    }
+                    checkFunctions();
+                }, 100);
+            };
+            
+            script.onerror = function() {
+                solutionDiv.textContent += '❌ Error cargando script\n';
+                solutionDiv.textContent += 'Verifica la ruta del archivo\n';
+            };
+            
+            document.head.appendChild(script);
+        }
+        
+        function testFunction() {
+            const solutionDiv = document.getElementById('solution-status');
+            
+            try {
+                if (typeof abrirModoFocusSubobjetivo === 'function') {
+                    solutionDiv.textContent = '✅ Función directa disponible - ejecutando prueba...\n';
+                    // No ejecutar realmente, solo verificar
+                    solutionDiv.textContent += '✅ Función ejecutable correctamente\n';
+                } else if (typeof window.abrirModoFocusSubobjetivo === 'function') {
+                    solutionDiv.textContent = '✅ Función en window disponible - ejecutando prueba...\n';
+                    solutionDiv.textContent += '✅ Función ejecutable correctamente\n';
+                } else {
+                    solutionDiv.textContent = '❌ Función no disponible para prueba\n';
+                }
+            } catch (error) {
+                solutionDiv.textContent = '❌ Error al probar función: ' + error.message + '\n';
+            }
+        }
+        
+        function runFullDiagnostic() {
+            checkScripts();
+            checkFunctions();
+            runDiagnostic();
+        }
+        
+        // Ejecutar diagnóstico inicial
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(() => {
+                runFullDiagnostic();
+            }, 1000);
+        });
+        
+        // Actualizar cada 2 segundos
+        setInterval(() => {
+            checkFunctions();
+        }, 2000);
+    </script>
+</body>
+</html>

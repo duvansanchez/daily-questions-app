@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test: Botón de Tarea Corregido</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body { padding: 20px; background-color: #f8f9fa; }
+        .container { max-width: 800px; margin: 0 auto; }
+        
+        .editor-toolbar {
+            border: 1px solid #e9ecef;
+            border-bottom: none;
+            background-color: #f8f9fa;
+            padding: 8px;
+            border-radius: 8px 8px 0 0;
+        }
+        
+        .editor-textarea {
+            border-radius: 0 0 8px 8px !important;
+            border-top: none !important;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            resize: vertical;
+            min-height: 200px;
+        }
+        
+        .test-result {
+            background-color: #e8f5e8;
+            border: 1px solid #c3e6c3;
+            border-radius: 4px;
+            padding: 10px;
+            margin-top: 15px;
+        }
+        
+        .test-error {
+            background-color: #f8e8e8;
+            border: 1px solid #e6c3c3;
+            border-radius: 4px;
+            padding: 10px;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>✅ Test: Botón de Tarea Corregido</h1>
+        
+        <div class="test-result">
+            <h5>🔧 Corrección Aplicada:</h5>
+            <ul>
+                <li><strong>Antes:</strong> <code>- [ ] Nueva tarea</code> (añadía texto de ejemplo)</li>
+                <li><strong>Ahora:</strong> <code>- [ ] </code> (solo el checkbox, listo para escribir)</li>
+            </ul>
+        </div>
+        
+        <div class="card mt-4">
+            <div class="card-body p-0">
+                <!-- Barra de herramientas -->
+                <div class="editor-toolbar">
+                    <div class="btn-group btn-group-sm">
+                        <button type="button" class="btn btn-outline-secondary" id="btn-task" title="Añadir tarea">
+                            <i class="bi bi-check-square"></i> Tarea
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" id="btn-bullet" title="Añadir viñeta">
+                            <i class="bi bi-list-ul"></i> Viñeta
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Editor -->
+                <div class="editor-container">
+                    <textarea class="form-control editor-textarea" id="editor-textarea" placeholder="Haz clic en los botones de arriba para probar:
+
+1. Botón 'Tarea' - Añade solo: - [ ] 
+2. Botón 'Viñeta' - Añade solo: - 
+
+Ambos te dejan listo para escribir tu propio texto."></textarea>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mt-4">
+            <div class="card-body">
+                <h5>🧪 Instrucciones de Prueba:</h5>
+                <ol>
+                    <li><strong>Posiciona el cursor</strong> donde quieras añadir una tarea</li>
+                    <li><strong>Haz clic en "Tarea"</strong> - Debería añadir solo <code>- [ ] </code></li>
+                    <li><strong>Escribe tu tarea</strong> después del checkbox</li>
+                    <li><strong>Prueba "Viñeta"</strong> - Debería añadir solo <code>- </code></li>
+                </ol>
+                
+                <h5 class="mt-4">✅ Comportamiento Esperado:</h5>
+                <ul>
+                    <li>Solo añade el formato básico (checkbox o viñeta)</li>
+                    <li>Te deja el cursor listo para escribir</li>
+                    <li>No añade texto de ejemplo</li>
+                    <li>Funciona en cualquier posición del texto</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Función para añadir una tarea (CORREGIDA)
+        function añadirTarea() {
+            const textarea = document.getElementById('editor-textarea');
+            if (!textarea) return;
+            
+            const cursorPos = textarea.selectionStart;
+            const textBefore = textarea.value.substring(0, cursorPos);
+            const textAfter = textarea.value.substring(cursorPos);
+            
+            // Verificar si estamos al inicio de una línea
+            const needsNewLine = textBefore.length > 0 && !textBefore.endsWith('\n');
+            const taskText = (needsNewLine ? '\n' : '') + '- [ ] ';
+            
+            textarea.value = textBefore + taskText + textAfter;
+            textarea.setSelectionRange(cursorPos + taskText.length, cursorPos + taskText.length);
+            textarea.focus();
+            
+            console.log('✅ Tarea añadida:', taskText);
+        }
+
+        // Función para añadir viñeta (CORREGIDA)
+        function añadirViñeta() {
+            const textarea = document.getElementById('editor-textarea');
+            if (!textarea) return;
+            
+            const cursorPos = textarea.selectionStart;
+            const textBefore = textarea.value.substring(0, cursorPos);
+            const textAfter = textarea.value.substring(cursorPos);
+            
+            // Verificar si estamos al inicio de una línea
+            const needsNewLine = textBefore.length > 0 && !textBefore.endsWith('\n');
+            const bulletText = (needsNewLine ? '\n' : '') + '- ';
+            
+            textarea.value = textBefore + bulletText + textAfter;
+            textarea.setSelectionRange(cursorPos + bulletText.length, cursorPos + bulletText.length);
+            textarea.focus();
+            
+            console.log('✅ Viñeta añadida:', bulletText);
+        }
+        
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            const taskBtn = document.getElementById('btn-task');
+            const bulletBtn = document.getElementById('btn-bullet');
+            
+            if (taskBtn) {
+                taskBtn.addEventListener('click', añadirTarea);
+                console.log('✅ Event listener añadido al botón de tarea');
+            }
+            
+            if (bulletBtn) {
+                bulletBtn.addEventListener('click', añadirViñeta);
+                console.log('✅ Event listener añadido al botón de viñeta');
+            }
+        });
+    </script>
+</body>
+</html>

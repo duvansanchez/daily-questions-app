@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test: Preview Sin Parpadeo</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body { padding: 20px; background-color: #f8f9fa; }
+        .container { max-width: 900px; margin: 0 auto; }
+        
+        .editor-toolbar {
+            border: 1px solid #e9ecef;
+            border-bottom: none;
+            background-color: #f8f9fa;
+            padding: 8px;
+            border-radius: 8px 8px 0 0;
+        }
+        
+        .editor-textarea {
+            border-radius: 0 0 8px 8px !important;
+            border-top: none !important;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            resize: vertical;
+            min-height: 200px;
+        }
+        
+        .editor-preview {
+            border: 1px solid #e9ecef;
+            border-radius: 0 0 8px 8px;
+            background-color: white;
+            padding: 12px;
+            min-height: 200px;
+            max-height: 400px;
+            overflow-y: auto;
+            resize: vertical;
+        }
+        
+        .preview-content {
+            font-size: 18px;
+            line-height: 1.6;
+        }
+        
+        /* Estilos de resaltado */
+        .preview-content .highlight-yellow {
+            background-color: #fff3cd;
+            padding: 2px 4px;
+            border-radius: 3px;
+            color: #856404;
+        }
+        
+        .preview-content .highlight-red {
+            background-color: #f8d7da;
+            padding: 2px 4px;
+            border-radius: 3px;
+            color: #721c24;
+        }
+        
+        .preview-content .highlight-blue {
+            background-color: #cff4fc;
+            padding: 2px 4px;
+            border-radius: 3px;
+            color: #055160;
+        }
+        
+        .preview-content .task-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0.5rem;
+            padding: 2px 0;
+            font-size: 18px;
+            line-height: 1.6;
+        }
+        
+        .preview-content .task-checkbox {
+            margin-right: 8px;
+            margin-top: 0;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+        
+        .preview-content .task-completed {
+            text-decoration: line-through;
+            color: #6c757d;
+        }
+        
+        .preview-content p {
+            margin-bottom: 0.75rem;
+            line-height: 1.6;
+            font-size: 18px;
+        }
+        
+        .preview-content ul {
+            padding-left: 20px;
+            margin-bottom: 1rem;
+        }
+        
+        .preview-content ul li {
+            margin-bottom: 0.25rem;
+            line-height: 1.6;
+            font-size: 18px;
+        }
+        
+        .btn.active {
+            background-color: #28a745;
+            border-color: #28a745;
+            color: white;
+        }
+        
+        .demo-section {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .improvement-badge {
+            background-color: #d1e7dd;
+            color: #0f5132;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-weight: 500;
+            display: inline-block;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>⚡ Test: Preview Sin Parpadeo</h1>
+        
+        <div class="alert alert-success">
+            <h5><i class="bi bi-check-circle me-2"></i>Problema Solucionado:</h5>
+            <p class="mb-0">Eliminado el parpadeo al abrir el modo focus. Ahora inicia <strong>directamente</strong> en vista previa sin mostrar primero el modo edición.</p>
+        </div>
+        
+        <div class="demo-section">
+            <div class="improvement-badge">
+                <i class="bi bi-lightning me-2"></i>Inicialización Instantánea
+            </div>
+            
+            <h5>🔧 Cambio Técnico Implementado:</h5>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <h6 class="text-danger">❌ Antes (Con Parpadeo):</h6>
+                    <div class="bg-light p-3 rounded">
+                        <code>
+                            // Inicializar en modo edición<br>
+                            setTimeout(() => {<br>
+                            &nbsp;&nbsp;togglePreview(); // Cambiar a preview<br>
+                            }, 100);
+                        </code>
+                    </div>
+                    <small class="text-muted">Resultado: Se ve edición → preview (parpadeo)</small>
+                </div>
+                
+                <div class="col-md-6">
+                    <h6 class="text-success">✅ Después (Sin Parpadeo):</h6>
+                    <div class="bg-light p-3 rounded">
+                        <code>
+                            // Configurar directamente en preview<br>
+                            editorMode = 'preview';<br>
+                            textarea.style.display = 'none';<br>
+                            previewDiv.style.display = 'block';<br>
+                            renderizarPreview();
+                        </code>
+                    </div>
+                    <small class="text-success">Resultado: Directamente en preview (sin parpadeo)</small>
+                </div>
+            </div>
+        </div>
+        
+        <div class="demo-section">
+            <h5><i class="bi bi-bullseye text-success me-2"></i>Simulación: Apertura de Modal</h5>
+            
+            <div class="card">
+                <div class="card-body p-0">
+                    <!-- Barra de herramientas -->
+                    <div class="editor-toolbar">
+                        <div class="btn-group btn-group-sm">
+                            <button type="button" class="btn btn-outline-info active" id="btn-preview" title="Cambiar a edición">
+                                <i class="bi bi-pencil"></i> Editar
+                            </button>
+                        </div>
+                        <small class="text-success ms-3">
+                            <i class="bi bi-check-circle me-1"></i>
+                            Iniciado directamente en preview (sin parpadeo)
+                        </small>
+                    </div>
+                    
+                    <!-- Editor (oculto desde el inicio) -->
+                    <div class="editor-container">
+                        <textarea class="form-control editor-textarea" id="editor-textarea" style="display: none;">**Notas de la tarea:**
+
+==yellow:EXPLICAR REFERENCIA DE ASESORIA HACIA ELLA==
+
+- [] Revisar el proceso actual
+- [x] Contactar con Carmen para aclaración  
+- [] Documentar el flujo correcto
+
+==red:NO HAY HORARIO PROGRAMADO PARA LOS SLA==
+
+**Próximos pasos:**
+- Definir horarios específicos
+- Crear alertas automáticas
+- ==blue:Establecer métricas de seguimiento==</textarea>
+                        
+                        <!-- Vista previa (visible desde el inicio) -->
+                        <div class="editor-preview" id="editor-preview" style="display: block;">
+                            <div class="preview-content">
+                                <p><strong>Notas de la tarea:</strong></p>
+                                <p><span class="highlight-yellow">EXPLICAR REFERENCIA DE ASESORIA HACIA ELLA</span></p>
+                                <div class="task-item">
+                                    <input type="checkbox" class="task-checkbox" disabled> 
+                                    <span>Revisar el proceso actual</span>
+                                </div>
+                                <div class="task-item">
+                                    <input type="checkbox" class="task-checkbox" checked disabled> 
+                                    <span class="task-completed">Contactar con Carmen para aclaración</span>
+                                </div>
+                                <div class="task-item">
+                                    <input type="checkbox" class="task-checkbox" disabled> 
+                                    <span>Documentar el flujo correcto</span>
+                                </div>
+                                <p><span class="highlight-red">NO HAY HORARIO PROGRAMADO PARA LOS SLA</span></p>
+                                <p><strong>Próximos pasos:</strong></p>
+                                <ul>
+                                    <li>Definir horarios específicos</li>
+                                    <li>Crear alertas automáticas</li>
+                                    <li><span class="highlight-blue">Establecer métricas de seguimiento</span></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <h5>⚡ Mejoras de Rendimiento:</h5>
+                <ul>
+                    <li><strong>Sin setTimeout:</strong> No hay delays artificiales</li>
+                    <li><strong>Configuración directa:</strong> Estados CSS aplicados inmediatamente</li>
+                    <li><strong>Renderizado inmediato:</strong> Contenido procesado al instante</li>
+                    <li><strong>Experiencia fluida:</strong> Sin transiciones visuales no deseadas</li>
+                </ul>
+            </div>
+            
+            <div class="col-md-6">
+                <h5>🎯 Resultado Final:</h5>
+                <ul>
+                    <li><strong>Apertura instantánea:</strong> Directamente en preview</li>
+                    <li><strong>Sin parpadeo:</strong> No se ve el modo edición</li>
+                    <li><strong>Contenido visible:</strong> Notas formateadas inmediatamente</li>
+                    <li><strong>Botón correcto:</strong> Muestra "Editar" desde el inicio</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="alert alert-info">
+            <h5><i class="bi bi-lightbulb me-2"></i>Flujo de Usuario Perfeccionado:</h5>
+            <p class="mb-2">Al abrir el modo focus de un sub-objetivo:</p>
+            <ol class="mb-0">
+                <li>Modal se abre</li>
+                <li><strong>Inmediatamente</strong> ves las notas en preview (sin parpadeo)</li>
+                <li>Botón ya dice "Editar" desde el primer momento</li>
+                <li>Si necesitas editar, un solo clic te lleva al modo edición</li>
+            </ol>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let editorMode = 'preview'; // Ya configurado en preview desde el inicio
+        
+        function togglePreview() {
+            const textarea = document.getElementById('editor-textarea');
+            const previewDiv = document.getElementById('editor-preview');
+            const previewBtn = document.getElementById('btn-preview');
+            
+            if (!textarea || !previewDiv || !previewBtn) return;
+            
+            if (editorMode === 'preview') {
+                // Cambiar a edición
+                editorMode = 'edit';
+                textarea.style.display = 'block';
+                previewDiv.style.display = 'none';
+                previewBtn.classList.remove('active');
+                previewBtn.innerHTML = '<i class="bi bi-eye"></i> Vista Previa';
+                previewBtn.title = 'Vista previa';
+                textarea.focus();
+            } else {
+                // Cambiar a vista previa
+                editorMode = 'preview';
+                textarea.style.display = 'none';
+                previewDiv.style.display = 'block';
+                previewBtn.classList.add('active');
+                previewBtn.innerHTML = '<i class="bi bi-pencil"></i> Editar';
+                previewBtn.title = 'Editar';
+                renderizarPreview();
+            }
+        }
+        
+        function renderizarPreview() {
+            const textarea = document.getElementById('editor-textarea');
+            const previewContent = document.querySelector('#editor-preview .preview-content');
+            
+            if (!textarea || !previewContent) return;
+            
+            let content = textarea.value;
+            let lines = content.split('\n');
+            let processedLines = [];
+            
+            for (let i = 0; i < lines.length; i++) {
+                let line = lines[i].trim();
+                
+                if (line === '') {
+                    processedLines.push('<br>');
+                    continue;
+                }
+                
+                // Procesar tareas completadas
+                if (line.match(/^- \[x\] (.*)$/) || line.match(/^- \[X\] (.*)$/)) {
+                    let taskText = line.replace(/^- \[[xX]\] (.*)$/, '$1');
+                    taskText = taskText
+                        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                        .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                        .replace(/==(\w+):(.*?)==/g, '<span class="highlight-$1">$2</span>')
+                        .replace(/==(.*?)==/g, '<span class="highlight-yellow">$1</span>');
+                    processedLines.push(`<div class="task-item"><input type="checkbox" class="task-checkbox" checked disabled> <span class="task-completed">${taskText}</span></div>`);
+                    continue;
+                }
+                
+                // Procesar tareas pendientes
+                if (line.match(/^- \[ \] (.*)$/) || line.match(/^- \[\] (.*)$/)) {
+                    let taskText = line.replace(/^- \[[\s]*\] (.*)$/, '$1');
+                    taskText = taskText
+                        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                        .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                        .replace(/==(\w+):(.*?)==/g, '<span class="highlight-$1">$2</span>')
+                        .replace(/==(.*?)==/g, '<span class="highlight-yellow">$1</span>');
+                    processedLines.push(`<div class="task-item"><input type="checkbox" class="task-checkbox" disabled> <span>${taskText}</span></div>`);
+                    continue;
+                }
+                
+                // Procesar listas con viñetas
+                if (line.match(/^- (.*)$/) && !line.match(/^- \[/)) {
+                    let listText = line.replace(/^- (.*)$/, '$1');
+                    listText = listText
+                        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                        .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                        .replace(/==(\w+):(.*?)==/g, '<span class="highlight-$1">$2</span>')
+                        .replace(/==(.*?)==/g, '<span class="highlight-yellow">$1</span>');
+                    processedLines.push(`<li>${listText}</li>`);
+                    continue;
+                }
+                
+                // Procesar texto normal
+                line = line
+                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                    .replace(/==(\w+):(.*?)==/g, '<span class="highlight-$1">$2</span>')
+                    .replace(/==(.*?)==/g, '<span class="highlight-yellow">$1</span>');
+                
+                processedLines.push(`<p>${line}</p>`);
+            }
+            
+            content = processedLines.join('');
+            
+            // Envolver listas
+            content = content.replace(/(<li>.*?<\/li>)(\s*<li>.*?<\/li>)*/g, function(match) {
+                return '<ul>' + match + '</ul>';
+            });
+            
+            // Limpiar <br> innecesarios
+            content = content
+                .replace(/<\/div><br><div/g, '</div><div')
+                .replace(/<\/ul><br><ul/g, '</ul><ul>')
+                .replace(/<\/p><br><p/g, '</p><p>');
+            
+            previewContent.innerHTML = content || '<em class="text-muted">No hay contenido para mostrar</em>';
+        }
+        
+        // Event listener para el botón de preview
+        document.addEventListener('DOMContentLoaded', function() {
+            const previewBtn = document.getElementById('btn-preview');
+            if (previewBtn) {
+                previewBtn.addEventListener('click', togglePreview);
+            }
+            
+            console.log('✅ Configurado directamente en preview - sin parpadeo');
+        });
+    </script>
+</body>
+</html>

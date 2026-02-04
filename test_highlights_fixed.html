@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test: Resaltados Corregidos</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body { padding: 20px; background-color: #f8f9fa; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        
+        .editor-toolbar {
+            border: 1px solid #e9ecef;
+            border-bottom: none;
+            background-color: #f8f9fa;
+            padding: 8px;
+            border-radius: 8px 8px 0 0;
+        }
+        
+        .editor-textarea {
+            border-radius: 0 0 8px 8px !important;
+            border-top: none !important;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            resize: vertical;
+            min-height: 200px;
+        }
+        
+        .editor-preview {
+            border: 1px solid #e9ecef;
+            border-radius: 0 0 8px 8px;
+            background-color: white;
+            padding: 12px;
+            min-height: 200px;
+            max-height: 400px;
+            overflow-y: auto;
+            resize: vertical;
+        }
+        
+        .preview-content {
+            font-size: 18px;
+            line-height: 1.6;
+        }
+        
+        /* Estilos de resaltado corregidos */
+        .preview-content .highlight-yellow {
+            background-color: #fff3cd;
+            padding: 2px 4px;
+            border-radius: 3px;
+            color: #856404;
+        }
+        
+        .preview-content .highlight-green {
+            background-color: #d1e7dd;
+            padding: 2px 4px;
+            border-radius: 3px;
+            color: #0f5132;
+        }
+        
+        .preview-content .highlight-blue {
+            background-color: #cff4fc;
+            padding: 2px 4px;
+            border-radius: 3px;
+            color: #055160;
+        }
+        
+        .preview-content .highlight-red {
+            background-color: #f8d7da;
+            padding: 2px 4px;
+            border-radius: 3px;
+            color: #721c24;
+        }
+        
+        .preview-content .highlight-orange {
+            background-color: #ffe69c;
+            padding: 2px 4px;
+            border-radius: 3px;
+            color: #997404;
+        }
+        
+        .preview-content .highlight-purple {
+            background-color: #e2d9f3;
+            padding: 2px 4px;
+            border-radius: 3px;
+            color: #59359a;
+        }
+        
+        .preview-content .task-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0.5rem;
+            padding: 2px 0;
+            font-size: 18px;
+            line-height: 1.6;
+        }
+        
+        .preview-content .task-checkbox {
+            margin-right: 8px;
+            margin-top: 0;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+        
+        .preview-content .task-completed {
+            text-decoration: line-through;
+            color: #6c757d;
+        }
+        
+        .preview-content p {
+            margin-bottom: 0.75rem;
+            line-height: 1.6;
+            font-size: 18px;
+        }
+        
+        .preview-content ul {
+            padding-left: 20px;
+            margin-bottom: 1rem;
+        }
+        
+        .preview-content ul li {
+            margin-bottom: 0.25rem;
+            line-height: 1.6;
+            font-size: 18px;
+        }
+        
+        .btn.active {
+            background-color: #28a745;
+            border-color: #28a745;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎨 Test: Resaltados Corregidos</h1>
+        
+        <div class="alert alert-success">
+            <h5><i class="bi bi-check-circle me-2"></i>Problema Solucionado:</h5>
+            <p class="mb-0">Los resaltados ahora funcionan correctamente en <strong>tareas</strong>, <strong>listas</strong> y <strong>párrafos</strong>.</p>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-body p-0">
+                        <!-- Barra de herramientas -->
+                        <div class="editor-toolbar">
+                            <div class="btn-group btn-group-sm">
+                                <button type="button" class="btn btn-outline-secondary" id="btn-preview" title="Vista previa">
+                                    <i class="bi bi-eye"></i> Vista Previa
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Editor -->
+                        <div class="editor-container">
+                            <textarea class="form-control editor-textarea" id="editor-textarea">**Prueba de resaltados en diferentes contextos:**
+
+==yellow:Resaltado amarillo en párrafo==
+==blue:Resaltado azul en párrafo==
+==red:Resaltado rojo en párrafo==
+
+**Tareas con resaltados:**
+- [] Tarea con ==green:resaltado verde==
+- [x] Tarea completada con ==orange:resaltado naranja==
+- [] ==purple:Tarea completamente resaltada==
+
+**Listas con resaltados:**
+- Lista con ==yellow:resaltado amarillo==
+- Lista con ==blue:texto azul== y **negrita**
+- Lista con *cursiva* y ==red:rojo==
+
+**Combinaciones:**
+- [] **Tarea** con *cursiva* y ==green:resaltado==
+- Lista con **==blue:negrita azul==** y ==red:rojo normal==
+
+==yellow:EXPLICAR REFERENCIA DE ASESORIA HACIA ELLA==
+==red:NO HAY HORARIO PROGRAMADO PARA LOS SLA==</textarea>
+                            
+                            <!-- Vista previa -->
+                            <div class="editor-preview" id="editor-preview" style="display: none;">
+                                <div class="preview-content"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <h5>🧪 Casos de Prueba</h5>
+                
+                <div class="card">
+                    <div class="card-body">
+                        <h6>✅ Ahora Funciona:</h6>
+                        <ul>
+                            <li><strong>Tareas:</strong> <code>- [] ==color:texto==</code></li>
+                            <li><strong>Listas:</strong> <code>- ==color:texto==</code></li>
+                            <li><strong>Párrafos:</strong> <code>==color:texto==</code></li>
+                            <li><strong>Combinaciones:</strong> Negritas + resaltados</li>
+                        </ul>
+                        
+                        <h6>🎨 Colores Disponibles:</h6>
+                        <ul>
+                            <li><code>==yellow:texto==</code></li>
+                            <li><code>==green:texto==</code></li>
+                            <li><code>==blue:texto==</code></li>
+                            <li><code>==red:texto==</code></li>
+                            <li><code>==orange:texto==</code></li>
+                            <li><code>==purple:texto==</code></li>
+                        </ul>
+                        
+                        <h6>🔧 Corrección Aplicada:</h6>
+                        <p class="small">Se aplicó el procesamiento de formato de texto también a las tareas y listas, no solo a los párrafos.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let editorMode = 'edit';
+        
+        function togglePreview() {
+            const textarea = document.getElementById('editor-textarea');
+            const previewDiv = document.getElementById('editor-preview');
+            const previewBtn = document.getElementById('btn-preview');
+            
+            if (!textarea || !previewDiv || !previewBtn) return;
+            
+            if (editorMode === 'edit') {
+                editorMode = 'preview';
+                textarea.style.display = 'none';
+                previewDiv.style.display = 'block';
+                previewBtn.classList.add('active');
+                previewBtn.innerHTML = '<i class="bi bi-pencil"></i> Editar';
+                previewBtn.title = 'Editar';
+                
+                renderizarPreview();
+            } else {
+                editorMode = 'edit';
+                textarea.style.display = 'block';
+                previewDiv.style.display = 'none';
+                previewBtn.classList.remove('active');
+                previewBtn.innerHTML = '<i class="bi bi-eye"></i> Vista Previa';
+                previewBtn.title = 'Vista previa';
+                textarea.focus();
+            }
+        }
+        
+        function renderizarPreview() {
+            const textarea = document.getElementById('editor-textarea');
+            const previewContent = document.querySelector('#editor-preview .preview-content');
+            
+            if (!textarea || !previewContent) return;
+            
+            let content = textarea.value;
+            let lines = content.split('\n');
+            let processedLines = [];
+            
+            for (let i = 0; i < lines.length; i++) {
+                let line = lines[i].trim();
+                
+                if (line === '') {
+                    processedLines.push('<br>');
+                    continue;
+                }
+                
+                // Procesar tareas completadas (ambos formatos)
+                if (line.match(/^- \[x\] (.*)$/) || line.match(/^- \[X\] (.*)$/)) {
+                    let taskText = line.replace(/^- \[[xX]\] (.*)$/, '$1');
+                    // Aplicar formato de texto a las tareas
+                    taskText = taskText
+                        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                        .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                        .replace(/==(\w+):(.*?)==/g, '<span class="highlight-$1">$2</span>')
+                        .replace(/==(.*?)==/g, '<span class="highlight-yellow">$1</span>');
+                    processedLines.push(`<div class="task-item"><input type="checkbox" class="task-checkbox" checked disabled> <span class="task-completed">${taskText}</span></div>`);
+                    continue;
+                }
+                
+                // Procesar tareas pendientes (ambos formatos)
+                if (line.match(/^- \[ \] (.*)$/) || line.match(/^- \[\] (.*)$/)) {
+                    let taskText = line.replace(/^- \[[\s]*\] (.*)$/, '$1');
+                    // Aplicar formato de texto a las tareas
+                    taskText = taskText
+                        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                        .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                        .replace(/==(\w+):(.*?)==/g, '<span class="highlight-$1">$2</span>')
+                        .replace(/==(.*?)==/g, '<span class="highlight-yellow">$1</span>');
+                    processedLines.push(`<div class="task-item"><input type="checkbox" class="task-checkbox" disabled> <span>${taskText}</span></div>`);
+                    continue;
+                }
+                
+                // Procesar listas con viñetas (que no sean tareas)
+                if (line.match(/^- (.*)$/) && !line.match(/^- \[/)) {
+                    let listText = line.replace(/^- (.*)$/, '$1');
+                    // Aplicar formato de texto a las listas
+                    listText = listText
+                        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                        .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                        .replace(/==(\w+):(.*?)==/g, '<span class="highlight-$1">$2</span>')
+                        .replace(/==(.*?)==/g, '<span class="highlight-yellow">$1</span>');
+                    processedLines.push(`<li>${listText}</li>`);
+                    continue;
+                }
+                
+                // Procesar texto normal con formato
+                line = line
+                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                    .replace(/==(\w+):(.*?)==/g, '<span class="highlight-$1">$2</span>')
+                    .replace(/==(.*?)==/g, '<span class="highlight-yellow">$1</span>');
+                
+                processedLines.push(`<p>${line}</p>`);
+            }
+            
+            content = processedLines.join('');
+            
+            // Envolver elementos <li> consecutivos en <ul>
+            content = content.replace(/(<li>.*?<\/li>)(\s*<li>.*?<\/li>)*/g, function(match) {
+                return '<ul>' + match + '</ul>';
+            });
+            
+            // Envolver elementos de tarea consecutivos en contenedor
+            content = content.replace(/(<div class="task-item">.*?<\/div>)(\s*<div class="task-item">.*?<\/div>)*/g, function(match) {
+                return '<div class="task-list">' + match + '</div>';
+            });
+            
+            // Limpiar <br> innecesarios
+            content = content
+                .replace(/<\/div><br><div/g, '</div><div')
+                .replace(/<\/ul><br><ul/g, '</ul><ul>')
+                .replace(/<\/p><br><p/g, '</p><p>');
+            
+            previewContent.innerHTML = content || '<em class="text-muted">No hay contenido para mostrar</em>';
+        }
+        
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            const previewBtn = document.getElementById('btn-preview');
+            
+            if (previewBtn) {
+                previewBtn.addEventListener('click', togglePreview);
+            }
+        });
+    </script>
+</body>
+</html>
