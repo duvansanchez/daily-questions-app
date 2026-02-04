@@ -3558,3 +3558,64 @@ los para días clickeables del calendario */
 [data-theme="dark"] .productividad-row:nth-child(even) {
     background-color: var(--bg-secondary);
 }
+/* Estilos para modo focus en tema oscuro */
+[data-theme="dark"] .focus-titulo {
+    color: #ffffff !important;
+}
+
+[data-theme="dark"] .focus-descripcion {
+    color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] #modalFocusObjetivo .modal-content {
+    background-color: var(--bg-secondary);
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] #modalFocusObjetivo .modal-header {
+    background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
+    border-bottom-color: var(--border-color);
+}
+
+[data-theme="dark"] .focus-timer {
+    background: var(--bg-tertiary);
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] .timer-time {
+    color: var(--primary-color);
+}
+
+[data-theme="dark"] .subobjetivos-focus-list {
+    background: var(--bg-tertiary);
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] .focus-subobjetivo-item {
+    background: var(--bg-secondary);
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] .focus-subobjetivo-item:hover {
+    border-color: var(--primary-color);
+    background: var(--bg-hover);
+}
+
+[data-theme="dark"] .focus-subobjetivo-titulo {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .focus-subobjetivo-titulo.completado {
+    color: var(--text-muted);
+}
+
+[data-theme="dark"] .focus-notas textarea {
+    background-color: var(--bg-secondary);
+    border-color: var(--border-color);
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .focus-notas textarea:focus {
+    border-color: var(--primary-color);
+    background-color: var(--bg-secondary);
+}

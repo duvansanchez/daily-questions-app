@@ -5557,6 +5557,79 @@ async function cargarSubobjetivosFocus(objetivoId) {
     }
 }
 
+// Función para recargar subobjetivos (alias para compatibilidad con el patch)
+async function recargarSubobjetivosFocus() {
+    if (objetivoEnFocus && objetivoEnFocus.id) {
+        console.log('🔄 Recargando subobjetivos en focus...');
+        await cargarSubobjetivosFocus(objetivoEnFocus.id);
+    } else {
+        console.error('❌ No hay objetivo en focus para recargar subobjetivos');
+    }
+}
+
+// Función para renderizar subobjetivos completo (para compatibilidad con el patch)
+function renderizarSubobjetivosFocusCompleto(subobjetivos) {
+    console.log('🎨 Renderizando subobjetivos completo...');
+    
+    const container = document.getElementById('focus-subobjetivos-list');
+    if (!container) {
+        console.error('❌ Container de subobjetivos no encontrado');
+        return;
+    }
+    
+    if (subobjetivos.length === 0) {
+        container.innerHTML = `
+            <div class="text-center text-muted py-4">
+                <i class="bi bi-list-check fs-1 mb-2 d-block"></i>
+                <p>Este objetivo no tiene subobjetivos</p>
+                <small>Los subobjetivos te ayudan a dividir tareas grandes en pasos más pequeños</small>
+            </div>
+        `;
+        document.getElementById('focus-progreso').textContent = '0/0';
+        return;
+    }
+
+    let html = '';
+    let completados = 0;
+    
+    subobjetivos.forEach(sub => {
+        if (sub.completado) completados++;
+        
+        html += `
+            <div class="focus-subobjetivo-item ${sub.completado ? 'completado' : ''}">
+                <input 
+                    type="checkbox" 
+                    class="focus-subobjetivo-checkbox" 
+                    ${sub.completado ? 'checked' : ''} 
+                    data-subobjetivo-id="${sub.id}"
+                    data-objetivo-id="${objetivoEnFocus ? objetivoEnFocus.id : ''}">
+                <span class="focus-subobjetivo-titulo ${sub.completado ? 'completado' : ''}">${sub.titulo}</span>
+            </div>
+        `;
+    });
+    
+    container.innerHTML = html;
+    
+    // Actualizar progreso
+    document.getElementById('focus-progreso').textContent = `${completados}/${subobjetivos.length}`;
+    
+    // Actualizar barra de progreso (eliminar existente primero)
+    const barraExistente = document.querySelector('.focus-progreso-bar');
+    if (barraExistente) {
+        barraExistente.remove();
+    }
+    
+    const porcentaje = subobjetivos.length > 0 ? (completados / subobjetivos.length) * 100 : 0;
+    const progresoHtml = `
+        <div class="focus-progreso-bar">
+            <div class="focus-progreso-fill" style="width: ${porcentaje}%"></div>
+        </div>
+    `;
+    document.getElementById('focus-progreso').insertAdjacentHTML('afterend', progresoHtml);
+    
+    console.log('✅ Renderizado completo terminado');
+}
+
 // Event listeners para subobjetivos en focus
 document.addEventListener('change', async function(e) {
     if (e.target.classList.contains('focus-subobjetivo-checkbox')) {
@@ -5572,20 +5645,26 @@ document.addEventListener('change', async function(e) {
             });
             
             if (response.ok) {
-                // Actualizar visualmente
-                const item = e.target.closest('.focus-subobjetivo-item');
-                const titulo = item.querySelector('.focus-subobjetivo-titulo');
-                
-                if (completado) {
-                    item.classList.add('completado');
-                    titulo.classList.add('completado');
+                // Recargar subobjetivos para reflejar el nuevo orden (completados al final)
+                if (objetivoEnFocus && typeof cargarSubobjetivosFocus === 'function') {
+                    console.log('🔄 Recargando subobjetivos después del cambio de estado...');
+                    await cargarSubobjetivosFocus(objetivoEnFocus.id);
                 } else {
-                    item.classList.remove('completado');
-                    titulo.classList.remove('completado');
+                    // Fallback: actualizar visualmente solo si no se puede recargar
+                    const item = e.target.closest('.focus-subobjetivo-item');
+                    const titulo = item.querySelector('.focus-subobjetivo-titulo');
+                    
+                    if (completado) {
+                        item.classList.add('completado');
+                        titulo.classList.add('completado');
+                    } else {
+                        item.classList.remove('completado');
+                        titulo.classList.remove('completado');
+                    }
+                    
+                    // Actualizar progreso sin recargar todo
+                    actualizarProgresoFocus();
                 }
-                
-                // Actualizar progreso sin recargar todo
-                actualizarProgresoFocus();
                 
                 // Recargar objetivos en el fondo
                 await cargarObjetivos();

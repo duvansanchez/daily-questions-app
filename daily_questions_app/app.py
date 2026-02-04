@@ -90,9 +90,10 @@ def get_db_connection():
                     # Configuración de conexión actualizada
                     conn_str = (
                         f"DRIVER={{{driver}}};"
-                        "SERVER=DESKTOP-2MR0PJ6;"  # Solo el nombre del servidor
+                        "SERVER=.\\SQLEXPRESS;"  # Instancia local de SQL Server Express
                         "DATABASE=DailyQuestions;"
-                        "Trusted_Connection=yes;"  # Usando autenticación de Windows
+                        "UID=sa;"  # Usuario SQL Server
+                        "PWD=123;"  # Contraseña
                         "TrustServerCertificate=yes;"
                         "Connection Timeout=30;"
                         "charset=UTF-8;"
@@ -383,7 +384,7 @@ def obtener_todos_subobjetivos_objetivos_modal(cursor, objetivos_creados, objeti
         LEFT JOIN subobjetivos_completados_log scl ON s.id = scl.subobjetivo_id 
             AND CAST(scl.fecha_completado AS DATE) = CAST(? AS DATE)
         WHERE s.objetivo_id IN ({objetivos_ids_str})
-        ORDER BY s.objetivo_id, s.orden ASC, s.id ASC
+        ORDER BY s.objetivo_id, s.completado ASC, s.orden ASC, s.id ASC
     """
     
     cursor.execute(query_todos_subobjetivos, (fecha,))
@@ -3208,7 +3209,7 @@ def api_objetivos_manana():
                         SELECT id, titulo, completado
                         FROM subobjetivos 
                         WHERE objetivo_id = ?
-                        ORDER BY orden, id
+                        ORDER BY completado ASC, orden, id
                     ''', (row[0],))
                     
                     subobjetivos_rows = cursor.fetchall()
@@ -3887,7 +3888,7 @@ def api_list_objetivos():
                 SELECT id, titulo, completado, fecha_creacion, orden, tiempo_focus, notas, objetivo_id
                 FROM subobjetivos 
                 WHERE objetivo_id IN ({placeholders})
-                ORDER BY objetivo_id, orden ASC, id ASC
+                ORDER BY objetivo_id, completado ASC, orden ASC, id ASC
             ''', objetivo_ids)
             
             subobjetivos_rows = cursor.fetchall()
@@ -4496,11 +4497,24 @@ def restaurar_objetivo_completo(objetivo_id):
 def api_delete_objetivo(objetivo_id):
     with get_db_connection() as conn:
         cursor = conn.cursor()
-        # Eliminar registros relacionados en objetivos_saltados y subobjetivos
+        # Eliminar registros relacionados en el orden correcto para evitar violaciones de integridad
         cursor.execute('''DELETE FROM objetivos_saltados WHERE objetivo_id = ?''', (objetivo_id,))
+        
+        # Primero eliminar registros de subobjetivos_completados_log para todos los subobjetivos de este objetivo
+        cursor.execute('''
+            DELETE FROM subobjetivos_completados_log 
+            WHERE subobjetivo_id IN (SELECT id FROM subobjetivos WHERE objetivo_id = ?)
+        ''', (objetivo_id,))
+        print(f"🗑️ Eliminados registros de completados_log para objetivo {objetivo_id}")
+        
+        # Luego eliminar los subobjetivos
         cursor.execute('''DELETE FROM subobjetivos WHERE objetivo_id = ?''', (objetivo_id,))
-        # Ahora sí eliminar el objetivo
+        print(f"🗑️ Eliminados subobjetivos para objetivo {objetivo_id}")
+        
+        # Finalmente eliminar el objetivo
         cursor.execute('''DELETE FROM objetivos WHERE id = ? AND user_id = ?''', (objetivo_id, current_user.id))
+        print(f"🗑️ Objetivo {objetivo_id} eliminado exitosamente")
+        
         conn.commit()
         return jsonify({'status': 'success'})
 
@@ -4722,7 +4736,8 @@ def api_reactivar_objetivo_hoy(objetivo_id):
 def api_list_subobjetivos(objetivo_id):
     with get_db_connection() as conn:
         cursor = conn.cursor()
-        cursor.execute('''SELECT id, titulo, completado, fecha_creacion, orden, tiempo_focus, notas FROM subobjetivos WHERE objetivo_id = ? ORDER BY orden ASC, id ASC''', (objetivo_id,))
+        # Ordenar por: completado ASC (no completados primero), luego por orden ASC, luego por id ASC
+        cursor.execute('''SELECT id, titulo, completado, fecha_creacion, orden, tiempo_focus, notas FROM subobjetivos WHERE objetivo_id = ? ORDER BY completado ASC, orden ASC, id ASC''', (objetivo_id,))
         rows = cursor.fetchall()
         subobjetivos = [
             {
@@ -4766,11 +4781,41 @@ def api_reordenar_subobjetivos(objetivo_id):
     ids = data.get('ids', [])
     if not isinstance(ids, list) or not all(isinstance(i, int) for i in ids):
         return jsonify({'error': 'Formato de datos inválido'}), 400
+    
     with get_db_connection() as conn:
         cursor = conn.cursor()
-        for orden, sub_id in enumerate(ids):
-            cursor.execute('''UPDATE subobjetivos SET orden = ? WHERE id = ? AND objetivo_id = ?''', (orden + 1, sub_id, objetivo_id))
+        
+        # Obtener el estado de completado de cada subobjetivo
+        placeholders = ','.join(['?' for _ in ids])
+        cursor.execute(f'''
+            SELECT id, completado 
+            FROM subobjetivos 
+            WHERE id IN ({placeholders}) AND objetivo_id = ?
+        ''', ids + [objetivo_id])
+        
+        subobjetivos_info = {row[0]: bool(row[1]) for row in cursor.fetchall()}
+        
+        # Separar completados y no completados manteniendo el orden recibido
+        no_completados = [id for id in ids if not subobjetivos_info.get(id, False)]
+        completados = [id for id in ids if subobjetivos_info.get(id, False)]
+        
+        # Asignar orden: primero no completados, luego completados
+        orden_actual = 1
+        
+        # Actualizar orden de no completados
+        for sub_id in no_completados:
+            cursor.execute('''UPDATE subobjetivos SET orden = ? WHERE id = ? AND objetivo_id = ?''', 
+                         (orden_actual, sub_id, objetivo_id))
+            orden_actual += 1
+        
+        # Actualizar orden de completados
+        for sub_id in completados:
+            cursor.execute('''UPDATE subobjetivos SET orden = ? WHERE id = ? AND objetivo_id = ?''', 
+                         (orden_actual, sub_id, objetivo_id))
+            orden_actual += 1
+        
         conn.commit()
+    
     return jsonify({'status': 'success'})
 
 @app.route('/api/subobjetivos/<int:subobjetivo_id>', methods=['PATCH'])
@@ -4860,6 +4905,28 @@ def api_update_subobjetivo(subobjetivo_id):
                     WHERE subobjetivo_id = ? AND user_id = ? AND CAST(fecha_completado AS DATE) = ?
                 ''', (subobjetivo_id, current_user.id, fecha_log))
                 print(f"🗑️ Registro de completado removido para subobjetivo {subobjetivo_id} en {fecha_log}")
+            
+            # Reordenar automáticamente todos los subobjetivos del objetivo
+            # para que los completados vayan al final
+            print(f"🔄 Reordenando subobjetivos del objetivo {objetivo_id} después del cambio de estado")
+            cursor.execute('''
+                SELECT id, completado 
+                FROM subobjetivos 
+                WHERE objetivo_id = ? 
+                ORDER BY completado ASC, orden ASC, id ASC
+            ''', (objetivo_id,))
+            
+            todos_subobjetivos = cursor.fetchall()
+            
+            # Actualizar el orden de todos los subobjetivos
+            for nuevo_orden, (sub_id, _) in enumerate(todos_subobjetivos, 1):
+                cursor.execute('''
+                    UPDATE subobjetivos 
+                    SET orden = ? 
+                    WHERE id = ?
+                ''', (nuevo_orden, sub_id))
+            
+            print(f"✅ Reordenamiento automático completado para objetivo {objetivo_id}")
         
         conn.commit()
         print(f"✅ Subobjetivo {subobjetivo_id} actualizado exitosamente")
@@ -4956,7 +5023,15 @@ def api_subobjetivos_completados_fecha(fecha):
 def api_delete_subobjetivo(subobjetivo_id):
     with get_db_connection() as conn:
         cursor = conn.cursor()
+        
+        # Primero eliminar registros relacionados en subobjetivos_completados_log
+        cursor.execute('''DELETE FROM subobjetivos_completados_log WHERE subobjetivo_id = ?''', (subobjetivo_id,))
+        print(f"🗑️ Eliminados registros de completados_log para subobjetivo {subobjetivo_id}")
+        
+        # Luego eliminar el subobjetivo
         cursor.execute('''DELETE FROM subobjetivos WHERE id = ?''', (subobjetivo_id,))
+        print(f"🗑️ Subobjetivo {subobjetivo_id} eliminado exitosamente")
+        
         conn.commit()
         return jsonify({'status': 'success'})
 

@@ -77,6 +77,52 @@ function agregarBotonesFocusSubobjetivos() {
         opcionFocus.textContent = '🎯 Focus';
         selectAcciones.appendChild(opcionFocus);
         
+        const opcionSubir = document.createElement('option');
+        opcionSubir.value = 'subir';
+        opcionSubir.textContent = '⬆️ Subir';
+        
+        // Deshabilitar si es el primer elemento O si es completado y el anterior no está completado
+        const esElPrimero = items[0] === item;
+        let deshabilitarSubir = esElPrimero;
+        
+        if (!esElPrimero && isCompleted) {
+            // Si está completado, verificar si el anterior no está completado
+            const itemAnterior = items[Array.from(items).indexOf(item) - 1];
+            const checkboxAnterior = itemAnterior?.querySelector('.focus-subobjetivo-checkbox');
+            if (checkboxAnterior && !checkboxAnterior.checked) {
+                deshabilitarSubir = true;
+            }
+        }
+        
+        if (deshabilitarSubir) {
+            opcionSubir.disabled = true;
+            opcionSubir.textContent = '⬆️ Subir (no disponible)';
+        }
+        selectAcciones.appendChild(opcionSubir);
+        
+        const opcionBajar = document.createElement('option');
+        opcionBajar.value = 'bajar';
+        opcionBajar.textContent = '⬇️ Bajar';
+        
+        // Deshabilitar si es el último elemento O si no está completado y el siguiente está completado
+        const esElUltimo = items[items.length - 1] === item;
+        let deshabilitarBajar = esElUltimo;
+        
+        if (!esElUltimo && !isCompleted) {
+            // Si no está completado, verificar si el siguiente está completado
+            const itemSiguiente = items[Array.from(items).indexOf(item) + 1];
+            const checkboxSiguiente = itemSiguiente?.querySelector('.focus-subobjetivo-checkbox');
+            if (checkboxSiguiente && checkboxSiguiente.checked) {
+                deshabilitarBajar = true;
+            }
+        }
+        
+        if (deshabilitarBajar) {
+            opcionBajar.disabled = true;
+            opcionBajar.textContent = '⬇️ Bajar (no disponible)';
+        }
+        selectAcciones.appendChild(opcionBajar);
+        
         const opcionEditar = document.createElement('option');
         opcionEditar.value = 'editar';
         opcionEditar.textContent = '✏️ Editar';
@@ -107,6 +153,12 @@ function agregarBotonesFocusSubobjetivos() {
                 } else {
                     alert('Función de focus no disponible');
                 }
+            } else if (accion === 'subir') {
+                console.log('Ejecutando subir para:', subobjetivoId);
+                moverSubobjetivoFocus(subobjetivoId, 'arriba');
+            } else if (accion === 'bajar') {
+                console.log('Ejecutando bajar para:', subobjetivoId);
+                moverSubobjetivoFocus(subobjetivoId, 'abajo');
             } else if (accion === 'editar') {
                 console.log('Ejecutando editar para:', subobjetivoId);
                 editarSubobjetivoInline(subobjetivoId, titulo);
@@ -382,5 +434,207 @@ async function eliminarSubobjetivoInline(subobjetivoId, itemElement) {
             text: 'No se pudo conectar con el servidor: ' + error.message,
             icon: 'error'
         });
+    }
+}
+
+// Función para mover subobjetivos en el modo focus
+async function moverSubobjetivoFocus(subobjetivoId, direccion) {
+    if (!objetivoEnFocus) {
+        console.error('No hay objetivo en focus');
+        return;
+    }
+    
+    console.log(`🔄 Iniciando movimiento ${direccion} para subobjetivo ${subobjetivoId}`);
+    
+    try {
+        // Obtener la lista actual de subobjetivos
+        const response = await fetch(`/api/objetivos/${objetivoEnFocus.id}/subobjetivos`);
+        const subobjetivos = await response.json();
+        
+        console.log('📋 Subobjetivos actuales:', subobjetivos.map(s => `${s.id}: ${s.titulo}`));
+        
+        // Encontrar el índice del subobjetivo a mover
+        const idx = subobjetivos.findIndex(s => s.id == subobjetivoId);
+        
+        if (idx === -1) {
+            console.error('Subobjetivo no encontrado');
+            return;
+        }
+        
+        console.log(`📍 Subobjetivo encontrado en posición ${idx}`);
+        
+        // Verificar si el movimiento es válido considerando el estado de completado
+        const subobjetivoActual = subobjetivos[idx];
+        
+        if (direccion === 'arriba') {
+            if (idx === 0) {
+                console.log('El subobjetivo ya está en la primera posición');
+                return;
+            }
+            
+            // Si el subobjetivo actual está completado, no puede subir por encima de uno no completado
+            const subobjetivoArriba = subobjetivos[idx - 1];
+            if (subobjetivoActual.completado && !subobjetivoArriba.completado) {
+                console.log('Un subobjetivo completado no puede moverse por encima de uno no completado');
+                if (typeof showError === 'function') {
+                    showError('Los subobjetivos completados deben permanecer al final');
+                }
+                return;
+            }
+        }
+        
+        if (direccion === 'abajo') {
+            if (idx === subobjetivos.length - 1) {
+                console.log('El subobjetivo ya está en la última posición');
+                return;
+            }
+            
+            // Si el subobjetivo actual no está completado, no puede bajar por debajo de uno completado
+            const subobjetivoAbajo = subobjetivos[idx + 1];
+            if (!subobjetivoActual.completado && subobjetivoAbajo.completado) {
+                console.log('Un subobjetivo no completado no puede moverse por debajo de uno completado');
+                if (typeof showError === 'function') {
+                    showError('Los subobjetivos no completados deben permanecer arriba');
+                }
+                return;
+            }
+        }
+        
+        // Realizar el intercambio
+        if (direccion === 'arriba') {
+            [subobjetivos[idx - 1], subobjetivos[idx]] = [subobjetivos[idx], subobjetivos[idx - 1]];
+            console.log(`🔄 Intercambiando posición ${idx} con ${idx - 1}`);
+        } else if (direccion === 'abajo') {
+            [subobjetivos[idx], subobjetivos[idx + 1]] = [subobjetivos[idx + 1], subobjetivos[idx]];
+            console.log(`🔄 Intercambiando posición ${idx} con ${idx + 1}`);
+        }
+        
+        // Enviar el nuevo orden al servidor
+        const ids = subobjetivos.map(s => s.id);
+        console.log('📤 Enviando nuevo orden:', ids);
+        
+        const reorderResponse = await fetch(`/api/objetivos/${objetivoEnFocus.id}/subobjetivos/reordenar`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ids })
+        });
+        
+        if (reorderResponse.ok) {
+            console.log('✅ Orden actualizado correctamente en el servidor');
+            
+            // Intentar múltiples métodos de recarga para asegurar que funcione
+            let recargaExitosa = false;
+            
+            // Método 1: Función oficial de recarga
+            if (typeof recargarSubobjetivosFocus === 'function') {
+                console.log('🔄 Método 1: Usando función oficial recargarSubobjetivosFocus...');
+                try {
+                    await recargarSubobjetivosFocus();
+                    recargaExitosa = true;
+                    console.log('✅ Recarga exitosa con método 1');
+                } catch (error) {
+                    console.error('❌ Error en método 1:', error);
+                }
+            }
+            
+            // Método 2: Función de renderizado directo
+            if (!recargaExitosa && typeof renderizarSubobjetivosFocusCompleto === 'function') {
+                console.log('🔄 Método 2: Usando renderizarSubobjetivosFocusCompleto...');
+                try {
+                    // Obtener datos actualizados
+                    const responseActualizada = await fetch(`/api/objetivos/${objetivoEnFocus.id}/subobjetivos`);
+                    const subobjetivosActualizados = await responseActualizada.json();
+                    
+                    // Actualizar datos globales
+                    window.currentSubobjetivos = subobjetivosActualizados;
+                    
+                    // Renderizar
+                    renderizarSubobjetivosFocusCompleto(subobjetivosActualizados);
+                    recargaExitosa = true;
+                    console.log('✅ Recarga exitosa con método 2');
+                } catch (error) {
+                    console.error('❌ Error en método 2:', error);
+                }
+            }
+            
+            // Método 3: Recarga manual del DOM
+            if (!recargaExitosa) {
+                console.log('🔄 Método 3: Recarga manual del DOM...');
+                try {
+                    const responseManual = await fetch(`/api/objetivos/${objetivoEnFocus.id}/subobjetivos`);
+                    const subobjetivosManual = await responseManual.json();
+                    
+                    const container = document.getElementById('focus-subobjetivos-list');
+                    if (container) {
+                        // Limpiar container
+                        container.innerHTML = '';
+                        
+                        // Recrear elementos
+                        let html = '';
+                        subobjetivosManual.forEach((sub) => {
+                            html += `
+                                <div class="focus-subobjetivo-item p-3 mb-2 bg-light rounded">
+                                    <input type="checkbox" class="form-check-input focus-subobjetivo-checkbox me-3" 
+                                           ${sub.completado ? "checked" : ""} 
+                                           data-subobjetivo-id="${sub.id}">
+                                    <span class="focus-subobjetivo-titulo ${sub.completado ? "text-decoration-line-through text-muted" : ""}" 
+                                          data-subobjetivo-id="${sub.id}">${sub.titulo}</span>
+                                </div>
+                            `;
+                        });
+                        
+                        container.innerHTML = html;
+                        
+                        // Actualizar datos globales
+                        window.currentSubobjetivos = subobjetivosManual;
+                        
+                        // Aplicar patch para agregar selects
+                        setTimeout(() => {
+                            if (typeof agregarBotonesFocusSubobjetivos === 'function') {
+                                agregarBotonesFocusSubobjetivos();
+                            }
+                        }, 100);
+                        
+                        // Actualizar contador
+                        const completados = subobjetivosManual.filter(s => s.completado).length;
+                        const progresoElement = document.getElementById('focus-progreso');
+                        if (progresoElement) {
+                            progresoElement.textContent = `${completados}/${subobjetivosManual.length}`;
+                        }
+                        
+                        recargaExitosa = true;
+                        console.log('✅ Recarga exitosa con método 3');
+                    }
+                } catch (error) {
+                    console.error('❌ Error en método 3:', error);
+                }
+            }
+            
+            if (recargaExitosa) {
+                // Mostrar mensaje de éxito
+                const direccionTexto = direccion === 'arriba' ? 'subido' : 'bajado';
+                if (typeof showSuccess === 'function') {
+                    showSuccess(`Subobjetivo ${direccionTexto} correctamente`);
+                } else {
+                    console.log(`✅ Subobjetivo ${direccionTexto} correctamente`);
+                }
+            } else {
+                console.error('❌ No se pudo recargar la vista, pero el cambio se guardó en el servidor');
+                if (typeof showError === 'function') {
+                    showError('Cambio guardado, pero necesitas recargar la página para verlo');
+                }
+            }
+        } else {
+            console.error('❌ Error al actualizar el orden en el servidor');
+            if (typeof showError === 'function') {
+                showError('Error al actualizar el orden del subobjetivo');
+            }
+        }
+        
+    } catch (error) {
+        console.error('💥 Error al mover subobjetivo:', error);
+        if (typeof showError === 'function') {
+            showError('Error al mover el subobjetivo: ' + error.message);
+        }
     }
 }

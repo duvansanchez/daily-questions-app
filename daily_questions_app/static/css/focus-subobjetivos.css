@@ -406,3 +406,136 @@ Estilos para tooltip personalizado con subobjetivos */
     text-decoration: underline;
     text-decoration-style: dotted;
 }
+
+/* Estilos para modo oscuro en focus de subobjetivos */
+[data-theme="dark"] .focus-subobjetivo-item {
+    background: var(--bg-secondary);
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] .focus-subobjetivo-item:hover {
+    background: var(--bg-hover);
+    border-color: var(--border-color-dark);
+}
+
+[data-theme="dark"] .focus-subobjetivo-item.completado {
+    background: var(--bg-tertiary);
+    border-color: var(--primary-color);
+}
+
+[data-theme="dark"] .focus-subobjetivo-titulo {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .focus-subobjetivo-titulo.completado {
+    color: var(--text-muted);
+}
+
+[data-theme="dark"] #modalFocusSubobjetivo .modal-content {
+    background-color: var(--bg-secondary);
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] #modalFocusSubobjetivo .focus-notas textarea {
+    background-color: var(--bg-secondary);
+    border-color: var(--border-color);
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] #modalFocusSubobjetivo .focus-notas textarea:focus {
+    border-color: var(--primary-color);
+    background-color: var(--bg-secondary);
+}
+
+[data-theme="dark"] #card-objetivos-manana {
+    background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
+}
+
+[data-theme="dark"] #card-objetivos-manana h5 {
+    color: var(--primary-color);
+}
+
+[data-theme="dark"] #lista-objetivos-manana .card {
+    background-color: var(--bg-secondary);
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] #lista-objetivos-manana .card:hover {
+    background-color: var(--bg-hover);
+}
+
+[data-theme="dark"] #lista-objetivos-manana .card-title {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] #lista-objetivos-manana small {
+    color: var(--text-muted);
+}
+
+[data-theme="dark"] .tooltip-personalizado .tooltip-inner {
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+}
+
+[data-theme="dark"] .tooltip-titulo {
+    color: var(--text-primary);
+    border-bottom-color: var(--border-color);
+}
+
+[data-theme="dark"] .tooltip-subobjetivos-header {
+    color: var(--text-secondary);
+}
+/* Estilos para el select de acciones en modo focus */
+.focus-subobjetivo-select {
+    min-width: 80px;
+    font-size: 12px;
+    padding: 2px 4px;
+    border-radius: 4px;
+    border: 1px solid #dee2e6;
+    background-color: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.focus-subobjetivo-select:hover {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.1rem rgba(13, 110, 253, 0.25);
+}
+
+.focus-subobjetivo-select:focus {
+    outline: none;
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+
+.focus-subobjetivo-select option:disabled {
+    color: #6c757d;
+    background-color: #f8f9fa;
+}
+
+/* Estilos para modo oscuro del select */
+[data-theme="dark"] .focus-subobjetivo-select {
+    background-color: var(--bg-secondary);
+    border-color: var(--border-color);
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .focus-subobjetivo-select:hover {
+    border-color: var(--primary-color);
+}
+
+[data-theme="dark"] .focus-subobjetivo-select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.2rem rgba(var(--primary-color-rgb), 0.25);
+}
+
+[data-theme="dark"] .focus-subobjetivo-select option {
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .focus-subobjetivo-select option:disabled {
+    color: var(--text-muted);
+    background-color: var(--bg-tertiary);
+}

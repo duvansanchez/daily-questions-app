@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test: Completed Subobjetivos Ordering</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .completed { text-decoration: line-through; color: #666; }
+        .error { color: red; font-weight: bold; }
+        .success { color: green; font-weight: bold; }
+        button { margin: 5px; padding: 8px 12px; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test: Completed Subobjetivos Ordering</h1>
+    
+    <div class="test-section">
+        <h2>Test Instructions</h2>
+        <ol>
+            <li>Open the main application at <a href="http://localhost:5000" target="_blank">http://localhost:5000</a></li>
+            <li>Login and go to the Objetivos section</li>
+            <li>Create or open an objetivo with multiple subobjetivos</li>
+            <li>Enter Focus mode for that objetivo</li>
+            <li>Test the following scenarios:</li>
+        </ol>
+    </div>
+
+    <div class="test-section">
+        <h2>🎯 Test Scenarios</h2>
+        
+        <h3>Scenario 1: Initial Ordering</h3>
+        <p>✅ <strong>Expected:</strong> All non-completed subobjetivos should appear first, followed by all completed ones</p>
+        <p>🔍 <strong>How to verify:</strong> Look at the subobjetivos list in focus mode</p>
+        
+        <h3>Scenario 2: Completing a Subobjetivo</h3>
+        <p>✅ <strong>Expected:</strong> When you check a subobjetivo as completed, it should automatically move to the bottom</p>
+        <p>🔍 <strong>How to verify:</strong> Check a subobjetivo checkbox and observe it moves down</p>
+        
+        <h3>Scenario 3: Uncompleting a Subobjetivo</h3>
+        <p>✅ <strong>Expected:</strong> When you uncheck a completed subobjetivo, it should move back up with the non-completed ones</p>
+        <p>🔍 <strong>How to verify:</strong> Uncheck a completed subobjetivo and observe it moves up</p>
+        
+        <h3>Scenario 4: Manual Reordering Restrictions</h3>
+        <p>✅ <strong>Expected:</strong> You should NOT be able to move completed items above non-completed ones</p>
+        <p>✅ <strong>Expected:</strong> You should NOT be able to move non-completed items below completed ones</p>
+        <p>🔍 <strong>How to verify:</strong> Try using the up/down arrows in the action dropdown</p>
+        
+        <h3>Scenario 5: Button States</h3>
+        <p>✅ <strong>Expected:</strong> Up/down buttons should be disabled when moves would violate the completion boundary</p>
+        <p>🔍 <strong>How to verify:</strong> Check if buttons are disabled appropriately in the action dropdown</p>
+    </div>
+
+    <div class="test-section">
+        <h2>🔧 API Test</h2>
+        <p>You can also test the API directly:</p>
+        <button onclick="testAPI()">Test API Ordering</button>
+        <div id="api-results"></div>
+    </div>
+
+    <script>
+        async function testAPI() {
+            const resultsDiv = document.getElementById('api-results');
+            resultsDiv.innerHTML = '<p>🔄 Testing API...</p>';
+            
+            try {
+                // Test with objetivo_id = 1 (you may need to adjust this)
+                const response = await fetch('/api/objetivos/1/subobjetivos');
+                
+                if (response.ok) {
+                    const subobjetivos = await response.json();
+                    
+                    let html = '<h4>📋 Subobjetivos Order:</h4><ol>';
+                    let completedFound = false;
+                    let orderingCorrect = true;
+                    
+                    subobjetivos.forEach((sub, index) => {
+                        const status = sub.completado ? '✅ Completed' : '⏳ Pending';
+                        const className = sub.completado ? 'completed' : '';
+                        
+                        html += `<li class="${className}">${sub.titulo} - ${status}</li>`;
+                        
+                        if (sub.completado) {
+                            completedFound = true;
+                        } else if (completedFound) {
+                            orderingCorrect = false;
+                        }
+                    });
+                    
+                    html += '</ol>';
+                    
+                    if (orderingCorrect) {
+                        html += '<p class="success">✅ Ordering is correct!</p>';
+                    } else {
+                        html += '<p class="error">❌ ERROR: Ordering is incorrect!</p>';
+                    }
+                    
+                    resultsDiv.innerHTML = html;
+                } else {
+                    resultsDiv.innerHTML = `<p class="error">❌ API Error: ${response.status}</p>`;
+                }
+            } catch (error) {
+                resultsDiv.innerHTML = `<p class="error">❌ Error: ${error.message}</p>`;
+            }
+        }
+    </script>
+</body>
+</html>
