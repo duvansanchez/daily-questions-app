@@ -90,10 +90,9 @@ def get_db_connection():
                     # Configuración de conexión actualizada
                     conn_str = (
                         f"DRIVER={{{driver}}};"
-                        "SERVER=.\\SQLEXPRESS;"  # Instancia local de SQL Server Express
+                        "SERVER=localhost;"  # Usar localhost que funciona
                         "DATABASE=DailyQuestions;"
-                        "UID=sa;"  # Usuario SQL Server
-                        "PWD=123;"  # Contraseña
+                        "Trusted_Connection=yes;"  # Usando autenticación de Windows
                         "TrustServerCertificate=yes;"
                         "Connection Timeout=30;"
                         "charset=UTF-8;"
