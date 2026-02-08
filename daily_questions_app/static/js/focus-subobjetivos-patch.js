@@ -1,16 +1,6 @@
 // Parche para agregar selects de acciones a los subobjetivos
 // Este archivo se ejecuta después de cargar los subobjetivos para agregar los selects
 
-console.log('🔧 Cargando focus-subobjetivos-patch.js...');
-
-// Verificar dependencias al cargar
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('📋 Verificando dependencias del patch...');
-    console.log('- abrirModoFocusSubobjetivo:', typeof abrirModoFocusSubobjetivo);
-    console.log('- window.abrirModoFocusSubobjetivo:', typeof window.abrirModoFocusSubobjetivo);
-    console.log('- Scripts cargados:', Array.from(document.scripts).map(s => s.src.split('/').pop()).filter(s => s.includes('focus')));
-});
-
 // Variable global para almacenar datos de subobjetivos
 window.currentSubobjetivos = [];
 let patcheandoSubobjetivos = false;
@@ -18,21 +8,17 @@ let patcheandoSubobjetivos = false;
 // Función para agregar selects de acciones a subobjetivos existentes
 function agregarBotonesFocusSubobjetivos() {
     if (patcheandoSubobjetivos) {
-        console.log('⏳ Parche ya en ejecución, omitiendo...');
         return;
     }
     
     patcheandoSubobjetivos = true;
-    console.log('🔧 Aplicando parche para selects de acciones en subobjetivos...');
     
     const container = document.getElementById('focus-subobjetivos-list');
     if (!container) {
-        console.log('❌ Container de subobjetivos no encontrado');
         return;
     }
     
     const items = container.querySelectorAll('.focus-subobjetivo-item');
-    console.log(`🔍 Encontrados ${items.length} items de subobjetivos`);
     
     items.forEach(item => {
         // Verificar si ya tiene select de acciones
@@ -44,7 +30,6 @@ function agregarBotonesFocusSubobjetivos() {
         const titulo = item.querySelector('.focus-subobjetivo-titulo');
         
         if (!checkbox || !titulo) {
-            console.log('❌ Checkbox o título no encontrado en item');
             return;
         }
         
@@ -53,7 +38,6 @@ function agregarBotonesFocusSubobjetivos() {
         const tituloTexto = titulo.textContent.trim();
         
         if (!subobjetivoId) {
-            console.log('❌ ID de subobjetivo no encontrado');
             return;
         }
         
@@ -149,7 +133,6 @@ function agregarBotonesFocusSubobjetivos() {
         // Agregar evento al select
         selectAcciones.onchange = function() {
             const accion = this.value;
-            console.log('Select cambiado a:', accion);
             
             if (!accion) return;
             
@@ -157,19 +140,13 @@ function agregarBotonesFocusSubobjetivos() {
             this.value = '';
             
             if (accion === 'focus') {
-                console.log('Ejecutando focus para:', subobjetivoId);
-                console.log('🔍 Verificando disponibilidad de función...');
-                console.log('- typeof abrirModoFocusSubobjetivo:', typeof abrirModoFocusSubobjetivo);
-                console.log('- typeof window.abrirModoFocusSubobjetivo:', typeof window.abrirModoFocusSubobjetivo);
                 
                 // Función para ejecutar el focus
                 const ejecutarFocus = () => {
                     if (typeof abrirModoFocusSubobjetivo === 'function') {
-                        console.log('✅ Usando función directa');
                         abrirModoFocusSubobjetivo(subobjetivoId, tituloTexto);
                         return true;
                     } else if (typeof window.abrirModoFocusSubobjetivo === 'function') {
-                        console.log('✅ Usando función de window');
                         window.abrirModoFocusSubobjetivo(subobjetivoId, tituloTexto);
                         return true;
                     }
@@ -181,70 +158,15 @@ function agregarBotonesFocusSubobjetivos() {
                     return;
                 }
                 
-                // Si no funciona, intentar cargar el script manualmente
-                console.log('⚠️ Función no encontrada, intentando cargar script...');
-                
-                // Verificar si el script está cargado
-                const scriptExists = document.querySelector('script[src*="focus-subobjetivos.js"]');
-                console.log('📜 Script focus-subobjetivos.js encontrado:', !!scriptExists);
-                
-                if (!scriptExists) {
-                    console.log('🔄 Cargando script manualmente...');
-                    const script = document.createElement('script');
-                    script.src = '/static/js/focus-subobjetivos.js';
-                    script.onload = () => {
-                        console.log('✅ Script cargado, reintentando...');
-                        setTimeout(() => {
-                            if (!ejecutarFocus()) {
-                                console.error('❌ Función sigue no disponible después de cargar script');
-                                alert('Error: No se pudo cargar la función de focus. Recarga la página.');
-                            }
-                        }, 100);
-                    };
-                    script.onerror = () => {
-                        console.error('❌ Error cargando script');
-                        alert('Error: No se pudo cargar el script de focus. Verifica la conexión.');
-                    };
-                    document.head.appendChild(script);
-                } else {
-                    // El script existe pero la función no está disponible
-                    console.log('⏳ Script existe, esperando carga completa...');
-                    let intentos = 0;
-                    const maxIntentos = 10;
-                    
-                    const verificarFuncion = () => {
-                        intentos++;
-                        console.log(`🔄 Intento ${intentos}/${maxIntentos}`);
-                        
-                        if (ejecutarFocus()) {
-                            console.log('✅ Función encontrada después de esperar');
-                            return;
-                        }
-                        
-                        if (intentos < maxIntentos) {
-                            setTimeout(verificarFuncion, 200);
-                        } else {
-                            console.error('❌ Función no disponible después de múltiples intentos');
-                            console.log('🔍 Estado final:');
-                            console.log('- window keys:', Object.keys(window).filter(k => k.includes('abrir')));
-                            console.log('- scripts cargados:', Array.from(document.scripts).map(s => s.src));
-                            alert('Error: Función de focus no disponible después de múltiples intentos. Recarga la página.');
-                        }
-                    };
-                    
-                    verificarFuncion();
-                }
+                // Si no funciona, mostrar error
+                alert('Error: Función de focus no disponible. Recarga la página.');
             } else if (accion === 'subir') {
-                console.log('Ejecutando subir para:', subobjetivoId);
                 moverSubobjetivoFocus(subobjetivoId, 'arriba');
             } else if (accion === 'bajar') {
-                console.log('Ejecutando bajar para:', subobjetivoId);
                 moverSubobjetivoFocus(subobjetivoId, 'abajo');
             } else if (accion === 'editar') {
-                console.log('Ejecutando editar para:', subobjetivoId);
                 editarSubobjetivoInline(subobjetivoId, titulo);
             } else if (accion === 'eliminar') {
-                console.log('Ejecutando eliminar para:', subobjetivoId);
                 eliminarSubobjetivoInline(subobjetivoId, item);
             }
         };
@@ -264,12 +186,9 @@ function agregarBotonesFocusSubobjetivos() {
         
         // Simplemente agregar el select al final del item
         item.appendChild(selectAcciones);
-        
-        console.log(`✅ Select de acciones agregado para: ${tituloTexto}`);
     });
     
     patcheandoSubobjetivos = false;
-    console.log('🔧 Parche completado');
 }
 
 // Función para cargar datos de subobjetivos

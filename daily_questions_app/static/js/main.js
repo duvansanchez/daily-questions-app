@@ -5723,8 +5723,6 @@ async function abrirModoFocus(objetivoId) {
         const modal = new bootstrap.Modal(modalElement);
         modal.show();
         
-        console.log('✅ Modal de focus abierto exitosamente');
-        
     } catch (error) {
         console.error('Error al abrir modo focus:', error);
         showError('Error al cargar el modo focus');

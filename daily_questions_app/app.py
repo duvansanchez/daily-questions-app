@@ -3810,6 +3810,7 @@ def api_list_objetivos():
                     ELSE 0
                 END ASC,
                 CASE 
+                    WHEN o.parte_dia IS NULL OR o.parte_dia = '' THEN 0
                     WHEN o.parte_dia = 'mañana' THEN 1
                     WHEN o.parte_dia = 'tarde' THEN 2
                     WHEN o.parte_dia = 'noche' THEN 3

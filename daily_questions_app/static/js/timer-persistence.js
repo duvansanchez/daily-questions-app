@@ -13,7 +13,6 @@ if (typeof timerInterval === 'undefined') {
 
 // Función para resetear el timer
 async function resetearTimer() {
-    console.log('🔄 OBJ: Reseteando timer...');
     timerRunning = false;
     timerSeconds = 0;
     clearInterval(timerInterval);
@@ -36,7 +35,6 @@ async function resetearTimer() {
     
     // Guardar el tiempo en 0 en la base de datos
     if (objetivoEnFocus) {
-        console.log('🔄 OBJ: Guardando tiempo en 0 en la base de datos...');
         const guardado = await guardarTiempoObjetivo(true); // forzar=true para guardar aunque sea 0
         if (guardado) {
             console.log('✅ OBJ: Tiempo reseteado y guardado exitosamente');
@@ -56,27 +54,18 @@ async function cargarTiempoAcumuladoObjetivo() {
     if (!objetivoEnFocus) return;
     
     try {
-        console.log('🔄 OBJ: Cargando tiempo acumulado del objetivo...');
         const response = await fetch(`/api/objetivos/${objetivoEnFocus.id}`);
         const objetivo = await response.json();
         
         if (objetivo && objetivo.tiempo_focus) {
             timerSeconds = objetivo.tiempo_focus;
             actualizarDisplayTimer();
-            
-            const minutos = Math.floor(objetivo.tiempo_focus / 60);
-            const segundos = objetivo.tiempo_focus % 60;
-            const tiempoFormateado = `${minutos}:${segundos.toString().padStart(2, '0')}`;
-            console.log(`⏱️ OBJ: Tiempo acumulado cargado: ${tiempoFormateado}`);
-        } else {
-            console.log('⏱️ OBJ: No hay tiempo acumulado previo');
         }
         
         // Cargar notas existentes
         const notasTextarea = document.getElementById('focus-notas-texto');
         if (notasTextarea && objetivo) {
             notasTextarea.value = objetivo.notas_adicionales || '';
-            console.log(`📝 OBJ: Notas cargadas: ${objetivo.notas_adicionales ? objetivo.notas_adicionales.length + ' caracteres' : 'vacías'}`);
         }
     } catch (error) {
         console.error('💥 OBJ: Error cargando tiempo acumulado:', error);
@@ -247,7 +236,6 @@ document.addEventListener('DOMContentLoaded', function() {
     if (modalFocus) {
         // Cuando se abre el modal, cargar tiempo acumulado
         modalFocus.addEventListener('shown.bs.modal', async function() {
-            console.log('🎯 OBJ: Modal abierto, cargando tiempo acumulado...');
             setTimeout(async () => {
                 await cargarTiempoAcumuladoObjetivo();
             }, 500);
