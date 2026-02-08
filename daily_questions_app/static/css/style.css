@@ -3619,3 +3619,112 @@ los para días clickeables del calendario */
     border-color: var(--primary-color);
     background-color: var(--bg-secondary);
 }
+
+/* Estilos para modales de objetivos más compactos */
+#modalNuevoObjetivo .modal-body,
+#modalEditarObjetivo .modal-body {
+    font-size: 0.875rem; /* 14px */
+}
+
+#modalNuevoObjetivo .form-label,
+#modalEditarObjetivo .form-label {
+    font-size: 0.8125rem; /* 13px */
+    margin-bottom: 0.25rem;
+}
+
+#modalNuevoObjetivo .form-control,
+#modalEditarObjetivo .form-control,
+#modalNuevoObjetivo .form-select,
+#modalEditarObjetivo .form-select {
+    font-size: 0.875rem; /* 14px */
+    padding: 0.375rem 0.75rem;
+}
+
+#modalNuevoObjetivo textarea.form-control,
+#modalEditarObjetivo textarea.form-control {
+    font-size: 0.875rem; /* 14px */
+}
+
+#modalNuevoObjetivo .modal-title,
+#modalEditarObjetivo .modal-title {
+    font-size: 1.125rem; /* 18px */
+}
+
+#modalNuevoObjetivo .text-muted,
+#modalEditarObjetivo .text-muted {
+    font-size: 0.8125rem; /* 13px */
+}
+
+#modalNuevoObjetivo .mb-3,
+#modalEditarObjetivo .mb-3 {
+    margin-bottom: 0.75rem !important;
+}
+
+#modalNuevoObjetivo .card-body,
+#modalEditarObjetivo .card-body {
+    padding: 0.75rem;
+}
+
+#modalNuevoObjetivo .small,
+#modalEditarObjetivo .small {
+    font-size: 0.75rem; /* 12px */
+}
+
+/* Reducir tamaño de botones en modales de objetivos */
+#modalNuevoObjetivo .btn,
+#modalEditarObjetivo .btn {
+    font-size: 0.8125rem; /* 13px */
+    padding: 0.375rem 0.75rem;
+}
+
+#modalNuevoObjetivo .btn-sm,
+#modalEditarObjetivo .btn-sm {
+    font-size: 0.75rem; /* 12px */
+    padding: 0.25rem 0.5rem;
+}
+
+/* Botones de subir/bajar subobjetivos */
+#modalNuevoObjetivo .checklist-item-controls button,
+#modalEditarObjetivo .checklist-item-controls button,
+#modalNuevoObjetivo .btn-move-up,
+#modalEditarObjetivo .btn-move-up,
+#modalNuevoObjetivo .btn-move-down,
+#modalEditarObjetivo .btn-move-down {
+    font-size: 0.75rem !important; /* 12px */
+    padding: 0.25rem 0.5rem !important;
+    min-width: 32px;
+}
+
+/* Botón de eliminar subobjetivo */
+#modalNuevoObjetivo .btn-remove-subobjetivo,
+#modalEditarObjetivo .btn-remove-subobjetivo {
+    font-size: 0.75rem !important;
+    padding: 0.25rem 0.5rem !important;
+}
+
+/* Botón de editar checklist */
+#btn-toggle-checklist,
+#btn-toggle-checklist-editar {
+    font-size: 0.8125rem !important; /* 13px */
+    padding: 0.375rem 0.75rem !important;
+}
+
+/* Botones del footer del modal */
+#modalNuevoObjetivo .modal-footer .btn,
+#modalEditarObjetivo .modal-footer .btn {
+    font-size: 0.875rem; /* 14px */
+    padding: 0.5rem 1rem;
+}
+
+/* Input de nuevo subobjetivo */
+#modalNuevoObjetivo #checklist-input,
+#modalEditarObjetivo #checklist-editar-input {
+    font-size: 0.8125rem;
+}
+
+/* Botón de agregar subobjetivo */
+#modalNuevoObjetivo #checklist-add-btn,
+#modalEditarObjetivo #checklist-editar-add-btn {
+    font-size: 0.8125rem !important;
+    padding: 0.375rem 0.75rem !important;
+}
