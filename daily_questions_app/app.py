@@ -5355,7 +5355,7 @@ def api_list_categorias_gestion():
             
             # Obtener categorías del usuario con estado activo
             cursor.execute('''
-                SELECT id, nombre, activa, fecha_creacion 
+                SELECT id, nombre, activa, fecha_creacion, descripcion
                 FROM categorias 
                 WHERE user_id = ?
                 ORDER BY nombre
@@ -5365,7 +5365,8 @@ def api_list_categorias_gestion():
                 'id': row[0],
                 'nombre': row[1],
                 'activa': bool(row[2]),
-                'fecha_creacion': row[3].strftime('%Y-%m-%d %H:%M:%S') if row[3] else None
+                'fecha_creacion': row[3].strftime('%Y-%m-%d %H:%M:%S') if row[3] else None,
+                'descripcion': row[4]
             } for row in cursor.fetchall()]
             
             # Obtener todas las subcategorías del usuario con estado activo
@@ -5410,6 +5411,7 @@ def api_create_categoria():
     try:
         data = request.get_json()
         nombre = data.get('nombre', '').strip()
+        descripcion = data.get('descripcion', '').strip()
         
         if not nombre:
             return jsonify({'error': 'El nombre de la categoría es obligatorio'}), 400
@@ -5428,10 +5430,10 @@ def api_create_categoria():
             
             # Crear la nueva categoría
             cursor.execute('''
-                INSERT INTO categorias (user_id, nombre, fecha_creacion)
-                OUTPUT INSERTED.id, INSERTED.nombre, INSERTED.fecha_creacion
-                VALUES (?, ?, GETDATE())
-            ''', (current_user.id, nombre))
+                INSERT INTO categorias (user_id, nombre, descripcion, fecha_creacion)
+                OUTPUT INSERTED.id, INSERTED.nombre, INSERTED.descripcion, INSERTED.fecha_creacion
+                VALUES (?, ?, ?, GETDATE())
+            ''', (current_user.id, nombre, descripcion if descripcion else None))
             
             row = cursor.fetchone()
             conn.commit()
@@ -5439,7 +5441,8 @@ def api_create_categoria():
             categoria = {
                 'id': row[0],
                 'nombre': row[1],
-                'fecha_creacion': row[2].strftime('%Y-%m-%d %H:%M:%S') if row[2] else None,
+                'descripcion': row[2],
+                'fecha_creacion': row[3].strftime('%Y-%m-%d %H:%M:%S') if row[3] else None,
                 'subcategorias': []
             }
 
@@ -5512,6 +5515,7 @@ def api_update_categoria(categoria_id):
     try:
         data = request.get_json()
         nombre = data.get('nombre', '').strip()
+        descripcion = data.get('descripcion', '').strip()
         
         if not nombre:
             return jsonify({'error': 'El nombre de la categoría es obligatorio'}), 400
@@ -5540,9 +5544,9 @@ def api_update_categoria(categoria_id):
             # Actualizar la categoría
             cursor.execute('''
                 UPDATE categorias 
-                SET nombre = ?
+                SET nombre = ?, descripcion = ?
                 WHERE id = ? AND user_id = ?
-            ''', (nombre, categoria_id, current_user.id))
+            ''', (nombre, descripcion if descripcion else None, categoria_id, current_user.id))
 
             # Sincronizar el campo 'categoria' en frases
             cursor.execute('''
@@ -6212,13 +6216,13 @@ def api_list_categorias_frases():
 
             # Categorías principales activas (de la tabla categorias para obtener las categorías reales)
             cursor.execute('''
-                SELECT id, nombre
+                SELECT id, nombre, descripcion
                 FROM categorias
                 WHERE user_id = ? AND activa = 1
                 ORDER BY nombre
             ''', (current_user.id,))
             categorias_data = cursor.fetchall()
-            cats = [row[1] for row in categorias_data]  # Obtener nombres de categorías reales
+            cats = [{'id': row[0], 'nombre': row[1], 'descripcion': row[2]} for row in categorias_data]
 
             # Subcategorías (opcionalmente filtradas por categoria)
             categoria_filter = request.args.get('categoria')

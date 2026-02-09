@@ -13,7 +13,7 @@ let focusSubData = {
 
 // Función para inicializar el focus de un sub-objetivo
 window.iniciarFocusSubobjetivo = async function(objetivoId, subobjetivoId, titulo) {
-    console.log('🎯 SIMPLE: Iniciando focus para sub-objetivo:', { objetivoId, subobjetivoId, titulo });
+    // console.log('🎯 SIMPLE: Iniciando focus para sub-objetivo:', { objetivoId, subobjetivoId, titulo });
     
     try {
         // Obtener datos del subobjetivo
@@ -33,7 +33,7 @@ window.iniciarFocusSubobjetivo = async function(objetivoId, subobjetivoId, titul
         focusSubData.tiempoAcumulado = subobjetivo.tiempo_focus || 0;
         focusSubData.timerSeconds = focusSubData.tiempoAcumulado;
         
-        console.log('💾 SIMPLE: Datos configurados:', focusSubData);
+        // console.log('💾 SIMPLE: Datos configurados:', focusSubData);
         
         // Actualizar display si existe
         actualizarDisplaySimple();
@@ -52,7 +52,7 @@ window.guardarTiempoSimple = async function() {
         return false;
     }
     
-    console.log(`💾 SIMPLE: Guardando ${focusSubData.timerSeconds} segundos para subobjetivo ${focusSubData.subobjetivoId}`);
+    // console.log(`💾 SIMPLE: Guardando ${focusSubData.timerSeconds} segundos para subobjetivo ${focusSubData.subobjetivoId}`);
     
     try {
         const response = await fetch(`/api/subobjetivos/${focusSubData.subobjetivoId}`, {
@@ -62,10 +62,10 @@ window.guardarTiempoSimple = async function() {
         });
 
         const result = await response.json();
-        console.log('📥 SIMPLE: Response:', response.status, result);
+        // console.log('📥 SIMPLE: Response:', response.status, result);
         
         if (response.ok) {
-            console.log('✅ SIMPLE: Guardado exitoso');
+            // console.log('✅ SIMPLE: Guardado exitoso');
             return true;
         } else {
             console.error('❌ SIMPLE: Error en guardado');
@@ -85,7 +85,7 @@ window.iniciarTimerSimple = function() {
     focusSubData.timerInterval = setInterval(() => {
         focusSubData.timerSeconds++;
         actualizarDisplaySimple();
-        console.log(`⏱️ SIMPLE: Timer: ${focusSubData.timerSeconds}s`);
+        // console.log(`⏱️ SIMPLE: Timer: ${focusSubData.timerSeconds}s`);
     }, 1000);
     
     console.log('▶️ SIMPLE: Timer iniciado');
@@ -98,7 +98,7 @@ window.pausarTimerSimple = function() {
     focusSubData.timerRunning = false;
     clearInterval(focusSubData.timerInterval);
     
-    console.log('⏸️ SIMPLE: Timer pausado');
+    // console.log('⏸️ SIMPLE: Timer pausado');
     
     // Guardar automáticamente al pausar
     guardarTiempoSimple();
@@ -145,5 +145,5 @@ window.testCompletoSimple = async function(objetivoId, subobjetivoId, titulo) {
     return guardado;
 };
 
-console.log('✅ SIMPLE: Funciones de focus simplificadas cargadas');
-console.log('💡 SIMPLE: Usa testCompletoSimple(objetivoId, subobjetivoId, titulo) para probar');
+// console.log('✅ SIMPLE: Funciones de focus simplificadas cargadas');
+// console.log('💡 SIMPLE: Usa testCompletoSimple(objetivoId, subobjetivoId, titulo) para probar');

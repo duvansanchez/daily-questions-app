@@ -1,11 +1,11 @@
 // Parche para agregar selects de acciones a los subobjetivos
 // Este archivo se ejecuta después de cargar los subobjetivos para agregar los selects
 
-console.log('🔧 Cargando focus-subobjetivos-patch.js...');
+// console.log('🔧 Cargando focus-subobjetivos-patch.js...');
 
 // Verificar dependencias al cargar
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('📋 Verificando dependencias del patch...');
+    // console.log('📋 Verificando dependencias del patch...');
     console.log('- abrirModoFocusSubobjetivo:', typeof abrirModoFocusSubobjetivo);
     console.log('- window.abrirModoFocusSubobjetivo:', typeof window.abrirModoFocusSubobjetivo);
     console.log('- Scripts cargados:', Array.from(document.scripts).map(s => s.src.split('/').pop()).filter(s => s.includes('focus')));
@@ -23,7 +23,7 @@ function agregarBotonesFocusSubobjetivos() {
     }
     
     patcheandoSubobjetivos = true;
-    console.log('🔧 Aplicando parche para selects de acciones en subobjetivos...');
+    // console.log('🔧 Aplicando parche para selects de acciones en subobjetivos...');
     
     const container = document.getElementById('focus-subobjetivos-list');
     if (!container) {
@@ -32,7 +32,7 @@ function agregarBotonesFocusSubobjetivos() {
     }
     
     const items = container.querySelectorAll('.focus-subobjetivo-item');
-    console.log(`🔍 Encontrados ${items.length} items de subobjetivos`);
+    // console.log(`🔍 Encontrados ${items.length} items de subobjetivos`);
     
     items.forEach(item => {
         // Verificar si ya tiene select de acciones
@@ -158,18 +158,18 @@ function agregarBotonesFocusSubobjetivos() {
             
             if (accion === 'focus') {
                 console.log('Ejecutando focus para:', subobjetivoId);
-                console.log('🔍 Verificando disponibilidad de función...');
+                // console.log('🔍 Verificando disponibilidad de función...');
                 console.log('- typeof abrirModoFocusSubobjetivo:', typeof abrirModoFocusSubobjetivo);
                 console.log('- typeof window.abrirModoFocusSubobjetivo:', typeof window.abrirModoFocusSubobjetivo);
                 
                 // Función para ejecutar el focus
                 const ejecutarFocus = () => {
                     if (typeof abrirModoFocusSubobjetivo === 'function') {
-                        console.log('✅ Usando función directa');
+                        // console.log('✅ Usando función directa');
                         abrirModoFocusSubobjetivo(subobjetivoId, tituloTexto);
                         return true;
                     } else if (typeof window.abrirModoFocusSubobjetivo === 'function') {
-                        console.log('✅ Usando función de window');
+                        // console.log('✅ Usando función de window');
                         window.abrirModoFocusSubobjetivo(subobjetivoId, tituloTexto);
                         return true;
                     }
@@ -189,11 +189,11 @@ function agregarBotonesFocusSubobjetivos() {
                 console.log('📜 Script focus-subobjetivos.js encontrado:', !!scriptExists);
                 
                 if (!scriptExists) {
-                    console.log('🔄 Cargando script manualmente...');
+                    // console.log('🔄 Cargando script manualmente...');
                     const script = document.createElement('script');
                     script.src = '/static/js/focus-subobjetivos.js';
                     script.onload = () => {
-                        console.log('✅ Script cargado, reintentando...');
+                        // console.log('✅ Script cargado, reintentando...');
                         setTimeout(() => {
                             if (!ejecutarFocus()) {
                                 console.error('❌ Función sigue no disponible después de cargar script');
@@ -214,10 +214,10 @@ function agregarBotonesFocusSubobjetivos() {
                     
                     const verificarFuncion = () => {
                         intentos++;
-                        console.log(`🔄 Intento ${intentos}/${maxIntentos}`);
+                        // console.log(`🔄 Intento ${intentos}/${maxIntentos}`);
                         
                         if (ejecutarFocus()) {
-                            console.log('✅ Función encontrada después de esperar');
+                            // console.log('✅ Función encontrada después de esperar');
                             return;
                         }
                         
@@ -225,7 +225,7 @@ function agregarBotonesFocusSubobjetivos() {
                             setTimeout(verificarFuncion, 200);
                         } else {
                             console.error('❌ Función no disponible después de múltiples intentos');
-                            console.log('🔍 Estado final:');
+                            // console.log('🔍 Estado final:');
                             console.log('- window keys:', Object.keys(window).filter(k => k.includes('abrir')));
                             console.log('- scripts cargados:', Array.from(document.scripts).map(s => s.src));
                             alert('Error: Función de focus no disponible después de múltiples intentos. Recarga la página.');
@@ -265,17 +265,17 @@ function agregarBotonesFocusSubobjetivos() {
         // Simplemente agregar el select al final del item
         item.appendChild(selectAcciones);
         
-        console.log(`✅ Select de acciones agregado para: ${tituloTexto}`);
+        // console.log(`✅ Select de acciones agregado para: ${tituloTexto}`);
     });
     
     // Aplicar prefijos de colores después de agregar los selects
     if (typeof aplicarPrefijosSubobjetivos === 'function') {
         aplicarPrefijosSubobjetivos();
-        console.log('🎨 Prefijos de colores aplicados');
+        // console.log('🎨 Prefijos de colores aplicados');
     }
     
     patcheandoSubobjetivos = false;
-    console.log('🔧 Parche completado');
+    // console.log('🔧 Parche completado');
 }
 
 // Función para cargar datos de subobjetivos
@@ -286,7 +286,7 @@ async function cargarDatosSubobjetivos() {
         const response = await fetch(`/api/objetivos/${objetivoEnFocus.id}/subobjetivos`);
         const subobjetivos = await response.json();
         window.currentSubobjetivos = subobjetivos;
-        console.log('📊 Datos de subobjetivos cargados:', subobjetivos.length);
+        // console.log('📊 Datos de subobjetivos cargados:', subobjetivos.length);
     } catch (error) {
         console.error('Error cargando datos de subobjetivos:', error);
     }
@@ -303,7 +303,7 @@ function observarCambiosSubobjetivos() {
     const observer = new MutationObserver(function(mutations) {
         mutations.forEach(function(mutation) {
             if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
-                console.log('🔄 Cambios detectados en subobjetivos, aplicando parche...');
+                // console.log('🔄 Cambios detectados en subobjetivos, aplicando parche...');
                 setTimeout(async () => {
                     await cargarDatosSubobjetivos();
                     agregarBotonesFocusSubobjetivos();
@@ -317,7 +317,7 @@ function observarCambiosSubobjetivos() {
         subtree: true
     });
     
-    console.log('👁️ Observer configurado para subobjetivos');
+    // console.log('👁️ Observer configurado para subobjetivos');
 }
 
 // Inicializar cuando se abra el modal de focus
@@ -325,7 +325,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const modalFocus = document.getElementById('modalFocusObjetivo');
     if (modalFocus) {
         modalFocus.addEventListener('shown.bs.modal', function() {
-            console.log('🎯 Modal de focus abierto, configurando observer...');
+            // console.log('🎯 Modal de focus abierto, configurando observer...');
             setTimeout(() => {
                 observarCambiosSubobjetivos();
                 agregarBotonesFocusSubobjetivos();
@@ -466,7 +466,7 @@ function editarSubobjetivoInline(subobjetivoId, tituloElement) {
                         }
                         
                         input.parentNode.replaceChild(nuevoSpan, input);
-                        console.log('✅ Subobjetivo actualizado correctamente');
+                        // console.log('✅ Subobjetivo actualizado correctamente');
                     } else {
                         alert('Error al actualizar');
                         restaurar();
@@ -553,14 +553,14 @@ async function moverSubobjetivoFocus(subobjetivoId, direccion) {
         return;
     }
     
-    console.log(`🔄 Iniciando movimiento ${direccion} para subobjetivo ${subobjetivoId}`);
+    // console.log(`🔄 Iniciando movimiento ${direccion} para subobjetivo ${subobjetivoId}`);
     
     try {
         // Obtener la lista actual de subobjetivos
         const response = await fetch(`/api/objetivos/${objetivoEnFocus.id}/subobjetivos`);
         const subobjetivos = await response.json();
         
-        console.log('📋 Subobjetivos actuales:', subobjetivos.map(s => `${s.id}: ${s.titulo}`));
+        // console.log('📋 Subobjetivos actuales:', subobjetivos.map(s => `${s.id}: ${s.titulo}`));
         
         // Encontrar el índice del subobjetivo a mover
         const idx = subobjetivos.findIndex(s => s.id == subobjetivoId);
@@ -612,15 +612,15 @@ async function moverSubobjetivoFocus(subobjetivoId, direccion) {
         // Realizar el intercambio
         if (direccion === 'arriba') {
             [subobjetivos[idx - 1], subobjetivos[idx]] = [subobjetivos[idx], subobjetivos[idx - 1]];
-            console.log(`🔄 Intercambiando posición ${idx} con ${idx - 1}`);
+            // console.log(`🔄 Intercambiando posición ${idx} con ${idx - 1}`);
         } else if (direccion === 'abajo') {
             [subobjetivos[idx], subobjetivos[idx + 1]] = [subobjetivos[idx + 1], subobjetivos[idx]];
-            console.log(`🔄 Intercambiando posición ${idx} con ${idx + 1}`);
+            // console.log(`🔄 Intercambiando posición ${idx} con ${idx + 1}`);
         }
         
         // Enviar el nuevo orden al servidor
         const ids = subobjetivos.map(s => s.id);
-        console.log('📤 Enviando nuevo orden:', ids);
+        // console.log('📤 Enviando nuevo orden:', ids);
         
         const reorderResponse = await fetch(`/api/objetivos/${objetivoEnFocus.id}/subobjetivos/reordenar`, {
             method: 'POST',
@@ -629,18 +629,18 @@ async function moverSubobjetivoFocus(subobjetivoId, direccion) {
         });
         
         if (reorderResponse.ok) {
-            console.log('✅ Orden actualizado correctamente en el servidor');
+            // console.log('✅ Orden actualizado correctamente en el servidor');
             
             // Intentar múltiples métodos de recarga para asegurar que funcione
             let recargaExitosa = false;
             
             // Método 1: Función oficial de recarga
             if (typeof recargarSubobjetivosFocus === 'function') {
-                console.log('🔄 Método 1: Usando función oficial recargarSubobjetivosFocus...');
+                // console.log('🔄 Método 1: Usando función oficial recargarSubobjetivosFocus...');
                 try {
                     await recargarSubobjetivosFocus();
                     recargaExitosa = true;
-                    console.log('✅ Recarga exitosa con método 1');
+                    // console.log('✅ Recarga exitosa con método 1');
                 } catch (error) {
                     console.error('❌ Error en método 1:', error);
                 }
@@ -648,7 +648,7 @@ async function moverSubobjetivoFocus(subobjetivoId, direccion) {
             
             // Método 2: Función de renderizado directo
             if (!recargaExitosa && typeof renderizarSubobjetivosFocusCompleto === 'function') {
-                console.log('🔄 Método 2: Usando renderizarSubobjetivosFocusCompleto...');
+                // console.log('🔄 Método 2: Usando renderizarSubobjetivosFocusCompleto...');
                 try {
                     // Obtener datos actualizados
                     const responseActualizada = await fetch(`/api/objetivos/${objetivoEnFocus.id}/subobjetivos`);
@@ -660,7 +660,7 @@ async function moverSubobjetivoFocus(subobjetivoId, direccion) {
                     // Renderizar
                     renderizarSubobjetivosFocusCompleto(subobjetivosActualizados);
                     recargaExitosa = true;
-                    console.log('✅ Recarga exitosa con método 2');
+                    // console.log('✅ Recarga exitosa con método 2');
                 } catch (error) {
                     console.error('❌ Error en método 2:', error);
                 }
@@ -668,7 +668,7 @@ async function moverSubobjetivoFocus(subobjetivoId, direccion) {
             
             // Método 3: Recarga manual del DOM
             if (!recargaExitosa) {
-                console.log('🔄 Método 3: Recarga manual del DOM...');
+                // console.log('🔄 Método 3: Recarga manual del DOM...');
                 try {
                     const responseManual = await fetch(`/api/objetivos/${objetivoEnFocus.id}/subobjetivos`);
                     const subobjetivosManual = await responseManual.json();
@@ -716,7 +716,7 @@ async function moverSubobjetivoFocus(subobjetivoId, direccion) {
                         }
                         
                         recargaExitosa = true;
-                        console.log('✅ Recarga exitosa con método 3');
+                        // console.log('✅ Recarga exitosa con método 3');
                     }
                 } catch (error) {
                     console.error('❌ Error en método 3:', error);
@@ -729,7 +729,7 @@ async function moverSubobjetivoFocus(subobjetivoId, direccion) {
                 if (typeof showSuccess === 'function') {
                     showSuccess(`Subobjetivo ${direccionTexto} correctamente`);
                 } else {
-                    console.log(`✅ Subobjetivo ${direccionTexto} correctamente`);
+                    // console.log(`✅ Subobjetivo ${direccionTexto} correctamente`);
                 }
             } else {
                 console.error('❌ No se pudo recargar la vista, pero el cambio se guardó en el servidor');

@@ -13,7 +13,7 @@ if (typeof timerInterval === 'undefined') {
 
 // Función para resetear el timer
 async function resetearTimer() {
-    console.log('🔄 OBJ: Reseteando timer...');
+    // console.log('🔄 OBJ: Reseteando timer...');
     timerRunning = false;
     timerSeconds = 0;
     clearInterval(timerInterval);
@@ -36,10 +36,10 @@ async function resetearTimer() {
     
     // Guardar el tiempo en 0 en la base de datos
     if (objetivoEnFocus) {
-        console.log('🔄 OBJ: Guardando tiempo en 0 en la base de datos...');
+        // console.log('🔄 OBJ: Guardando tiempo en 0 en la base de datos...');
         const guardado = await guardarTiempoObjetivo(true); // forzar=true para guardar aunque sea 0
         if (guardado) {
-            console.log('✅ OBJ: Tiempo reseteado y guardado exitosamente');
+            // console.log('✅ OBJ: Tiempo reseteado y guardado exitosamente');
             showSuccess('Tiempo reiniciado correctamente');
         } else {
             console.error('❌ OBJ: Error al guardar el tiempo reseteado');
@@ -56,7 +56,7 @@ async function cargarTiempoAcumuladoObjetivo() {
     if (!objetivoEnFocus) return;
     
     try {
-        console.log('🔄 OBJ: Cargando tiempo acumulado del objetivo...');
+        // console.log('🔄 OBJ: Cargando tiempo acumulado del objetivo...');
         const response = await fetch(`/api/objetivos/${objetivoEnFocus.id}`);
         const objetivo = await response.json();
         
@@ -67,16 +67,16 @@ async function cargarTiempoAcumuladoObjetivo() {
             const minutos = Math.floor(objetivo.tiempo_focus / 60);
             const segundos = objetivo.tiempo_focus % 60;
             const tiempoFormateado = `${minutos}:${segundos.toString().padStart(2, '0')}`;
-            console.log(`⏱️ OBJ: Tiempo acumulado cargado: ${tiempoFormateado}`);
+            // console.log(`⏱️ OBJ: Tiempo acumulado cargado: ${tiempoFormateado}`);
         } else {
-            console.log('⏱️ OBJ: No hay tiempo acumulado previo');
+            // console.log('⏱️ OBJ: No hay tiempo acumulado previo');
         }
         
         // Cargar notas existentes
         const notasTextarea = document.getElementById('focus-notas-texto');
         if (notasTextarea && objetivo) {
             notasTextarea.value = objetivo.notas_adicionales || '';
-            console.log(`📝 OBJ: Notas cargadas: ${objetivo.notas_adicionales ? objetivo.notas_adicionales.length + ' caracteres' : 'vacías'}`);
+            // console.log(`📝 OBJ: Notas cargadas: ${objetivo.notas_adicionales ? objetivo.notas_adicionales.length + ' caracteres' : 'vacías'}`);
         }
     } catch (error) {
         console.error('💥 OBJ: Error cargando tiempo acumulado:', error);
@@ -85,7 +85,7 @@ async function cargarTiempoAcumuladoObjetivo() {
 
 // Función para guardar tiempo acumulado del objetivo principal
 async function guardarTiempoObjetivo(forzar = false) {
-    console.log('🔍 OBJ: Verificando condiciones para guardar tiempo...');
+    // console.log('🔍 OBJ: Verificando condiciones para guardar tiempo...');
     console.log('- objetivoEnFocus:', objetivoEnFocus);
     console.log('- timerSeconds:', timerSeconds);
     console.log('- forzar:', forzar);
@@ -101,10 +101,10 @@ async function guardarTiempoObjetivo(forzar = false) {
     }
     
     try {
-        console.log(`💾 OBJ: Guardando tiempo de objetivo ID ${objetivoEnFocus.id}: ${timerSeconds} segundos`);
+        // console.log(`💾 OBJ: Guardando tiempo de objetivo ID ${objetivoEnFocus.id}: ${timerSeconds} segundos`);
         
         const payload = { tiempo_focus: timerSeconds };
-        console.log('📤 OBJ: Payload:', JSON.stringify(payload));
+        // console.log('📤 OBJ: Payload:', JSON.stringify(payload));
         
         const response = await fetch(`/api/objetivos/${objetivoEnFocus.id}`, {
             method: 'PATCH',
@@ -112,11 +112,11 @@ async function guardarTiempoObjetivo(forzar = false) {
             body: JSON.stringify(payload)
         });
 
-        console.log('📥 OBJ: Response status:', response.status);
+        // console.log('📥 OBJ: Response status:', response.status);
         
         if (response.ok) {
             const result = await response.json();
-            console.log('✅ OBJ: Tiempo de objetivo guardado exitosamente:', result);
+            // console.log('✅ OBJ: Tiempo de objetivo guardado exitosamente:', result);
             return true;
         } else {
             const errorText = await response.text();
@@ -143,7 +143,7 @@ async function guardarNotasObjetivo() {
     }
     
     const notas = notasTextarea.value.trim();
-    console.log(`📝 OBJ: Guardando notas del objetivo: ${notas.length} caracteres`);
+    // console.log(`📝 OBJ: Guardando notas del objetivo: ${notas.length} caracteres`);
     
     try {
         const response = await fetch(`/api/objetivos/${objetivoEnFocus.id}`, {
@@ -153,7 +153,7 @@ async function guardarNotasObjetivo() {
         });
 
         if (response.ok) {
-            console.log('✅ OBJ: Notas del objetivo guardadas exitosamente');
+            // console.log('✅ OBJ: Notas del objetivo guardadas exitosamente');
             return true;
         } else {
             console.error('❌ OBJ: Error al guardar notas del objetivo');
@@ -183,7 +183,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const pausarTimerOriginal = window.pausarTimer;
             
             window.pausarTimer = function() {
-                console.log('⏸️ OBJ: Timer pausado, guardando tiempo y notas...');
+                // console.log('⏸️ OBJ: Timer pausado, guardando tiempo y notas...');
                 
                 // Ejecutar función original
                 pausarTimerOriginal();
@@ -197,7 +197,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             };
             
-            console.log('✅ OBJ: Función pausarTimer sobrescrita para guardar automáticamente');
+            // console.log('✅ OBJ: Función pausarTimer sobrescrita para guardar automáticamente');
         } else {
             console.log('⚠️ OBJ: Función pausarTimer no encontrada, creando nueva...');
             
@@ -216,10 +216,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     // Guardar tiempo y notas inmediatamente al pausar
                     if (objetivoEnFocus) {
                         if (timerSeconds > 0) {
-                            console.log('⏸️ OBJ: Timer pausado, guardando tiempo...');
+                            // console.log('⏸️ OBJ: Timer pausado, guardando tiempo...');
                             guardarTiempoObjetivo();
                         }
-                        console.log('⏸️ OBJ: Timer pausado, guardando notas...');
+                        // console.log('⏸️ OBJ: Timer pausado, guardando notas...');
                         guardarNotasObjetivo();
                     }
                 }
@@ -237,7 +237,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const btnReset = document.getElementById('timer-reset');
     if (btnReset) {
         btnReset.addEventListener('click', resetearTimer);
-        console.log('✅ OBJ: Event listener para botón reset configurado');
+        // console.log('✅ OBJ: Event listener para botón reset configurado');
     }
 });
 
@@ -247,7 +247,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (modalFocus) {
         // Cuando se abre el modal, cargar tiempo acumulado
         modalFocus.addEventListener('shown.bs.modal', async function() {
-            console.log('🎯 OBJ: Modal abierto, cargando tiempo acumulado...');
+            // console.log('🎯 OBJ: Modal abierto, cargando tiempo acumulado...');
             setTimeout(async () => {
                 await cargarTiempoAcumuladoObjetivo();
             }, 500);
@@ -289,7 +289,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     const checkboxMarcarAyer = document.getElementById('focus-marcar-como-ayer');
                     const checkboxDesmarcarAyer = document.getElementById('focus-desmarcar-ayer');
                     
-                    console.log('🔍 DEBUG Checkboxes (timer-persistence):', {
+                    // console.log('🔍 DEBUG Checkboxes (timer-persistence):', {
                         marcarAyer: checkboxMarcarAyer ? checkboxMarcarAyer.checked : 'NO ENCONTRADO',
                         desmarcarAyer: checkboxDesmarcarAyer ? checkboxDesmarcarAyer.checked : 'NO ENCONTRADO'
                     });

@@ -100,6 +100,11 @@
                             <label for="nombre-categoria" class="form-label">Nombre de la categoría</label>
                             <input type="text" class="form-control" id="nombre-categoria" required placeholder="Ej: Motivación">
                         </div>
+                        <div class="mb-3">
+                            <label for="descripcion-categoria" class="form-label">Descripción <span class="text-muted">(opcional)</span></label>
+                            <textarea class="form-control" id="descripcion-categoria" rows="3" maxlength="500" placeholder="Describe de qué trata esta categoría..."></textarea>
+                            <div class="form-text">Máximo 500 caracteres. Esta descripción se mostrará al filtrar por esta categoría.</div>
+                        </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
@@ -124,6 +129,11 @@
                         <div class="mb-3">
                             <label for="editar-nombre-categoria" class="form-label">Nombre de la categoría</label>
                             <input type="text" class="form-control" id="editar-nombre-categoria" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editar-descripcion-categoria" class="form-label">Descripción <span class="text-muted">(opcional)</span></label>
+                            <textarea class="form-control" id="editar-descripcion-categoria" rows="3" maxlength="500" placeholder="Describe de qué trata esta categoría..."></textarea>
+                            <div class="form-text">Máximo 500 caracteres. Esta descripción se mostrará al filtrar por esta categoría.</div>
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -245,8 +255,9 @@ function configurarEventos() {
     document.getElementById('form-nueva-categoria').addEventListener('submit', function(e) {
         e.preventDefault();
         const nombre = document.getElementById('nombre-categoria').value.trim();
+        const descripcion = document.getElementById('descripcion-categoria').value.trim();
         if (nombre) {
-            crearCategoria(nombre);
+            crearCategoria(nombre, descripcion);
         }
     });
 
@@ -255,8 +266,9 @@ function configurarEventos() {
         e.preventDefault();
         const id = document.getElementById('editar-categoria-id').value;
         const nombre = document.getElementById('editar-nombre-categoria').value.trim();
+        const descripcion = document.getElementById('editar-descripcion-categoria').value.trim();
         if (id && nombre) {
-            actualizarCategoria(id, nombre);
+            actualizarCategoria(id, nombre, descripcion);
         }
     });
 
@@ -303,6 +315,7 @@ function configurarEventos() {
 // Mostrar modal de nueva categoría
 function mostrarModalNuevaCategoria() {
     document.getElementById('nombre-categoria').value = '';
+    document.getElementById('descripcion-categoria').value = '';
     const modal = new bootstrap.Modal(document.getElementById('modalNuevaCategoria'));
     modal.show();
 }
@@ -313,6 +326,7 @@ function mostrarModalEditarCategoria(categoriaId) {
     if (!categoria) return;
     document.getElementById('editar-categoria-id').value = categoria.id;
     document.getElementById('editar-nombre-categoria').value = categoria.nombre;
+    document.getElementById('editar-descripcion-categoria').value = categoria.descripcion || '';
     const modal = new bootstrap.Modal(document.getElementById('modalEditarCategoria'));
     modal.show();
 }
@@ -713,13 +727,13 @@ function renderizarSubcategorias() {
 }
 
 // Crear nueva categoría
-function crearCategoria(nombre) {
+function crearCategoria(nombre, descripcion) {
     fetch('/api/categorias', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ nombre })
+        body: JSON.stringify({ nombre, descripcion })
     })
     .then(response => response.json())
     .then(data => {
@@ -744,13 +758,13 @@ function crearCategoria(nombre) {
 }
 
 // Actualizar categoría
-function actualizarCategoria(id, nombre) {
+function actualizarCategoria(id, nombre, descripcion) {
     fetch(`/api/categorias/${id}`, {
         method: 'PUT',
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ nombre })
+        body: JSON.stringify({ nombre, descripcion })
     })
     .then(response => response.json())
     .then(data => {

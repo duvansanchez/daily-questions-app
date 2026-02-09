@@ -3327,23 +3327,46 @@ function actualizarCategoriasDisponibles() {
                 if (data.categorias && data.categorias.length > 0) {
                     data.categorias.forEach(cat => {
                         const option = document.createElement('option');
-                        option.value = cat;
-                        option.textContent = capitalizarPrimeraLetra(cat.replace(/_/g, ' '));
+                        // Manejar tanto objetos como strings
+                        if (typeof cat === 'object' && cat.nombre) {
+                            option.value = cat.nombre;
+                            option.textContent = capitalizarPrimeraLetra(cat.nombre.replace(/_/g, ' '));
+                            if (cat.descripcion) {
+                                option.setAttribute('data-descripcion', cat.descripcion);
+                            }
+                        } else {
+                            option.value = cat;
+                            option.textContent = capitalizarPrimeraLetra(cat.replace(/_/g, ' '));
+                        }
                         filtroCategoria.appendChild(option);
                     });
                 }
 
                 // Restaurar valor seleccionado si existe
-                if (valorActual && data.categorias && data.categorias.includes(valorActual)) {
-                    filtroCategoria.value = valorActual;
+                if (valorActual) {
+                    const categoriaExiste = data.categorias && data.categorias.some(cat => 
+                        (typeof cat === 'object' ? cat.nombre : cat) === valorActual
+                    );
+                    if (categoriaExiste) {
+                        filtroCategoria.value = valorActual;
+                    }
                 }
             }
 
             // Actualizar selectores de modales
-            const todasLasCategorias = (data.categorias || []).map(cat => ({
-                value: cat,
-                label: capitalizarPrimeraLetra(cat.replace(/_/g, ' '))
-            }));
+            const todasLasCategorias = (data.categorias || []).map(cat => {
+                if (typeof cat === 'object' && cat.nombre) {
+                    return {
+                        value: cat.nombre,
+                        label: capitalizarPrimeraLetra(cat.nombre.replace(/_/g, ' '))
+                    };
+                } else {
+                    return {
+                        value: cat,
+                        label: capitalizarPrimeraLetra(cat.replace(/_/g, ' '))
+                    };
+                }
+            });
             actualizarSelectoresCategorias(todasLasCategorias);
         })
         .catch(error => {
@@ -4914,15 +4937,29 @@ async function cargarCategoriasAudios() {
             if (data.categorias && data.categorias.length > 0) {
                 data.categorias.forEach(cat => {
                     const option = document.createElement('option');
-                    option.value = cat;
-                    option.textContent = capitalizarPrimeraLetra(cat.replace(/_/g, ' '));
+                    // Manejar tanto objetos como strings
+                    if (typeof cat === 'object' && cat.nombre) {
+                        option.value = cat.nombre;
+                        option.textContent = capitalizarPrimeraLetra(cat.nombre.replace(/_/g, ' '));
+                        if (cat.descripcion) {
+                            option.setAttribute('data-descripcion', cat.descripcion);
+                        }
+                    } else {
+                        option.value = cat;
+                        option.textContent = capitalizarPrimeraLetra(cat.replace(/_/g, ' '));
+                    }
                     filtroCategoria.appendChild(option);
                 });
             }
 
             // Restaurar valor seleccionado si existe
-            if (valorActual && data.categorias && data.categorias.includes(valorActual)) {
-                filtroCategoria.value = valorActual;
+            if (valorActual) {
+                const categoriaExiste = data.categorias && data.categorias.some(cat => 
+                    (typeof cat === 'object' ? cat.nombre : cat) === valorActual
+                );
+                if (categoriaExiste) {
+                    filtroCategoria.value = valorActual;
+                }
             }
         }
         
