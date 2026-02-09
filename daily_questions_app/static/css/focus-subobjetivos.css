@@ -843,3 +843,120 @@ Estilos para tooltip personalizado con subobjetivos */
     color: var(--text-muted);
     background-color: var(--bg-tertiary);
 }
+/* Estilos para prefijos de sub-objetivos */
+.subobjetivo-prefix {
+    display: inline-block;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-right: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Prefijos específicos con sus colores */
+.prefix-feat {
+    background-color: #10b981;
+    color: white;
+}
+
+.prefix-fix {
+    background-color: #ef4444;
+    color: white;
+}
+
+.prefix-refactor {
+    background-color: #06b6d4;
+    color: white;
+}
+
+.prefix-docs {
+    background-color: #3b82f6;
+    color: white;
+}
+
+.prefix-style {
+    background-color: #a855f7;
+    color: white;
+}
+
+.prefix-investigate {
+    background-color: #f59e0b;
+    color: white;
+}
+
+.prefix-config {
+    background-color: #f97316;
+    color: white;
+}
+
+/* Versiones para modo oscuro */
+[data-theme="dark"] .prefix-feat {
+    background-color: #059669;
+}
+
+[data-theme="dark"] .prefix-fix {
+    background-color: #dc2626;
+}
+
+[data-theme="dark"] .prefix-refactor {
+    background-color: #0891b2;
+}
+
+[data-theme="dark"] .prefix-docs {
+    background-color: #2563eb;
+}
+
+[data-theme="dark"] .prefix-style {
+    background-color: #9333ea;
+}
+
+[data-theme="dark"] .prefix-investigate {
+    background-color: #d97706;
+}
+
+[data-theme="dark"] .prefix-config {
+    background-color: #ea580c;
+}
+/* Estilos para el tooltip de prefijos */
+.prefijos-tooltip {
+    max-width: 350px;
+}
+
+.prefijos-tooltip .tooltip-inner {
+    background-color: #2c3e50;
+    color: white;
+    padding: 12px 16px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    text-align: left;
+    line-height: 1.6;
+    font-size: 0.85rem;
+}
+
+.prefijos-tooltip .tooltip-arrow::before {
+    border-top-color: #2c3e50;
+}
+
+/* Estilos para modo oscuro del tooltip */
+[data-theme="dark"] .prefijos-tooltip .tooltip-inner {
+    background-color: #1a202c;
+    border: 1px solid #4a5568;
+}
+
+[data-theme="dark"] .prefijos-tooltip .tooltip-arrow::before {
+    border-top-color: #1a202c;
+}
+
+/* Ícono de información con hover effect */
+.info-icon-prefijos {
+    transition: all 0.2s ease;
+    opacity: 0.7;
+}
+
+.info-icon-prefijos:hover {
+    opacity: 1;
+    transform: scale(1.1);
+    color: #0d6efd !important;
+}

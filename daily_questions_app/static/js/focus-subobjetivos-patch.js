@@ -268,6 +268,12 @@ function agregarBotonesFocusSubobjetivos() {
         console.log(`✅ Select de acciones agregado para: ${tituloTexto}`);
     });
     
+    // Aplicar prefijos de colores después de agregar los selects
+    if (typeof aplicarPrefijosSubobjetivos === 'function') {
+        aplicarPrefijosSubobjetivos();
+        console.log('🎨 Prefijos de colores aplicados');
+    }
+    
     patcheandoSubobjetivos = false;
     console.log('🔧 Parche completado');
 }
@@ -387,7 +393,18 @@ function editarSubobjetivoInline(subobjetivoId, tituloElement) {
         
         const nuevoSpan = document.createElement('span');
         nuevoSpan.className = 'focus-subobjetivo-titulo';
-        nuevoSpan.textContent = textoOriginal;
+        
+        // Procesar prefijos en el texto original
+        const textoConPrefijo = typeof procesarTituloConPrefijos === 'function' 
+            ? procesarTituloConPrefijos(textoOriginal) 
+            : textoOriginal;
+        
+        if (textoConPrefijo !== textoOriginal) {
+            nuevoSpan.innerHTML = textoConPrefijo;
+            nuevoSpan.setAttribute('data-prefijo-procesado', 'true');
+        } else {
+            nuevoSpan.textContent = textoOriginal;
+        }
         
         // Restaurar indicador de tiempo si existía
         const subobjetivoData = window.currentSubobjetivos?.find(s => s.id == subobjetivoId);
@@ -422,7 +439,18 @@ function editarSubobjetivoInline(subobjetivoId, tituloElement) {
                         
                         const nuevoSpan = document.createElement('span');
                         nuevoSpan.className = 'focus-subobjetivo-titulo';
-                        nuevoSpan.textContent = nuevoTexto;
+                        
+                        // Procesar prefijos en el nuevo texto
+                        const textoConPrefijo = typeof procesarTituloConPrefijos === 'function' 
+                            ? procesarTituloConPrefijos(nuevoTexto) 
+                            : nuevoTexto;
+                        
+                        if (textoConPrefijo !== nuevoTexto) {
+                            nuevoSpan.innerHTML = textoConPrefijo;
+                            nuevoSpan.setAttribute('data-prefijo-procesado', 'true');
+                        } else {
+                            nuevoSpan.textContent = nuevoTexto;
+                        }
                         
                         // Restaurar indicador de tiempo si existía
                         const subobjetivoData = window.currentSubobjetivos?.find(s => s.id == subobjetivoId);
@@ -653,13 +681,17 @@ async function moverSubobjetivoFocus(subobjetivoId, direccion) {
                         // Recrear elementos
                         let html = '';
                         subobjetivosManual.forEach((sub) => {
+                            const tituloConPrefijo = typeof procesarTituloConPrefijos === 'function' 
+                                ? procesarTituloConPrefijos(sub.titulo) 
+                                : sub.titulo;
+                                
                             html += `
                                 <div class="focus-subobjetivo-item p-3 mb-2 bg-light rounded">
                                     <input type="checkbox" class="form-check-input focus-subobjetivo-checkbox me-3" 
                                            ${sub.completado ? "checked" : ""} 
                                            data-subobjetivo-id="${sub.id}">
                                     <span class="focus-subobjetivo-titulo ${sub.completado ? "text-decoration-line-through text-muted" : ""}" 
-                                          data-subobjetivo-id="${sub.id}">${sub.titulo}</span>
+                                          data-subobjetivo-id="${sub.id}" data-prefijo-procesado="true">${tituloConPrefijo}</span>
                                 </div>
                             `;
                         });

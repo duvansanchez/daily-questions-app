@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test: Prefijos de Sub-objetivos</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body { padding: 20px; background-color: #f8f9fa; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        
+        /* Estilos para prefijos de sub-objetivos */
+        .subobjetivo-prefix {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-right: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Prefijos específicos con sus colores */
+        .prefix-feat {
+            background-color: #10b981;
+            color: white;
+        }
+
+        .prefix-fix {
+            background-color: #ef4444;
+            color: white;
+        }
+
+        .prefix-refactor {
+            background-color: #06b6d4;
+            color: white;
+        }
+
+        .prefix-docs {
+            background-color: #3b82f6;
+            color: white;
+        }
+
+        .prefix-style {
+            background-color: #a855f7;
+            color: white;
+        }
+
+        .prefix-investigate {
+            background-color: #f59e0b;
+            color: white;
+        }
+
+        .prefix-config {
+            background-color: #f97316;
+            color: white;
+        }
+        
+        .focus-subobjetivo-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            margin-bottom: 8px;
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+        }
+        
+        .focus-subobjetivo-titulo {
+            font-weight: 500;
+            color: #495057;
+            flex: 1;
+        }
+        
+        .color-reference {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .color-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
+        .color-sample {
+            width: 80px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎨 Test: Prefijos de Sub-objetivos con Colores</h1>
+        
+        <div class="alert alert-success">
+            <h5><i class="bi bi-check-circle me-2"></i>Funcionalidad Implementada:</h5>
+            <p class="mb-0">Los sub-objetivos con prefijos específicos ahora muestran esos prefijos con colores distintivos para mejor organización visual.</p>
+        </div>
+        
+        <div class="color-reference">
+            <h5>📋 Referencia de Prefijos y Colores</h5>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="color-item">
+                        <div class="color-sample">
+                            <span class="subobjetivo-prefix prefix-feat">feat:</span>
+                        </div>
+                        <div>
+                            <strong>Verde (Emerald)</strong> - Algo nuevo, crecimiento o adición
+                        </div>
+                    </div>
+                    
+                    <div class="color-item">
+                        <div class="color-sample">
+                            <span class="subobjetivo-prefix prefix-fix">fix:</span>
+                        </div>
+                        <div>
+                            <strong>Rojo (Rose)</strong> - Corrección de un error o algo "roto"
+                        </div>
+                    </div>
+                    
+                    <div class="color-item">
+                        <div class="color-sample">
+                            <span class="subobjetivo-prefix prefix-refactor">refactor:</span>
+                        </div>
+                        <div>
+                            <strong>Cian (Teal)</strong> - Limpieza de código, color neutro técnico
+                        </div>
+                    </div>
+                    
+                    <div class="color-item">
+                        <div class="color-sample">
+                            <span class="subobjetivo-prefix prefix-docs">docs:</span>
+                        </div>
+                        <div>
+                            <strong>Azul (Blue)</strong> - Información y documentación
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="color-item">
+                        <div class="color-sample">
+                            <span class="subobjetivo-prefix prefix-style">style:</span>
+                        </div>
+                        <div>
+                            <strong>Morado (Purple)</strong> - Cambios visuales y estética
+                        </div>
+                    </div>
+                    
+                    <div class="color-item">
+                        <div class="color-sample">
+                            <span class="subobjetivo-prefix prefix-investigate">investigate:</span>
+                        </div>
+                        <div>
+                            <strong>Amarillo (Amber)</strong> - Requiere atención y análisis
+                        </div>
+                    </div>
+                    
+                    <div class="color-item">
+                        <div class="color-sample">
+                            <span class="subobjetivo-prefix prefix-config">config:</span>
+                        </div>
+                        <div>
+                            <strong>Naranja (Orange)</strong> - Ajustes técnicos del sistema
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="bi bi-list-check me-2"></i>Ejemplos de Sub-objetivos con Prefijos</h5>
+            </div>
+            <div class="card-body">
+                <div class="focus-subobjetivo-item">
+                    <input type="checkbox" class="form-check-input me-3">
+                    <span class="focus-subobjetivo-titulo" id="ejemplo-1">feat: Implementar sistema de notificaciones</span>
+                </div>
+                
+                <div class="focus-subobjetivo-item">
+                    <input type="checkbox" class="form-check-input me-3" checked>
+                    <span class="focus-subobjetivo-titulo" id="ejemplo-2">fix: Corregir error en validación de formularios</span>
+                </div>
+                
+                <div class="focus-subobjetivo-item">
+                    <input type="checkbox" class="form-check-input me-3">
+                    <span class="focus-subobjetivo-titulo" id="ejemplo-3">refactor: Optimizar consultas de base de datos</span>
+                </div>
+                
+                <div class="focus-subobjetivo-item">
+                    <input type="checkbox" class="form-check-input me-3">
+                    <span class="focus-subobjetivo-titulo" id="ejemplo-4">docs: Actualizar documentación de API</span>
+                </div>
+                
+                <div class="focus-subobjetivo-item">
+                    <input type="checkbox" class="form-check-input me-3">
+                    <span class="focus-subobjetivo-titulo" id="ejemplo-5">style: Mejorar diseño responsive del dashboard</span>
+                </div>
+                
+                <div class="focus-subobjetivo-item">
+                    <input type="checkbox" class="form-check-input me-3">
+                    <span class="focus-subobjetivo-titulo" id="ejemplo-6">investigate: Analizar rendimiento de consultas lentas</span>
+                </div>
+                
+                <div class="focus-subobjetivo-item">
+                    <input type="checkbox" class="form-check-input me-3">
+                    <span class="focus-subobjetivo-titulo" id="ejemplo-7">config: Configurar variables de entorno para producción</span>
+                </div>
+                
+                <div class="focus-subobjetivo-item">
+                    <input type="checkbox" class="form-check-input me-3">
+                    <span class="focus-subobjetivo-titulo" id="ejemplo-8">Tarea normal sin prefijo</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <h5>✅ Características Implementadas:</h5>
+                <ul>
+                    <li><strong>Detección automática:</strong> Reconoce prefijos al inicio del título</li>
+                    <li><strong>Colores distintivos:</strong> Cada prefijo tiene su color específico</li>
+                    <li><strong>Compatibilidad:</strong> Funciona con tareas completadas y no completadas</li>
+                    <li><strong>Modo oscuro:</strong> Colores adaptados para tema oscuro</li>
+                </ul>
+            </div>
+            
+            <div class="col-md-6">
+                <h5>🔧 Implementación Técnica:</h5>
+                <ul>
+                    <li><strong>CSS:</strong> Clases específicas para cada prefijo</li>
+                    <li><strong>JavaScript:</strong> Procesamiento automático de títulos</li>
+                    <li><strong>Persistencia:</strong> Se mantiene al editar sub-objetivos</li>
+                    <li><strong>Performance:</strong> Solo procesa una vez por elemento</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="text-center mt-4">
+            <button class="btn btn-primary" onclick="aplicarPrefijos()">
+                <i class="bi bi-palette me-1"></i>Aplicar Prefijos de Colores
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Función para procesar títulos con prefijos de colores
+        function procesarTituloConPrefijos(titulo) {
+            if (!titulo) return titulo;
+            
+            // Definir prefijos y sus clases CSS
+            const prefijos = {
+                'feat:': 'prefix-feat',
+                'fix:': 'prefix-fix', 
+                'refactor:': 'prefix-refactor',
+                'docs:': 'prefix-docs',
+                'style:': 'prefix-style',
+                'investigate:': 'prefix-investigate',
+                'config:': 'prefix-config'
+            };
+            
+            // Buscar si el título comienza con algún prefijo
+            for (const [prefijo, clase] of Object.entries(prefijos)) {
+                if (titulo.toLowerCase().startsWith(prefijo.toLowerCase())) {
+                    // Extraer el prefijo y el resto del título
+                    const prefijoTexto = titulo.substring(0, prefijo.length);
+                    const restoTitulo = titulo.substring(prefijo.length).trim();
+                    
+                    // Retornar HTML con el prefijo coloreado
+                    return `<span class="subobjetivo-prefix ${clase}">${prefijoTexto}</span>${restoTitulo}`;
+                }
+            }
+            
+            // Si no hay prefijo, retornar el título original
+            return titulo;
+        }
+        
+        // Función para aplicar prefijos a todos los ejemplos
+        function aplicarPrefijos() {
+            for (let i = 1; i <= 8; i++) {
+                const elemento = document.getElementById(`ejemplo-${i}`);
+                if (elemento && !elemento.hasAttribute('data-prefijo-procesado')) {
+                    const tituloOriginal = elemento.textContent;
+                    const tituloConPrefijo = procesarTituloConPrefijos(tituloOriginal);
+                    
+                    if (tituloConPrefijo !== tituloOriginal) {
+                        elemento.innerHTML = tituloConPrefijo;
+                        elemento.setAttribute('data-prefijo-procesado', 'true');
+                    }
+                }
+            }
+        }
+        
+        // Aplicar prefijos automáticamente al cargar
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(aplicarPrefijos, 500);
+        });
+    </script>
+</body>
+</html>

@@ -417,24 +417,49 @@ function inicializarEditorNotas() {
         removeHighlight: !!btnRemoveHighlight
     });
     
-    if (btnBold) btnBold.addEventListener('click', () => aplicarFormato('**', '**'));
-    if (btnItalic) btnItalic.addEventListener('click', () => aplicarFormato('*', '*'));
+    // Remover event listeners existentes para evitar duplicados
+    if (btnBold) {
+        btnBold.removeEventListener('click', btnBold._formatHandler);
+        btnBold._formatHandler = () => aplicarFormato('**', '**');
+        btnBold.addEventListener('click', btnBold._formatHandler);
+    }
+    if (btnItalic) {
+        btnItalic.removeEventListener('click', btnItalic._formatHandler);
+        btnItalic._formatHandler = () => aplicarFormato('*', '*');
+        btnItalic.addEventListener('click', btnItalic._formatHandler);
+    }
     
     const btnTask = document.getElementById('btn-task');
     const btnBullet = document.getElementById('btn-bullet');
     
-    if (btnTask) btnTask.addEventListener('click', () => añadirTarea());
-    if (btnBullet) btnBullet.addEventListener('click', () => añadirViñeta());
+    if (btnTask) {
+        btnTask.removeEventListener('click', btnTask._taskHandler);
+        btnTask._taskHandler = () => añadirTarea();
+        btnTask.addEventListener('click', btnTask._taskHandler);
+    }
+    if (btnBullet) {
+        btnBullet.removeEventListener('click', btnBullet._bulletHandler);
+        btnBullet._bulletHandler = () => añadirViñeta();
+        btnBullet.addEventListener('click', btnBullet._bulletHandler);
+    }
     if (btnPreview) {
-        btnPreview.addEventListener('click', () => {
+        // Remover event listener existente para evitar duplicados
+        btnPreview.removeEventListener('click', btnPreview._previewHandler);
+        btnPreview._previewHandler = () => {
             console.log('👁️ Alternando vista previa');
             togglePreview();
-        });
+        };
+        btnPreview.addEventListener('click', btnPreview._previewHandler);
     }
-    if (btnSaveNotes) btnSaveNotes.addEventListener('click', () => guardarNotasManual());
+    if (btnSaveNotes) {
+        btnSaveNotes.removeEventListener('click', btnSaveNotes._saveHandler);
+        btnSaveNotes._saveHandler = () => guardarNotasManual();
+        btnSaveNotes.addEventListener('click', btnSaveNotes._saveHandler);
+    }
     
-    // Auto-guardado mientras se escribe
-    textarea.addEventListener('input', () => {
+    // Auto-guardado mientras se escribe (remover listener existente primero)
+    textarea.removeEventListener('input', textarea._inputHandler);
+    textarea._inputHandler = () => {
         mostrarEstadoGuardado('saving');
         
         // Cancelar timeout anterior
@@ -447,10 +472,12 @@ function inicializarEditorNotas() {
             const guardado = await guardarNotasSubobjetivo();
             mostrarEstadoGuardado(guardado ? 'saved' : 'error');
         }, 2000);
-    });
+    };
+    textarea.addEventListener('input', textarea._inputHandler);
     
-    // Atajos de teclado
-    textarea.addEventListener('keydown', (e) => {
+    // Atajos de teclado (remover listener existente primero)
+    textarea.removeEventListener('keydown', textarea._keydownHandler);
+    textarea._keydownHandler = (e) => {
         if (e.ctrlKey || e.metaKey) {
             switch (e.key.toLowerCase()) {
                 case 'b':
@@ -469,7 +496,8 @@ function inicializarEditorNotas() {
                 // Dejar que el navegador maneje el resto de atajos
             }
         }
-    });
+    };
+    textarea.addEventListener('keydown', textarea._keydownHandler);
     
     console.log('✅ Editor de notas inicializado correctamente');
     
@@ -636,8 +664,19 @@ function añadirViñeta() {
     textarea.dispatchEvent(new Event('input'));
 }
 
+// Variable para prevenir múltiples toggles simultáneos
+let toggleInProgress = false;
+
 // Función para alternar vista previa
 function togglePreview() {
+    // Prevenir múltiples ejecuciones simultáneas
+    if (toggleInProgress) {
+        console.log('⚠️ Toggle ya en progreso, ignorando...');
+        return;
+    }
+    
+    toggleInProgress = true;
+    
     const textarea = document.getElementById('focus-sub-notas-texto');
     const previewDiv = document.getElementById('focus-sub-notas-preview');
     const previewBtn = document.getElementById('btn-preview');
@@ -651,31 +690,39 @@ function togglePreview() {
     
     if (!textarea || !previewDiv || !previewBtn) {
         console.error('❌ Elementos necesarios para preview no encontrados');
+        toggleInProgress = false;
         return;
     }
     
-    if (editorMode === 'edit') {
-        // Cambiar a vista previa
-        console.log('👁️ Cambiando a vista previa');
-        editorMode = 'preview';
-        textarea.style.display = 'none';
-        previewDiv.style.display = 'block';
-        previewBtn.classList.add('active');
-        previewBtn.innerHTML = '<i class="bi bi-pencil"></i>';
-        previewBtn.title = 'Editar';
-        
-        // Renderizar contenido
-        renderizarPreview();
-    } else {
-        // Cambiar a edición
-        console.log('✏️ Cambiando a edición');
-        editorMode = 'edit';
-        textarea.style.display = 'block';
-        previewDiv.style.display = 'none';
-        previewBtn.classList.remove('active');
-        previewBtn.innerHTML = '<i class="bi bi-eye"></i>';
-        previewBtn.title = 'Vista previa';
-        textarea.focus();
+    try {
+        if (editorMode === 'edit') {
+            // Cambiar a vista previa
+            console.log('👁️ Cambiando a vista previa');
+            editorMode = 'preview';
+            textarea.style.display = 'none';
+            previewDiv.style.display = 'block';
+            previewBtn.classList.add('active');
+            previewBtn.innerHTML = '<i class="bi bi-pencil"></i>';
+            previewBtn.title = 'Editar';
+            
+            // Renderizar contenido
+            renderizarPreview();
+        } else {
+            // Cambiar a edición
+            console.log('✏️ Cambiando a edición');
+            editorMode = 'edit';
+            textarea.style.display = 'block';
+            previewDiv.style.display = 'none';
+            previewBtn.classList.remove('active');
+            previewBtn.innerHTML = '<i class="bi bi-eye"></i>';
+            previewBtn.title = 'Vista previa';
+            textarea.focus();
+        }
+    } finally {
+        // Liberar el lock después de un pequeño delay
+        setTimeout(() => {
+            toggleInProgress = false;
+        }, 100);
     }
 }
 
@@ -879,6 +926,57 @@ function resetearEditor() {
     
     // Resetear estado de guardado
     mostrarEstadoGuardado('saved');
+    
+    // Resetear variable de toggle
+    toggleInProgress = false;
+    
+    // Limpiar event listeners para evitar acumulación
+    limpiarEventListenersEditor();
+}
+
+// Función para limpiar event listeners del editor
+function limpiarEventListenersEditor() {
+    const textarea = document.getElementById('focus-sub-notas-texto');
+    const btnBold = document.getElementById('btn-bold');
+    const btnItalic = document.getElementById('btn-italic');
+    const btnPreview = document.getElementById('btn-preview');
+    const btnSaveNotes = document.getElementById('btn-save-notes');
+    const btnTask = document.getElementById('btn-task');
+    const btnBullet = document.getElementById('btn-bullet');
+    
+    // Remover todos los event listeners personalizados
+    if (textarea && textarea._inputHandler) {
+        textarea.removeEventListener('input', textarea._inputHandler);
+        textarea._inputHandler = null;
+    }
+    if (textarea && textarea._keydownHandler) {
+        textarea.removeEventListener('keydown', textarea._keydownHandler);
+        textarea._keydownHandler = null;
+    }
+    if (btnBold && btnBold._formatHandler) {
+        btnBold.removeEventListener('click', btnBold._formatHandler);
+        btnBold._formatHandler = null;
+    }
+    if (btnItalic && btnItalic._formatHandler) {
+        btnItalic.removeEventListener('click', btnItalic._formatHandler);
+        btnItalic._formatHandler = null;
+    }
+    if (btnPreview && btnPreview._previewHandler) {
+        btnPreview.removeEventListener('click', btnPreview._previewHandler);
+        btnPreview._previewHandler = null;
+    }
+    if (btnSaveNotes && btnSaveNotes._saveHandler) {
+        btnSaveNotes.removeEventListener('click', btnSaveNotes._saveHandler);
+        btnSaveNotes._saveHandler = null;
+    }
+    if (btnTask && btnTask._taskHandler) {
+        btnTask.removeEventListener('click', btnTask._taskHandler);
+        btnTask._taskHandler = null;
+    }
+    if (btnBullet && btnBullet._bulletHandler) {
+        btnBullet.removeEventListener('click', btnBullet._bulletHandler);
+        btnBullet._bulletHandler = null;
+    }
 }
 
 // ===== EVENT LISTENERS GLOBALES PARA RESALTADO =====
@@ -910,3 +1008,57 @@ window.abrirModoFocusSubobjetivo = abrirModoFocusSubobjetivo;
 console.log('✅ focus-subobjetivos.js cargado completamente');
 console.log('🔍 Función abrirModoFocusSubobjetivo disponible:', typeof abrirModoFocusSubobjetivo);
 console.log('🔍 Función en window:', typeof window.abrirModoFocusSubobjetivo);
+// ===== PROCESAMIENTO DE PREFIJOS DE SUB-OBJETIVOS =====
+
+// Función para procesar títulos con prefijos de colores
+function procesarTituloConPrefijos(titulo) {
+    if (!titulo) return titulo;
+    
+    // Definir prefijos y sus clases CSS
+    const prefijos = {
+        'feat:': 'prefix-feat',
+        'fix:': 'prefix-fix', 
+        'refactor:': 'prefix-refactor',
+        'docs:': 'prefix-docs',
+        'style:': 'prefix-style',
+        'investigate:': 'prefix-investigate',
+        'config:': 'prefix-config'
+    };
+    
+    // Buscar si el título comienza con algún prefijo
+    for (const [prefijo, clase] of Object.entries(prefijos)) {
+        if (titulo.toLowerCase().startsWith(prefijo.toLowerCase())) {
+            // Extraer el prefijo y el resto del título
+            const prefijoTexto = titulo.substring(0, prefijo.length);
+            const restoTitulo = titulo.substring(prefijo.length).trim();
+            
+            // Retornar HTML con el prefijo coloreado
+            return `<span class="subobjetivo-prefix ${clase}">${prefijoTexto}</span>${restoTitulo}`;
+        }
+    }
+    
+    // Si no hay prefijo, retornar el título original
+    return titulo;
+}
+
+// Función para aplicar prefijos a todos los sub-objetivos visibles
+function aplicarPrefijosSubobjetivos() {
+    const items = document.querySelectorAll('.focus-subobjetivo-titulo');
+    
+    items.forEach(item => {
+        // Solo procesar si no ha sido procesado antes
+        if (!item.hasAttribute('data-prefijo-procesado')) {
+            const tituloOriginal = item.textContent;
+            const tituloConPrefijo = procesarTituloConPrefijos(tituloOriginal);
+            
+            if (tituloConPrefijo !== tituloOriginal) {
+                item.innerHTML = tituloConPrefijo;
+                item.setAttribute('data-prefijo-procesado', 'true');
+            }
+        }
+    });
+}
+
+// Exponer función globalmente
+window.procesarTituloConPrefijos = procesarTituloConPrefijos;
+window.aplicarPrefijosSubobjetivos = aplicarPrefijosSubobjetivos;

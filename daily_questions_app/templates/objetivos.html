@@ -1060,6 +1060,21 @@ endblock %} {% block head %}
             <h5 class="mb-0">
               <i class="bi bi-list-check me-2"></i>Progreso del objetivo
               <span class="badge bg-primary ms-2" id="focus-progreso">0/0</span>
+              <i class="bi bi-info-circle ms-2 text-info" 
+                 style="cursor: pointer; font-size: 1rem;" 
+                 data-bs-toggle="tooltip" 
+                 data-bs-placement="top" 
+                 data-bs-html="true"
+                 data-bs-title="<strong>Prefijos de Sub-objetivos:</strong><br>
+                 <span class='badge' style='background-color: #10b981; margin: 2px;'>feat:</span> Nuevas funcionalidades<br>
+                 <span class='badge' style='background-color: #ef4444; margin: 2px;'>fix:</span> Corrección de errores<br>
+                 <span class='badge' style='background-color: #06b6d4; margin: 2px;'>refactor:</span> Limpieza de código<br>
+                 <span class='badge' style='background-color: #3b82f6; margin: 2px;'>docs:</span> Documentación<br>
+                 <span class='badge' style='background-color: #a855f7; margin: 2px;'>style:</span> Cambios visuales<br>
+                 <span class='badge' style='background-color: #f59e0b; margin: 2px;'>investigate:</span> Análisis<br>
+                 <span class='badge' style='background-color: #f97316; margin: 2px;'>config:</span> Configuración"
+                 title="Información de prefijos">
+              </i>
             </h5>
             <button class="btn btn-outline-primary btn-sm" id="btn-agregar-subobjetivo-focus">
               <i class="bi bi-plus"></i> Agregar subobjetivo
@@ -4631,6 +4646,58 @@ Puedes usar:
       </div>
     `;
   }
+</script>
+
+<script>
+// Inicializar tooltip de prefijos cuando se carga la página
+document.addEventListener('DOMContentLoaded', function() {
+    // Esperar un poco para asegurar que Bootstrap esté cargado
+    setTimeout(function() {
+        if (typeof bootstrap !== 'undefined' && bootstrap.Tooltip) {
+            // Inicializar tooltip de prefijos
+            const tooltipElement = document.querySelector('[data-bs-toggle="tooltip"]');
+            if (tooltipElement) {
+                new bootstrap.Tooltip(tooltipElement, {
+                    trigger: 'hover',
+                    delay: { show: 300, hide: 100 },
+                    customClass: 'prefijos-tooltip'
+                });
+                console.log('✅ Tooltip de prefijos inicializado');
+            }
+        } else {
+            console.log('⚠️ Bootstrap no disponible para tooltip de prefijos');
+        }
+    }, 1000);
+});
+
+// También inicializar cuando se abre el modal de focus
+document.addEventListener('DOMContentLoaded', function() {
+    const modalFocus = document.getElementById('modalFocusObjetivo');
+    if (modalFocus) {
+        modalFocus.addEventListener('shown.bs.modal', function() {
+            setTimeout(function() {
+                if (typeof bootstrap !== 'undefined' && bootstrap.Tooltip) {
+                    const tooltipElement = document.querySelector('[data-bs-toggle="tooltip"]');
+                    if (tooltipElement) {
+                        // Destruir tooltip existente si existe
+                        const existingTooltip = bootstrap.Tooltip.getInstance(tooltipElement);
+                        if (existingTooltip) {
+                            existingTooltip.dispose();
+                        }
+                        
+                        // Crear nuevo tooltip
+                        new bootstrap.Tooltip(tooltipElement, {
+                            trigger: 'hover',
+                            delay: { show: 300, hide: 100 },
+                            customClass: 'prefijos-tooltip'
+                        });
+                        console.log('✅ Tooltip de prefijos reinicializado en modal');
+                    }
+                }
+            }, 500);
+        });
+    }
+});
 </script>
 
 {% endblock %}

@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Prefix Functions</title>
+    <script src="http://localhost:5000/static/js/focus-subobjetivos.js"></script>
+</head>
+<body>
+    <h1>Testing Prefix Functions</h1>
+    <div id="results"></div>
+    
+    <script>
+        setTimeout(() => {
+            const results = document.getElementById('results');
+            let html = '<h2>Function Tests:</h2>';
+            
+            // Test if functions exist
+            html += `<p>procesarTituloConPrefijos: ${typeof procesarTituloConPrefijos}</p>`;
+            html += `<p>aplicarPrefijosSubobjetivos: ${typeof aplicarPrefijosSubobjetivos}</p>`;
+            html += `<p>window.procesarTituloConPrefijos: ${typeof window.procesarTituloConPrefijos}</p>`;
+            html += `<p>window.aplicarPrefijosSubobjetivos: ${typeof window.aplicarPrefijosSubobjetivos}</p>`;
+            
+            // Test prefix processing
+            if (typeof procesarTituloConPrefijos === 'function') {
+                html += '<h3>Prefix Processing Tests:</h3>';
+                const tests = [
+                    'feat: Nueva funcionalidad',
+                    'fix: Corregir bug',
+                    'refactor: Limpiar código',
+                    'docs: Actualizar documentación',
+                    'style: Mejorar diseño',
+                    'investigate: Analizar problema',
+                    'config: Configurar servidor',
+                    'Sin prefijo'
+                ];
+                
+                tests.forEach(test => {
+                    const result = procesarTituloConPrefijos(test);
+                    html += `<p><strong>Input:</strong> "${test}"<br><strong>Output:</strong> ${result}</p>`;
+                });
+            }
+            
+            results.innerHTML = html;
+        }, 1000);
+    </script>
+</body>
+</html>
