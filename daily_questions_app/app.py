@@ -5370,7 +5370,7 @@ def api_list_categorias_gestion():
             
             # Obtener todas las subcategorías del usuario con estado activo
             cursor.execute('''
-                SELECT s.id, s.nombre, s.categoria_id, s.activa, s.fecha_creacion, c.nombre as categoria_nombre
+                SELECT s.id, s.nombre, s.categoria_id, s.activa, s.fecha_creacion, c.nombre as categoria_nombre, s.descripcion
                 FROM subcategorias s
                 INNER JOIN categorias c ON s.categoria_id = c.id
                 WHERE c.user_id = ?
@@ -5383,7 +5383,8 @@ def api_list_categorias_gestion():
                 'categoria_id': row[2],
                 'activa': bool(row[3]),
                 'fecha_creacion': row[4].strftime('%Y-%m-%d %H:%M:%S') if row[4] else None,
-                'categoria_nombre': row[5]
+                'categoria_nombre': row[5],
+                'descripcion': row[6]
             } for row in cursor.fetchall()]
             
             return jsonify({
@@ -5671,6 +5672,7 @@ def api_create_subcategoria():
         data = request.get_json()
         nombre = data.get('nombre', '').strip()
         categoria_id = data.get('categoria_id')
+        descripcion = data.get('descripcion', '').strip()
         
         if not nombre:
             return jsonify({'error': 'El nombre de la subcategoría es obligatorio'}), 400
@@ -5701,10 +5703,10 @@ def api_create_subcategoria():
             
             # Crear la nueva subcategoría
             cursor.execute('''
-                INSERT INTO subcategorias (user_id, categoria_id, nombre, fecha_creacion)
-                OUTPUT INSERTED.id, INSERTED.nombre, INSERTED.fecha_creacion
-                VALUES (?, ?, ?, GETDATE())
-            ''', (current_user.id, categoria_id, nombre))
+                INSERT INTO subcategorias (user_id, categoria_id, nombre, descripcion, fecha_creacion)
+                OUTPUT INSERTED.id, INSERTED.nombre, INSERTED.descripcion, INSERTED.fecha_creacion
+                VALUES (?, ?, ?, ?, GETDATE())
+            ''', (current_user.id, categoria_id, nombre, descripcion if descripcion else None))
             
             row = cursor.fetchone()
             conn.commit()
@@ -5712,7 +5714,8 @@ def api_create_subcategoria():
             subcategoria = {
                 'id': row[0],
                 'nombre': row[1],
-                'fecha_creacion': row[2].strftime('%Y-%m-%d %H:%M:%S') if row[2] else None,
+                'descripcion': row[2],
+                'fecha_creacion': row[3].strftime('%Y-%m-%d %H:%M:%S') if row[3] else None,
                 'categoria_id': categoria_id
             }
 
@@ -5730,6 +5733,7 @@ def api_update_subcategoria(subcategoria_id):
         data = request.get_json()
         nombre = data.get('nombre', '').strip()
         categoria_id = data.get('categoria_id')
+        descripcion = data.get('descripcion', '').strip()
         
         if not nombre:
             return jsonify({'error': 'El nombre de la subcategoría es obligatorio'}), 400
@@ -5772,9 +5776,9 @@ def api_update_subcategoria(subcategoria_id):
             # Actualizar la subcategoría
             cursor.execute('''
                 UPDATE subcategorias 
-                SET nombre = ?, categoria_id = ?
+                SET nombre = ?, categoria_id = ?, descripcion = ?
                 WHERE id = ? AND user_id = ?
-            ''', (nombre, categoria_id, subcategoria_id, current_user.id))
+            ''', (nombre, categoria_id, descripcion if descripcion else None, subcategoria_id, current_user.id))
 
             # Sincronizar el campo 'subcategoria' en frases
             cursor.execute('''
@@ -6229,24 +6233,24 @@ def api_list_categorias_frases():
                 if categoria_row:
                     categoria_id = categoria_row[0]
                     cursor.execute('''
-                        SELECT DISTINCT COALESCE(s.nombre,'') AS sub
+                        SELECT s.id, s.nombre, s.descripcion
                         FROM subcategorias s
                         WHERE s.user_id = ? AND s.categoria_id = ? AND s.activa = 1
+                        ORDER BY s.nombre
                     ''', (current_user.id, categoria_id))
-                    subs = [row[0] for row in cursor.fetchall() if (row[0] or '').strip() != '']
+                    subs = [{'id': row[0], 'nombre': row[1], 'descripcion': row[2]} for row in cursor.fetchall() if (row[1] or '').strip() != '']
                 else:
                     subs = []
-                subs.sort()
             else:
                 # Todas las subcategorías activas del usuario
                 cursor.execute('''
-                    SELECT DISTINCT COALESCE(s.nombre,'') AS sub
+                    SELECT s.id, s.nombre, s.descripcion
                     FROM subcategorias s
                     INNER JOIN categorias c ON s.categoria_id = c.id
                     WHERE s.user_id = ? AND s.activa = 1 AND c.activa = 1
+                    ORDER BY s.nombre
                 ''', (current_user.id,))
-                subs = [row[0] for row in cursor.fetchall() if (row[0] or '').strip() != '']
-                subs.sort()
+                subs = [{'id': row[0], 'nombre': row[1], 'descripcion': row[2]} for row in cursor.fetchall() if (row[1] or '').strip() != '']
 
             return jsonify({'categorias': cats, 'subcategorias': subs})
     except Exception as e:

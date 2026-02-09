@@ -326,6 +326,17 @@ endblock %} {% block head %}
             <small id="indicador-filtro-estadisticas" class="text-muted">Estadísticas generales</small>
           </div>
 
+          <!-- Descripción de subcategoría (se muestra cuando se filtra por subcategoría) -->
+          <div id="descripcion-subcategoria-container" class="alert alert-info mb-3" style="display: none;">
+            <div class="d-flex align-items-start">
+              <i class="bi bi-info-circle me-2 mt-1"></i>
+              <div>
+                <strong id="descripcion-subcategoria-titulo"></strong>
+                <p id="descripcion-subcategoria-texto" class="mb-0 mt-1"></p>
+              </div>
+            </div>
+          </div>
+
           <!-- Filtros y controles -->
           <div class="d-flex justify-content-between align-items-center mb-3">
             <div class="row g-2 flex-grow-1 align-items-end">
@@ -2053,6 +2064,12 @@ Puedes usar:
               '<option value="">Todas las subcategorías</option>';
             filtrosActivos.subcategoria = "";
           }
+          
+          // Ocultar descripción de subcategoría
+          const descripcionContainer = document.getElementById("descripcion-subcategoria-container");
+          if (descripcionContainer) {
+            descripcionContainer.style.display = 'none';
+          }
         }
 
         // Aplicar filtros automáticamente
@@ -2065,6 +2082,29 @@ Puedes usar:
     if (filtroSubcategoria) {
       filtroSubcategoria.addEventListener("change", function () {
         filtrosActivos.subcategoria = this.value;
+        
+        // Mostrar descripción de la subcategoría si está seleccionada
+        const descripcionContainer = document.getElementById("descripcion-subcategoria-container");
+        const descripcionTitulo = document.getElementById("descripcion-subcategoria-titulo");
+        const descripcionTexto = document.getElementById("descripcion-subcategoria-texto");
+        
+        if (this.value) {
+          // Buscar la subcategoría seleccionada
+          const subcategoriaSeleccionada = this.options[this.selectedIndex];
+          const descripcion = subcategoriaSeleccionada.getAttribute('data-descripcion');
+          const nombre = subcategoriaSeleccionada.text;
+          
+          if (descripcion && descripcion.trim()) {
+            descripcionTitulo.textContent = nombre;
+            descripcionTexto.textContent = descripcion;
+            descripcionContainer.style.display = 'block';
+          } else {
+            descripcionContainer.style.display = 'none';
+          }
+        } else {
+          descripcionContainer.style.display = 'none';
+        }
+        
         aplicarFiltros();
       });
     }
@@ -2287,8 +2327,18 @@ Puedes usar:
 
       data.subcategorias.forEach((subcategoria) => {
         const option = document.createElement("option");
-        option.value = subcategoria; // Valor original para el backend
-        option.textContent = normalizarNombre(subcategoria); // Nombre normalizado para mostrar
+        // Si subcategoria es un objeto, usar su nombre, sino usar el valor directamente
+        if (typeof subcategoria === 'object' && subcategoria.nombre) {
+          option.value = subcategoria.nombre; // Valor original para el backend
+          option.textContent = normalizarNombre(subcategoria.nombre); // Nombre normalizado para mostrar
+          // Agregar descripción como atributo data
+          if (subcategoria.descripcion) {
+            option.setAttribute('data-descripcion', subcategoria.descripcion);
+          }
+        } else {
+          option.value = subcategoria; // Valor original para el backend
+          option.textContent = normalizarNombre(subcategoria); // Nombre normalizado para mostrar
+        }
         select.appendChild(option);
       });
     } catch (error) {
@@ -2313,6 +2363,12 @@ Puedes usar:
     document.getElementById("filtro-subcategoria-frases").value = "";
     document.getElementById("filtro-subcategoria-frases").innerHTML =
       '<option value="">Todas las subcategorías</option>';
+    
+    // Ocultar descripción de subcategoría
+    const descripcionContainer = document.getElementById("descripcion-subcategoria-container");
+    if (descripcionContainer) {
+      descripcionContainer.style.display = 'none';
+    }
 
     filtrosActivos.categoria = "";
     filtrosActivos.subcategoria = "";

@@ -151,6 +151,11 @@
                             <label for="nombre-subcategoria" class="form-label">Nombre de la subcategoría</label>
                             <input type="text" class="form-control" id="nombre-subcategoria" required>
                         </div>
+                        <div class="mb-3">
+                            <label for="descripcion-subcategoria" class="form-label">Descripción <span class="text-muted">(opcional)</span></label>
+                            <textarea class="form-control" id="descripcion-subcategoria" rows="3" maxlength="500" placeholder="Describe de qué trata esta subcategoría..."></textarea>
+                            <div class="form-text">Máximo 500 caracteres. Esta descripción se mostrará al filtrar por esta subcategoría.</div>
+                        </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
@@ -179,6 +184,11 @@
                         <div class="mb-3">
                             <label for="editar-categoria-subcategoria" class="form-label">Categoría</label>
                             <select class="form-select" id="editar-categoria-subcategoria" required></select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editar-descripcion-subcategoria" class="form-label">Descripción <span class="text-muted">(opcional)</span></label>
+                            <textarea class="form-control" id="editar-descripcion-subcategoria" rows="3" maxlength="500" placeholder="Describe de qué trata esta subcategoría..."></textarea>
+                            <div class="form-text">Máximo 500 caracteres. Esta descripción se mostrará al filtrar por esta subcategoría.</div>
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -255,8 +265,9 @@ function configurarEventos() {
         e.preventDefault();
         const categoriaId = document.getElementById('categoria-padre-id').value;
         const nombre = document.getElementById('nombre-subcategoria').value.trim();
+        const descripcion = document.getElementById('descripcion-subcategoria').value.trim();
         if (categoriaId && nombre) {
-            crearSubcategoria(categoriaId, nombre);
+            crearSubcategoria(categoriaId, nombre, descripcion);
         }
     });
 
@@ -266,8 +277,9 @@ function configurarEventos() {
         const id = document.getElementById('editar-subcategoria-id').value;
         const categoriaId = document.getElementById('editar-categoria-subcategoria').value;
         const nombre = document.getElementById('editar-nombre-subcategoria').value.trim();
+        const descripcion = document.getElementById('editar-descripcion-subcategoria').value.trim();
         if (id && categoriaId && nombre) {
-            actualizarSubcategoria(id, categoriaId, nombre);
+            actualizarSubcategoria(id, categoriaId, nombre, descripcion);
         }
     });
 
@@ -309,6 +321,7 @@ function mostrarModalEditarCategoria(categoriaId) {
 function mostrarModalNuevaSubcategoria(categoriaId) {
     document.getElementById('categoria-padre-id').value = categoriaId;
     document.getElementById('nombre-subcategoria').value = '';
+    document.getElementById('descripcion-subcategoria').value = '';
     const modal = new bootstrap.Modal(document.getElementById('modalNuevaSubcategoria'));
     modal.show();
 }
@@ -327,6 +340,7 @@ function mostrarModalEditarSubcategoria(subcategoriaId) {
         // Actualizar los campos del formulario
         document.getElementById('editar-subcategoria-id').value = subcategoria.id;
         document.getElementById('editar-nombre-subcategoria').value = subcategoria.nombre || '';
+        document.getElementById('editar-descripcion-subcategoria').value = subcategoria.descripcion || '';
 
         // Cargar categorías en el select
         const select = document.getElementById('editar-categoria-subcategoria');
@@ -789,13 +803,13 @@ function eliminarCategoria(id) {
 }
 
 // Crear nueva subcategoría
-function crearSubcategoria(categoriaId, nombre) {
+function crearSubcategoria(categoriaId, nombre, descripcion) {
     fetch('/api/subcategorias', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ categoria_id: categoriaId, nombre })
+        body: JSON.stringify({ categoria_id: categoriaId, nombre, descripcion })
     })
     .then(response => response.json())
     .then(data => {
@@ -820,14 +834,14 @@ function crearSubcategoria(categoriaId, nombre) {
 }
 
 // Actualizar subcategoría
-function actualizarSubcategoria(id, categoriaId, nombre) {
-    console.log('Actualizando subcategoria', id, 'a categoria', categoriaId, 'con nombre', nombre);
+function actualizarSubcategoria(id, categoriaId, nombre, descripcion) {
+    console.log('Actualizando subcategoria', id, 'a categoria', categoriaId, 'con nombre', nombre, 'y descripcion', descripcion);
     fetch(`/api/subcategorias/${id}`, {
         method: 'PUT',
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ categoria_id: categoriaId, nombre })
+        body: JSON.stringify({ categoria_id: categoriaId, nombre, descripcion })
     })
     .then(response => response.json())
     .then(data => {
