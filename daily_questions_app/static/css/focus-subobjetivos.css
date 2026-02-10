@@ -960,3 +960,31 @@ Estilos para tooltip personalizado con subobjetivos */
     transform: scale(1.1);
     color: #0d6efd !important;
 }
+
+/* Estilos para drag & drop */
+.drag-handle {
+    transition: color 0.2s ease;
+}
+
+.drag-handle:hover {
+    color: #0d6efd !important;
+}
+
+.drag-handle:active {
+    cursor: grabbing !important;
+}
+
+.focus-subobjetivo-item[draggable="true"] {
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.focus-subobjetivo-item.drag-over {
+    border: 2px dashed #0d6efd;
+    background-color: #e7f1ff;
+    transform: scale(1.02);
+}
+
+[data-theme="dark"] .focus-subobjetivo-item.drag-over {
+    border-color: var(--primary-color);
+    background-color: rgba(13, 110, 253, 0.1);
+}

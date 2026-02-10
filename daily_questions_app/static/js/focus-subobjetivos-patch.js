@@ -14,6 +14,7 @@ document.addEventListener('DOMContentLoaded', function() {
 // Variable global para almacenar datos de subobjetivos
 window.currentSubobjetivos = [];
 let patcheandoSubobjetivos = false;
+let draggedItem = null; // Variable global para drag & drop
 
 // Función para agregar selects de acciones a subobjetivos existentes
 function agregarBotonesFocusSubobjetivos() {
@@ -62,6 +63,129 @@ function agregarBotonesFocusSubobjetivos() {
         item.style.alignItems = 'center';
         item.style.justifyContent = 'space-between';
         
+        // Agregar ícono de drag al inicio del item
+        const dragHandle = document.createElement('span');
+        dragHandle.className = 'drag-handle';
+        dragHandle.innerHTML = '⋮⋮';
+        dragHandle.style.cssText = `
+            cursor: grab;
+            padding: 4px 8px;
+            color: #6c757d;
+            font-size: 16px;
+            user-select: none;
+            margin-right: 8px;
+        `;
+        dragHandle.title = 'Arrastra para reordenar';
+        
+        // Insertar el drag handle al inicio
+        item.insertBefore(dragHandle, item.firstChild);
+        
+        // Hacer el item arrastrable
+        item.setAttribute('draggable', 'true');
+        item.style.cursor = 'move';
+        
+        // Eventos de drag & drop
+        item.addEventListener('dragstart', function(e) {
+            draggedItem = this;
+            this.style.opacity = '0.5';
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/html', this.innerHTML);
+        });
+        
+        item.addEventListener('dragend', function(e) {
+            this.style.opacity = '1';
+            draggedItem = null;
+            
+            // Remover clases de hover de todos los items
+            items.forEach(i => {
+                i.classList.remove('drag-over');
+            });
+        });
+        
+        item.addEventListener('dragover', function(e) {
+            if (e.preventDefault) {
+                e.preventDefault();
+            }
+            e.dataTransfer.dropEffect = 'move';
+            
+            if (draggedItem !== this) {
+                this.classList.add('drag-over');
+            }
+            
+            return false;
+        });
+        
+        item.addEventListener('dragleave', function(e) {
+            this.classList.remove('drag-over');
+        });
+        
+        item.addEventListener('drop', async function(e) {
+            if (e.stopPropagation) {
+                e.stopPropagation();
+            }
+            
+            this.classList.remove('drag-over');
+            
+            if (draggedItem !== this) {
+                // Obtener IDs
+                const draggedId = draggedItem.querySelector('.focus-subobjetivo-checkbox').getAttribute('data-subobjetivo-id');
+                const targetId = this.querySelector('.focus-subobjetivo-checkbox').getAttribute('data-subobjetivo-id');
+                
+                // Verificar restricciones de completado
+                const draggedCompleted = draggedItem.querySelector('.focus-subobjetivo-checkbox').checked;
+                const targetCompleted = this.querySelector('.focus-subobjetivo-checkbox').checked;
+                
+                // No permitir mover completados antes de no completados
+                if (draggedCompleted && !targetCompleted) {
+                    alert('Los subobjetivos completados deben permanecer al final');
+                    return false;
+                }
+                
+                // No permitir mover no completados después de completados
+                if (!draggedCompleted && targetCompleted) {
+                    alert('Los subobjetivos no completados deben permanecer arriba');
+                    return false;
+                }
+                
+                // Reordenar en el DOM
+                const allItems = Array.from(container.querySelectorAll('.focus-subobjetivo-item'));
+                const draggedIndex = allItems.indexOf(draggedItem);
+                const targetIndex = allItems.indexOf(this);
+                
+                if (draggedIndex < targetIndex) {
+                    this.parentNode.insertBefore(draggedItem, this.nextSibling);
+                } else {
+                    this.parentNode.insertBefore(draggedItem, this);
+                }
+                
+                // Obtener nuevo orden
+                const newOrder = Array.from(container.querySelectorAll('.focus-subobjetivo-checkbox'))
+                    .map(cb => parseInt(cb.getAttribute('data-subobjetivo-id'), 10));
+                
+                // Enviar al servidor
+                try {
+                    const response = await fetch(`/api/objetivos/${objetivoEnFocus.id}/subobjetivos/reordenar`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ ids: newOrder })
+                    });
+                    
+                    if (!response.ok) {
+                        alert('Error al guardar el nuevo orden');
+                        // Recargar para restaurar el orden original
+                        if (typeof recargarSubobjetivosFocus === 'function') {
+                            recargarSubobjetivosFocus();
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error al reordenar:', error);
+                    alert('Error al guardar el nuevo orden');
+                }
+            }
+            
+            return false;
+        });
+        
         // Crear select de acciones básico
         const selectAcciones = document.createElement('select');
         selectAcciones.className = 'focus-subobjetivo-select';
@@ -87,51 +211,7 @@ function agregarBotonesFocusSubobjetivos() {
         opcionFocus.textContent = '🎯 Focus';
         selectAcciones.appendChild(opcionFocus);
         
-        const opcionSubir = document.createElement('option');
-        opcionSubir.value = 'subir';
-        opcionSubir.textContent = '⬆️ Subir';
-        
-        // Deshabilitar si es el primer elemento O si es completado y el anterior no está completado
-        const esElPrimero = items[0] === item;
-        let deshabilitarSubir = esElPrimero;
-        
-        if (!esElPrimero && isCompleted) {
-            // Si está completado, verificar si el anterior no está completado
-            const itemAnterior = items[Array.from(items).indexOf(item) - 1];
-            const checkboxAnterior = itemAnterior?.querySelector('.focus-subobjetivo-checkbox');
-            if (checkboxAnterior && !checkboxAnterior.checked) {
-                deshabilitarSubir = true;
-            }
-        }
-        
-        if (deshabilitarSubir) {
-            opcionSubir.disabled = true;
-            opcionSubir.textContent = '⬆️ Subir (no disponible)';
-        }
-        selectAcciones.appendChild(opcionSubir);
-        
-        const opcionBajar = document.createElement('option');
-        opcionBajar.value = 'bajar';
-        opcionBajar.textContent = '⬇️ Bajar';
-        
-        // Deshabilitar si es el último elemento O si no está completado y el siguiente está completado
-        const esElUltimo = items[items.length - 1] === item;
-        let deshabilitarBajar = esElUltimo;
-        
-        if (!esElUltimo && !isCompleted) {
-            // Si no está completado, verificar si el siguiente está completado
-            const itemSiguiente = items[Array.from(items).indexOf(item) + 1];
-            const checkboxSiguiente = itemSiguiente?.querySelector('.focus-subobjetivo-checkbox');
-            if (checkboxSiguiente && checkboxSiguiente.checked) {
-                deshabilitarBajar = true;
-            }
-        }
-        
-        if (deshabilitarBajar) {
-            opcionBajar.disabled = true;
-            opcionBajar.textContent = '⬇️ Bajar (no disponible)';
-        }
-        selectAcciones.appendChild(opcionBajar);
+        // NO agregar opciones de subir/bajar - se usará drag & drop
         
         const opcionEditar = document.createElement('option');
         opcionEditar.value = 'editar';
@@ -158,42 +238,33 @@ function agregarBotonesFocusSubobjetivos() {
             
             if (accion === 'focus') {
                 console.log('Ejecutando focus para:', subobjetivoId);
-                // console.log('🔍 Verificando disponibilidad de función...');
                 console.log('- typeof abrirModoFocusSubobjetivo:', typeof abrirModoFocusSubobjetivo);
                 console.log('- typeof window.abrirModoFocusSubobjetivo:', typeof window.abrirModoFocusSubobjetivo);
                 
-                // Función para ejecutar el focus
                 const ejecutarFocus = () => {
                     if (typeof abrirModoFocusSubobjetivo === 'function') {
-                        // console.log('✅ Usando función directa');
                         abrirModoFocusSubobjetivo(subobjetivoId, tituloTexto);
                         return true;
                     } else if (typeof window.abrirModoFocusSubobjetivo === 'function') {
-                        // console.log('✅ Usando función de window');
                         window.abrirModoFocusSubobjetivo(subobjetivoId, tituloTexto);
                         return true;
                     }
                     return false;
                 };
                 
-                // Intentar ejecutar inmediatamente
                 if (ejecutarFocus()) {
                     return;
                 }
                 
-                // Si no funciona, intentar cargar el script manualmente
                 console.log('⚠️ Función no encontrada, intentando cargar script...');
                 
-                // Verificar si el script está cargado
                 const scriptExists = document.querySelector('script[src*="focus-subobjetivos.js"]');
                 console.log('📜 Script focus-subobjetivos.js encontrado:', !!scriptExists);
                 
                 if (!scriptExists) {
-                    // console.log('🔄 Cargando script manualmente...');
                     const script = document.createElement('script');
                     script.src = '/static/js/focus-subobjetivos.js';
                     script.onload = () => {
-                        // console.log('✅ Script cargado, reintentando...');
                         setTimeout(() => {
                             if (!ejecutarFocus()) {
                                 console.error('❌ Función sigue no disponible después de cargar script');
@@ -207,17 +278,14 @@ function agregarBotonesFocusSubobjetivos() {
                     };
                     document.head.appendChild(script);
                 } else {
-                    // El script existe pero la función no está disponible
                     console.log('⏳ Script existe, esperando carga completa...');
                     let intentos = 0;
                     const maxIntentos = 10;
                     
                     const verificarFuncion = () => {
                         intentos++;
-                        // console.log(`🔄 Intento ${intentos}/${maxIntentos}`);
                         
                         if (ejecutarFocus()) {
-                            // console.log('✅ Función encontrada después de esperar');
                             return;
                         }
                         
@@ -225,7 +293,6 @@ function agregarBotonesFocusSubobjetivos() {
                             setTimeout(verificarFuncion, 200);
                         } else {
                             console.error('❌ Función no disponible después de múltiples intentos');
-                            // console.log('🔍 Estado final:');
                             console.log('- window keys:', Object.keys(window).filter(k => k.includes('abrir')));
                             console.log('- scripts cargados:', Array.from(document.scripts).map(s => s.src));
                             alert('Error: Función de focus no disponible después de múltiples intentos. Recarga la página.');
@@ -234,15 +301,8 @@ function agregarBotonesFocusSubobjetivos() {
                     
                     verificarFuncion();
                 }
-            } else if (accion === 'subir') {
-                console.log('Ejecutando subir para:', subobjetivoId);
-                moverSubobjetivoFocus(subobjetivoId, 'arriba');
-            } else if (accion === 'bajar') {
-                console.log('Ejecutando bajar para:', subobjetivoId);
-                moverSubobjetivoFocus(subobjetivoId, 'abajo');
             } else if (accion === 'editar') {
                 console.log('Ejecutando editar para:', subobjetivoId);
-                // Buscar el elemento titulo nuevamente para asegurar que está en el DOM
                 const tituloActual = item.querySelector('.focus-subobjetivo-titulo');
                 if (tituloActual) {
                     editarSubobjetivoInline(subobjetivoId, tituloActual);
