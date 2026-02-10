@@ -5801,7 +5801,7 @@ async function cargarSubobjetivosFocus(objetivoId) {
                         ${sub.completado ? 'checked' : ''} 
                         data-subobjetivo-id="${sub.id}"
                         data-objetivo-id="${objetivoId}">
-                    <span class="focus-subobjetivo-titulo ${sub.completado ? 'completado' : ''}">${sub.titulo}</span>
+                    <span class="focus-subobjetivo-titulo ${sub.completado ? 'completado' : ''}" data-subobjetivo-id="${sub.id}">${sub.titulo}</span>
                 </div>
             `;
         });
@@ -5882,7 +5882,7 @@ function renderizarSubobjetivosFocusCompleto(subobjetivos) {
                     ${sub.completado ? 'checked' : ''} 
                     data-subobjetivo-id="${sub.id}"
                     data-objetivo-id="${objetivoEnFocus ? objetivoEnFocus.id : ''}">
-                <span class="focus-subobjetivo-titulo ${sub.completado ? 'completado' : ''}">${sub.titulo}</span>
+                <span class="focus-subobjetivo-titulo ${sub.completado ? 'completado' : ''}" data-subobjetivo-id="${sub.id}">${sub.titulo}</span>
             </div>
         `;
     });

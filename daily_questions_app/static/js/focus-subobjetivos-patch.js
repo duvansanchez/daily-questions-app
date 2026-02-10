@@ -242,7 +242,14 @@ function agregarBotonesFocusSubobjetivos() {
                 moverSubobjetivoFocus(subobjetivoId, 'abajo');
             } else if (accion === 'editar') {
                 console.log('Ejecutando editar para:', subobjetivoId);
-                editarSubobjetivoInline(subobjetivoId, titulo);
+                // Buscar el elemento titulo nuevamente para asegurar que está en el DOM
+                const tituloActual = item.querySelector('.focus-subobjetivo-titulo');
+                if (tituloActual) {
+                    editarSubobjetivoInline(subobjetivoId, tituloActual);
+                } else {
+                    console.error('❌ No se encontró el elemento titulo en el DOM');
+                    alert('Error: No se pudo encontrar el elemento para editar');
+                }
             } else if (accion === 'eliminar') {
                 console.log('Ejecutando eliminar para:', subobjetivoId);
                 eliminarSubobjetivoInline(subobjetivoId, item);
@@ -268,11 +275,11 @@ function agregarBotonesFocusSubobjetivos() {
         // console.log(`✅ Select de acciones agregado para: ${tituloTexto}`);
     });
     
-    // Aplicar prefijos de colores después de agregar los selects
-    if (typeof aplicarPrefijosSubobjetivos === 'function') {
-        aplicarPrefijosSubobjetivos();
-        // console.log('🎨 Prefijos de colores aplicados');
-    }
+    // NO aplicar prefijos de colores aquí porque ya se procesaron al crear el HTML
+    // if (typeof aplicarPrefijosSubobjetivos === 'function') {
+    //     aplicarPrefijosSubobjetivos();
+    //     // console.log('🎨 Prefijos de colores aplicados');
+    // }
     
     patcheandoSubobjetivos = false;
     // console.log('🔧 Parche completado');
@@ -342,16 +349,28 @@ setTimeout(() => {
 
 // Función para editar subobjetivo inline
 function editarSubobjetivoInline(subobjetivoId, tituloElement) {
-    // Obtener solo el texto del título, sin elementos hijos (como el tiempo)
-    let textoOriginal = '';
-    for (let node of tituloElement.childNodes) {
-        if (node.nodeType === Node.TEXT_NODE) {
-            textoOriginal += node.textContent;
+    // Obtener el texto completo del título
+    let textoOriginal = tituloElement.textContent.trim();
+    
+    // Si el título tiene prefijos procesados (con HTML), necesitamos reconstruir el texto correctamente
+    if (tituloElement.hasAttribute('data-prefijo-procesado')) {
+        // Buscar el span del prefijo
+        const prefijoSpan = tituloElement.querySelector('.subobjetivo-prefix');
+        if (prefijoSpan) {
+            const prefijoTexto = prefijoSpan.textContent;
+            // Obtener el resto del texto (sin el prefijo)
+            const restoTexto = Array.from(tituloElement.childNodes)
+                .filter(node => node.nodeType === Node.TEXT_NODE)
+                .map(node => node.textContent)
+                .join('');
+            
+            // Reconstruir con espacio después del prefijo
+            textoOriginal = prefijoTexto + ' ' + restoTexto.trim();
         }
     }
     
     // Limpiar cualquier formato de tiempo que pueda quedar
-    textoOriginal = textoOriginal.trim()
+    textoOriginal = textoOriginal
         .replace(/\s*\(\d{1,3}:\d{2}\)\s*$/, '')  // (123:45)
         .replace(/\s*\(\d{1,3}:\d{2}:\d{2}\)\s*$/, '')  // (1:23:45)
         .replace(/\s*-\s*\d{1,3}:\d{2}\s*$/, '')  // - 123:45
@@ -382,6 +401,13 @@ function editarSubobjetivoInline(subobjetivoId, tituloElement) {
     // Guardar referencia al elemento original
     const elementoOriginal = tituloElement;
     
+    // Verificar que el elemento tiene un parentNode válido
+    if (!tituloElement.parentNode) {
+        console.error('❌ El elemento titulo no tiene parentNode');
+        alert('Error: El elemento no está en el DOM. Intenta recargar la página.');
+        return;
+    }
+    
     // Reemplazar título con input
     tituloElement.parentNode.replaceChild(input, tituloElement);
     input.focus();
@@ -393,6 +419,7 @@ function editarSubobjetivoInline(subobjetivoId, tituloElement) {
         
         const nuevoSpan = document.createElement('span');
         nuevoSpan.className = 'focus-subobjetivo-titulo';
+        nuevoSpan.setAttribute('data-subobjetivo-id', subobjetivoId);
         
         // Procesar prefijos en el texto original
         const textoConPrefijo = typeof procesarTituloConPrefijos === 'function' 
@@ -439,6 +466,7 @@ function editarSubobjetivoInline(subobjetivoId, tituloElement) {
                         
                         const nuevoSpan = document.createElement('span');
                         nuevoSpan.className = 'focus-subobjetivo-titulo';
+                        nuevoSpan.setAttribute('data-subobjetivo-id', subobjetivoId);
                         
                         // Procesar prefijos en el nuevo texto
                         const textoConPrefijo = typeof procesarTituloConPrefijos === 'function' 
@@ -483,8 +511,19 @@ function editarSubobjetivoInline(subobjetivoId, tituloElement) {
         }
     });
     
-    // Solo cancelar con Escape, no con blur para evitar que se cierre inmediatamente
+    // Cancelar con blur (cuando pierde el foco)
+    input.addEventListener('blur', function() {
+        // Pequeño delay para permitir que otros eventos se procesen primero
+        setTimeout(() => {
+            if (input.parentNode) {
+                restaurar();
+            }
+        }, 100);
+    });
 }
+
+// Exponer función globalmente para que pueda ser llamada desde objetivos.html
+window.editarSubobjetivoInline = editarSubobjetivoInline;
 
 // Función para eliminar subobjetivo
 async function eliminarSubobjetivoInline(subobjetivoId, itemElement) {
@@ -545,6 +584,9 @@ async function eliminarSubobjetivoInline(subobjetivoId, itemElement) {
         });
     }
 }
+
+// Exponer función globalmente
+window.eliminarSubobjetivoInline = eliminarSubobjetivoInline;
 
 // Función para mover subobjetivos en el modo focus
 async function moverSubobjetivoFocus(subobjetivoId, direccion) {

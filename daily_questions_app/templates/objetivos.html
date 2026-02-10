@@ -2824,6 +2824,13 @@ Puedes usar:
           if (container) {
             let html = "";
             subobjetivos2.forEach((sub) => {
+              // Procesar prefijos antes de crear el HTML
+              const tituloConPrefijo = typeof procesarTituloConPrefijos === 'function' 
+                ? procesarTituloConPrefijos(sub.titulo) 
+                : sub.titulo;
+              
+              const tienePrefijo = tituloConPrefijo !== sub.titulo;
+              
               html += `
                 <div class="focus-subobjetivo-item p-3 mb-2 bg-light rounded">
                   <input type="checkbox" class="form-check-input focus-subobjetivo-checkbox me-3" 
@@ -2833,7 +2840,7 @@ Puedes usar:
                   ? "text-decoration-line-through text-muted"
                   : ""
                 }" 
-                        data-subobjetivo-id="${sub.id}">${sub.titulo}</span>
+                        data-subobjetivo-id="${sub.id}"${tienePrefijo ? ' data-prefijo-procesado="true"' : ''}>${tituloConPrefijo}</span>
                 </div>
               `;
             });
@@ -3077,94 +3084,45 @@ Puedes usar:
 
   // Doble clic para editar
   document.addEventListener("dblclick", function (e) {
-    if (e.target.classList.contains("focus-subobjetivo-titulo")) {
-      const subobjetivoId = e.target.getAttribute("data-subobjetivo-id");
-      editarSubobjetivoInline(subobjetivoId, e.target);
+    // Buscar el elemento con la clase focus-subobjetivo-titulo
+    // Puede ser el target directo o un padre cercano (en caso de prefijos con HTML)
+    let tituloElement = e.target;
+    
+    if (!tituloElement.classList.contains("focus-subobjetivo-titulo")) {
+      // Si el target no es el título, buscar en los padres
+      tituloElement = e.target.closest(".focus-subobjetivo-titulo");
+    }
+    
+    if (tituloElement && tituloElement.classList.contains("focus-subobjetivo-titulo")) {
+      const subobjetivoId = tituloElement.getAttribute("data-subobjetivo-id");
+      
+      if (!subobjetivoId) {
+        console.error("No se encontró el ID del subobjetivo en el elemento:", tituloElement);
+        return;
+      }
+      
+      console.log("Doble clic detectado en subobjetivo:", subobjetivoId);
+      console.log("Verificando disponibilidad de editarSubobjetivoInline...");
+      console.log("- typeof editarSubobjetivoInline:", typeof editarSubobjetivoInline);
+      console.log("- typeof window.editarSubobjetivoInline:", typeof window.editarSubobjetivoInline);
+      
+      // Verificar si la función está disponible
+      if (typeof editarSubobjetivoInline === 'function') {
+        console.log("Usando editarSubobjetivoInline directa");
+        editarSubobjetivoInline(subobjetivoId, tituloElement);
+      } else if (typeof window.editarSubobjetivoInline === 'function') {
+        console.log("Usando window.editarSubobjetivoInline");
+        window.editarSubobjetivoInline(subobjetivoId, tituloElement);
+      } else {
+        console.error("La función editarSubobjetivoInline no está disponible");
+        console.log("Funciones disponibles en window:", Object.keys(window).filter(k => k.includes('editar')));
+        alert("Error: La función de edición no está cargada. Intenta recargar la página.");
+      }
     }
   });
 
-  // Función para editar subobjetivo inline
-  function editarSubobjetivoInline(subobjetivoId, elemento) {
-    const textoOriginal = elemento.textContent.trim();
-
-    // Crear input
-    const input = document.createElement("input");
-    input.type = "text";
-    input.value = textoOriginal;
-    input.className = "form-control form-control-sm";
-    input.style.width = "100%";
-
-    // Reemplazar span con input
-    elemento.parentNode.replaceChild(input, elemento);
-    input.focus();
-    input.select();
-
-    // Función para guardar
-    async function guardar() {
-      const nuevoTexto = input.value.trim();
-
-      if (!nuevoTexto) {
-        alert("El título no puede estar vacío");
-        input.focus();
-        return;
-      }
-
-      if (nuevoTexto === textoOriginal) {
-        // Sin cambios, restaurar
-        restaurarSpan();
-        return;
-      }
-
-      try {
-        const response = await fetch(`/api/subobjetivos/${subobjetivoId}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ titulo: nuevoTexto }),
-        });
-
-        if (response.ok) {
-          // Actualizar solo el texto sin recargar todo
-          const nuevoSpan = document.createElement("span");
-          nuevoSpan.className = elemento.className;
-          nuevoSpan.setAttribute("data-subobjetivo-id", subobjetivoId);
-          nuevoSpan.style.cursor = "pointer";
-          nuevoSpan.title = "Doble clic para editar";
-          nuevoSpan.textContent = nuevoTexto;
-
-          input.parentNode.replaceChild(nuevoSpan, input);
-        } else {
-          alert("Error al actualizar el subobjetivo");
-          restaurarSpan();
-        }
-      } catch (error) {
-        console.error("Error:", error);
-        alert("Error al actualizar el subobjetivo");
-        restaurarSpan();
-      }
-    }
-
-    // Función para restaurar span
-    function restaurarSpan() {
-      const nuevoSpan = document.createElement("span");
-      nuevoSpan.className = elemento.className;
-      nuevoSpan.setAttribute("data-subobjetivo-id", subobjetivoId);
-      nuevoSpan.style.cursor = "pointer";
-      nuevoSpan.title = "Doble clic para editar";
-      nuevoSpan.textContent = textoOriginal;
-
-      input.parentNode.replaceChild(nuevoSpan, input);
-    }
-
-    // Event listeners del input
-    input.addEventListener("blur", guardar);
-    input.addEventListener("keypress", function (e) {
-      if (e.key === "Enter") {
-        guardar();
-      } else if (e.key === "Escape") {
-        restaurarSpan();
-      }
-    });
-  }
+  // La función editarSubobjetivoInline está definida en focus-subobjetivos-patch.js
+  // para manejar correctamente los prefijos de colores y el formato
 
   // Los selects se agregan automáticamente via focus-subobjetivos-patch.js
 
@@ -3440,6 +3398,13 @@ Puedes usar:
 
         let html = "";
         subobjetivos.forEach((sub) => {
+          // Procesar prefijos antes de crear el HTML
+          const tituloConPrefijo = typeof procesarTituloConPrefijos === 'function' 
+            ? procesarTituloConPrefijos(sub.titulo) 
+            : sub.titulo;
+          
+          const tienePrefijo = tituloConPrefijo !== sub.titulo;
+          
           html += `
                 <div class="focus-subobjetivo-item p-3 mb-2 bg-light rounded">
                     <input type="checkbox" class="form-check-input focus-subobjetivo-checkbox me-3" 
@@ -3449,7 +3414,7 @@ Puedes usar:
               ? "text-decoration-line-through text-muted"
               : ""
             }" 
-                          data-subobjetivo-id="${sub.id}">${sub.titulo}</span>
+                          data-subobjetivo-id="${sub.id}"${tienePrefijo ? ' data-prefijo-procesado="true"' : ''}>${tituloConPrefijo}</span>
                 </div>
             `;
         });
