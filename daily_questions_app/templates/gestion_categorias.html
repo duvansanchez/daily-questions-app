@@ -671,8 +671,14 @@ function renderizarSubcategorias() {
     const listGroup = document.createElement('div');
     listGroup.className = 'list-group';
     
-    // Ordenar subcategorías por nombre
-    subcategoriasUnicas.sort((a, b) => a.nombre.localeCompare(b.nombre));
+    // Ordenar subcategorías: primero activas (alfabéticamente), luego inactivas (alfabéticamente)
+    subcategoriasUnicas.sort((a, b) => {
+        // Si una está activa y la otra no, la activa va primero
+        if (a.activa && !b.activa) return -1;
+        if (!a.activa && b.activa) return 1;
+        // Si ambas tienen el mismo estado, ordenar alfabéticamente
+        return a.nombre.localeCompare(b.nombre);
+    });
     
     // Procesar cada subcategoría única
     subcategoriasUnicas.forEach(subcategoria => {
