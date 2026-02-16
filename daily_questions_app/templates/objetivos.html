@@ -1733,12 +1733,16 @@ Puedes usar:
       });
 
     // Configurar envío del formulario de edición
+    // NOTA: Este event listener está comentado porque ya existe uno en main.js
+    // que maneja el envío del formulario con validación de duplicados
+    /*
     document
       .getElementById("form-editar-frase")
       .addEventListener("submit", async function (e) {
         e.preventDefault();
         await enviarEditarFrase();
       });
+    */
   }
 
   // Función para enviar nueva frase

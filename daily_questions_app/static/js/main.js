@@ -4868,11 +4868,27 @@ function configurarEventListenersFrases() {
                 categoria = nuevaCategoria.toLowerCase().replace(/\s+/g, '_');
             }
             
+            // Obtener subcategoría (nueva o existente)
+            let subcategoria = document.getElementById('editar-frase-subcategoria').value;
+            if (subcategoria === 'nueva') {
+                const nuevaSubcategoria = document.getElementById('editar-nueva-subcategoria-input').value.trim();
+                if (!nuevaSubcategoria) {
+                    showError('Por favor ingresa el nombre de la nueva subcategoría');
+                    return;
+                }
+                if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ0-9\s]+$/.test(nuevaSubcategoria)) {
+                    showError('La subcategoría solo puede contener letras, números y espacios');
+                    return;
+                }
+                subcategoria = nuevaSubcategoria.toLowerCase().replace(/\s+/g, '_');
+            }
+            
             const fraseId = document.getElementById('editar-frase-id').value;
             const datos = {
                 texto: document.getElementById('editar-frase-texto').value,
                 autor: document.getElementById('editar-frase-autor').value,
                 categoria: categoria,
+                subcategoria: subcategoria,
                 notas: document.getElementById('editar-frase-notas').value
             };
             
