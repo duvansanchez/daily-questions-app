@@ -4340,15 +4340,27 @@ async function mostrarFraseAleatoria() {
 }
 
 // Editar frase
-function editarFrase(fraseId) {
+async function editarFrase(fraseId) {
     const frase = frases.find(f => f.id === fraseId);
     if (!frase) return;
+    
+    // Cargar categorías si no están cargadas
+    await actualizarCategoriasDisponibles();
     
     document.getElementById('editar-frase-id').value = frase.id;
     document.getElementById('editar-frase-texto').value = frase.texto;
     document.getElementById('editar-frase-autor').value = frase.autor || '';
     document.getElementById('editar-frase-categoria').value = frase.categoria;
     document.getElementById('editar-frase-notas').value = frase.notas || '';
+    
+    // Cargar subcategorías para la categoría de la frase
+    if (frase.categoria) {
+        await cargarSubcategoriasParaModal(frase.categoria, 'editar-frase-subcategoria');
+        // Establecer la subcategoría después de cargarlas
+        if (frase.subcategoria) {
+            document.getElementById('editar-frase-subcategoria').value = frase.subcategoria;
+        }
+    }
     
     const modal = new bootstrap.Modal(document.getElementById('modalEditarFrase'));
     modal.show();
