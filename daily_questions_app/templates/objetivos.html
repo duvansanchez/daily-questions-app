@@ -326,6 +326,17 @@ endblock %} {% block head %}
             <small id="indicador-filtro-estadisticas" class="text-muted">Estadísticas generales</small>
           </div>
 
+          <!-- Descripción de subcategoría (se muestra cuando se filtra por subcategoría) -->
+          <div id="descripcion-subcategoria-container" class="alert alert-info mb-3" style="display: none;">
+            <div class="d-flex align-items-start">
+              <i class="bi bi-info-circle me-2 mt-1"></i>
+              <div>
+                <strong id="descripcion-subcategoria-titulo"></strong>
+                <p id="descripcion-subcategoria-texto" class="mb-0 mt-1"></p>
+              </div>
+            </div>
+          </div>
+
           <!-- Filtros y controles -->
           <div class="d-flex justify-content-between align-items-center mb-3">
             <div class="row g-2 flex-grow-1 align-items-end">
@@ -1060,6 +1071,21 @@ endblock %} {% block head %}
             <h5 class="mb-0">
               <i class="bi bi-list-check me-2"></i>Progreso del objetivo
               <span class="badge bg-primary ms-2" id="focus-progreso">0/0</span>
+              <i class="bi bi-info-circle ms-2 text-info" 
+                 style="cursor: pointer; font-size: 1rem;" 
+                 data-bs-toggle="tooltip" 
+                 data-bs-placement="top" 
+                 data-bs-html="true"
+                 data-bs-title="<strong>Prefijos de Sub-objetivos:</strong><br>
+                 <span class='badge' style='background-color: #10b981; margin: 2px;'>feat:</span> Nuevas funcionalidades<br>
+                 <span class='badge' style='background-color: #ef4444; margin: 2px;'>fix:</span> Corrección de errores<br>
+                 <span class='badge' style='background-color: #06b6d4; margin: 2px;'>refactor:</span> Limpieza de código<br>
+                 <span class='badge' style='background-color: #3b82f6; margin: 2px;'>docs:</span> Documentación<br>
+                 <span class='badge' style='background-color: #a855f7; margin: 2px;'>style:</span> Cambios visuales<br>
+                 <span class='badge' style='background-color: #f59e0b; margin: 2px;'>investigate:</span> Análisis<br>
+                 <span class='badge' style='background-color: #f97316; margin: 2px;'>config:</span> Configuración"
+                 title="Información de prefijos">
+              </i>
             </h5>
             <button class="btn btn-outline-primary btn-sm" id="btn-agregar-subobjetivo-focus">
               <i class="bi bi-plus"></i> Agregar subobjetivo
@@ -2028,6 +2054,27 @@ Puedes usar:
         // Cargar subcategorías para la categoría seleccionada
         if (categoria) {
           await cargarSubcategoriasParaFiltros(categoria);
+          
+          // Mostrar descripción de la categoría si no hay subcategoría seleccionada
+          const descripcionContainer = document.getElementById("descripcion-subcategoria-container");
+          const descripcionTitulo = document.getElementById("descripcion-subcategoria-titulo");
+          const descripcionTexto = document.getElementById("descripcion-subcategoria-texto");
+          const subcategoriaSelect = document.getElementById("filtro-subcategoria-frases");
+          
+          // Solo mostrar descripción de categoría si no hay subcategoría seleccionada
+          if (!subcategoriaSelect.value) {
+            const categoriaSeleccionada = this.options[this.selectedIndex];
+            const descripcion = categoriaSeleccionada.getAttribute('data-descripcion');
+            const nombre = categoriaSeleccionada.text;
+            
+            if (descripcion && descripcion.trim()) {
+              descripcionTitulo.textContent = nombre;
+              descripcionTexto.textContent = descripcion;
+              descripcionContainer.style.display = 'block';
+            } else {
+              descripcionContainer.style.display = 'none';
+            }
+          }
         } else {
           // Limpiar subcategorías si no hay categoría seleccionada
           const subSelect = document.getElementById(
@@ -2037,6 +2084,12 @@ Puedes usar:
             subSelect.innerHTML =
               '<option value="">Todas las subcategorías</option>';
             filtrosActivos.subcategoria = "";
+          }
+          
+          // Ocultar descripción de subcategoría
+          const descripcionContainer = document.getElementById("descripcion-subcategoria-container");
+          if (descripcionContainer) {
+            descripcionContainer.style.display = 'none';
           }
         }
 
@@ -2050,6 +2103,29 @@ Puedes usar:
     if (filtroSubcategoria) {
       filtroSubcategoria.addEventListener("change", function () {
         filtrosActivos.subcategoria = this.value;
+        
+        // Mostrar descripción de la subcategoría si está seleccionada
+        const descripcionContainer = document.getElementById("descripcion-subcategoria-container");
+        const descripcionTitulo = document.getElementById("descripcion-subcategoria-titulo");
+        const descripcionTexto = document.getElementById("descripcion-subcategoria-texto");
+        
+        if (this.value) {
+          // Buscar la subcategoría seleccionada
+          const subcategoriaSeleccionada = this.options[this.selectedIndex];
+          const descripcion = subcategoriaSeleccionada.getAttribute('data-descripcion');
+          const nombre = subcategoriaSeleccionada.text;
+          
+          if (descripcion && descripcion.trim()) {
+            descripcionTitulo.textContent = nombre;
+            descripcionTexto.textContent = descripcion;
+            descripcionContainer.style.display = 'block';
+          } else {
+            descripcionContainer.style.display = 'none';
+          }
+        } else {
+          descripcionContainer.style.display = 'none';
+        }
+        
         aplicarFiltros();
       });
     }
@@ -2245,8 +2321,18 @@ Puedes usar:
       if (data.categorias && Array.isArray(data.categorias)) {
         data.categorias.forEach((categoria) => {
           const option = document.createElement("option");
-          option.value = categoria; // Valor original para el backend
-          option.textContent = normalizarNombre(categoria); // Nombre normalizado para mostrar
+          // Si categoria es un objeto, usar su nombre, sino usar el valor directamente
+          if (typeof categoria === 'object' && categoria.nombre) {
+            option.value = categoria.nombre; // Valor original para el backend
+            option.textContent = normalizarNombre(categoria.nombre); // Nombre normalizado para mostrar
+            // Agregar descripción como atributo data
+            if (categoria.descripcion) {
+              option.setAttribute('data-descripcion', categoria.descripcion);
+            }
+          } else {
+            option.value = categoria; // Valor original para el backend
+            option.textContent = normalizarNombre(categoria); // Nombre normalizado para mostrar
+          }
           select.appendChild(option);
         });
         console.log("Categorías cargadas en filtros:", data.categorias);
@@ -2272,8 +2358,18 @@ Puedes usar:
 
       data.subcategorias.forEach((subcategoria) => {
         const option = document.createElement("option");
-        option.value = subcategoria; // Valor original para el backend
-        option.textContent = normalizarNombre(subcategoria); // Nombre normalizado para mostrar
+        // Si subcategoria es un objeto, usar su nombre, sino usar el valor directamente
+        if (typeof subcategoria === 'object' && subcategoria.nombre) {
+          option.value = subcategoria.nombre; // Valor original para el backend
+          option.textContent = normalizarNombre(subcategoria.nombre); // Nombre normalizado para mostrar
+          // Agregar descripción como atributo data
+          if (subcategoria.descripcion) {
+            option.setAttribute('data-descripcion', subcategoria.descripcion);
+          }
+        } else {
+          option.value = subcategoria; // Valor original para el backend
+          option.textContent = normalizarNombre(subcategoria); // Nombre normalizado para mostrar
+        }
         select.appendChild(option);
       });
     } catch (error) {
@@ -2298,6 +2394,12 @@ Puedes usar:
     document.getElementById("filtro-subcategoria-frases").value = "";
     document.getElementById("filtro-subcategoria-frases").innerHTML =
       '<option value="">Todas las subcategorías</option>';
+    
+    // Ocultar descripción de subcategoría
+    const descripcionContainer = document.getElementById("descripcion-subcategoria-container");
+    if (descripcionContainer) {
+      descripcionContainer.style.display = 'none';
+    }
 
     filtrosActivos.categoria = "";
     filtrosActivos.subcategoria = "";
@@ -2566,34 +2668,34 @@ Puedes usar:
 
 <!-- Script para subobjetivos en modo focus -->
 <script>
-  console.log("🚀 Script de subobjetivos focus cargado");
+  // console.log("🚀 Script de subobjetivos focus cargado");
 
   // Usar delegación de eventos para que funcione siempre
   document.addEventListener("click", function (e) {
     // Botón agregar subobjetivo
     if (e.target.id === "btn-agregar-subobjetivo-focus") {
-      console.log("🎯 Click en botón agregar subobjetivo");
+      // console.log("🎯 Click en botón agregar subobjetivo");
       e.preventDefault();
 
       const container = document.getElementById("nuevo-subobjetivo-focus");
       const input = document.getElementById("input-nuevo-subobjetivo-focus");
 
       console.log("📦 Container encontrado:", !!container);
-      console.log("📝 Input encontrado:", !!input);
+      // console.log("📝 Input encontrado:", !!input);
 
       if (container && input) {
         container.style.display = "block";
-        console.log("📝 Input antes de focus:", input);
-        console.log("📝 Input disabled?", input.disabled);
-        console.log("📝 Input readonly?", input.readOnly);
+        // console.log("📝 Input antes de focus:", input);
+        // console.log("📝 Input disabled?", input.disabled);
+        // console.log("📝 Input readonly?", input.readOnly);
         input.focus();
         e.target.style.display = "none";
-        console.log("✅ Input mostrado correctamente");
+        // console.log("✅ Input mostrado correctamente");
 
         // Verificar si el input realmente tiene el foco
         setTimeout(() => {
-          console.log("📝 Input tiene foco?", document.activeElement === input);
-          console.log("📝 Elemento activo:", document.activeElement);
+          // console.log("📝 Input tiene foco?", document.activeElement === input);
+          // console.log("📝 Elemento activo:", document.activeElement);
         }, 100);
       } else {
         console.error("❌ No se encontraron elementos necesarios");
@@ -2625,7 +2727,7 @@ Puedes usar:
       e.target.id === "btn-guardar-subobjetivo-focus" ||
       e.target.closest("#btn-guardar-subobjetivo-focus")
     ) {
-      console.log("💾 Click en botón guardar - FORZADO");
+      // console.log("💾 Click en botón guardar - FORZADO");
       e.preventDefault();
       e.stopPropagation();
 
@@ -2637,7 +2739,7 @@ Puedes usar:
 
   // Función separada para guardar subobjetivo - INDEPENDIENTE DEL FOCO
   async function guardarNuevoSubobjetivo() {
-    console.log("💾 FORZANDO guardar subobjetivo...");
+    // console.log("💾 FORZANDO guardar subobjetivo...");
 
     const input = document.getElementById("input-nuevo-subobjetivo-focus");
     if (!input) {
@@ -2650,10 +2752,10 @@ Puedes usar:
       return;
     }
 
-    console.log("📝 Input encontrado, valor actual:", input.value);
+    // console.log("📝 Input encontrado, valor actual:", input.value);
 
     const titulo = input.value.trim();
-    console.log("📝 Título del subobjetivo:", titulo);
+    // console.log("📝 Título del subobjetivo:", titulo);
 
     if (!titulo) {
       Swal.fire({
@@ -2668,8 +2770,8 @@ Puedes usar:
     const modalFocus = document.getElementById("modalFocusObjetivo");
     const objetivoId = modalFocus?.getAttribute("data-objetivo-id");
 
-    console.log("🎯 ID del objetivo:", objetivoId);
-    console.log("🎯 Modal encontrado:", !!modalFocus);
+    // console.log("🎯 ID del objetivo:", objetivoId);
+    // console.log("🎯 Modal encontrado:", !!modalFocus);
 
     if (!objetivoId) {
       Swal.fire({
@@ -2684,8 +2786,8 @@ Puedes usar:
       const url = `/api/objetivos/${objetivoId}/subobjetivos`;
       const body = { titulo: titulo };
 
-      console.log("📡 Enviando request a:", url);
-      console.log("📡 Body:", body);
+      // console.log("📡 Enviando request a:", url);
+      // console.log("📡 Body:", body);
 
       const response = await fetch(url, {
         method: "POST",
@@ -2693,12 +2795,12 @@ Puedes usar:
         body: JSON.stringify(body),
       });
 
-      console.log("📡 Response status:", response.status);
-      console.log("📡 Response ok:", response.ok);
+      // console.log("📡 Response status:", response.status);
+      // console.log("📡 Response ok:", response.ok);
 
       if (response.ok) {
         const result = await response.json();
-        console.log("✅ Subobjetivo creado:", result);
+        // console.log("✅ Subobjetivo creado:", result);
 
         // Limpiar input
         input.value = "";
@@ -2708,20 +2810,27 @@ Puedes usar:
           "inline-block";
 
         // Recargar subobjetivos en modo focus DIRECTAMENTE
-        console.log("🔄 Recargando subobjetivos AHORA...");
+        // console.log("🔄 Recargando subobjetivos AHORA...");
 
         try {
           const response2 = await fetch(
             `/api/objetivos/${objetivoId}/subobjetivos`
           );
           const subobjetivos2 = await response2.json();
-          console.log("🔄 Subobjetivos recargados:", subobjetivos2.length);
+          // console.log("🔄 Subobjetivos recargados:", subobjetivos2.length);
 
           // Renderizar directamente
           const container = document.getElementById("focus-subobjetivos-list");
           if (container) {
             let html = "";
             subobjetivos2.forEach((sub) => {
+              // Procesar prefijos antes de crear el HTML
+              const tituloConPrefijo = typeof procesarTituloConPrefijos === 'function' 
+                ? procesarTituloConPrefijos(sub.titulo) 
+                : sub.titulo;
+              
+              const tienePrefijo = tituloConPrefijo !== sub.titulo;
+              
               html += `
                 <div class="focus-subobjetivo-item p-3 mb-2 bg-light rounded">
                   <input type="checkbox" class="form-check-input focus-subobjetivo-checkbox me-3" 
@@ -2731,7 +2840,7 @@ Puedes usar:
                   ? "text-decoration-line-through text-muted"
                   : ""
                 }" 
-                        data-subobjetivo-id="${sub.id}">${sub.titulo}</span>
+                        data-subobjetivo-id="${sub.id}"${tienePrefijo ? ' data-prefijo-procesado="true"' : ''}>${tituloConPrefijo}</span>
                 </div>
               `;
             });
@@ -2753,7 +2862,7 @@ Puedes usar:
               }
             }, 200);
 
-            console.log("✅ RECARGA COMPLETADA!");
+            // console.log("✅ RECARGA COMPLETADA!");
           }
         } catch (error) {
           console.error("❌ Error en recarga manual:", error);
@@ -2812,7 +2921,7 @@ Puedes usar:
     "focus",
     function (e) {
       if (e.target.id === "input-nuevo-subobjetivo-focus") {
-        console.log("🎯 Input enfocado");
+        // console.log("🎯 Input enfocado");
       }
     },
     true
@@ -2820,7 +2929,7 @@ Puedes usar:
 
   document.addEventListener("input", function (e) {
     if (e.target.id === "input-nuevo-subobjetivo-focus") {
-      console.log("📝 Texto en input:", e.target.value);
+      // console.log("📝 Texto en input:", e.target.value);
     }
   });
 
@@ -2848,7 +2957,7 @@ Puedes usar:
       e.preventDefault();
       const link = e.target.closest(".accion-focus-subobjetivo");
       const subobjetivoId = link.getAttribute("data-id");
-      console.log("🎯 Focus en subobjetivo:", subobjetivoId);
+      // console.log("🎯 Focus en subobjetivo:", subobjetivoId);
 
       // Buscar el título del subobjetivo para pasarlo a la función
       const container = document.getElementById("focus-subobjetivos-list");
@@ -2885,7 +2994,7 @@ Puedes usar:
       e.preventDefault();
       const link = e.target.closest(".accion-editar-subobjetivo");
       const subobjetivoId = link.getAttribute("data-id");
-      console.log("✏️ Editar subobjetivo:", subobjetivoId);
+      // console.log("✏️ Editar subobjetivo:", subobjetivoId);
 
       // Buscar el título del subobjetivo
       const container = document.getElementById("focus-subobjetivos-list");
@@ -2927,7 +3036,7 @@ Puedes usar:
         });
 
         if (response.ok) {
-          console.log("✅ Subobjetivo eliminado");
+          // console.log("✅ Subobjetivo eliminado");
           // Buscar y eliminar el item del DOM
           const container = document.getElementById("focus-subobjetivos-list");
           const items = container.querySelectorAll(
@@ -2975,94 +3084,45 @@ Puedes usar:
 
   // Doble clic para editar
   document.addEventListener("dblclick", function (e) {
-    if (e.target.classList.contains("focus-subobjetivo-titulo")) {
-      const subobjetivoId = e.target.getAttribute("data-subobjetivo-id");
-      editarSubobjetivoInline(subobjetivoId, e.target);
+    // Buscar el elemento con la clase focus-subobjetivo-titulo
+    // Puede ser el target directo o un padre cercano (en caso de prefijos con HTML)
+    let tituloElement = e.target;
+    
+    if (!tituloElement.classList.contains("focus-subobjetivo-titulo")) {
+      // Si el target no es el título, buscar en los padres
+      tituloElement = e.target.closest(".focus-subobjetivo-titulo");
+    }
+    
+    if (tituloElement && tituloElement.classList.contains("focus-subobjetivo-titulo")) {
+      const subobjetivoId = tituloElement.getAttribute("data-subobjetivo-id");
+      
+      if (!subobjetivoId) {
+        console.error("No se encontró el ID del subobjetivo en el elemento:", tituloElement);
+        return;
+      }
+      
+      console.log("Doble clic detectado en subobjetivo:", subobjetivoId);
+      console.log("Verificando disponibilidad de editarSubobjetivoInline...");
+      console.log("- typeof editarSubobjetivoInline:", typeof editarSubobjetivoInline);
+      console.log("- typeof window.editarSubobjetivoInline:", typeof window.editarSubobjetivoInline);
+      
+      // Verificar si la función está disponible
+      if (typeof editarSubobjetivoInline === 'function') {
+        console.log("Usando editarSubobjetivoInline directa");
+        editarSubobjetivoInline(subobjetivoId, tituloElement);
+      } else if (typeof window.editarSubobjetivoInline === 'function') {
+        console.log("Usando window.editarSubobjetivoInline");
+        window.editarSubobjetivoInline(subobjetivoId, tituloElement);
+      } else {
+        console.error("La función editarSubobjetivoInline no está disponible");
+        console.log("Funciones disponibles en window:", Object.keys(window).filter(k => k.includes('editar')));
+        alert("Error: La función de edición no está cargada. Intenta recargar la página.");
+      }
     }
   });
 
-  // Función para editar subobjetivo inline
-  function editarSubobjetivoInline(subobjetivoId, elemento) {
-    const textoOriginal = elemento.textContent.trim();
-
-    // Crear input
-    const input = document.createElement("input");
-    input.type = "text";
-    input.value = textoOriginal;
-    input.className = "form-control form-control-sm";
-    input.style.width = "100%";
-
-    // Reemplazar span con input
-    elemento.parentNode.replaceChild(input, elemento);
-    input.focus();
-    input.select();
-
-    // Función para guardar
-    async function guardar() {
-      const nuevoTexto = input.value.trim();
-
-      if (!nuevoTexto) {
-        alert("El título no puede estar vacío");
-        input.focus();
-        return;
-      }
-
-      if (nuevoTexto === textoOriginal) {
-        // Sin cambios, restaurar
-        restaurarSpan();
-        return;
-      }
-
-      try {
-        const response = await fetch(`/api/subobjetivos/${subobjetivoId}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ titulo: nuevoTexto }),
-        });
-
-        if (response.ok) {
-          // Actualizar solo el texto sin recargar todo
-          const nuevoSpan = document.createElement("span");
-          nuevoSpan.className = elemento.className;
-          nuevoSpan.setAttribute("data-subobjetivo-id", subobjetivoId);
-          nuevoSpan.style.cursor = "pointer";
-          nuevoSpan.title = "Doble clic para editar";
-          nuevoSpan.textContent = nuevoTexto;
-
-          input.parentNode.replaceChild(nuevoSpan, input);
-        } else {
-          alert("Error al actualizar el subobjetivo");
-          restaurarSpan();
-        }
-      } catch (error) {
-        console.error("Error:", error);
-        alert("Error al actualizar el subobjetivo");
-        restaurarSpan();
-      }
-    }
-
-    // Función para restaurar span
-    function restaurarSpan() {
-      const nuevoSpan = document.createElement("span");
-      nuevoSpan.className = elemento.className;
-      nuevoSpan.setAttribute("data-subobjetivo-id", subobjetivoId);
-      nuevoSpan.style.cursor = "pointer";
-      nuevoSpan.title = "Doble clic para editar";
-      nuevoSpan.textContent = textoOriginal;
-
-      input.parentNode.replaceChild(nuevoSpan, input);
-    }
-
-    // Event listeners del input
-    input.addEventListener("blur", guardar);
-    input.addEventListener("keypress", function (e) {
-      if (e.key === "Enter") {
-        guardar();
-      } else if (e.key === "Escape") {
-        restaurarSpan();
-      }
-    });
-  }
+  // La función editarSubobjetivoInline está definida en focus-subobjetivos-patch.js
+  // para manejar correctamente los prefijos de colores y el formato
 
   // Los selects se agregan automáticamente via focus-subobjetivos-patch.js
 
@@ -3263,20 +3323,20 @@ Puedes usar:
               modalFocus.setAttribute("data-objetivo-id", objetivoId);
             }
 
-            console.log("✅ ID del objetivo capturado para focus:", objetivoId);
+            // console.log("✅ ID del objetivo capturado para focus:", objetivoId);
           }
         }
       });
 
       // Función para recargar subobjetivos con funcionalidad completa
       async function recargarSubobjetivosFocus() {
-        console.log("🔄 RECARGA: Iniciando recarga de subobjetivos...");
+        // console.log("🔄 RECARGA: Iniciando recarga de subobjetivos...");
 
         const modalFocus = document.getElementById("modalFocusObjetivo");
         const objetivoId = modalFocus?.getAttribute("data-objetivo-id");
 
-        console.log("🔄 RECARGA: Modal encontrado:", !!modalFocus);
-        console.log("🔄 RECARGA: Objetivo ID:", objetivoId);
+        // console.log("🔄 RECARGA: Modal encontrado:", !!modalFocus);
+        // console.log("🔄 RECARGA: Objetivo ID:", objetivoId);
 
         if (!objetivoId) {
           console.error("🔄 RECARGA: No hay objetivo ID, abortando");
@@ -3285,10 +3345,10 @@ Puedes usar:
 
         try {
           const url = `/api/objetivos/${objetivoId}/subobjetivos`;
-          console.log("🔄 RECARGA: Fetching desde:", url);
+          // console.log("🔄 RECARGA: Fetching desde:", url);
 
           const response = await fetch(url);
-          console.log("🔄 RECARGA: Response status:", response.status);
+          // console.log("🔄 RECARGA: Response status:", response.status);
 
           if (!response.ok) {
             throw new Error(`HTTP ${response.status}`);
@@ -3302,7 +3362,7 @@ Puedes usar:
           );
 
           renderizarSubobjetivosFocusCompleto(subobjetivos);
-          console.log("🔄 RECARGA: Renderizado completado");
+          // console.log("🔄 RECARGA: Renderizado completado");
         } catch (error) {
           console.error("🔄 RECARGA: Error completo:", error);
         }
@@ -3317,7 +3377,7 @@ Puedes usar:
         );
 
         const container = document.getElementById("focus-subobjetivos-list");
-        console.log("🎨 RENDER: Container encontrado:", !!container);
+        // console.log("🎨 RENDER: Container encontrado:", !!container);
 
         if (!container) {
           console.error("🎨 RENDER: No se encontró el container!");
@@ -3338,6 +3398,13 @@ Puedes usar:
 
         let html = "";
         subobjetivos.forEach((sub) => {
+          // Procesar prefijos antes de crear el HTML
+          const tituloConPrefijo = typeof procesarTituloConPrefijos === 'function' 
+            ? procesarTituloConPrefijos(sub.titulo) 
+            : sub.titulo;
+          
+          const tienePrefijo = tituloConPrefijo !== sub.titulo;
+          
           html += `
                 <div class="focus-subobjetivo-item p-3 mb-2 bg-light rounded">
                     <input type="checkbox" class="form-check-input focus-subobjetivo-checkbox me-3" 
@@ -3347,7 +3414,7 @@ Puedes usar:
               ? "text-decoration-line-through text-muted"
               : ""
             }" 
-                          data-subobjetivo-id="${sub.id}">${sub.titulo}</span>
+                          data-subobjetivo-id="${sub.id}"${tienePrefijo ? ' data-prefijo-procesado="true"' : ''}>${tituloConPrefijo}</span>
                 </div>
             `;
         });
@@ -3620,11 +3687,11 @@ Puedes usar:
   // Función para cargar objetivos de mañana
   async function cargarObjetivosManana() {
     try {
-      console.log("📅 Iniciando carga de objetivos de mañana...");
+      // console.log("📅 Iniciando carga de objetivos de mañana...");
 
       const response = await fetch("/api/objetivos/manana");
-      console.log("📡 Response status:", response.status);
-      console.log("📡 Response ok:", response.ok);
+      // console.log("📡 Response status:", response.status);
+      // console.log("📡 Response ok:", response.ok);
 
       if (!response.ok) {
         console.error(
@@ -3636,12 +3703,12 @@ Puedes usar:
       }
 
       const data = await response.json();
-      console.log("📊 Data recibida completa:", data);
-      console.log("📊 Total objetivos:", data.total);
-      console.log("📊 Fecha mañana:", data.fecha_manana);
+      // console.log("📊 Data recibida completa:", data);
+      // console.log("📊 Total objetivos:", data.total);
+      // console.log("📊 Fecha mañana:", data.fecha_manana);
 
       if (data.objetivos && data.objetivos.length > 0) {
-        console.log("📋 Objetivos encontrados:");
+        // console.log("📋 Objetivos encontrados:");
         data.objetivos.forEach((obj, index) => {
           console.log(
             `  ${index + 1}. ${obj.titulo} (${obj.total_subobjetivos
@@ -3650,9 +3717,9 @@ Puedes usar:
         });
       }
 
-      console.log("📅 Llamando a renderizarObjetivosManana...");
+      // console.log("📅 Llamando a renderizarObjetivosManana...");
       renderizarObjetivosManana(data);
-      console.log("✅ Renderizado completado");
+      // console.log("✅ Renderizado completado");
     } catch (error) {
       console.error("💥 Error completo cargando objetivos de mañana:", error);
       console.error("💥 Error stack:", error.stack);
@@ -3783,7 +3850,7 @@ Puedes usar:
     // Inicializar tooltips para los títulos de objetivos
     inicializarTooltipsObjetivos();
 
-    console.log(`✅ Renderizados ${data.total} objetivos de mañana`);
+    // console.log(`✅ Renderizados ${data.total} objetivos de mañana`);
   }
 
   // Función para mostrar error
@@ -3814,12 +3881,12 @@ Puedes usar:
 
   // Función para mostrar/ocultar objetivos de mañana
   function toggleObjetivosManana() {
-    console.log("🔄 toggleObjetivosManana llamada");
+    // console.log("🔄 toggleObjetivosManana llamada");
 
     const contenido = document.getElementById("contenido-objetivos-manana");
     const chevron = document.getElementById("icono-chevron-manana");
 
-    console.log("📋 Elementos encontrados:", {
+    // console.log("📋 Elementos encontrados:", {
       contenido: !!contenido,
       chevron: !!chevron,
       objetivosMananaVisible: objetivosMananaVisible,
@@ -3833,28 +3900,28 @@ Puedes usar:
 
     if (objetivosMananaVisible) {
       // Ocultar
-      console.log("📅 Ocultando objetivos de mañana...");
+      // console.log("📅 Ocultando objetivos de mañana...");
       contenido.classList.remove("show");
       chevron.style.transform = "rotate(0deg)";
       objetivosMananaVisible = false;
-      console.log("📅 Objetivos de mañana ocultados");
+      // console.log("📅 Objetivos de mañana ocultados");
     } else {
       // Mostrar
-      console.log("📅 Mostrando objetivos de mañana...");
+      // console.log("📅 Mostrando objetivos de mañana...");
       contenido.classList.add("show");
       chevron.style.transform = "rotate(90deg)";
       objetivosMananaVisible = true;
 
       // Cargar datos solo la primera vez
       if (!objetivosMananaYaCargados) {
-        console.log("📅 Cargando objetivos por primera vez...");
+        // console.log("📅 Cargando objetivos por primera vez...");
         cargarObjetivosManana();
         objetivosMananaYaCargados = true;
       } else {
-        console.log("📅 Objetivos ya cargados previamente");
+        // console.log("📅 Objetivos ya cargados previamente");
       }
 
-      console.log("📅 Objetivos de mañana mostrados");
+      // console.log("📅 Objetivos de mañana mostrados");
     }
   }
 
@@ -3961,7 +4028,7 @@ Puedes usar:
 
   // Función para mostrar tooltip con subobjetivos
   async function mostrarTooltipConSubobjetivos(elemento, objetivoId) {
-    console.log("🔄 Mostrando tooltip para objetivo:", objetivoId);
+    // console.log("🔄 Mostrando tooltip para objetivo:", objetivoId);
 
     // Cancelar timeout de ocultar si existe
     if (timeoutTooltip) {
@@ -3971,7 +4038,7 @@ Puedes usar:
 
     // Si ya hay un tooltip, eliminarlo inmediatamente
     if (tooltipPersonalizado) {
-      console.log("🔄 Eliminando tooltip anterior...");
+      // console.log("🔄 Eliminando tooltip anterior...");
       if (tooltipPersonalizado.parentNode) {
         tooltipPersonalizado.parentNode.removeChild(tooltipPersonalizado);
       }
@@ -4041,7 +4108,7 @@ Puedes usar:
       setTimeout(() => {
         if (tooltipPersonalizado) {
           tooltipPersonalizado.style.opacity = "1";
-          console.log("✅ Tooltip mostrado");
+          // console.log("✅ Tooltip mostrado");
         }
       }, 10);
 
@@ -4061,7 +4128,7 @@ Puedes usar:
 
   // Función para ocultar tooltip con subobjetivos
   function ocultarTooltipConSubobjetivos(elemento = null) {
-    console.log("🔄 Intentando ocultar tooltip...");
+    // console.log("🔄 Intentando ocultar tooltip...");
 
     // Cancelar timeout anterior si existe
     if (timeoutTooltip) {
@@ -4115,7 +4182,7 @@ Puedes usar:
           )})`;
         }
 
-        console.log(`📅 Contador de mañana: ${data.total} objetivos`);
+        // console.log(`📅 Contador de mañana: ${data.total} objetivos`);
       }
     } catch (error) {
       console.log(
@@ -4159,8 +4226,8 @@ Puedes usar:
       const data = await response.json();
 
       // DEBUG: Mostrar datos recibidos
-      console.log('🔍 DEBUG - Datos completos recibidos:', data);
-      console.log('🔍 DEBUG - Status:', data.status);
+      // console.log('🔍 DEBUG - Datos completos recibidos:', data);
+      // console.log('🔍 DEBUG - Status:', data.status);
 
       // Verificar si la respuesta es exitosa
       if (data.status !== 'success') {
@@ -4175,20 +4242,20 @@ Puedes usar:
 
       // Almacenar subobjetivos completados globalmente para uso en generarHtmlSubobjetivosCompletados
       window.subobjetivosCompletadosFecha = objetivosData.subobjetivos_completados || [];
-      console.log(`📋 Subobjetivos completados en ${fecha}:`, window.subobjetivosCompletadosFecha.length);
-      console.log('🔍 DEBUG - Estructura completa de data:', data);
-      console.log('🔍 DEBUG - subobjetivos_completados data:', objetivosData.subobjetivos_completados);
+      // console.log(`📋 Subobjetivos completados en ${fecha}:`, window.subobjetivosCompletadosFecha.length);
+      // console.log('🔍 DEBUG - Estructura completa de data:', data);
+      // console.log('🔍 DEBUG - subobjetivos_completados data:', objetivosData.subobjetivos_completados);
 
       // DEBUG: Mostrar estructura de datos
-      console.log('🔍 DEBUG - objetivosData:', objetivosData);
-      console.log('🔍 DEBUG - objetivos_creados:', objetivosData.objetivos_creados);
-      console.log('🔍 DEBUG - objetivos_completados:', objetivosData.objetivos_completados);
-      console.log('🔍 DEBUG - objetivos_recurrentes_pendientes:', objetivosData.objetivos_recurrentes_pendientes);
-      console.log('🔍 DEBUG - subobjetivos_completados:', objetivosData.subobjetivos_completados);
+      // console.log('🔍 DEBUG - objetivosData:', objetivosData);
+      // console.log('🔍 DEBUG - objetivos_creados:', objetivosData.objetivos_creados);
+      // console.log('🔍 DEBUG - objetivos_completados:', objetivosData.objetivos_completados);
+      // console.log('🔍 DEBUG - objetivos_recurrentes_pendientes:', objetivosData.objetivos_recurrentes_pendientes);
+      // console.log('🔍 DEBUG - subobjetivos_completados:', objetivosData.subobjetivos_completados);
 
       // DEBUG: Mostrar resumen del servidor
       if (objetivosData.resumen) {
-        console.log('🔍 DEBUG - Resumen del servidor:', objetivosData.resumen);
+        // console.log('🔍 DEBUG - Resumen del servidor:', objetivosData.resumen);
       }
 
       // Agregar objetivos creados (marcando si están completados o no)
@@ -4238,8 +4305,8 @@ Puedes usar:
       }
 
       // DEBUG: Mostrar objetivos procesados
-      console.log('🔍 DEBUG - todosLosObjetivos procesados:', todosLosObjetivos);
-      console.log('🔍 DEBUG - Cantidad total:', todosLosObjetivos.length);
+      // console.log('🔍 DEBUG - todosLosObjetivos procesados:', todosLosObjetivos);
+      // console.log('🔍 DEBUG - Cantidad total:', todosLosObjetivos.length);
 
       // Actualizar contadores
       const totalObjetivos = todosLosObjetivos.length;
@@ -4252,7 +4319,7 @@ Puedes usar:
       ).length;
 
       // DEBUG: Mostrar contadores calculados
-      console.log('🔍 DEBUG - Contadores:', {
+      // console.log('🔍 DEBUG - Contadores:', {
         totalObjetivos,
         totalCompletados,
         totalPendientes,
@@ -4281,10 +4348,10 @@ Puedes usar:
         renderizarObjetivosSeparados(listaCreados, listaCompletados);
       }
 
-      console.log(`✅ Modal cargado: ${totalObjetivos} objetivos (${totalCompletados} completados, ${totalPendientes} pendientes)`);
+      // console.log(`✅ Modal cargado: ${totalObjetivos} objetivos (${totalCompletados} completados, ${totalPendientes} pendientes)`);
 
       // DEBUG: Comparar con datos del calendario
-      console.log('🔍 DEBUG - Comparación esperada vs real:');
+      // console.log('🔍 DEBUG - Comparación esperada vs real:');
       console.log('  - Tooltip calendario dice: 0 creados, 2 completados, 3 pendientes (total 5)');
       console.log(`  - Modal muestra: ${totalObjetivos} total, ${totalCompletados} completados, ${totalPendientes} pendientes`);
       console.log('  - ¿Coinciden? NO - Hay una discrepancia en los datos');
@@ -4463,20 +4530,20 @@ Puedes usar:
 
   // Función auxiliar para agregar objetivos que tienen subobjetivos completados (objetivos.html)
   async function agregarObjetivosConSubobjetivosCompletadosObjetivos() {
-    console.log('🔍 [Objetivos] Buscando objetivos faltantes con subobjetivos completados...');
+    // console.log('🔍 [Objetivos] Buscando objetivos faltantes con subobjetivos completados...');
 
     // Obtener IDs únicos de objetivos que tienen subobjetivos completados
     const objetivosConSubobjetivos = [...new Set(
       window.subobjetivosCompletadosFecha.map(sub => sub.objetivo_id)
     )];
 
-    console.log('🎯 [Objetivos] Objetivos con subobjetivos completados:', objetivosConSubobjetivos);
+    // console.log('🎯 [Objetivos] Objetivos con subobjetivos completados:', objetivosConSubobjetivos);
 
     // Verificar cuáles objetivos ya están en la lista
     const objetivosYaIncluidos = todosLosObjetivos.map(obj => obj.id);
     const objetivosFaltantes = objetivosConSubobjetivos.filter(id => !objetivosYaIncluidos.includes(id));
 
-    console.log('📋 [Objetivos] Objetivos ya incluidos:', objetivosYaIncluidos);
+    // console.log('📋 [Objetivos] Objetivos ya incluidos:', objetivosYaIncluidos);
     console.log('❓ [Objetivos] Objetivos faltantes:', objetivosFaltantes);
 
     // Si hay objetivos faltantes, obtenerlos del servidor
@@ -4494,7 +4561,7 @@ Puedes usar:
               tipo_origen: 'objetivo_con_subobjetivos'
             });
 
-            console.log(`✅ [Objetivos] Agregado objetivo faltante: ${objetivoData.titulo}`);
+            // console.log(`✅ [Objetivos] Agregado objetivo faltante: ${objetivoData.titulo}`);
           }
         } catch (error) {
           console.error(`❌ [Objetivos] Error obteniendo objetivo ${objetivoId}:`, error);
@@ -4631,6 +4698,58 @@ Puedes usar:
       </div>
     `;
   }
+</script>
+
+<script>
+// Inicializar tooltip de prefijos cuando se carga la página
+document.addEventListener('DOMContentLoaded', function() {
+    // Esperar un poco para asegurar que Bootstrap esté cargado
+    setTimeout(function() {
+        if (typeof bootstrap !== 'undefined' && bootstrap.Tooltip) {
+            // Inicializar tooltip de prefijos
+            const tooltipElement = document.querySelector('[data-bs-toggle="tooltip"]');
+            if (tooltipElement) {
+                new bootstrap.Tooltip(tooltipElement, {
+                    trigger: 'hover',
+                    delay: { show: 300, hide: 100 },
+                    customClass: 'prefijos-tooltip'
+                });
+                // console.log('✅ Tooltip de prefijos inicializado');
+            }
+        } else {
+            console.log('⚠️ Bootstrap no disponible para tooltip de prefijos');
+        }
+    }, 1000);
+});
+
+// También inicializar cuando se abre el modal de focus
+document.addEventListener('DOMContentLoaded', function() {
+    const modalFocus = document.getElementById('modalFocusObjetivo');
+    if (modalFocus) {
+        modalFocus.addEventListener('shown.bs.modal', function() {
+            setTimeout(function() {
+                if (typeof bootstrap !== 'undefined' && bootstrap.Tooltip) {
+                    const tooltipElement = document.querySelector('[data-bs-toggle="tooltip"]');
+                    if (tooltipElement) {
+                        // Destruir tooltip existente si existe
+                        const existingTooltip = bootstrap.Tooltip.getInstance(tooltipElement);
+                        if (existingTooltip) {
+                            existingTooltip.dispose();
+                        }
+                        
+                        // Crear nuevo tooltip
+                        new bootstrap.Tooltip(tooltipElement, {
+                            trigger: 'hover',
+                            delay: { show: 300, hide: 100 },
+                            customClass: 'prefijos-tooltip'
+                        });
+                        // console.log('✅ Tooltip de prefijos reinicializado en modal');
+                    }
+                }
+            }, 500);
+        });
+    }
+});
 </script>
 
 {% endblock %}
