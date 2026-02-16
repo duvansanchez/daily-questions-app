@@ -5905,6 +5905,13 @@ async function cargarSubobjetivosFocus(objetivoId) {
         subobjetivos.forEach(sub => {
             if (sub.completado) completados++;
             
+            // Procesar prefijos antes de crear el HTML
+            const tituloConPrefijo = typeof procesarTituloConPrefijos === 'function' 
+                ? procesarTituloConPrefijos(sub.titulo) 
+                : sub.titulo;
+            
+            const tienePrefijo = tituloConPrefijo !== sub.titulo;
+            
             html += `
                 <div class="focus-subobjetivo-item ${sub.completado ? 'completado' : ''}">
                     <input 
@@ -5913,7 +5920,7 @@ async function cargarSubobjetivosFocus(objetivoId) {
                         ${sub.completado ? 'checked' : ''} 
                         data-subobjetivo-id="${sub.id}"
                         data-objetivo-id="${objetivoId}">
-                    <span class="focus-subobjetivo-titulo ${sub.completado ? 'completado' : ''}" data-subobjetivo-id="${sub.id}">${sub.titulo}</span>
+                    <span class="focus-subobjetivo-titulo ${sub.completado ? 'completado' : ''}" data-subobjetivo-id="${sub.id}"${tienePrefijo ? ' data-prefijo-procesado="true"' : ''}>${tituloConPrefijo}</span>
                 </div>
             `;
         });
