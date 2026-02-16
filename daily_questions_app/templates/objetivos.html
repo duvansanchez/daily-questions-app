@@ -1351,6 +1351,16 @@ Puedes usar:
   // Función para normalizar nombres de categorías y subcategorías
   function normalizarNombre(nombre) {
     if (!nombre) return "";
+    
+    // Si es un objeto, extraer el nombre
+    if (typeof nombre === 'object' && nombre.nombre) {
+      nombre = nombre.nombre;
+    }
+    
+    // Si no es string, convertirlo
+    if (typeof nombre !== 'string') {
+      return String(nombre);
+    }
 
     return nombre
       .split("_")
@@ -1465,13 +1475,20 @@ Puedes usar:
     // Añadir las nuevas opciones con nombres normalizados
     opciones.forEach((opcion) => {
       const option = document.createElement("option");
-      option.value = opcion; // Valor original para el backend
-      option.textContent = normalizarNombre(opcion); // Nombre normalizado para mostrar
+      // Manejar tanto objetos como strings
+      if (typeof opcion === 'object' && opcion.nombre) {
+        option.value = opcion.nombre; // Valor original para el backend
+        option.textContent = normalizarNombre(opcion.nombre); // Nombre normalizado para mostrar
+      } else {
+        option.value = opcion; // Valor original para el backend
+        option.textContent = normalizarNombre(opcion); // Nombre normalizado para mostrar
+      }
       select.appendChild(option);
     });
 
     // Restaurar la selección anterior si existe en las nuevas opciones
-    if (selectedValue && opciones.includes(selectedValue)) {
+    const opcionesValues = opciones.map(o => typeof o === 'object' && o.nombre ? o.nombre : o);
+    if (selectedValue && opcionesValues.includes(selectedValue)) {
       select.value = selectedValue;
     }
 
@@ -1529,13 +1546,20 @@ Puedes usar:
     // Agregar las subcategorías al select con nombres normalizados
     subcategorias.forEach((subcat) => {
       const option = document.createElement("option");
-      option.value = subcat; // Valor original para el backend
-      option.textContent = normalizarNombre(subcat); // Nombre normalizado para mostrar
+      // Manejar tanto objetos como strings
+      if (typeof subcat === 'object' && subcat.nombre) {
+        option.value = subcat.nombre; // Valor original para el backend
+        option.textContent = normalizarNombre(subcat.nombre); // Nombre normalizado para mostrar
+      } else {
+        option.value = subcat; // Valor original para el backend
+        option.textContent = normalizarNombre(subcat); // Nombre normalizado para mostrar
+      }
       select.appendChild(option);
     });
 
     // Restaurar la selección anterior si existe
-    if (selectedSubcategoria && subcategorias.includes(selectedSubcategoria)) {
+    const subcategoriasValues = subcategorias.map(s => typeof s === 'object' && s.nombre ? s.nombre : s);
+    if (selectedSubcategoria && subcategoriasValues.includes(selectedSubcategoria)) {
       select.value = selectedSubcategoria;
     }
   }
@@ -1566,8 +1590,14 @@ Puedes usar:
     // Añadir las nuevas opciones con nombres normalizados
     opciones.forEach((opcion) => {
       const option = document.createElement("option");
-      option.value = opcion; // Valor original para el backend
-      option.textContent = normalizarNombre(opcion); // Nombre normalizado para mostrar
+      // Manejar tanto objetos como strings
+      if (typeof opcion === 'object' && opcion.nombre) {
+        option.value = opcion.nombre; // Valor original para el backend
+        option.textContent = normalizarNombre(opcion.nombre); // Nombre normalizado para mostrar
+      } else {
+        option.value = opcion; // Valor original para el backend
+        option.textContent = normalizarNombre(opcion); // Nombre normalizado para mostrar
+      }
       select.appendChild(option);
     });
 
@@ -1578,9 +1608,10 @@ Puedes usar:
     select.appendChild(nuevaOption);
 
     // Restaurar la selección anterior si existe en las nuevas opciones
+    const opcionesValues = opciones.map(o => typeof o === 'object' && o.nombre ? o.nombre : o);
     if (
       selectedValue &&
-      (selectedValue === "nueva" || opciones.includes(selectedValue))
+      (selectedValue === "nueva" || opcionesValues.includes(selectedValue))
     ) {
       select.value = selectedValue;
     }

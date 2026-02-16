@@ -3313,73 +3313,78 @@ async function cargarSubcategoriasFrases(categoria) {
 }
 
 // Actualizar categorías disponibles en los selectores
-function actualizarCategoriasDisponibles() {
-    // Obtener categorías desde la API
-    fetch('/api/frases/categorias')
-        .then(response => response.json())
-        .then(data => {
-            // Actualizar filtro de categorías
-            const filtroCategoria = document.getElementById('filtro-categoria-frases');
-            if (filtroCategoria) {
-                const valorActual = filtroCategoria.value;
-                filtroCategoria.innerHTML = '<option value="">Todas las categorías</option>';
+async function actualizarCategoriasDisponibles() {
+    console.log('🔄 Iniciando carga de categorías...');
+    try {
+        const response = await fetch('/api/frases/categorias');
+        const data = await response.json();
+        console.log('📦 Datos recibidos:', data);
+        
+        // Actualizar filtro de categorías
+        const filtroCategoria = document.getElementById('filtro-categoria-frases');
+        if (filtroCategoria) {
+            const valorActual = filtroCategoria.value;
+            filtroCategoria.innerHTML = '<option value="">Todas las categorías</option>';
 
-                if (data.categorias && data.categorias.length > 0) {
-                    data.categorias.forEach(cat => {
-                        const option = document.createElement('option');
-                        // Manejar tanto objetos como strings
-                        if (typeof cat === 'object' && cat.nombre) {
-                            option.value = cat.nombre;
-                            option.textContent = capitalizarPrimeraLetra(cat.nombre.replace(/_/g, ' '));
-                            if (cat.descripcion) {
-                                option.setAttribute('data-descripcion', cat.descripcion);
-                            }
-                        } else {
-                            option.value = cat;
-                            option.textContent = capitalizarPrimeraLetra(cat.replace(/_/g, ' '));
+            if (data.categorias && data.categorias.length > 0) {
+                data.categorias.forEach(cat => {
+                    const option = document.createElement('option');
+                    // Manejar tanto objetos como strings
+                    if (typeof cat === 'object' && cat.nombre) {
+                        option.value = cat.nombre;
+                        option.textContent = capitalizarPrimeraLetra(cat.nombre.replace(/_/g, ' '));
+                        if (cat.descripcion) {
+                            option.setAttribute('data-descripcion', cat.descripcion);
                         }
-                        filtroCategoria.appendChild(option);
-                    });
-                }
-
-                // Restaurar valor seleccionado si existe
-                if (valorActual) {
-                    const categoriaExiste = data.categorias && data.categorias.some(cat => 
-                        (typeof cat === 'object' ? cat.nombre : cat) === valorActual
-                    );
-                    if (categoriaExiste) {
-                        filtroCategoria.value = valorActual;
+                    } else {
+                        option.value = cat;
+                        option.textContent = capitalizarPrimeraLetra(cat.replace(/_/g, ' '));
                     }
-                }
+                    filtroCategoria.appendChild(option);
+                });
             }
 
-            // Actualizar selectores de modales
-            const todasLasCategorias = (data.categorias || []).map(cat => {
-                if (typeof cat === 'object' && cat.nombre) {
-                    return {
-                        value: cat.nombre,
-                        label: capitalizarPrimeraLetra(cat.nombre.replace(/_/g, ' '))
-                    };
-                } else {
-                    return {
-                        value: cat,
-                        label: capitalizarPrimeraLetra(cat.replace(/_/g, ' '))
-                    };
+            // Restaurar valor seleccionado si existe
+            if (valorActual) {
+                const categoriaExiste = data.categorias && data.categorias.some(cat => 
+                    (typeof cat === 'object' ? cat.nombre : cat) === valorActual
+                );
+                if (categoriaExiste) {
+                    filtroCategoria.value = valorActual;
                 }
-            });
-            actualizarSelectoresCategorias(todasLasCategorias);
-        })
-        .catch(error => {
-            console.error('Error cargando categorías:', error);
+            }
+        }
+
+        // Actualizar selectores de modales
+        const todasLasCategorias = (data.categorias || []).map(cat => {
+            if (typeof cat === 'object' && cat.nombre) {
+                return {
+                    value: cat.nombre,
+                    label: capitalizarPrimeraLetra(cat.nombre.replace(/_/g, ' '))
+                };
+            } else {
+                return {
+                    value: cat,
+                    label: capitalizarPrimeraLetra(cat.replace(/_/g, ' '))
+                };
+            }
         });
+        console.log('📋 Categorías procesadas para modales:', todasLasCategorias);
+        actualizarSelectoresCategorias(todasLasCategorias);
+        console.log('✅ Categorías cargadas exitosamente');
+    } catch (error) {
+        console.error('❌ Error cargando categorías:', error);
+    }
 }
 
 // Actualizar selectores de categorías en los modales
 function actualizarSelectoresCategorias(categorias) {
+    console.log('🔧 actualizarSelectoresCategorias llamada con:', categorias);
     const selectores = ['frase-categoria', 'editar-frase-categoria'];
     
     selectores.forEach(selectorId => {
         const selector = document.getElementById(selectorId);
+        console.log(`📋 Selector ${selectorId}:`, selector ? 'encontrado' : 'NO encontrado');
         if (selector) {
             const valorActual = selector.value;
             
@@ -3405,6 +3410,8 @@ function actualizarSelectoresCategorias(categorias) {
             nuevaOption.value = 'nueva';
             nuevaOption.textContent = '+ Nueva categoría';
             selector.appendChild(nuevaOption);
+            
+            console.log(`✅ ${selectorId} actualizado con ${categorias.length} categorías`);
             
             // Restaurar valor si existe
             if (valorActual && (valorActual === 'nueva' || categorias.find(c => c.value === valorActual))) {
@@ -4673,12 +4680,26 @@ function configurarEventListenersFrases() {
     // Botón nueva frase
     const btnNuevaFrase = document.getElementById('btn-nueva-frase');
     if (btnNuevaFrase && !btnNuevaFrase.hasAttribute('data-listener-added')) {
-        btnNuevaFrase.addEventListener('click', function() {
+        btnNuevaFrase.addEventListener('click', async function() {
+            console.log('🎯 Click en botón Nueva Frase');
             const modal = new bootstrap.Modal(document.getElementById('modalNuevaFrase'));
             modal.show();
+            console.log('📱 Modal mostrado');
             
-            // Configurar event listeners cuando se abre el modal
+            // Cargar categorías después de mostrar el modal
+            await actualizarCategoriasDisponibles();
+            console.log('✅ Categorías actualizadas');
+            
+            // Limpiar el selector de subcategorías
+            const subcategoriaSelect = document.getElementById('frase-subcategoria');
+            if (subcategoriaSelect) {
+                subcategoriaSelect.innerHTML = '<option value="">Selecciona una subcategoría</option><option value="nueva">+ Nueva subcategoría</option>';
+                console.log('🧹 Selector de subcategorías limpiado');
+            }
+            
+            // Configurar event listeners y preseleccionar filtros
             setTimeout(() => {
+                console.log('⚙️ Configurando event listeners y preselección');
                 configurarEventListenersCategorias();
                 preseleccionarFiltrosEnModal();
             }, 100);
@@ -5485,38 +5506,103 @@ function configurarEventListenersCategorias() {
 }
 
 // Manejar cambio de categoría en modal de nueva frase
-function manejarCambioCategoria() {
+async function manejarCambioCategoria() {
     const nuevaCategoriaContainer = document.getElementById('nueva-categoria-container');
     const nuevaCategoriaInput = document.getElementById('nueva-categoria-input');
+    const subcategoriaSelect = document.getElementById('frase-subcategoria');
     
     if (this.value === 'nueva') {
         nuevaCategoriaContainer.style.display = 'block';
         if (nuevaCategoriaInput) {
             nuevaCategoriaInput.focus();
         }
+        // Limpiar subcategorías cuando se crea una nueva categoría
+        if (subcategoriaSelect) {
+            subcategoriaSelect.innerHTML = '<option value="">Selecciona una subcategoría</option><option value="nueva">+ Nueva subcategoría</option>';
+        }
     } else {
         nuevaCategoriaContainer.style.display = 'none';
         if (nuevaCategoriaInput) {
             nuevaCategoriaInput.value = '';
+        }
+        // Cargar subcategorías para la categoría seleccionada
+        if (subcategoriaSelect && this.value) {
+            await cargarSubcategoriasParaModal(this.value, 'frase-subcategoria');
         }
     }
 }
 
 // Manejar cambio de categoría en modal de editar frase
-function manejarCambioEditarCategoria() {
+async function manejarCambioEditarCategoria() {
     const nuevaCategoriaContainer = document.getElementById('editar-nueva-categoria-container');
     const nuevaCategoriaInput = document.getElementById('editar-nueva-categoria-input');
+    const subcategoriaSelect = document.getElementById('editar-frase-subcategoria');
     
     if (this.value === 'nueva') {
         nuevaCategoriaContainer.style.display = 'block';
         if (nuevaCategoriaInput) {
             nuevaCategoriaInput.focus();
         }
+        // Limpiar subcategorías cuando se crea una nueva categoría
+        if (subcategoriaSelect) {
+            subcategoriaSelect.innerHTML = '<option value="">Selecciona una subcategoría</option><option value="nueva">+ Nueva subcategoría</option>';
+        }
     } else {
         nuevaCategoriaContainer.style.display = 'none';
         if (nuevaCategoriaInput) {
             nuevaCategoriaInput.value = '';
         }
+        // Cargar subcategorías para la categoría seleccionada
+        if (subcategoriaSelect && this.value) {
+            await cargarSubcategoriasParaModal(this.value, 'editar-frase-subcategoria');
+        }
+    }
+}
+
+// Cargar subcategorías para una categoría específica en un modal
+async function cargarSubcategoriasParaModal(categoria, selectId) {
+    const subcategoriaSelect = document.getElementById(selectId);
+    if (!subcategoriaSelect) return;
+
+    // Limpiar opciones actuales
+    subcategoriaSelect.innerHTML = '<option value="">Selecciona una subcategoría</option>';
+
+    if (!categoria) {
+        subcategoriaSelect.innerHTML += '<option value="nueva">+ Nueva subcategoría</option>';
+        return;
+    }
+
+    try {
+        const response = await fetch(`/api/frases/categorias?categoria=${encodeURIComponent(categoria)}`);
+        const data = await response.json();
+
+        if (data.subcategorias && data.subcategorias.length > 0) {
+            data.subcategorias.forEach(sub => {
+                const option = document.createElement('option');
+                // Manejar tanto objetos como strings
+                if (typeof sub === 'object' && sub.nombre) {
+                    option.value = sub.nombre;
+                    option.textContent = capitalizarPrimeraLetra(sub.nombre.replace(/_/g, ' '));
+                } else {
+                    option.value = sub;
+                    option.textContent = capitalizarPrimeraLetra(String(sub).replace(/_/g, ' '));
+                }
+                subcategoriaSelect.appendChild(option);
+            });
+        }
+        
+        // Agregar opción de nueva subcategoría al final
+        const nuevaOption = document.createElement('option');
+        nuevaOption.value = 'nueva';
+        nuevaOption.textContent = '+ Nueva subcategoría';
+        subcategoriaSelect.appendChild(nuevaOption);
+    } catch (error) {
+        console.error('Error cargando subcategorías:', error);
+        // Agregar opción de nueva subcategoría incluso si hay error
+        const nuevaOption = document.createElement('option');
+        nuevaOption.value = 'nueva';
+        nuevaOption.textContent = '+ Nueva subcategoría';
+        subcategoriaSelect.appendChild(nuevaOption);
     }
 }
 
